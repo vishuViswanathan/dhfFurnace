@@ -209,6 +209,18 @@ public class L2DFHFurnace extends DFHFurnace {
 
     FieldResults oneFieldResults;
 
+    public boolean setFieldProductionData() {
+        if (oneFieldResults != null) {
+            oneFieldResults.compareResults();
+            l2DFHeating.setFieldProductionData(oneFieldResults.production, oneFieldResults.commonAirTemp,
+                    oneFieldResults.commonFuelTemp);
+            return true;
+        }
+        else
+            return false;
+
+    }
+
     public boolean takeFieldResultsFromXML(String xmlStr) {
         boolean retVal = false;
         ValAndPos vp;

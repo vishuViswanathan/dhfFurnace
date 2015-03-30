@@ -1,8 +1,6 @@
 package basic;
 
 import directFiredHeating.DFHeating;
-import level2.L2DFHFurnace;
-import level2.L2DFHeating;
 import mvXML.ValAndPos;
 import mvXML.XMLmv;
 
@@ -22,6 +20,9 @@ public class ProductionData {
     public double exitTemp;
     public double deltaTemp;
     public int nChargeRows = 1;
+    // the following two applicable for Strip heating
+    public double exitZoneFceTemp;
+    public double minExitZoneTemp;
     public double piecesPerh = 0;
     public double speed = 0; // in m/h
     public String errMsg = "";
@@ -31,12 +32,13 @@ public class ProductionData {
         inError = false;
     }
 
-    public ProductionData(ProductionData fromProductionData) {
+    public ProductionData(ProductionData fromProductionData) {  // TODO how different from copyFrom()
         this();
         ProductionData fP = fromProductionData;
         charge = new Charge(fromProductionData.charge);
         chPitch = fromProductionData.chPitch;
         setProduction(fP.production, fP.nChargeRows, fP.entryTemp, fP.exitTemp, fP.deltaTemp, fP.bottShadow);
+        setExitZoneTempData(fP.exitZoneFceTemp, fP.minExitZoneTemp);
     }
 
     public ProductionData(DFHeating dfHeating, String xmlStr) {
@@ -60,6 +62,12 @@ public class ProductionData {
             piecesPerh = production / charge.unitWt;
     }
 
+    public void setExitZoneTempData(double exitZoneFceTemp, double minExitZoneTemp) {
+        this.exitZoneFceTemp = exitZoneFceTemp;
+        this.minExitZoneTemp = minExitZoneTemp;
+    }
+
+
     public double totalChargeHeat() {
         return production * charge.getDeltaHeat(entryTemp, exitTemp);
     }
@@ -72,6 +80,7 @@ public class ProductionData {
         ProductionData fP = fromProductionData;
         setCharge(fP.charge, fP.chPitch);
         setProduction(fP.production, fP.nChargeRows, fP.entryTemp, fP.exitTemp, fP.deltaTemp, fP.bottShadow);
+        setExitZoneTempData(fP.exitZoneFceTemp, fP.minExitZoneTemp);
     }
 
     String errString = "";
@@ -96,6 +105,10 @@ public class ProductionData {
             deltaTemp = Double.valueOf(vp.val);
             vp = XMLmv.getTag(xmlStr, "nChargeRows", 0);
             nChargeRows = Integer.valueOf(vp.val);
+            vp = XMLmv.getTag(xmlStr, "dischZoneFceTemp", 0);
+            exitZoneFceTemp = Double.valueOf(vp.val);
+            vp = XMLmv.getTag(xmlStr, "minDischZoneTemp", 0);
+            minExitZoneTemp = Double.valueOf(vp.val);
         } catch (Exception e) {
             errMsg = "Same problem in Reading production data :" + e.getLocalizedMessage();
             bRetVal = false;
@@ -112,8 +125,16 @@ public class ProductionData {
         xmlStr.append(XMLmv.putTag("exitTemp", exitTemp));
         xmlStr.append(XMLmv.putTag("deltaTemp", deltaTemp));
         xmlStr.append(XMLmv.putTag("nChargeRows", nChargeRows));
+        xmlStr.append(XMLmv.putTag("dischZoneFceTemp", exitZoneFceTemp));
+        xmlStr.append(XMLmv.putTag("minDischZoneTemp", minExitZoneTemp));
+
         return xmlStr;
     }
+    /*
+        public double dischZoneFceTemp;
+    public double minDischZoneTemp;
+
+     */
 
     public String getErrString() {
         return errString;

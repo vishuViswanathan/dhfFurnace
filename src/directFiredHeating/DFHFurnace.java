@@ -865,7 +865,7 @@ public class DFHFurnace {
                     chTempProfileFactor = 1.0;  // reset to default
                     honorLastZoneMinFceTemp = false;
                     if (!skipReferenceDataCheck) {
-                        // @TODO - exitTAllowance is fixed as 5 here
+                        // TODO - exitTAllowance is fixed as 5 here
                         int nPoints = performBase.getChInTempProfile(production, commFuelFiring.fuel, chInTempProfile, 5);
 //                        int nPoints = performBase.getChInTempProfile(production, commFuelFiring.fuel,
 //                                chInTempProfile, 10, iFirstFiredSection);
@@ -1118,9 +1118,9 @@ public class DFHFurnace {
 
     public void resetLossAssignment() {
         for (FceSection sec : topSections)
-            sec.resestLossAssignment();
+            sec.resetLossAssignment();
         for (FceSection sec : botSections)
-            sec.resestLossAssignment();
+            sec.resetLossAssignment();
 
     }
 

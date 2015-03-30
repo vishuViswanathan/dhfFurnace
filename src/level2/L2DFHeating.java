@@ -1,11 +1,7 @@
 package level2;
 
 import TMopcUa.TMuaClient;
-import basic.ChMaterial;
-import basic.Charge;
-import basic.Fuel;
-import basic.Observations;
-import directFiredHeating.DFHResult;
+import basic.*;
 import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
 import mvXML.ValAndPos;
@@ -454,13 +450,49 @@ public class L2DFHeating extends DFHeating {
         return retVal;
     }
 
+    public void setFieldProductionData(ProductionData pData, double airTemp, double fuelTemp) {
+        fillChargeInFurnaceUI(pData);
+        fillRecuDataUI(airTemp, fuelTemp);
+    }
+
+    void fillChargeDetailsUI(Charge ch) {
+        cbChType.setSelectedItem(ch.type);
+        tfChDiameter.setData(ch.diameter * 1000);
+        tfChWidth.setData(ch.width * 1000);
+        tfChThickness.setData(ch.height * 1000);
+        tfChLength.setData(ch.length * 1000);
+        cbChMaterial.setSelectedItem(ch.chMaterial);
+    }
+
+    void fillChargeInFurnaceUI(ProductionData pData) {
+        fillChargeDetailsUI(pData.charge);
+        tfBottShadow.setData(pData.bottShadow * 100);
+        tfChPitch.setData(pData.chPitch * 1000);
+        tfChRows.setData(pData.nChargeRows);
+        tfProduction.setData(pData.production / 1000);
+        tfEntryTemp.setData(pData.entryTemp);
+        tfExitTemp.setData(pData.exitTemp);
+        tfDeltaTemp.setData(pData.deltaTemp);
+        tfExitZoneFceTemp.setData(pData.exitZoneFceTemp);
+        tfMinExitZoneFceTemp.setData(pData.minExitZoneTemp);
+    }
+
+    void fillRecuDataUI(double airTemp, double fuelTemp) {
+        tfAirTemp.setData(airTemp);
+        tfFuelTemp.setData(fuelTemp);
+    }
+
+
     boolean evalForFieldProduction() {   // @TODO incomplete
         mIEvalWithFieldCorrection.setEnabled(true);
+        if (l2Furnace.setFieldProductionData() ) {
+            l2Furnace.resetLossFactor();
+            calculateFce();
+        }
         return false;
     }
 
     boolean recalculateWithFieldCorrections() {   // @TODO incomplete
-        l2Furnace.resetLossFactor();
         mIEvalForFieldProduction.setEnabled(false);
         return false;
     }

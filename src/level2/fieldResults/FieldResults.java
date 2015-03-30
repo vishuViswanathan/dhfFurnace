@@ -21,12 +21,13 @@ import java.util.Vector;
  */
 public class FieldResults {
     L2DFHFurnace l2Furnace;
-    ProductionData production;
+    public ProductionData production;
     FuelFiring fuelFiring;
     double chTempIn;
     double chTempOut;
     double flueTempOut;
-    double commonAirTemp;
+    public double commonAirTemp;
+    public double commonFuelTemp;
     HeatExchProps airHeatExchProps;
     public boolean inError = false;
     public String errMsg = "FieldResults:";
@@ -48,7 +49,7 @@ public class FieldResults {
     public void takeFromCalculations() {
         production = new ProductionData(l2Furnace.production);
 //        setCommonData(l2Furnace.chTempIN, l2Furnace.chTempOUT, l2Furnace.flueTempOUT, l2Furnace.commonAirTemp);
-        setCommonData(l2Furnace.flueTempOUT, l2Furnace.commonAirTemp);
+        setCommonData(l2Furnace.flueTempOUT, l2Furnace.commonAirTemp, l2Furnace.commFuelFiring.fuelTemp);
         FceSection oneSec;
         OneZone oneZone;
         int nSec = l2Furnace.nTopActiveSecs;
@@ -77,16 +78,10 @@ public class FieldResults {
         }
     }
 
-    public void setCommonData(double chTempIn, double chTempOut, double flueTempOut, double airTemp) {
-        this.chTempIn = chTempIn;
-        this.chTempOut =chTempOut;
+    public void setCommonData(double flueTempOut, double airTemp,  double fuelTemp) {
         this.flueTempOut = flueTempOut;
         this.commonAirTemp = airTemp;
-    }
-
-    public void setCommonData(double flueTempOut, double airTemp) {
-        this.flueTempOut = flueTempOut;
-        this.commonAirTemp = airTemp;
+        this.commonFuelTemp = fuelTemp;
     }
 
     public void addZoneResult(boolean bBot, int zNum, double fceTemp, double fuelFlow, double airTemp, double afRatio) {
@@ -97,7 +92,7 @@ public class FieldResults {
      * Compares the calculation results with the Field data and works our the lossFactor to be applied to
      * the calculated data
      */
-    boolean compareResults() {
+    public boolean compareResults() {
         boolean retVal = false;
         // the field data
         if (!inError) {
@@ -144,6 +139,8 @@ public class FieldResults {
                     flueTempOut = Double.valueOf(vp.val);
                     vp = XMLmv.getTag(xmlStr, "commonAirTemp", 0);
                     commonAirTemp = Double.valueOf(vp.val);
+                    vp = XMLmv.getTag(xmlStr, "commonFuelTemp", 0);
+                    commonFuelTemp = Double.valueOf(vp.val);
                     vp = XMLmv.getTag(xmlStr, "bTopBot", vp.endPos);
                     boolean bTopBot = vp.val.equals("1");
                     if (bTopBot != l2Furnace.bTopBot) {
@@ -194,6 +191,7 @@ public class FieldResults {
         xmlStr.append(XMLmv.putTag("fuelFiring", l2Furnace.commFuelFiring.dataInXML()));
         xmlStr.append(XMLmv.putTag("flueTempOut", fmtTemp.format(flueTempOut)));
         xmlStr.append(XMLmv.putTag("commonAirTemp", fmtTemp.format(commonAirTemp)));
+        xmlStr.append(XMLmv.putTag("commonFuelTemp", fmtTemp.format(commonFuelTemp)));
         xmlStr.append(XMLmv.putTag("bTopBot", (l2Furnace.bTopBot) ? "1" : "0"));
         xmlStr.append(XMLmv.putTag("topZones", zonesInXML(false)));
         if (l2Furnace.bTopBot)

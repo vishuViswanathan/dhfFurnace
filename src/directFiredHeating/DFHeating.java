@@ -202,27 +202,27 @@ public class DFHeating extends JApplet implements InputControl {
     MultiPairColPanel mpTitlePanel;
     MultiPairColPanel mpFceCommDataPanel;
     double chWidth = 1.2, chThickness = 0.2, chLength = 9, chDiameter = 0.2;
-    JComboBox cbChType;
+    protected JComboBox cbChType;
     protected int nChargeRows = 1;
     ChMaterial selChMaterial;
-    NumberTextField tfChWidth, tfChThickness, tfChLength, tfChDiameter;
-    JComboBox cbChMaterial;
+    protected NumberTextField tfChWidth, tfChThickness, tfChLength, tfChDiameter;
+    protected JComboBox cbChMaterial;
     MultiPairColPanel mpChargeData;
     JLabel labChWidth, labChLength;
     protected double bottShadow, chPitch = 1.3, tph = 200;
     protected double entryTemp = 30, exitTemp = 1200, deltaTemp = 25;
     protected double exitZoneFceTemp = 1050; // for strip heating
     protected double minExitZoneFceTemp = 900; // for strip heating
-    NumberTextField tfBottShadow, tfChPitch, tfChRows, tfProduction;
-    NumberTextField tfEntryTemp, tfExitTemp, tfDeltaTemp;
-    NumberTextField tfExitZoneFceTemp;
-    NumberTextField tfMinExitZoneFceTemp;
+    protected NumberTextField tfBottShadow, tfChPitch, tfChRows, tfProduction;
+    protected NumberTextField tfEntryTemp, tfExitTemp, tfDeltaTemp;
+    protected NumberTextField tfExitZoneFceTemp;
+    protected NumberTextField tfMinExitZoneFceTemp;
     LengthChangeListener lengthListener = new LengthChangeListener();
     MultiPairColPanel mpChInFce;
     NumberTextField tfTotTime, tfSpTime, tfSpeed;
     double calculStep = 1.0;
     public double ambTemp = 30, airTemp = 500, fuelTemp = 30;
-    NumberTextField tfCalculStep, tfAmbTemp, tfAirTemp, tfFuelTemp;
+    protected NumberTextField tfCalculStep, tfAmbTemp, tfAirTemp, tfFuelTemp;
     JButton pbCalculate;
     MultiPairColPanel mpCalcul;
     double deltaTflue = 50, deltaTAirFromRecu = 50, maxFlueAtRecu = 800;
@@ -2153,11 +2153,12 @@ public class DFHeating extends JApplet implements InputControl {
         evalThread.start();
     }
 
-    public boolean evaluate(ThreadController master, double forOutput, double stripWidth) {
+    public boolean evaluate(ThreadController master, double forOutput, double stripWidth) {   // TODO not used
         return furnace.evaluate(master, forOutput, stripWidth);
     }
 
-    void calculateFce() {
+    protected void calculateFce() {
+        furnace.resetLossFactor();
         initPrintGroups();
         enableResultsMenu(false);
         takeValuesFromUI();
@@ -2174,6 +2175,7 @@ public class DFHeating extends JApplet implements InputControl {
                 production = new ProductionData();
                 production.setCharge(theCharge, chPitch);
                 production.setProduction(tph * 1000, nChargeRows, entryTemp, exitTemp, deltaTemp, bottShadow);
+                production.setExitZoneTempData(exitZoneFceTemp, minExitZoneFceTemp);
                 furnace.setProduction(production);
                 if (evaluator != null)
                     if (evaluator.stopped)

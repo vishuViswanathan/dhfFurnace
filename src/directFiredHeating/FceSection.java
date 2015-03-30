@@ -626,7 +626,7 @@ public class FceSection {
         setLossFactor(1.0);
     }
 
-    public void resestLossAssignment() {
+    public void resetLossAssignment() {
         for (FceSubSection sub: subSections)
             sub.resetLossAssignment();
     }
