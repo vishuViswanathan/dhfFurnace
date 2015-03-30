@@ -1,0 +1,35 @@
+[PropertyInfo]
+ambCombo,JComboBox,false,false, , ,false,<default>
+areaSelectedButton,Button,false,false, , ,false,<default>
+buffer,BufferedImage,false,false, , ,false,<default>
+cancellButton,Button,false,false, , ,false,<default>
+clearAmbientButton,Button,false,false, , ,false,<default>
+endX,int,false,false, , ,false,<default>
+endY,int,false,false, , ,false,<default>
+exitButton,Button,false,false, , ,false,<default>
+face,FaceDisplay,false,false, , ,false,<default>
+formatPos,DecimalFormat,false,false, , ,false,<default>
+halfUnitCell,double,false,false, , ,false,<default>
+height,double,false,false, , ,false,<default>
+imageG2,Graphics2D,false,false, , ,false,<default>
+lastPt,Point,false,false, , ,false,<default>
+markArea,boolean[][],false,false, , ,false,<default>
+markColor,Color,false,false, , ,false,<default>
+mouseOnPanel,boolean,false,false, , ,false,<default>
+okButon,Button,false,false, , ,false,<default>
+selectAllButton,Button,false,false, , ,false,<default>
+startX,int,false,false, , ,false,<default>
+startY,int,false,false, , ,false,<default>
+surf,ChargeSurface,false,false, , ,false,<default>
+tbAmbAtCursor,JTextField,false,false, , ,false,<default>
+tbCursor,JTextField,false,false, , ,false,<default>
+unitCell,double,false,false, , ,false,<default>
+unitSide,int,false,false, , ,false,<default>
+width,double,false,false, , ,false,<default>
+xCells,int,false,false, , ,false,<default>
+yCells,int,false,false, , ,false,<default>
+[IconNames]
+
+
+
+

@@ -1,0 +1,32 @@
+[PropertyInfo]
+actualLen,int,false,false, , ,false,<default>
+charge,ThreeDCharge,false,false, , ,false,<default>
+cntDataPoints,int,false,false, , ,false,<default>
+collectionLength,int,false,false, , ,true,<default>
+columnHeader,String,false,false, , ,true,<default>
+dataChangeLsteners,Vector,false,false, , ,false,<default>
+dataSet,double[],false,false, , ,false,<default>
+filePath,String,false,false, , ,false,<default>
+heatHistory,Vector,false,false, , ,false,<default>
+latestHeatdata,double[],false,false, , ,false,<default>
+latestTempdata,double[][][],false,false, , ,false,<default>
+maxTableLen,int,false,false, , ,false,<default>
+MAXTIMEPOINTS,int,false,false, , ,false,<default>
+oK,boolean,false,false, , ,false,<default>
+pointCount,int,false,false, , ,true,<default>
+pointData,Hashtable,false,false, , ,false,<default>
+pointList,PointInCharge[],false,false, , ,true,<default>
+table,TwoDTable,false,false, , ,false,<default>
+tableActive,boolean,false,false, , ,false,<default>
+tempHistory,Vector,false,false, , ,false,<default>
+tempPoints,Vector,false,false, , ,false,<default>
+timePoints,double[],false,false, , ,false,<default>
+validTimePoints,int,false,false, , ,false,<default>
+xsize,int,false,false, , ,true,<default>
+ysize,int,false,false, , ,true,<default>
+zsize,int,false,false, , ,true,<default>
+[IconNames]
+
+
+
+

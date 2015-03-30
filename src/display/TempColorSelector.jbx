@@ -1,0 +1,18 @@
+[PropertyInfo]
+colorEnd,float,false,false, , ,false,<default>
+colorStart,float,false,false, , ,false,<default>
+colorSwitch,float,false,false, , ,false,<default>
+formatTemp0,DecimalFormat,false,false, , ,false,<default>
+imageScaleG,Graphics2D,false,false, , ,false,<default>
+jTmaxT,JTextField,false,false, , ,false,<default>
+jTminT,JTextField,false,false, , ,false,<default>
+scaleBuffer,BufferedImage,false,false, , ,false,<default>
+scaleUnitX,int,false,false, , ,false,<default>
+scaleUnitY,int,false,false, , ,false,<default>
+tMax,float,false,false, , ,false,<default>
+tMin,float,false,false, , ,false,<default>
+[IconNames]
+
+
+
+

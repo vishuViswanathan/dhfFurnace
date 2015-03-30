@@ -1,0 +1,14 @@
+
+GraphDisplay can query the CalculMachine for the number
+of graphs
+
+public TraceHeader[] getTraceHeader();
+
+
+Then get individual details or set details by calling
+
+public DoubleRange getXrange(int trace)
+public DoubleRange getYrange(int trace)
+		etc.
+
+TreeMap.clear() does NOT clear the map ?
