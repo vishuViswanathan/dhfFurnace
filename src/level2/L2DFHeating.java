@@ -41,6 +41,7 @@ public class L2DFHeating extends DFHeating {
     JMenuItem mIReadFceSettings;
 
     JMenuItem mILoadFieldResult;
+    JMenuItem mILevel1FieldResults;
     JMenuItem mISaveFieldResult;
 
     JMenuItem mIEvalForFieldProduction;
@@ -97,7 +98,8 @@ public class L2DFHeating extends DFHeating {
             mIReadDFHStripProcess = new JMenuItem("Read StripDFHProcess List from File");
             mISaveDFHStripProcess = new JMenuItem("Save StripDFHProcess List to File");
 
-            mILoadFieldResult = new JMenuItem("Load Field Results");
+            mILevel1FieldResults = new JMenuItem("Take Results From Level1");
+            mILoadFieldResult = new JMenuItem("Load Field Results from File");
             mISaveFieldResult = new JMenuItem("Save As Field Results");
             mISaveFieldResult.setEnabled(false);
             mIEvalForFieldProduction = new JMenuItem("Calculate for Field Production");
@@ -112,6 +114,7 @@ public class L2DFHeating extends DFHeating {
             mIAddDFHStripProcess.addActionListener(li);
             mISaveDFHStripProcess.addActionListener(li);
             mIReadDFHStripProcess.addActionListener(li);
+            mILevel1FieldResults.addActionListener(li);
             mILoadFieldResult.addActionListener(li);
             mISaveFieldResult.addActionListener(li);
             mIEvalForFieldProduction.addActionListener(li);
@@ -125,6 +128,7 @@ public class L2DFHeating extends DFHeating {
             mL2Configuration.add(mIReadDFHStripProcess);
             mL2Configuration.add(mISaveDFHStripProcess);
             mL2Configuration.addSeparator();
+            mL2Configuration.add(mILevel1FieldResults);
             mL2Configuration.add(mILoadFieldResult);
             mL2Configuration.add(mIEvalForFieldProduction);
             mL2Configuration.add(mIEvalWithFieldCorrection);
@@ -164,6 +168,8 @@ public class L2DFHeating extends DFHeating {
                 saveFurnaceSettings();
             else if (caller == mISaveFieldResult)
                 saveAsFieldResults();
+            else if (caller == mILevel1FieldResults)
+                takeResultsFromLevel1();
             else if (caller == mILoadFieldResult)
                 loadFieldResults();
             else if (caller == mIEvalForFieldProduction)
@@ -428,6 +434,17 @@ public class L2DFHeating extends DFHeating {
         return retVal;
     }
 
+    boolean takeResultsFromLevel1()  {
+        mIEvalForFieldProduction.setEnabled(false);
+        mIEvalWithFieldCorrection.setEnabled(false);
+        boolean retVal = false;
+        retVal = l2Furnace.takeFieldResultsFromLevel1();
+        if (retVal) {
+            mIEvalForFieldProduction.setEnabled(true);
+        }
+        return retVal;
+    }
+
     boolean loadFieldResults() {
         mIEvalForFieldProduction.setEnabled(false);
         mIEvalWithFieldCorrection.setEnabled(false);
@@ -487,6 +504,8 @@ public class L2DFHeating extends DFHeating {
         mIEvalWithFieldCorrection.setEnabled(true);
         if (l2Furnace.setFieldProductionData() ) {
             l2Furnace.resetLossFactor();
+            showMessage("Unfreezing Recu Specs");
+            l2Furnace.newRecu();
             calculateFce();
         }
         return false;

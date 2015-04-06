@@ -1,7 +1,11 @@
 package level2.fieldResults;
 
+import com.sun.org.apache.bcel.internal.generic.L2D;
 import directFiredHeating.FceSection;
 import level2.L2DFHFurnace;
+import level2.L2ParamGroup;
+import level2.L2Zone;
+import level2.Tag;
 import mvXML.ValAndPos;
 import mvXML.XMLmv;
 
@@ -53,10 +57,27 @@ public class FieldZone {
         testValidity();
     }
 
+    public FieldZone(L2DFHFurnace l2Furnace, boolean bBot, int zNum, L2Zone oneZone) {
+        this(l2Furnace, bBot, zNum);
+        takeFromL2Zone(oneZone);
+        testValidity();
+    }
+
+    void takeFromL2Zone(L2Zone oneZone) {
+        frFceTemp = oneZone.getValue(L2ParamGroup.Parameter.Temperature, Tag.TagName.PV).floatValue;
+        frFuelFlow = oneZone.getValue(L2ParamGroup.Parameter.FuelFlow, Tag.TagName.PV).floatValue;
+        frAirTemp = oneZone.getValue(L2ParamGroup.Parameter.AirFlow, Tag.TagName.Temperature).floatValue;
+        if (frFuelFlow > 0)
+            frAfRatio = oneZone.getValue(L2ParamGroup.Parameter.AirFlow, Tag.TagName.PV).floatValue /
+                        frFuelFlow;
+        else
+            frAfRatio = 1.0;
+    }
+
     void testValidity() {
         bValid = (sec.bRecuType) ? (frFuelFlow == 0) : (frFuelFlow > 0);
         if (!bValid)
-            errMsg = toString() + " Zone type and Fuel flow (" + frFuelFlow + ") does not match";
+            errMsg = toString() + ": Zone type and Fuel flow (" + frFuelFlow + ") does not match";
         else
             errMsg = "";
     }
@@ -90,6 +111,6 @@ public class FieldZone {
     }
 
     public String toString() {
-        return "Field Zone - " + sec.botSection + "Bottom Section - " + zNum;
+        return " Field Zone - " + zNum;
     }
 }

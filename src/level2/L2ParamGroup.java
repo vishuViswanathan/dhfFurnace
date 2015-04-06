@@ -20,11 +20,13 @@ public class L2ParamGroup {
          AFRatio("AFRatio"),
          Pressure("Pressure"),
          Speed("Speed"),
+         Flue("Flue"),
          FuelCharacteristic("FuelCharacteristic"),
          Data("Data"),
          Status("Status"),
          ErrMsg("ErrorMsg"),
-         InfoMsg("InfoMsg");
+         InfoMsg("InfoMsg"),
+         L2Stat("Level2Stat");
          private final String elementName;
 
          Parameter(String elementName) {
@@ -83,19 +85,19 @@ public class L2ParamGroup {
         return paramList.get(element);
     }
 
-    ProcessValue setValue(Parameter element, Tag.TagName tagName, float newValue) {
+    public ProcessValue setValue(Parameter element, Tag.TagName tagName, float newValue) {
          return getL2Param(element).setValue(tagName, newValue);
     }
 
-    ProcessValue setValue(Parameter element, Tag.TagName tagName, String strValue) {
+    public ProcessValue setValue(Parameter element, Tag.TagName tagName, String strValue) {
          return getL2Param(element).setValue(tagName, strValue);
     }
 
-    ProcessValue setValue(Parameter element, Tag.TagName tagName, boolean bValue) {
+    public ProcessValue setValue(Parameter element, Tag.TagName tagName, boolean bValue) {
          return getL2Param(element).setValue(tagName, bValue);
     }
 
-    ProcessValue getValue(Parameter element, Tag.TagName tagName) {
+    public ProcessValue getValue(Parameter element, Tag.TagName tagName) {
         return getL2Param(element).getValue(tagName);
     }
 
@@ -113,6 +115,11 @@ public class L2ParamGroup {
             throw(e);
         }
         return retVal;
+    }
+
+    public boolean addOneParameter(Parameter element, L2ZoneParam param) {
+        paramList.put(element, param);
+        return true;
     }
 
     void info(String msg) {

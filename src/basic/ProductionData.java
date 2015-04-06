@@ -13,12 +13,12 @@ import mvXML.XMLmv;
  */
 public class ProductionData {
     public Charge charge;
-    public double bottShadow;
-    public double chPitch;
+    public double bottShadow = 0;
+    public double chPitch = 1.0;
     public double production;  // in kg/h
-    public double entryTemp;
+    public double entryTemp = 30;
     public double exitTemp;
-    public double deltaTemp;
+    public double deltaTemp = 1;
     public int nChargeRows = 1;
     // the following two applicable for Strip heating
     public double exitZoneFceTemp;
@@ -30,6 +30,7 @@ public class ProductionData {
 
     public ProductionData() {
         inError = false;
+
     }
 
     public ProductionData(ProductionData fromProductionData) {  // TODO how different from copyFrom()

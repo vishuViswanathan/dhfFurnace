@@ -1581,7 +1581,7 @@ public class DFHFurnace {
                         decide("Existing Recuperator", " Do you want to use the existing Air Recuperator ?")));
     }
 
-    void newRecu() {
+    public void newRecu() {
         existingHeatExch = null;
         bRecuFrozen = false;
 //        freezeAirRecu.setEnabled(true);
@@ -1859,7 +1859,7 @@ public class DFHFurnace {
     }
 
     protected JRadioButton recuCounterFlow;
-    JButton freezeAirRecu;
+    JButton jbFreezeAirRecu;
     boolean bRecuFrozen = false;
     JButton saveRecuperator;
 
@@ -1883,8 +1883,8 @@ public class DFHFurnace {
         if (airRecu != null && existingHeatExch == null) {
             existingHeatExch = airRecu.getHeatExchProps(recuCounterFlow.isSelected());
             if (existingHeatExch.canPerform) {
-                if (freezeAirRecu != null) {
-                    freezeAirRecu.setEnabled(false);
+                if (jbFreezeAirRecu != null) {
+                    jbFreezeAirRecu.setEnabled(false);
                     recuCounterFlow.setEnabled(false);
                 }
                 bRecuFrozen = true;
@@ -1934,7 +1934,7 @@ public class DFHFurnace {
     class RecuBalanceListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             Object caller = e.getSource();
-            if (caller == freezeAirRecu)
+            if (caller == jbFreezeAirRecu)
                 freezeAirRecu();
             else if (caller == saveRecuperator) {
                 if (saveRecuToFile())
@@ -1948,8 +1948,8 @@ public class DFHFurnace {
 
     JPanel recuBalanceP() {
         recuCounterFlow = new JRadioButton("Counter Flow Type", true);
-        freezeAirRecu = new JButton("Freeze Air Recuperator Specification");
-        freezeAirRecu.setEnabled(!bRecuFrozen);
+        jbFreezeAirRecu = new JButton("Freeze Air Recuperator Specification");
+        jbFreezeAirRecu.setEnabled(!bRecuFrozen);
         saveRecuperator = new JButton("Save Recuperator");
         JPanel outerP = new FramedPanel();
         JPanel innerP = new FramedPanel(new GridBagLayout());
@@ -1974,15 +1974,15 @@ public class DFHFurnace {
             gbc.gridy++;
         }
         if (!controller.bFuelHeatedByRecu) {
-            freezeAirRecu.addActionListener(recuBalL);
+            jbFreezeAirRecu.addActionListener(recuBalL);
             saveRecuperator.addActionListener(recuBalL);
             if (existingHeatExch != null) {
                 bRecuFrozen = true;
-                freezeAirRecu.setEnabled(false);
+                jbFreezeAirRecu.setEnabled(false);
                 recuCounterFlow.setEnabled(false);
             }
             JPanel jp = new JPanel();
-            jp.add(freezeAirRecu);
+            jp.add(jbFreezeAirRecu);
             jp.add(saveRecuperator);
             jp.add(recuCounterFlow);
             innerP.add(jp, gbc);

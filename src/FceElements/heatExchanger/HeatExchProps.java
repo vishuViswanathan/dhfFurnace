@@ -134,7 +134,7 @@ public class HeatExchProps {
             heatedTinBase = Double.valueOf(vp.val);
             vp = XMLmv.getTag(xmlStr, "heatedToutBase", 0);
             heatedToutBase = Double.valueOf(vp.val);
-            // @TODO to calculate the heat exchange parameters from Fuel and fuel flow
+            // @TODO to calculate the heat exchange parameters from Fuel and fuel flow (any dilution ?)
             // heatingFlowBase, heatedFlowBase, heatExchBase
             heatingFlowBase = totalFuel * fuelFiring.unitFlueFlow();
             heatedFlowBase = totalFuel * fuelFiring.unitAirFlow();

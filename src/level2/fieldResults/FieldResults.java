@@ -1,10 +1,13 @@
 package level2.fieldResults;
 
 import FceElements.heatExchanger.HeatExchProps;
+import basic.ChMaterial;
+import basic.Charge;
 import basic.FuelFiring;
 import basic.ProductionData;
+import com.sun.org.apache.bcel.internal.generic.L2D;
 import directFiredHeating.FceSection;
-import level2.L2DFHFurnace;
+import level2.*;
 import mvXML.ValAndPos;
 import mvXML.XMLmv;
 import performance.stripFce.OneZone;
@@ -23,10 +26,9 @@ public class FieldResults {
     L2DFHFurnace l2Furnace;
     public ProductionData production;
     FuelFiring fuelFiring;
-    double chTempIn;
-    double chTempOut;
     double flueTempOut;
     public double commonAirTemp;
+    public double flueAtRecu;
     public double commonFuelTemp;
     HeatExchProps airHeatExchProps;
     public boolean inError = false;
@@ -76,6 +78,73 @@ public class FieldResults {
         if (!takeFromXML(xmlStr)) {
             inError = true;
         }
+    }
+
+    public FieldResults(L2DFHFurnace l2Furnace, boolean fromLevel1) {  // TODO to be used
+        this(l2Furnace);
+        inError = true;
+        if (takeZonalData()) {
+            if (takeRecuData(l2Furnace.getRecuperatorZ())) {
+                if (takeStripData(l2Furnace.getStripZone())) {
+                    inError = false;
+                }
+            }
+        }
+    }
+
+    boolean takeStripData(L2Zone stripZone) {
+        boolean retVal = false;
+        double stripExitT = stripZone.getValue(L2ParamGroup.Parameter.Temperature, Tag.TagName.PV).floatValue;
+        double width = stripZone.getValue(L2ParamGroup.Parameter.Data, Tag.TagName.Width).floatValue / 1000; // m
+        double thick = stripZone.getValue(L2ParamGroup.Parameter.Data, Tag.TagName.Thick).floatValue / 1000; // m
+        double speed = stripZone.getValue(L2ParamGroup.Parameter.Speed, Tag.TagName.PV).floatValue * 60; // m/h
+        double output = 7.85 * width * speed * thick * 1000; // kg/h
+        String forProcess = stripZone.getValue(L2ParamGroup.Parameter.Data, Tag.TagName.Process).stringValue;
+        OneStripDFHProcess stripDFHProc = l2Furnace.l2DFHeating.getStripDFHProcess(forProcess);
+        if (stripDFHProc != null) {
+            production = new ProductionData();
+            ChMaterial chMat = stripDFHProc.getChMaterial(forProcess, thick);
+            if (chMat != null) {
+                Charge ch = new Charge(stripDFHProc.getChMaterial(forProcess, thick), width, 1.0, thick, 0.1, Charge.ChType.SOLID_RECTANGLE);
+                production.charge = ch;
+                production.chPitch = 1.0;
+                production.production = output;
+                production.exitTemp = stripExitT;
+                production.exitZoneFceTemp = topZones[topZones.length - 1].frFceTemp;
+                production.minExitZoneTemp = 850; // TODO minExitZoneTemp is taken as 850
+                retVal = true;
+            }
+            else
+                l2Furnace.l2DFHeating.showError("Could not ascertain Charge Material for " +
+                        forProcess + " with strip Thickness " + thick);
+        }
+        else
+            l2Furnace.l2DFHeating.showError("Could not ascertain Process data " + forProcess);
+        return retVal;
+    }
+
+    boolean takeRecuData(L2Zone recu) {
+        commonAirTemp = recu.getValue(L2ParamGroup.Parameter.AirFlow, Tag.TagName.Temperature).floatValue;
+        commonFuelTemp = 30; // TODO  commonFuelTemp set as 30
+        flueAtRecu = recu.getValue(L2ParamGroup.Parameter.Flue, Tag.TagName.Temperature).floatValue;
+        return true;
+    }
+
+    boolean takeZonalData() {
+        boolean retVal = true;
+        FieldZone oneFieldZone;
+        for (int z = 0; z < l2Furnace.nTopActiveSecs; z++) {
+            oneFieldZone = new FieldZone(l2Furnace, false, z, l2Furnace.getOneL2Zone(z, false));
+            if (oneFieldZone.bValid)
+                topZones[z] = oneFieldZone;
+            else {
+                l2Furnace.l2DFHeating.showError("Problem in reading field performance data for Zone " + (z + 1) + ": " +
+                        oneFieldZone.errMsg);
+                retVal = false;
+                break;
+            }
+        }
+        return retVal;
     }
 
     public void setCommonData(double flueTempOut, double airTemp,  double fuelTemp) {
@@ -246,5 +315,4 @@ public class FieldResults {
         }
         return retVal;
     }
-
 }

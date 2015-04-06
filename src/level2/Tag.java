@@ -18,13 +18,15 @@ public class Tag {
         Enabled("enabled"),
         Noted("noted"),
         Ready("ready"),
+        Mode("Mode"),   // eg Strip mode for DFH control
         //floats
         PV("PV"),
         SP("SP"),
         CV("CV"),
         Thick("thick"),
         Width("width"),
-        Temperature("Temperature"),
+        Length("balanceLength"),
+        Temperature("Temperature"),    // for Air and fuel
         Span("span"),
         X1("x1"),
         X2("x2"),
@@ -145,6 +147,7 @@ public class Tag {
             case Enabled:
             case Noted:
             case Ready:
+            case Mode:
                 type = ProcessData.DataType.BOOLEAN;
                 break;
             case Process:
