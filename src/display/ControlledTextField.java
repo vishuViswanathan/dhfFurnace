@@ -1,7 +1,5 @@
 package display;
 
-import org.omg.PortableInterceptor.ACTIVE;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.FocusEvent;

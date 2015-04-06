@@ -1,13 +1,6 @@
 package display;
 
-import directFiredHeating.DFHeating;
-
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.text.BadLocationException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -177,6 +170,9 @@ public class NumberTextField extends JTextField implements ActionListener, Focus
         return format.format(val);
     }
 
+
+
+
     public double getData() {
         textWithError = getText();
         String data = textWithError;
@@ -203,13 +199,15 @@ public class NumberTextField extends JTextField implements ActionListener, Focus
     }
 
     public void focusLost(FocusEvent fe) {
-        if (controller.canNotify())
-            takeNote();
+        if (controller != null)
+            if (controller.canNotify())
+                takeNote();
     }
 
     public void actionPerformed(ActionEvent te) {
-        if (controller.canNotify())
-            takeNote();
+        if (controller != null)
+            if (controller.canNotify())
+                takeNote();
     }
 
 //    @Override
@@ -221,9 +219,12 @@ public class NumberTextField extends JTextField implements ActionListener, Focus
 
     void takeNote() {
         if (isInError()) {
-            controller.enableNotify(false);
+
+            if (controller != null)
+                controller.enableNotify(false);
             JOptionPane.showMessageDialog(null, errMsg + " [" + textWithError + "]", title, JOptionPane.ERROR_MESSAGE);
-            controller.enableNotify(true);
+            if (controller != null)
+                controller.enableNotify(true);
             if (!(parent == null))
                 parent.toFront();
 //          showError();

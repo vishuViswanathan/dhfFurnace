@@ -22,11 +22,14 @@ public class MultiPairColPanel extends FramedPanel {
     boolean bHasTitle = false;
     Insets insetL = new Insets(1, 1, 1, 2);
     Insets insetR = new Insets(1, 2, 1, 1);
+    Insets insetLR = new Insets(1, 2, 1, 2);
     Insets insetLBlank = new Insets(5, 1, 5, 2);
     GridBagConstraints gbcL =
             new GridBagConstraints(0, 0, 1, 1, 0, 0, GridBagConstraints.EAST, 0, insetL, 0, 0);
     GridBagConstraints gbcR =
             new GridBagConstraints(0, 0, 1, 1, 0, 0, GridBagConstraints.WEST, 0, insetR, 0, 0);
+    GridBagConstraints gbcLR =
+            new GridBagConstraints(0, 0, 1, 1, 0, 0, GridBagConstraints.CENTER, 0, insetLR, 0, 0);
     int labelWidth = 0, dataWidth = 0;
     Font boldFont;
     int rowCount = 0;
@@ -35,6 +38,8 @@ public class MultiPairColPanel extends FramedPanel {
             new GridBagConstraints(0, 0, 1, 1, 0, 0, GridBagConstraints.EAST, 0, insetL, 0, 0);
     GridBagConstraints gbcBoxR =
             new GridBagConstraints(0, 0, 1, 1, 0, 0, GridBagConstraints.WEST, 0, insetR, 0, 0);
+    GridBagConstraints gbcBoxLR =
+            new GridBagConstraints(0, 0, 1, 1, 0, 0, GridBagConstraints.CENTER, 0, insetLR, 0, 0);
 
     Vector<ComponentPair> compPairs;
 //    Font titleFont;
@@ -128,6 +133,31 @@ public class MultiPairColPanel extends FramedPanel {
 
     public void addItemPair(String name, double val, String format) {
         addItemPair(name, val, format, false);
+    }
+
+    public void addItem(Component comp) {
+        if (box == null) {
+            lastRow++;
+            gbcLR.gridx = 0;
+            gbcLR.gridy = lastRow;
+            gbcLR.gridwidth = 2;
+            add(comp, gbcLR);
+
+            gbcL.gridy = lastRow;
+            gbcR.gridy = lastRow;
+            rowCount++;
+        }
+        else {
+            gbcBoxL.gridx = 0;
+            gbcBoxL.gridy++;
+            gbcBoxR.gridy++;
+            gbcBoxLR.gridx = 0;
+            gbcBoxLR.gridwidth = 2;
+            gbcBoxLR.gridy = gbcBoxL.gridy;
+            box.add(comp, gbcBoxLR);
+            rowCount++;
+        }
+
     }
 
     public int getRowCount() {
