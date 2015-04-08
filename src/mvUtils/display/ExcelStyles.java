@@ -1,4 +1,4 @@
-package display;
+package mvUtils.display;
 
 import mvUtils.display.ComponentPair;
 import mvUtils.display.MultiPairColPanel;

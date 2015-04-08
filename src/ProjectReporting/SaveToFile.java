@@ -1,6 +1,6 @@
 package ProjectReporting;
 
-import display.ExcelStyles;
+import mvUtils.display.ExcelStyles;
 import netscape.javascript.JSException;
 import netscape.javascript.JSObject;
 import org.apache.poi.hssf.usermodel.*;

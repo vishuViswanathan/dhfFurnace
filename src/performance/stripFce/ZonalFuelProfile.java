@@ -2,7 +2,7 @@ package performance.stripFce;
 
 import appReporting.Reporter;
 import directFiredHeating.DFHeating;
-import display.ExcelStyles;
+import mvUtils.display.ExcelStyles;
 import mvUtils.display.FramedPanel;
 import mvUtils.math.XYArray;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
