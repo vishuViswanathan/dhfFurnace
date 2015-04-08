@@ -1,13 +1,14 @@
 package display;
 
-import basic.ComponentPair;
+import mvUtils.display.ComponentPair;
+import mvUtils.display.MultiPairColPanel;
+import mvUtils.display.XLcellData;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.util.CellRangeAddress;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.Color;
 import java.util.Date;
 import java.util.Vector;
 

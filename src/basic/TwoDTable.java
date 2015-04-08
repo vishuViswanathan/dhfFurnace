@@ -1,8 +1,7 @@
 package basic;
 
-import mvmath.DoublePoint;
-import mvmath.XYArray;
-import org.apache.poi.ss.formula.functions.Column;
+import mvUtils.math.DoublePoint;
+import mvUtils.math.XYArray;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;

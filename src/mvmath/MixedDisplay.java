@@ -1,5 +1,12 @@
 package mvmath;
 
+import mvUtils.display.EventDespatcher;
+import mvUtils.display.FramedPanel;
+import mvUtils.display.GraphDisplay;
+import mvUtils.display.GraphInfo;
+import mvUtils.math.BasicCalculData;
+import mvUtils.math.DoublePoint;
+
 import java.util.*;
 import java.awt.*;
 import java.awt.event.*;

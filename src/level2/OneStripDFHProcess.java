@@ -1,12 +1,8 @@
 package level2;
 
 import basic.ChMaterial;
-import com.sun.org.apache.bcel.internal.generic.L2D;
-import display.InputControl;
-import mvXML.ValAndPos;
-import mvXML.XMLmv;
-
-import javax.swing.*;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLmv;
 
 /**
  * Created by IntelliJ IDEA.

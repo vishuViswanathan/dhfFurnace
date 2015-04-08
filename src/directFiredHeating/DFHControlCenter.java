@@ -2,8 +2,7 @@ package directFiredHeating;
 
 import basic.ChMaterial;
 import basic.Fuel;
-import display.ControlCenter;
-import display.InputControl;
+import mvUtils.display.InputControl;
 
 import javax.swing.*;
 import java.awt.*;

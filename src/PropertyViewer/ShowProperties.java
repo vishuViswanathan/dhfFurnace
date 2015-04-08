@@ -1,14 +1,14 @@
 package PropertyViewer;
 
-import mvmath.*;
+import mvUtils.display.*;
+import mvUtils.math.DoubleRange;
+import mvUtils.math.OnePropertyDet;
 import netscape.javascript.JSException;
 import netscape.javascript.JSObject;
 
 import javax.swing.*;
-import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.QuadCurve2D;
 
 /**
  * Created by IntelliJ IDEA.

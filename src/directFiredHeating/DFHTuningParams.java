@@ -1,9 +1,11 @@
 package directFiredHeating;
 
-import display.*;
-import mvXML.ValAndPos;
-import mvXML.XMLmv;
-import mvmath.FramedPanel;
+import mvUtils.display.MultiPairColPanel;
+import mvUtils.display.NumberLabel;
+import mvUtils.display.NumberTextField;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLmv;
+import mvUtils.display.FramedPanel;
 
 import javax.swing.*;
 import java.awt.*;

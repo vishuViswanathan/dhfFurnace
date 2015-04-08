@@ -1,7 +1,6 @@
 package level2;
 
-import directFiredHeating.DFHeating;
-import mvmath.DoubleRange;
+import mvUtils.math.DoubleRange;
 import performance.stripFce.PerformanceTable;
 import performance.stripFce.ZonalFuelProfile;
 

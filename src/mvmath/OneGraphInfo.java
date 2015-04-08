@@ -1,6 +1,8 @@
 package mvmath;
 
-import javax.swing.*;
+import mvUtils.display.TraceHeader;
+import mvUtils.math.DoublePoint;
+import mvUtils.math.DoubleRange;
 
 /**
  * Created by IntelliJ IDEA.

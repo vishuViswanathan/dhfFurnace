@@ -4,10 +4,12 @@ import basic.*;
 import directFiredHeating.DFHFurnace;
 import directFiredHeating.DFHeating;
 import display.*;
-import mvXML.ValAndPos;
-import mvXML.XMLmv;
-import mvmath.DoubleRange;
-import mvmath.FramedPanel;
+import mvUtils.display.MultiPairColPanel;
+import mvUtils.display.NumberLabel;
+import mvUtils.display.NumberTextField;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLmv;
+import mvUtils.display.FramedPanel;
 
 import javax.swing.*;
 import java.awt.*;

@@ -1,13 +1,12 @@
 package PropertySetter;
 
-import display.ControlledTextField;
-import display.InputControl;
-//import display.NumberTextField;
-import mvmath.*;
+import mvUtils.display.*;
+//import mvUtils.display.NumberTextField;
+import mvUtils.math.DoubleRange;
+import mvUtils.math.XYArray;
 import netscape.javascript.JSException;
 import netscape.javascript.JSObject;
 
-import javax.print.DocFlavor;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;

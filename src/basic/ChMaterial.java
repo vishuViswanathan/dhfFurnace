@@ -1,9 +1,8 @@
 package basic;
 
-import com.sun.xml.internal.bind.v2.model.core.ID;
-import mvXML.ValAndPos;
-import mvXML.XMLmv;
-import mvmath.XYArray;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLmv;
+import mvUtils.math.XYArray;
 
 /**
  * Created by IntelliJ IDEA.

@@ -1,6 +1,10 @@
 package PropertyViewer;
 
-import mvmath.*;
+import mvUtils.display.GraphInfoAdapter;
+import mvUtils.display.TraceHeader;
+import mvUtils.math.DoublePoint;
+import mvUtils.math.DoubleRange;
+
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.table.*;
@@ -14,7 +18,7 @@ import java.util.Vector;
  * Time: 12:42 PM
  * To change this template use File | Settings | File Templates.
  */
-public class PropertyTraces extends GraphInfoAdapter  {
+public class PropertyTraces extends GraphInfoAdapter {
     Vector<OnePropertyTrace> traces;
     int nTraces = 0;
     DoubleRange commonX, commonY;

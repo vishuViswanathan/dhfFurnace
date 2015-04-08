@@ -2,16 +2,15 @@ package performance.stripFce;
 
 import directFiredHeating.DFHFurnace;
 import directFiredHeating.FceSection;
-import display.NumberLabel;
+import mvUtils.display.NumberLabel;
 import display.SizedLabel;
-import display.TextLabel;
-import mvXML.ValAndPos;
-import mvXML.XMLmv;
-import mvmath.FramedPanel;
+import mvUtils.display.TextLabel;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLmv;
+import mvUtils.display.FramedPanel;
 
 import javax.swing.*;
 import java.awt.*;
-
 /**
  * Created by IntelliJ IDEA.
  * User: M Viswanathan
@@ -101,7 +100,7 @@ public class OneZone {
     public String dataInXML() {
         String xmlStr = "";
         if (!interpolated) {
-            xmlStr = XMLmv.putTag("bRecuTypeP", ((bRecuType) ? "1": "0"));
+            xmlStr = XMLmv.putTag("bRecuTypeP", ((bRecuType) ? "1" : "0"));
             xmlStr += XMLmv.putTag("bBotP", ((bBot) ? "1": "0"));
             xmlStr += XMLmv.putTag("fuelFlowP", fuelFlow);
             xmlStr += XMLmv.putTag("fceTempP", fceTemp);

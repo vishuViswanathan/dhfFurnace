@@ -1,6 +1,6 @@
 package display;
 
-import mvmath.FramedPanel;
+import mvUtils.display.FramedPanel;
 
 import javax.swing.*;
 

@@ -1,9 +1,9 @@
 package directFiredHeating;
 
 import basic.FlueComposition;
-import mvmath.DoublePoint;
-import mvmath.LineMv;
-import mvmath.SPECIAL;
+import mvUtils.math.DoublePoint;
+import mvUtils.math.LineMv;
+import mvUtils.math.SPECIAL;
 
 /**
  * Created by IntelliJ IDEA.

@@ -3,14 +3,16 @@ package radiantTubeHeating;
 import PropertyViewer.OnePropertyTrace;
 import basic.Charge;
 import basic.RadiantTube;
-import mvXML.XMLmv;
-import mvmath.*;
+import mvUtils.display.GraphInfoAdapter;
+import mvUtils.display.TraceHeader;
+import mvUtils.math.DoublePoint;
+import mvUtils.math.DoubleRange;
+import mvUtils.mvXML.XMLmv;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
-import java.text.DecimalFormat;
 import java.util.Vector;
 
 /**

@@ -1,12 +1,11 @@
 package basic;
 
-import com.sun.deploy.panel.ControlPanel;
-import directFiredHeating.DFHControlCenter;
 import display.*;
-import mvXML.ValAndPos;
-import mvXML.XMLmv;
-import mvmath.FramedPanel;
-import mvmath.XYArray;
+import mvUtils.display.InputControl;
+import mvUtils.display.MultiPairColPanel;
+import mvUtils.mvXML.XMLmv;
+import mvUtils.display.FramedPanel;
+import mvUtils.math.XYArray;
 
 import javax.swing.*;
 import java.awt.*;
@@ -134,17 +133,17 @@ public class Fuel extends Fluid{
     }
 
     public Fuel(String xmlStr, boolean itIsXML) throws Exception{
-        ValAndPos vp;
+        mvUtils.mvXML.ValAndPos vp;
         boolean inError = true;
-        vp = XMLmv.getTag(xmlStr, "Name", 0);
+        vp = mvUtils.mvXML.XMLmv.getTag(xmlStr, "Name", 0);
         name = vp.val;
         if (name.length() >  2) {
-            vp = XMLmv.getTag(xmlStr, "units", 0);
+            vp = mvUtils.mvXML.XMLmv.getTag(xmlStr, "units", 0);
             units = vp.val;
-            vp = XMLmv.getTag(xmlStr, "calVal", 0);
+            vp = mvUtils.mvXML.XMLmv.getTag(xmlStr, "calVal", 0);
             try {
                 calVal = Double.valueOf(vp.val);
-                vp = XMLmv.getTag(xmlStr, "airFuelRatio", 0);
+                vp = mvUtils.mvXML.XMLmv.getTag(xmlStr, "airFuelRatio", 0);
                 airFuelRatio = Double.valueOf(vp.val);
                 vp = XMLmv.getTag(xmlStr, "flueFuelRatio", 0);
                 flueFuelRatio = Double.valueOf(vp.val);

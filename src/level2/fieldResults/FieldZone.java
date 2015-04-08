@@ -1,13 +1,12 @@
 package level2.fieldResults;
 
-import com.sun.org.apache.bcel.internal.generic.L2D;
 import directFiredHeating.FceSection;
 import level2.L2DFHFurnace;
 import level2.L2ParamGroup;
 import level2.L2Zone;
 import level2.Tag;
-import mvXML.ValAndPos;
-import mvXML.XMLmv;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLmv;
 
 import java.text.DecimalFormat;
 

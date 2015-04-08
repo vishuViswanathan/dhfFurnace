@@ -1,12 +1,13 @@
 package linkTFM;
 
 import display.*;
-import mvXML.DoubleWithErrStat;
-import mvXML.ValAndPos;
-import mvXML.XMLgroupStat;
-import mvXML.XMLmv;
-import mvmath.FramedPanel;
-import mvmath.SPECIAL;
+import mvUtils.display.*;
+import mvUtils.mvXML.DoubleWithErrStat;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLgroupStat;
+import mvUtils.mvXML.XMLmv;
+import mvUtils.display.FramedPanel;
+import mvUtils.math.SPECIAL;
 
 import javax.swing.*;
 import java.awt.*;

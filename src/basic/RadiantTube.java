@@ -1,6 +1,6 @@
 package basic;
 
-import mvXML.XMLmv;
+import mvUtils.mvXML.XMLmv;
 
 /**
  * Created by IntelliJ IDEA.

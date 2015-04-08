@@ -10,9 +10,9 @@ import directFiredHeating.DFHFurnace;
 import directFiredHeating.FceSection;
 import level2.fieldResults.FieldResults;
 import level2.listeners.L2SubscriptionListener;
-import mvXML.ValAndPos;
-import mvXML.XMLmv;
-import mvmath.DoubleMV;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLmv;
+import mvUtils.math.DoubleMV;
 import org.opcfoundation.ua.builtintypes.DataValue;
 import performance.stripFce.Performance;
 

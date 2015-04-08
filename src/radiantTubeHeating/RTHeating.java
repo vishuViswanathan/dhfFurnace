@@ -4,27 +4,18 @@ import PropertyViewer.OnePropertyTrace;
 import basic.ChMaterial;
 import basic.Charge;
 import basic.RadiantTube;
-import mvmath.*;
+import mvUtils.display.FramedPanel;
+import mvUtils.display.GraphDisplay;
+import mvUtils.display.GraphInfo;
+import mvUtils.math.XYArray;
 import netscape.javascript.JSException;
 import netscape.javascript.JSObject;
-import org.apache.poi.hssf.usermodel.*;
-import org.apache.poi.ss.usermodel.*;
-
-import org.apache.poi.ss.usermodel.Font;
 
 
-import javax.media.j3d.Material;
 import javax.swing.*;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.Color;
 import java.awt.event.*;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.text.DecimalFormat;
-import java.util.Vector;
 
 /**
  * Created by IntelliJ IDEA.

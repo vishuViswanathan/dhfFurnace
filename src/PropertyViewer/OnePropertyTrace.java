@@ -1,8 +1,10 @@
 package PropertyViewer;
 
-import mvmath.*;
-
-import java.security.PublicKey;
+import mvUtils.display.TraceHeader;
+import mvUtils.math.DoublePoint;
+import mvUtils.math.DoubleRange;
+import mvUtils.math.OnePropertyDet;
+import mvUtils.math.XYArray;
 
 /**
  * Created by IntelliJ IDEA.

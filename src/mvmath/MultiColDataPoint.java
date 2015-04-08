@@ -1,5 +1,7 @@
 package mvmath;
 
+import mvUtils.math.MultiColData;
+
 /**
  * Created by IntelliJ IDEA.
  * User: M Viswanathan

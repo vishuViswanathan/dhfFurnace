@@ -1,13 +1,13 @@
 package basic;
 
 
-import com.sun.corba.se.spi.ior.IdentifiableBase;
-import com.sun.xml.internal.bind.v2.model.core.ID;
 import directFiredHeating.DFHFurnace;
 import display.*;
-import mvXML.ValAndPos;
-import mvXML.XMLgroupStat;
-import mvXML.XMLmv;
+import mvUtils.display.InputControl;
+import mvUtils.display.VScrollSync;
+import mvUtils.display.XLcellData;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLmv;
 
 import javax.swing.*;
 import java.awt.*;

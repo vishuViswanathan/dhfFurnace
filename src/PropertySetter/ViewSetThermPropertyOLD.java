@@ -1,9 +1,9 @@
 package PropertySetter;
 
-import display.InputControl;
-import display.NumberTextField;
-import mvmath.FramedPanel;
-import mvmath.XYArray;
+import mvUtils.display.InputControl;
+import mvUtils.display.NumberTextField;
+import mvUtils.display.FramedPanel;
+import mvUtils.math.XYArray;
 import netscape.javascript.JSException;
 import netscape.javascript.JSObject;
 

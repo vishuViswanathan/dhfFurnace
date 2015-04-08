@@ -1,11 +1,11 @@
 package FceElements;
 
 import basic.*;
-import display.InputControl;
-import display.MultiPairColPanel;
-import display.NumberLabel;
-import display.NumberTextField;
-import mvmath.FramedPanel;
+import mvUtils.display.InputControl;
+import mvUtils.display.MultiPairColPanel;
+import mvUtils.display.NumberLabel;
+import mvUtils.display.NumberTextField;
+import mvUtils.display.FramedPanel;
 
 import javax.swing.*;
 import java.awt.*;

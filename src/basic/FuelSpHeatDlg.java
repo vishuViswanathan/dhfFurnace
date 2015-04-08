@@ -1,10 +1,8 @@
 package basic;
 
-import com.sun.j3d.utils.scenegraph.io.state.javax.media.j3d.LightState;
-import display.ControlCenter;
-import display.InputControl;
-import display.MultiPairColPanel;
-import display.NumberTextField;
+import mvUtils.display.InputControl;
+import mvUtils.display.MultiPairColPanel;
+import mvUtils.display.NumberTextField;
 
 import javax.swing.*;
 import java.awt.*;

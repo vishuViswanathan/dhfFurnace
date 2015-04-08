@@ -1,8 +1,8 @@
 package basic;
 
 
-import display.MultiPairColPanel;
-import mvmath.FramedPanel;
+import mvUtils.display.MultiPairColPanel;
+import mvUtils.display.FramedPanel;
 
 import javax.swing.*;
 import java.awt.*;

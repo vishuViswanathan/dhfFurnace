@@ -3,12 +3,10 @@ package PropertySetter;
 import basic.ChMaterial;
 import basic.FlueComposition;
 import basic.Fuel;
-import com.sun.org.apache.xml.internal.resolver.readers.SAXCatalogParser;
-import com.sun.xml.internal.bind.v2.runtime.Name;
 import directFiredHeating.DFHResult;
 import display.ControlCenter;
-import display.InputControl;
-import mvmath.XYArray;
+import mvUtils.display.InputControl;
+import mvUtils.math.XYArray;
 import netscape.javascript.JSException;
 import netscape.javascript.JSObject;
 

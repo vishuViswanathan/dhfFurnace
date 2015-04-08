@@ -2,9 +2,9 @@ package FceElements.heatExchanger;
 
 import basic.Fluid;
 import basic.FuelFiring;
-import mvXML.ValAndPos;
-import mvXML.XMLmv;
-import mvmath.SPECIAL;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLmv;
+import mvUtils.math.SPECIAL;
 
 /**
  * Created by IntelliJ IDEA.

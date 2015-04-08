@@ -1,5 +1,9 @@
 package display;
 
+import mvUtils.display.InputControl;
+import mvUtils.display.MultiPairColPanel;
+import mvUtils.display.NumberTextField;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;

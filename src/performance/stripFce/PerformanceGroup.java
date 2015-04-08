@@ -7,10 +7,8 @@ import directFiredHeating.DFHFurnace;
 import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
 import display.TimedMessage;
-import mvXML.ValAndPos;
-import mvXML.XMLmv;
-import sun.launcher.resources.launcher_es;
-import sun.misc.Perf;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLmv;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;

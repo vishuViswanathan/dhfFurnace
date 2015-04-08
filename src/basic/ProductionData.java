@@ -1,8 +1,8 @@
 package basic;
 
 import directFiredHeating.DFHeating;
-import mvXML.ValAndPos;
-import mvXML.XMLmv;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLmv;
 
 /**
  * Created by IntelliJ IDEA.

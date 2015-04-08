@@ -1,7 +1,7 @@
 package PropertySetter;
 
-import mvmath.SPECIAL;
-import mvmath.XYArray;
+import mvUtils.math.SPECIAL;
+import mvUtils.math.XYArray;
 
 /**
  * Created by IntelliJ IDEA.

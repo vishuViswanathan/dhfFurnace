@@ -1,6 +1,8 @@
 package mvmath;
 
 
+import mvUtils.display.GraphInfo;
+import mvUtils.math.BasicCalculData;
 
 public interface ResultDisplay {
 

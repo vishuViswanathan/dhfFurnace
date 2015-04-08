@@ -2,11 +2,11 @@ package linkTFM;
 
 import directFiredHeating.DFHFurnace;
 import directFiredHeating.FceSection;
-import mvXML.DoubleWithErrStat;
-import mvXML.ValAndPos;
-import mvXML.XMLgroupStat;
-import mvXML.XMLmv;
-import mvmath.SPECIAL;
+import mvUtils.mvXML.DoubleWithErrStat;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLgroupStat;
+import mvUtils.mvXML.XMLmv;
+import mvUtils.math.SPECIAL;
 
 import java.util.Vector;
 

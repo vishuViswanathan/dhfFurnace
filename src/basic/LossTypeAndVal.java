@@ -1,8 +1,8 @@
 package basic;
 
 import directFiredHeating.FceSubSection;
-import display.InputControl;
-import display.NumberTextField;
+import mvUtils.display.InputControl;
+import mvUtils.display.NumberTextField;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;

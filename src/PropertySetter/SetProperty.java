@@ -1,17 +1,10 @@
 package PropertySetter;
 
-import basic.ChMaterial;
-import basic.Fuel;
-
-import com.sun.xml.internal.fastinfoset.util.DuplicateAttributeVerifier;
-import directFiredHeating.DFHResult;
-import display.ControlCenter;
-import display.InputControl;
-import display.NumberTextField;
-import mvmath.FramedPanel;
+import mvUtils.display.InputControl;
+import mvUtils.display.NumberTextField;
+import mvUtils.display.FramedPanel;
 import netscape.javascript.JSException;
 import netscape.javascript.JSObject;
-import sun.util.resources.CalendarData;
 
 import javax.swing.*;
 import java.awt.*;

@@ -2,16 +2,12 @@ package display;
 
 import basic.ChMaterial;
 import basic.Fuel;
-import com.sun.java.browser.plugin2.liveconnect.v1.Result;
 import directFiredHeating.DFHResult;
-import mvmath.FramedPanel;
-import sun.swing.text.html.FrameEditorPaneTag;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusListener;
-import java.sql.ResultSet;
 
 /**
  * Created by IntelliJ IDEA.

@@ -1,9 +1,7 @@
 package basic;
 
-import mvmath.DoublePoint;
-import mvmath.XYArray;
-
-import java.util.Vector;
+import mvUtils.math.DoublePoint;
+import mvUtils.math.XYArray;
 
 /**
  * Created by IntelliJ IDEA.

@@ -2,9 +2,13 @@ package directFiredHeating;
 
 import basic.*;
 import display.*;
-import mvXML.ValAndPos;
-import mvXML.XMLmv;
-import mvmath.*;
+import mvUtils.display.*;
+import mvUtils.math.DoublePoint;
+import mvUtils.math.MultiColData;
+import mvUtils.math.SPECIAL;
+import mvUtils.math.XYArray;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLmv;
 import org.apache.poi.ss.usermodel.Sheet;
 
 import javax.swing.*;

@@ -5,7 +5,7 @@ import basic.FlueCompoAndQty;
 import basic.FlueComposition;
 import basic.ProductionData;
 import mvmath.MultiColDataPoint;
-import mvmath.SPECIAL;
+import mvUtils.math.SPECIAL;
 
 import javax.swing.*;
 import java.util.Stack;

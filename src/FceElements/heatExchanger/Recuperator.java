@@ -3,10 +3,10 @@ package FceElements.heatExchanger;
 import basic.FlueCompoAndQty;
 import basic.FlueComposition;
 import basic.Fluid;
-import display.MultiPairColPanel;
-import display.NumberLabel;
-import mvmath.FramedPanel;
-import mvmath.SPECIAL;
+import mvUtils.display.MultiPairColPanel;
+import mvUtils.display.NumberLabel;
+import mvUtils.display.FramedPanel;
+import mvUtils.math.SPECIAL;
 
 import javax.swing.*;
 import java.awt.*;

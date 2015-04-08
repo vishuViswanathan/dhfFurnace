@@ -2,11 +2,11 @@ package linkTFM;
 
 import directFiredHeating.DFHFurnace;
 import directFiredHeating.DFHeating;
-import mvXML.DoubleWithErrStat;
-import mvXML.ValAndPos;
-import mvXML.XMLgroupStat;
-import mvXML.XMLmv;
-import mvmath.FramedPanel;
+import mvUtils.mvXML.DoubleWithErrStat;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLgroupStat;
+import mvUtils.mvXML.XMLmv;
+import mvUtils.display.FramedPanel;
 
 import javax.swing.*;
 import java.awt.*;

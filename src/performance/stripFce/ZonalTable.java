@@ -1,13 +1,12 @@
 package performance.stripFce;
 
 import basic.TwoDTable;
-import mvXML.ValAndPos;
-import mvXML.XMLmv;
-import mvmath.FramedPanel;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLmv;
+import mvUtils.display.FramedPanel;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyEvent;
 import java.util.Hashtable;
 
 /**

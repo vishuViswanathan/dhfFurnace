@@ -3,9 +3,14 @@ package directFiredHeating;
 import appReporting.Reporter;
 import basic.*;
 import display.*;
-import mvXML.ValAndPos;
-import mvXML.XMLmv;
-import mvmath.*;
+import mvUtils.display.*;
+import mvUtils.math.DoublePoint;
+import mvUtils.math.MultiColData;
+import mvUtils.math.SPECIAL;
+import mvUtils.math.XYArray;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLmv;
+import mvUtils.display.FramedPanel;
 import org.apache.poi.ss.usermodel.Sheet;
 import performance.stripFce.OneZone;
 

@@ -4,8 +4,8 @@ import TMopcUa.TMuaClient;
 import basic.*;
 import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
-import mvXML.ValAndPos;
-import mvXML.XMLmv;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLmv;
 import org.apache.log4j.Logger;
 
 import javax.swing.*;

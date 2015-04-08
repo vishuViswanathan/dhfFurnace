@@ -1,5 +1,7 @@
 package display;
 
+import mvUtils.display.XLcellData;
+
 import javax.swing.*;
 import java.awt.*;
 

@@ -1,10 +1,8 @@
 package level2;
 
-import mvXML.ValAndPos;
-import mvXML.XMLmv;
-import mvmath.DoubleRange;
-
-import java.util.Vector;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLmv;
+import mvUtils.math.DoubleRange;
 
 /**
  * Created by IntelliJ IDEA.

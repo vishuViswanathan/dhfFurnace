@@ -1,22 +1,17 @@
 package basic;
 
-import com.sun.org.apache.xpath.internal.operations.And;
 import directFiredHeating.DFHFurnace;
 import directFiredHeating.FceSubSection;
-import display.ControlCenter;
-import display.InputControl;
-import display.NumberTextField;
-import mvXML.ValAndPos;
-import mvXML.XMLmv;
-import mvmath.FramedPanel;
+import mvUtils.display.InputControl;
+import mvUtils.display.NumberTextField;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLmv;
+import mvUtils.display.FramedPanel;
 
 import javax.swing.*;
-import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusListener;
-import java.security.AllPermission;
-import java.util.Vector;
 
 /**
  * Created by IntelliJ IDEA.

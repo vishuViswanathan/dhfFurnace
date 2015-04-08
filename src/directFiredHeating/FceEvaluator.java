@@ -1,9 +1,8 @@
 package directFiredHeating;
 
 import basic.ProductionData;
-import display.ControlCenter;
 import display.ThreadController;
-import mvmath.*;
+import mvUtils.display.FramedPanel;
 import performance.stripFce.Performance;
 
 import javax.swing.*;

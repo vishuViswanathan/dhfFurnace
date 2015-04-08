@@ -1,5 +1,8 @@
 package directFiredHeating;
 
+import mvUtils.math.DoubleRange;
+import mvUtils.math.MultiColData;
+import mvUtils.math.SPECIAL;
 import mvmath.*;
 
 import java.awt.*;

@@ -4,11 +4,11 @@ import basic.CheckInRange;
 import basic.TwoDTable;
 import directFiredHeating.DFHFurnace;
 import directFiredHeating.DFHeating;
-import display.MultiPairColPanel;
-import display.NumberTextField;
-import mvXML.ValAndPos;
-import mvXML.XMLmv;
-import mvmath.FramedPanel;
+import mvUtils.display.MultiPairColPanel;
+import mvUtils.display.NumberTextField;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLmv;
+import mvUtils.display.FramedPanel;
 
 import javax.swing.*;
 import java.awt.*;

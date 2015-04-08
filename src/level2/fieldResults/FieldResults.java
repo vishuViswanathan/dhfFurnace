@@ -5,15 +5,13 @@ import basic.ChMaterial;
 import basic.Charge;
 import basic.FuelFiring;
 import basic.ProductionData;
-import com.sun.org.apache.bcel.internal.generic.L2D;
 import directFiredHeating.FceSection;
 import level2.*;
-import mvXML.ValAndPos;
-import mvXML.XMLmv;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLmv;
 import performance.stripFce.OneZone;
 
 import java.text.DecimalFormat;
-import java.util.Vector;
 
 /**
  * Created by IntelliJ IDEA.

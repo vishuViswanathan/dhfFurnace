@@ -1,10 +1,10 @@
 package basic;
 
-import display.MultiPairColPanel;
-import display.NumberLabel;
-import display.VScrollSync;
-import display.XLcellData;
-import mvmath.DoubleMV;
+import mvUtils.display.MultiPairColPanel;
+import mvUtils.display.NumberLabel;
+import mvUtils.display.VScrollSync;
+import mvUtils.display.XLcellData;
+import mvUtils.math.DoubleMV;
 
 import javax.swing.*;
 import java.awt.*;

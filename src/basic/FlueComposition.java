@@ -1,12 +1,12 @@
 package basic;
 
-import display.MultiPairColPanel;
-import display.NumberLabel;
-import mvXML.ValAndPos;
-import mvXML.XMLmv;
-import mvmath.DoublePoint;
-import mvmath.SPECIAL;
-import mvmath.XYArray;
+import mvUtils.display.MultiPairColPanel;
+import mvUtils.display.NumberLabel;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLmv;
+import mvUtils.math.DoublePoint;
+import mvUtils.math.SPECIAL;
+import mvUtils.math.XYArray;
 
 /**
  * Created by IntelliJ IDEA.

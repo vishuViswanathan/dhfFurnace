@@ -74,5 +74,6 @@ class UnitsSymbol {
 
   String getName() {
     return name;
+      Trends
   }
 }
