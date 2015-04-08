@@ -1,7 +1,5 @@
 package mvUtils.display;
 
-import display.ValueForExcel;
-
 import javax.swing.*;
 import java.awt.*;
 
@@ -33,7 +31,7 @@ public class TextLabel extends JLabel implements XLcellData {
         this(text, false, horzAlignment);
     }
 
-    public display.ValueForExcel getValueForExcel() {
+    public ValueForExcel getValueForExcel() {
         return new ValueForExcel(bBold, getText());
     }
 

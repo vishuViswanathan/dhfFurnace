@@ -1,7 +1,5 @@
 package mvUtils.display;
 
-import display.ValueForExcel;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -247,7 +245,7 @@ public class NumberTextField extends JTextField implements ActionListener, Focus
         return label.getText();
     }
 
-    public display.ValueForExcel getValueForExcel() {
+    public ValueForExcel getValueForExcel() {
 //        String str = getText();
 //        str.replace(",", "");
 //        boolean bNumeric = str.matches("((-|\\+)?[0-9]+(\\.[0-9]+)?)+");

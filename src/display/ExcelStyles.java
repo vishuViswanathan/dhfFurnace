@@ -2,6 +2,7 @@ package display;
 
 import mvUtils.display.ComponentPair;
 import mvUtils.display.MultiPairColPanel;
+import mvUtils.display.ValueForExcel;
 import mvUtils.display.XLcellData;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.usermodel.Font;

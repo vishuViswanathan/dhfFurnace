@@ -1,7 +1,5 @@
 package mvUtils.display;
 
-import display.*;
-
 /**
  * Created by IntelliJ IDEA.
  * User: M Viswanathan
@@ -10,7 +8,7 @@ import display.*;
  * To change this template use File | Settings | File Templates.
  */
 public interface XLcellData {
-    public display.ValueForExcel getValueForExcel();
+    public ValueForExcel getValueForExcel();
     public String getFmtStr();
     public boolean isEnabled();
 }

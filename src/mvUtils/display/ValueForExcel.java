@@ -1,4 +1,4 @@
-package display;
+package mvUtils.display;
 
 /**
  * Created by IntelliJ IDEA.

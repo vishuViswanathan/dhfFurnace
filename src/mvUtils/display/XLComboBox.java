@@ -32,15 +32,15 @@ public class XLComboBox extends JComboBox implements XLcellData{
     }
 
 
-    public display.ValueForExcel getValueForExcel() {
+    public ValueForExcel getValueForExcel() {
         if (bOnlySelected)
-            return new display.ValueForExcel(bBold, "" + getSelectedItem());
+            return new ValueForExcel(bBold, "" + getSelectedItem());
         else {
             String val = "";
             int n = getItemCount();
             for (int i = 0; i < n; i++)
                 val += ((i > 0) ? "" : ", ") + getItemAt(i);
-            return new display.ValueForExcel(bBold, val);
+            return new ValueForExcel(bBold, val);
         }
     }
 

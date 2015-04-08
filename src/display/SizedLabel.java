@@ -1,5 +1,6 @@
 package display;
 
+import mvUtils.display.ValueForExcel;
 import mvUtils.display.XLcellData;
 
 import javax.swing.*;

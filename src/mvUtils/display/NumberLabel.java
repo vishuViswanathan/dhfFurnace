@@ -1,7 +1,5 @@
 package mvUtils.display;
 
-import display.ValueForExcel;
-
 import javax.swing.*;
 import java.awt.*;
 import java.text.DecimalFormat;
@@ -84,7 +82,7 @@ public class NumberLabel extends JLabel implements XLcellData {
     }
 
 
-    public display.ValueForExcel getValueForExcel() {
+    public ValueForExcel getValueForExcel() {
 //        String str = getText();
 //        str = str.replace(",", "");
 //        boolean bNumeric = str.matches("((-|\\+)?[0-9]+(\\.[0-9]+)?)+");

@@ -19,8 +19,8 @@ public class XLTextField extends JTextField implements XLcellData {
         super(text);
     }
 
-    public display.ValueForExcel getValueForExcel() {
-        return new display.ValueForExcel(bBold, getText());
+    public ValueForExcel getValueForExcel() {
+        return new ValueForExcel(bBold, getText());
     }
 
     public String getFmtStr() {
