@@ -503,17 +503,24 @@ public class L2DFHeating extends DFHeating {
     boolean evalForFieldProduction() {   // @TODO incomplete
         mIEvalWithFieldCorrection.setEnabled(true);
         if (l2Furnace.setFieldProductionData() ) {
-            l2Furnace.resetLossFactor();
             showMessage("Unfreezing Recu Specs");
             l2Furnace.newRecu();
+            l2Furnace.setCurveSmoothening(false);
             calculateFce();
+            return true;
         }
-        return false;
+        else
+            return false;
     }
 
     boolean recalculateWithFieldCorrections() {   // @TODO incomplete
-        mIEvalForFieldProduction.setEnabled(false);
-        return false;
+        if (l2Furnace.adjustForFieldResults()) {
+            calculateFce(false); // without reset the loss Factors
+            mIEvalForFieldProduction.setEnabled(false);
+            return true;
+        }
+        else
+            return false;
     }
 
     boolean loadFieldResults(String filePath) {
@@ -669,6 +676,7 @@ public class L2DFHeating extends DFHeating {
 
     public void resultsReady(Observations observations) {
         super.resultsReady(observations);
+        l2Furnace.setCurveSmoothening(true);
         if (proc == DFHTuningParams.ForProcess.STRIP) {
             mISaveFieldResult.setEnabled(true);
         }

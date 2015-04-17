@@ -206,6 +206,11 @@ public class FlueComposition extends Fluid {
         return flueHcont.getYat(temperature);
     }
 
+    @Override
+    public double deltaHeat(double fromTemp, double toTemp) {
+        return flueHcont.getYat(fromTemp) - flueHcont.getYat(toTemp);
+    }
+
     public double tempFromSensHeat(double heat) {
         return flueHcont.getXat(heat);
     }

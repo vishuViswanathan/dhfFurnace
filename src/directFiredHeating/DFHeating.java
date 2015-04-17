@@ -861,6 +861,10 @@ public class DFHeating extends JApplet implements InputControl {
         mainF.setJMenuBar(mb);
     }
 
+    public boolean isOnProductionLine() {
+        return onProductionLine;
+    }
+
     public void enableDataEdit() {
         Component vNow = slate.getViewport().getView();
         if (vNow != inpPage && vNow != opPage)
@@ -1352,6 +1356,13 @@ public class DFHeating extends JApplet implements InputControl {
                 selFuel = fuel;
                 break;
             }
+        return selFuel;
+    }
+
+    public Fuel getSelFuel() {
+        Fuel selFuel = null;
+        if (fuelList.size() == 1)
+            selFuel = fuelList.get(0);
         return selFuel;
     }
 
@@ -2158,12 +2169,13 @@ public class DFHeating extends JApplet implements InputControl {
         return furnace.evaluate(master, forOutput, stripWidth);
     }
 
-    protected void calculateFce() {
-        furnace.resetLossFactor();
+    protected void calculateFce(boolean bResetLossFactor) {
         initPrintGroups();
         enableResultsMenu(false);
-        takeValuesFromUI();
-
+        if (bResetLossFactor) {
+            furnace.resetLossFactor();
+            takeValuesFromUI();
+        }
         while (checkData()) {
             if (furnace.showZoneDataMsgIfRequired(pbCalculate)) {
                 if (!commFuel.bMixedFuel && fuelTemp > 0 && !tuningParams.bOnProductionLine
@@ -2192,6 +2204,10 @@ public class DFHeating extends JApplet implements InputControl {
             }
             break;
         }
+    }
+
+    protected void calculateFce() {
+        calculateFce(true);
     }
 
     void enableCalculStat() {

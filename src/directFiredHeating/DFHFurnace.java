@@ -760,6 +760,11 @@ public class DFHFurnace {
     boolean honorLastZoneMinFceTemp = false;
     boolean considerChTempProfile = false;
     boolean skipReferenceDataCheck = false;
+    boolean smoothenCurve = true;
+
+    public void setCurveSmoothening(boolean ena) {
+        smoothenCurve = ena;
+    }
 
     String getMainTitle() {
         Charge ch = production.charge;
@@ -1005,7 +1010,7 @@ public class DFHFurnace {
                 }
             }
         }
-        if (allOk)
+        if (allOk && smoothenCurve)
             smoothenProfile(bBot);
         return allOk;
     }

@@ -1,5 +1,9 @@
 package level2.fieldResults;
 
+import basic.FlowAndTemperature;
+import basic.Fluid;
+import basic.Fuel;
+import basic.FuelFiring;
 import directFiredHeating.FceSection;
 import level2.L2DFHFurnace;
 import level2.L2ParamGroup;
@@ -7,6 +11,7 @@ import level2.L2Zone;
 import level2.Tag;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
+import performance.stripFce.OneZone;
 
 import java.text.DecimalFormat;
 
@@ -20,6 +25,8 @@ import java.text.DecimalFormat;
 public class FieldZone {
     L2DFHFurnace l2Furnace;
     FceSection sec;
+    Fuel zonalFuel;
+    FuelFiring zonalFuelFiring;
     int zNum;
     double frFceTemp;
     double frFuelFlow;
@@ -35,18 +42,21 @@ public class FieldZone {
         this.l2Furnace = l2Furnace;
         this.sec = sec;
         this.zNum = sec.secNum;
+//        this.zonalFuelFiring = new FuelFiring(l2Furnace.commFuelFiring, false);
     }
 
     public FieldZone(L2DFHFurnace l2Furnace, boolean bBot, int zNum) {
         this(l2Furnace, l2Furnace.getOneSection(bBot, zNum));
     }
 
-    public FieldZone(L2DFHFurnace l2Furnace, boolean bBot, int zNum, double fceTemp, double fuelFlow, double airTemp, double afRatio) {
+    public FieldZone(L2DFHFurnace l2Furnace, boolean bBot, int zNum, double fceTemp, double fuelFlow,
+                     double airTemp, double afRatio) {
         this(l2Furnace, bBot, zNum);
-        this.frFceTemp = fceTemp;
-        this.frFuelFlow = fuelFlow;
-        this.frAirTemp = airTemp;
-        this.frAfRatio = afRatio;
+        setValues(fceTemp, fuelFlow, airTemp, afRatio);
+//        this.frFceTemp = fceTemp;
+//        this.frFuelFlow = fuelFlow;
+//        this.frAirTemp = airTemp;
+//        this.frAfRatio = afRatio;
         testValidity();
     }
 
@@ -63,14 +73,16 @@ public class FieldZone {
     }
 
     void takeFromL2Zone(L2Zone oneZone) {
-        frFceTemp = oneZone.getValue(L2ParamGroup.Parameter.Temperature, Tag.TagName.PV).floatValue;
-        frFuelFlow = oneZone.getValue(L2ParamGroup.Parameter.FuelFlow, Tag.TagName.PV).floatValue;
-        frAirTemp = oneZone.getValue(L2ParamGroup.Parameter.AirFlow, Tag.TagName.Temperature).floatValue;
+        double fceTemp = oneZone.getValue(L2ParamGroup.Parameter.Temperature, Tag.TagName.PV).floatValue;
+        double fuelFlow = oneZone.getValue(L2ParamGroup.Parameter.FuelFlow, Tag.TagName.PV).floatValue;
+        double airTemp = oneZone.getValue(L2ParamGroup.Parameter.AirFlow, Tag.TagName.Temperature).floatValue;
+        double afRatio;
         if (frFuelFlow > 0)
-            frAfRatio = oneZone.getValue(L2ParamGroup.Parameter.AirFlow, Tag.TagName.PV).floatValue /
+            afRatio = oneZone.getValue(L2ParamGroup.Parameter.AirFlow, Tag.TagName.PV).floatValue /
                         frFuelFlow;
         else
-            frAfRatio = 1.0;
+            afRatio = 1.0;
+        setValues(fceTemp, fuelFlow, airTemp, afRatio);
     }
 
     void testValidity() {
@@ -81,11 +93,42 @@ public class FieldZone {
             errMsg = "";
     }
 
+    FlowAndTemperature compareResults(FlowAndTemperature passingFlue) {
+        zonalFuelFiring = new FuelFiring(l2Furnace.commFuelFiring, false);
+        zonalFuelFiring.setTemperatures(frAirTemp);
+        double heatToCharge = sec.heatToCharge();  // TODO in field Results comparison, heat to charge is considered equal
+        OneZone oneZone = sec.getZonePerfData();
+        double calculatedLosses = oneZone.losses;
+        // evaluate frLosses
+        double calculatedFlueTempOut = sec.getTempFlueOut();
+        double calculatedFceTemp = oneZone.fceTemp;
+        // assuming same ratio between the flueOutTemp and FceTemp calculated frFlueTempOut
+        double frFlueTempOut = calculatedFlueTempOut / calculatedFceTemp * frFceTemp;
+        double frNetFuelHeat = frFuelFlow * zonalFuelFiring.netUsefulFromFuel(frFlueTempOut, frAirTemp);
+//        double frHeatFromPassingFlue = passingFlue.flow *
+//                (zonalFuelFiring.flueHeatPerUFuel(passingFlue.temperature, frFlueTempOut));
+        Fluid flue = zonalFuelFiring.flue;
+        double frHeatFromPassingFlue = passingFlue.flow *
+                flue.deltaHeat(passingFlue.temperature, frFlueTempOut);
+        double frLosses = frNetFuelHeat + frHeatFromPassingFlue - heatToCharge;
+        lossFactor = frLosses / calculatedLosses;
+        passingFlue.flow += frFuelFlow * zonalFuelFiring.unitFlueFlow();
+        passingFlue.temperature = frFlueTempOut;
+        return passingFlue;
+    }
+
+    double flueQtyFromZone() {
+        return frFuelFlow * zonalFuelFiring.unitFlueFlow();
+    }
+
+
+
     public void setValues(double fceTemp, double fuelFlow, double airTemp, double afRatio) {
         this.frFceTemp = fceTemp;
         this.frFuelFlow = fuelFlow;
         this.frAirTemp = airTemp;
         this.frAfRatio = afRatio;
+//        zonalFuelFiring.setTemperatures(frAirTemp, frFceTemp);
     }
 
     public StringBuilder dataInXML() {
@@ -99,13 +142,14 @@ public class FieldZone {
     public boolean takeFromXML(String xmlStr) throws NumberFormatException {
         ValAndPos vp;
         vp = XMLmv.getTag(xmlStr, "frFceTemp", 0);
-        frFceTemp = Double.valueOf(vp.val);
+        double fceTemp = Double.valueOf(vp.val);
         vp = XMLmv.getTag(xmlStr, "frFuelFlow", 0);
-        frFuelFlow = Double.valueOf(vp.val);
+        double fuelFlow = Double.valueOf(vp.val);
         vp = XMLmv.getTag(xmlStr, "frAirTemp", 0);
-        frAirTemp = Double.valueOf(vp.val);
+        double airTemp = Double.valueOf(vp.val);
         vp = XMLmv.getTag(xmlStr, "frAfRatio", 0);
-        frAfRatio = Double.valueOf(vp.val);
+        double afRatio = Double.valueOf(vp.val);
+        setValues(fceTemp, fuelFlow, airTemp, afRatio);
         return true;
     }
 

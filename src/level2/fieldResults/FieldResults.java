@@ -1,10 +1,8 @@
 package level2.fieldResults;
 
 import FceElements.heatExchanger.HeatExchProps;
-import basic.ChMaterial;
-import basic.Charge;
-import basic.FuelFiring;
-import basic.ProductionData;
+import basic.*;
+import com.sun.corba.se.spi.ior.TaggedComponentFactoryFinder;
 import directFiredHeating.FceSection;
 import level2.*;
 import mvUtils.mvXML.ValAndPos;
@@ -84,7 +82,9 @@ public class FieldResults {
         if (takeZonalData()) {
             if (takeRecuData(l2Furnace.getRecuperatorZ())) {
                 if (takeStripData(l2Furnace.getStripZone())) {
-                    inError = false;
+                    if (takeCommonDFHData(l2Furnace.getCommonDFHZ())) {
+                        inError = false;
+                    }
                 }
             }
         }
@@ -124,13 +124,21 @@ public class FieldResults {
     boolean takeRecuData(L2Zone recu) {
         commonAirTemp = recu.getValue(L2ParamGroup.Parameter.AirFlow, Tag.TagName.Temperature).floatValue;
         commonFuelTemp = 30; // TODO  commonFuelTemp set as 30
+        double excessAir = 0.05; // TODO excess air for fuelFiring is taken as 5%
         flueAtRecu = recu.getValue(L2ParamGroup.Parameter.Flue, Tag.TagName.Temperature).floatValue;
+        fuelFiring = l2Furnace.getFuelFiring(false, excessAir, commonAirTemp, commonFuelTemp);
+        return true;
+    }
+
+    boolean takeCommonDFHData(L2Zone dfhZ) {
+        flueTempOut = dfhZ.getValue(L2ParamGroup.Parameter.Flue, Tag.TagName.Temperature).floatValue;
         return true;
     }
 
     boolean takeZonalData() {
         boolean retVal = true;
         FieldZone oneFieldZone;
+
         for (int z = 0; z < l2Furnace.nTopActiveSecs; z++) {
             oneFieldZone = new FieldZone(l2Furnace, false, z, l2Furnace.getOneL2Zone(z, false));
             if (oneFieldZone.bValid)
@@ -159,7 +167,26 @@ public class FieldResults {
      * Compares the calculation results with the Field data and works our the lossFactor to be applied to
      * the calculated data
      */
-    public boolean compareResults() {
+
+    boolean compareResults() {
+        boolean retVal = false;
+        // the field data
+        if (!inError) {
+            FlowAndTemperature passingFlue = new FlowAndTemperature();
+            FieldZone zone;
+            for (int z = topZones.length - 1; z >= 0; z--)
+                topZones[z].compareResults(passingFlue);
+            if (l2Furnace.bTopBot) {
+                passingFlue.reset();
+                for (int z = botZones.length - 1; z >= 0; z--)
+                    botZones[z].compareResults(passingFlue);
+            }
+            retVal = true;
+        }
+        return retVal;
+    }
+
+    boolean compareResultsOLD() {
         boolean retVal = false;
         // the field data
         if (!inError) {
@@ -180,6 +207,28 @@ public class FieldResults {
             return true;
         }
         return retVal;
+    }
+
+
+
+    /**
+     * Make necessary corrections in calculation based on field results
+     * @return
+     */
+    public boolean adjustForFieldResults() {
+        if (compareResults()) {
+            FieldZone[] zones = topZones;
+            for (FieldZone z: zones)
+                z.sec.setLossFactor(z.lossFactor);
+            if (l2Furnace.bTopBot) {
+                zones = botZones;
+                for (FieldZone z : zones)
+                    z.sec.setLossFactor(z.lossFactor);
+            }
+            return true;
+        }
+        else
+            return false;
     }
 
     public boolean takeFromXML(String xmlStr) {

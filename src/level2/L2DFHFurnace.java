@@ -2,6 +2,8 @@ package level2;
 
 import FceElements.heatExchanger.HeatExchProps;
 import TMopcUa.TMuaClient;
+import basic.Fuel;
+import basic.FuelFiring;
 import com.prosysopc.ua.ServiceException;
 import com.prosysopc.ua.client.MonitoredDataItem;
 import com.prosysopc.ua.client.Subscription;
@@ -38,6 +40,7 @@ public class L2DFHFurnace extends DFHFurnace {
     ReadyNotedParam l2StripSizeParams;
     L2Zone stripZone;  // all strip data size, speed temperature etc.
     L2Zone recuperatorZ;
+    L2Zone commonDFHZ;
     String equipment;
     Subscription messageSub;
     Subscription stripSub;
@@ -58,6 +61,7 @@ public class L2DFHFurnace extends DFHFurnace {
         messagesON = createL2Messages();
         createStripParam();
         createRecuParam();
+        createCommonDFHZ();
     }
 
     boolean createStripParamOLD() { // TODO to be removed subsequently
@@ -127,9 +131,29 @@ public class L2DFHFurnace extends DFHFurnace {
         return retVal;
      }
 
+    boolean createCommonDFHZ() {
+        boolean retVal = false;
+//        stripSub = source.createSubscription(new SubAliveListener(), new StripListener());
+        commonDFHZ = new L2Zone(this, "DFHCommon", null);
+        try {
+            Tag[] commonDFHTags1 = {
+                    new Tag(L2ParamGroup.Parameter.FuelCharacteristic, Tag.TagName.Noted, false, false)};
+            commonDFHZ.addOneParameter(L2ParamGroup.Parameter.FuelCharacteristic, commonDFHTags1);
+            noteMonitoredTags(commonDFHTags1);
+            Tag[] commonDFHTags2 = {
+                    new Tag(L2ParamGroup.Parameter.Flue, Tag.TagName.Temperature, false, false)};
+            commonDFHZ.addOneParameter(L2ParamGroup.Parameter.Flue, commonDFHTags2);
+            noteMonitoredTags(commonDFHTags2);
+        } catch (TagCreationException e) {
+            showError("CommonDFH connection to Level1 :" + e.getMessage());
+            retVal = false;
+        }
+        return retVal;
+    }
+
     boolean createRecuParam() {
         boolean retVal = false;
-        stripSub = source.createSubscription(new SubAliveListener(), new StripListener());
+//        stripSub = source.createSubscription(new SubAliveListener(), new StripListener());
         recuperatorZ = new L2Zone(this, "Recuperator", null);
         try {
             Tag[] recuFlueTags = {
@@ -255,6 +279,10 @@ public class L2DFHFurnace extends DFHFurnace {
         return recuperatorZ;
     }
 
+    public L2Zone getCommonDFHZ() {
+        return commonDFHZ;
+    }
+
     public L2Zone getOneL2Zone(int zNum, boolean bBot) {
         L2Zone theZone = null;
         if (bBot)
@@ -305,7 +333,7 @@ public class L2DFHFurnace extends DFHFurnace {
 
     public boolean setFieldProductionData() {
         if (oneFieldResults != null) {
-            oneFieldResults.compareResults();
+//            oneFieldResults.compareResults();
             l2DFHeating.setFieldProductionData(oneFieldResults.production, oneFieldResults.commonAirTemp,
                     oneFieldResults.commonFuelTemp);
             return true;
@@ -313,6 +341,22 @@ public class L2DFHFurnace extends DFHFurnace {
         else
             return false;
 
+    }
+
+    public FuelFiring getFuelFiring(boolean bRegen, double excessAir, double airTemp, double fuelTemp)  {
+        Fuel f = l2DFHeating.getSelFuel(); // TODO considers only one fuel
+        if (f != null)
+            return new FuelFiring(f, bRegen, excessAir, airTemp, fuelTemp);
+        else
+            return null;
+    }
+
+    public boolean adjustForFieldResults() {
+        if (oneFieldResults != null) {
+            return oneFieldResults.adjustForFieldResults();
+        }
+        else
+            return false;
     }
 
      public boolean takeFieldResultsFromXML(String xmlStr) {

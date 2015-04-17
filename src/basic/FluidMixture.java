@@ -81,6 +81,14 @@ public class FluidMixture extends Fluid {
             return Double.NaN;
     }
 
+    @Override
+    public double deltaHeat(double fromTemp, double toTemp) {
+        if (heatCont != null)
+            return heatCont.getYat(fromTemp) - heatCont.getYat(toTemp);
+        else
+            return Double.NaN;
+    }
+
     public double tempFromSensHeat(double heat) {
         if (heatCont != null)
             return heatCont.getXat(heat);

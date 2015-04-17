@@ -778,6 +778,10 @@ public class FceSection {
         return vUnitFurnaces.get(lastSlot + 1).tempG;
     }
 
+    public double getExitingGasTemp() {
+        return vUnitFurnaces.get(firstSlot).tempG;
+    }
+
 
     public double getFirstSlotGasTemp() {
         return vUnitFurnaces.get(firstSlot).tempG;

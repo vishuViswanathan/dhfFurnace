@@ -21,6 +21,10 @@ public class Fluid {
         return temperature * spHt;
     }
 
+    public double deltaHeat(double fromTemp, double toTemp) {
+        return spHt * (fromTemp - toTemp);
+    }
+
     public double tempFromSensHeat(double heat) {
         return heat / spHt;
     }

@@ -73,6 +73,10 @@ public class ProductionData {
         return production * charge.getDeltaHeat(entryTemp, exitTemp);
     }
 
+    public double getChargeHeat(double fromTemp, double toTemp) {
+        return production * charge.getDeltaHeat(fromTemp, toTemp);
+    }
+
     public void setSpeed(double speed) {
         this.speed = speed;
     }

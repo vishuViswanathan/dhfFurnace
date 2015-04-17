@@ -455,6 +455,18 @@ public class Fuel extends Fluid{
     }
 
     @Override
+    public double deltaHeat(double fromTemp, double toTemp) {
+        if (bMixedFuel)
+            return Double.NaN;
+        else {
+            if (sensHeat == null || sensHeat.arrLen <= 0)
+                return 0;
+            else
+                return sensHeat.getYat(fromTemp) - sensHeat.getYat(toTemp);
+        }
+    }
+
+    @Override
     public double tempFromSensHeat(double heat) {
         double retVal = Double.NaN;
         if (!bMixedFuel) {

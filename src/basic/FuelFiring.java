@@ -130,6 +130,12 @@ public class FuelFiring {
         return effCalValNoFlue - flueHeatPerUFuel(flueExitTemp);
     }
 
+    public double netUsefulFromFuel(double flueExitTemp, double airPhTemp)  {
+        double airHeat = FlueComposition.hContAir.getYat(airPhTemp) * actAFRatio;
+        double fuelHeat = fuel.sensHeatFromTemp(fuelTemp);
+        return fuel.calVal + airHeat + fuelHeat - flueHeatPerUFuel(flueExitTemp);
+    }
+
     public double unitFuelHeatWithAPH() {
         return effCalValNoFlue;
     }
