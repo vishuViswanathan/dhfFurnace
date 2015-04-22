@@ -11,6 +11,7 @@ import mvUtils.display.XLcellData;
 import linkTFM.FceProfTFM;
 import mvUtils.display.*;
 import mvUtils.math.*;
+import mvUtils.math.ExcelAdapter;
 import mvUtils.mvXML.DoubleWithErrStat;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLgroupStat;

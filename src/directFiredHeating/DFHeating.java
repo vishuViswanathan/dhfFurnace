@@ -130,7 +130,7 @@ public class DFHeating extends JApplet implements InputControl {
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
 //    public Level2Furnace furnaceLevel2;
-    protected String releaseDate = "20150408PM";
+    protected String releaseDate = "20150420AM";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -660,11 +660,14 @@ public class DFHeating extends JApplet implements InputControl {
                     String msg2 = "Enter Furnace Profile for Combined Top And Bottom.\nie. TOTAL Height from Floor to Roof";
                     if (cbFceFor.getSelectedItem() != DFHTuningParams.ForProcess.STRIP) {
                         msg1 = "Changing 'Furnace For' to Strip Heating\n\n";
-                        showMessage(msg1 + msg2);
+                        if (!onProductionLine)
+                            showMessage(msg1 + msg2);
                         cbFceFor.setSelectedItem(DFHTuningParams.ForProcess.STRIP);
                     }
-                    else
-                        showMessage(msg2);
+                    else {
+                        if (!onProductionLine)
+                            showMessage(msg2);
+                    }
                     break;
             }
             furnace.changeFiringMode(bTopBot, bAddTopSoak);
@@ -2928,7 +2931,8 @@ public class DFHeating extends JApplet implements InputControl {
                         if ((msg.equals("OK"))) {
                             bRetVal = true;
                             parent().toFront();
-                            showMessage("Fuel and Charge Material to be Selected/Checked before Calculation.");
+                            if (!onProductionLine)
+                                showMessage("Fuel and Charge Material to be Selected/Checked before Calculation.");
                         } else
                             showError("in Furnace Data from XL file!\n" + msg);
                     } else
@@ -3035,7 +3039,8 @@ public class DFHeating extends JApplet implements InputControl {
                         if (stat.equals("OK")) {
                             bRetVal = true;
                             parent().toFront();
-                            showMessage("Fuel and Charge Material to be Selected/Checked before Calculation.");
+                            if (!onProductionLine)
+                                showMessage("Fuel and Charge Material to be Selected/Checked before Calculation.");
                         } else
                             showError(stat);
                     } else

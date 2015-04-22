@@ -4,7 +4,7 @@ import basic.ChMaterial;
 import basic.FlueCompoAndQty;
 import basic.FlueComposition;
 import basic.ProductionData;
-import mvmath.MultiColDataPoint;
+import mvUtils.math.MultiColDataPoint;
 import mvUtils.math.SPECIAL;
 
 import javax.swing.*;

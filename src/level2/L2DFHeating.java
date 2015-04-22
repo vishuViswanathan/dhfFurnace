@@ -709,7 +709,7 @@ public class L2DFHeating extends DFHeating {
                 level2Heating.showMessage("Facing problem connecting to Level1");
         }
 
-//        level2Heating.setVisible(true);
+        level2Heating.setVisible(true);
 /*
 
          try {
