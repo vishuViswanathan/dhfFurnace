@@ -225,48 +225,50 @@ public class LossParamsTFM {
     }
 
     boolean setSlotLosses(Vector<BeamParams> movingBeams, Iterator<Integer> lossTypeKeys) {
-        boolean retVal = false;
-        LossType.LossBasis basis = LossType.LossBasis.LENGTH;
-        LossType.TempAction tempAct = LossType.TempAction.POW4;
-        int movingBeamSecs = movingBeams.size();
-        double lossPerT4, factor;
-        BeamParams oneParam;
-        double stPos = 0, endPos = 0, length;
-        int lNum;
-        if (movingBeamSecs > 0) {
-            for (int s = 0; s < movingBeamSecs; s++) {
-                oneParam = movingBeams.get(s);
-                lossPerT4 = oneParam.totalSlotsLossPerT4();
-                if (lossPerT4 > 0) {
-                    length = oneParam.secLength;
-                    factor = lossPerT4 / length;
-                    endPos = stPos + length;
-                    lNum = addToLossType("Moving Posts Slots Sec#" + (s + 1), factor, basis, tempAct, lossTypeKeys);
-                    if (lNum > 0)
-                        furnace.assignLoss(true, stPos, endPos, lNum, 1.0);
-                }
-                stPos = endPos;
-            }
-            retVal = true;
-        }
-        else  {
-            for (int s = 0; s < movingBeamSecs; s++) {
-                oneParam = movingBeams.get(s);
-                lossPerT4 = oneParam.totalWHSlotsLossPerT4();
-                if (lossPerT4 > 0) {
-                    length = oneParam.secLength;
-                    factor = lossPerT4 / length;
-                    endPos = stPos + length;
-                    lNum = addToLossType("Walking Hearth Slots Sec#" + (s + 1), factor, basis, tempAct, lossTypeKeys);
-                    if (lNum > 0)
-                        furnace.assignLoss(false, stPos, endPos, lNum, 1.0);
-                }
-                stPos = endPos;
-            }
-            retVal = true;
-        }
-        return retVal;
-    }
+          boolean retVal = false;
+          LossType.LossBasis basis = LossType.LossBasis.LENGTH;
+          LossType.TempAction tempAct = LossType.TempAction.POW4;
+          int movingBeamSecs = movingBeams.size();
+          double lossPerT4, factor;
+          BeamParams oneParam;
+          double stPos = 0, endPos = 0, length;
+          int lNum;
+          if (movingBeamSecs > 0) {
+              if (furnace.bTopBot) {
+                  for (int s = 0; s < movingBeamSecs; s++) {
+                      oneParam = movingBeams.get(s);
+                      lossPerT4 = oneParam.totalSlotsLossPerT4();
+                      if (lossPerT4 > 0) {
+                          length = oneParam.secLength;
+                          factor = lossPerT4 / length;
+                          endPos = stPos + length;
+                          lNum = addToLossType("Moving Posts Slots Sec#" + (s + 1), factor, basis, tempAct, lossTypeKeys);
+                          if (lNum > 0)
+                              furnace.assignLoss(true, stPos, endPos, lNum, 1.0);
+                      }
+                      stPos = endPos;
+                  }
+                  retVal = true;
+              }
+              else {
+                  for (int s = 0; s < movingBeamSecs; s++) {
+                      oneParam = movingBeams.get(s);
+                      lossPerT4 = oneParam.totalWHSlotsLossPerT4();
+                      if (lossPerT4 > 0) {
+                          length = oneParam.secLength;
+                          factor = lossPerT4 / length;
+                          endPos = stPos + length;
+                          lNum = addToLossType("Walking Hearth Slots Sec#" + (s + 1), factor, basis, tempAct, lossTypeKeys);
+                          if (lNum > 0)
+                              furnace.assignLoss(false, stPos, endPos, lNum, 1.0);
+                      }
+                      stPos = endPos;
+                  }
+                  retVal = true;
+              }
+          }
+          return retVal;
+      }
 
     boolean setSkidLosses(Vector<BeamParams> fixedBeams, Vector<BeamParams> movingBeams, Iterator<Integer> lossTypeKeys)  {
         boolean retVal = false;

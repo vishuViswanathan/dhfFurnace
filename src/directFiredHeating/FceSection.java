@@ -1576,6 +1576,7 @@ public class FceSection {
                 XMLmv.putTag("cbFuelChoice", "" + cbFuelChoice.getSelectedItem()) +
                 XMLmv.putTag("cbFuels", "" + cbFuels.getSelectedItem()) +
                 XMLmv.putTag("excessAir", "" + "" + excessAir) +
+                XMLmv.putTag("fuelTemp", "" + "" + fuelTemp) +
                 XMLmv.putTag("cbBurnerType", "" + cbBurnerType.getSelectedItem()) +
                 XMLmv.putTag("bAPHCommonRecu", ((bAPHCommonRecu) ? "1" : "0")) +
                 XMLmv.putTag("flueExhFract", "" + "" + burnerFlueExhFract) +
@@ -1663,6 +1664,9 @@ public class FceSection {
             regenPHTemp = Double.valueOf(vp.val);
             vp = XMLmv.getTag(xmlStr, "excessAir", 0);
             excessAir = Double.valueOf(vp.val);
+            vp = XMLmv.getTag(xmlStr, "fuelTemp", 0);
+            if (vp.val.length() > 0)
+                fuelTemp = Double.valueOf(vp.val);
             vp = XMLmv.getTag(xmlStr, "tcLocation", 0);
             if (vp.val.length() > 0)
                 tcLocationFromZoneStart = Double.valueOf(vp.val);

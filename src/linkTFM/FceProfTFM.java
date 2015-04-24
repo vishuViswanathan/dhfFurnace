@@ -70,10 +70,9 @@ public class FceProfTFM {
     public XMLgroupStat fceProfFromTFM(String xmlStr, XMLgroupStat grpStat, DFHFurnace furnace) {
         this.furnace = furnace;
         this.bTopBot = furnace.bTopBot;
-        lossParamsTFM = new LossParamsTFM(dfHeating);
-        lossParamsTFM.paramsFromXML(xmlStr, grpStat);
-        getBeamsData(xmlStr, grpStat);
-//        DoubleWithErrStat dblWithStat;
+//        lossParamsTFM = new LossParamsTFM(dfHeating);
+//        lossParamsTFM.paramsFromXML(xmlStr, grpStat);
+//        getBeamsData(xmlStr, grpStat);
         ValAndPos vp;
         if (bTopBot) {
             vp = XMLmv.getTag(xmlStr, "botSections", 0);
@@ -90,11 +89,14 @@ public class FceProfTFM {
         else
             grpStat.addStat(false, "   Top Section Profile NOT found\n");
         if (nBotSec < 2)  {
-            bTopBot = false;
+            furnace.bTopBot = bTopBot = false;
             furnace.changeFiringMode(bTopBot, false);
             dfHeating.setHeatingMode("TOP FIRED");
         }
 
+        lossParamsTFM = new LossParamsTFM(dfHeating);
+        lossParamsTFM.paramsFromXML(xmlStr, grpStat);
+        getBeamsData(xmlStr, grpStat);
         grpStat.addStat(true, "Building DFHFurnace Profile\n");
         setFceProfile(grpStat);
         lossParamsTFM.mapTFMlosses(furnace, fixedBeams, movingBeams);

@@ -359,7 +359,6 @@ public class DFHeating extends JApplet implements InputControl {
         if (ena)
             furnace.resetSections();
         tfReference.setEditable(ena && !onProductionLine);
-        tfFceTitle.setEditable(ena && !onProductionLine);
         tfCustomer.setEditable(ena && !onProductionLine);
         ntfWidth.setEditable(ena && !onProductionLine);
         tfExcessAir.setEditable(ena);
@@ -641,6 +640,10 @@ public class DFHeating extends JApplet implements InputControl {
         cbHeatingMode.setSelectedItem(HeatingMode.getEnum(mode));
     }
 
+    void enableParamsForTopBot() {
+        tfBottShadow.setEnabled(bTopBot);
+    }
+
     class HeatingModeListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             heatingMode = (HeatingMode)cbHeatingMode.getSelectedItem();
@@ -672,6 +675,7 @@ public class DFHeating extends JApplet implements InputControl {
             }
             furnace.changeFiringMode(bTopBot, bAddTopSoak);
             noteFiringModeChange(bTopBot);
+            enableParamsForTopBot();
         }
     }
 

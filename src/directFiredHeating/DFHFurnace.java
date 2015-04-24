@@ -16,7 +16,6 @@ import mvUtils.mvXML.DoubleWithErrStat;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLgroupStat;
 import mvUtils.mvXML.XMLmv;
-import mvmath.*;
 import mvUtils.display.FramedPanel;
 import mvUtils.display.GraphDisplay;
 import mvUtils.display.GraphInfoAdapter;
@@ -3823,6 +3822,7 @@ public class DFHFurnace {
     }
 
     public String dataInXML(boolean withPerformance) {
+        evalActiveSecs();
         String xmlStr = XMLmv.putTag("bTopBot", (bTopBot ? "1" : "0"));
         xmlStr += XMLmv.putTag("lossTypeList", lossTypeList.dataInXML());
 
