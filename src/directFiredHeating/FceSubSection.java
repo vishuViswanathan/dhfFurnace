@@ -43,7 +43,7 @@ public class FceSubSection {
     static String strZones = "Zones";
 
     static void initStaticData(Component tfTopLen, Component tfBotLen) {
-        if (!inited) {
+//        if (!inited) {
             topBotSel = new ButtonGroup();
             rbTop = new JRadioButton(strTopZones);
             rbBot = new JRadioButton("Bottom Zones");
@@ -99,7 +99,7 @@ public class FceSubSection {
             jl.setEnabled(false);
             rowHead.add(jl, gbcHeader);
             inited = true;
-        }
+//        }
     }
 
     static boolean bColHeadInited = false;
@@ -201,12 +201,12 @@ public class FceSubSection {
         showLossHeader();
     }
 
-    public static FramedPanel getRowHeader(ActionListener li, Component tfTopLen, Component tfBottLen) {
-        initStaticData(tfTopLen, tfBottLen);
-        rbBot.addActionListener(li);
-        rbTop.addActionListener(li);
-        return rowHead;
-    }
+//    public static FramedPanel getRowHeader(ActionListener li, Component tfTopLen, Component tfBottLen) {   //TODO not used
+//        initStaticData(tfTopLen, tfBottLen);
+//        rbBot.addActionListener(li);
+//        rbTop.addActionListener(li);
+//        return rowHead;
+//    }
 
     public static FramedPanel getRowHeader(Component tfTopLen, Component tfBottLen) {
         initStaticData(tfTopLen, tfBottLen);
