@@ -15,53 +15,54 @@ import java.awt.event.*;
  */
 
 public class QueryDialog extends JDialog {
-  QueryPanel qp = new QueryPanel();
-  JButton ok = new JButton("Ok");
-  JButton cancel = new JButton("Cancel");
-  boolean updated = false;
-  public QueryDialog(JFrame owner, String name) {
-    super(owner, name);
-    Container container = getContentPane();
-    container.add(qp, "Center");
-    JPanel buttonP = new JPanel();
-    buttonP.add(cancel);
-    buttonP.add(ok);
-    container.add(buttonP, "South");
-    ButtonListener buttListener = new ButtonListener();
-    ok.addActionListener(buttListener);
-    cancel.addActionListener(buttListener);
-    pack();
+    QueryPanel qp = new QueryPanel();
+    JButton ok = new JButton("Ok");
+    JButton cancel = new JButton("Cancel");
+    boolean updated = false;
+    public QueryDialog(JFrame owner, String name) {
+        super(owner, name);
+        setModal(true);
+        Container container = getContentPane();
+        container.add(qp, "Center");
+        JPanel buttonP = new JPanel();
+        buttonP.add(cancel);
+        buttonP.add(ok);
+        container.add(buttonP, "South");
+        ButtonListener buttListener = new ButtonListener();
+        ok.addActionListener(buttListener);
+        cancel.addActionListener(buttListener);
+        pack();
    }
 
-  public void addQuery(String label, Component comp) {
-    qp.addQuery(label, comp);
-    pack();
-  }
+    public void addQuery(String label, Component comp) {
+        qp.addQuery(label, comp);
+        pack();
+    }
 
-  public void addQuery(String label, JTextField value, double min, double max) {
-    qp.addQuery(label, value, min, max);
-  }
+    public void addQuery(String label, JTextField value, double min, double max) {
+        qp.addQuery(label, value, min, max);
+    }
 
-  public void addSpace() {
+    public void addSpace() {
     qp.addSpace();
     pack();
   }
 
-  public void addTextLine(String text) {
+    public void addTextLine(String text) {
     qp.addTextLine(text);
   }
 
-  public boolean isUpdated() {
+    public boolean isUpdated() {
     return updated;
   }
 
-  class ButtonListener implements ActionListener {
-    public void actionPerformed(ActionEvent e) {
-      Object caller = e.getSource();
-      if (caller == ok)
-        updated = true;
-      dispose();
+    class ButtonListener implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+        Object caller = e.getSource();
+        if (caller == ok)
+            updated = true;
+            dispose();
+        }
     }
-  }
 
 }
