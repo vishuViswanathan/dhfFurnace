@@ -123,7 +123,8 @@ public class FuelFiring {
 //        double flueHeat = flueHeatPerUFuel(flueExitTemp);
 //        return new FuelHeatDetails(effCalValNoFlue - flueHeat, airHeatPerUfuel, fuelSensibleHeat, flueHeat);
         double netFuelHeat = netUsefulFromFuel(flueExitTemp);
-        return new FuelHeatDetails(netFuelHeat, airHeatPerUfuel, fuelSensibleHeat, netFuelHeat - effCalValNoFlue);
+// 20150424         return new FuelHeatDetails(netFuelHeat, airHeatPerUfuel, fuelSensibleHeat, netFuelHeat - effCalValNoFlue);
+        return new FuelHeatDetails(netFuelHeat, airHeatPerUfuel, fuelSensibleHeat,  effCalValNoFlue - netFuelHeat);
     }
 
     public double netUsefulFromFuel(double flueExitTemp) {
