@@ -4,9 +4,11 @@ import TMopcUa.TMuaClient;
 import basic.*;
 import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
+import display.QueryDialog;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import org.apache.log4j.Logger;
+import protection.MachineCheck;
 
 import javax.swing.*;
 import java.awt.*;
@@ -80,6 +82,10 @@ public class L2DFHeating extends DFHeating {
         furnace.setTuningParams(tuningParams);
         createUIs();
         getFuelAndCharge();
+        if (!testMachineID()) {
+            showError("Software key mismatch, Aborting ...");
+            close();
+        }
         displayIt();
         getL2FceFromFile();
 //        displayIt();
@@ -689,11 +695,107 @@ public class L2DFHeating extends DFHeating {
         }
     }
 
-    public void destroy() {
+    boolean testMachineID() {
+        boolean keyOK = false;
+        boolean newKey = false;
+        MachineCheck  mc = new MachineCheck();
+        String machineId = mc.getMachineID();
+//        showMessage("Machine Id = " + machineId);
+//        showMessage("Key = " + mc.getKey(machineId));
+        String key = getKeyFromFile();
+        do {
+            if (key.length() < 5) {
+                key = getKeyFromUser(machineId);
+                newKey = true;
+            }
+            if (key.length() > 5) {
+//                showMessage("key = " + key);
+//                showMessage("Machine OK = " + mc.checkKey(key));
+                keyOK = mc.checkKey(key);
+                if (!newKey && !keyOK) {
+                    boolean response = decide("Software key", "There is some problem in the saved key\n"
+                            + " Do you want to delete the earlier key data and enter the key manually?");
+                    if (response) {
+                        key = "";
+                        continue;
+                    }
+                }
+                if (keyOK && newKey)
+                    saveKeyToFile(key);
+            }
+            break;
+        } while (true);
+        return keyOK;
+    }
+
+    String keyFileHead = "TMIDFHLevel2Key:";
+
+    void saveKeyToFile(String key) {
+        boolean done = false;
+        String filePath = fceDataLocation + "machineKey.ini";
+        debug("Data file name for saving key:" + filePath);
+        try {
+            BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(filePath));
+            oStream.write(keyFileHead.getBytes());
+            oStream.write(key.getBytes());
+            oStream.close();
+            done = true;
+        } catch (FileNotFoundException e) {
+            debug("Could not create file " + filePath);
+        } catch (IOException e) {
+            debug("Some IO Error in writing to file " + filePath + "!");
+        }
+        if (done)
+            debug("key saved to " + filePath);
+        else
+            showError("Unable to save software key");
+    }
+
+    String getKeyFromFile() {
+        String key = "";
+        String filePath = fceDataLocation + "machineKey.ini";
+        debug("Data file name :" + filePath);
+        try {
+            BufferedInputStream iStream = new BufferedInputStream(new FileInputStream(filePath));
+            //           FileInputStream iStream = new FileInputStream(fileName);
+            File f = new File(filePath);
+            long len = f.length();
+            int headLen = keyFileHead.length();
+            if (len > headLen && len < 100) {
+                int iLen = (int) len;
+                byte[] data = new byte[iLen];
+                iStream.read(data);
+                String dataStr = new String(data);
+                if (dataStr.substring(0, headLen).equals(keyFileHead))
+                    key = dataStr.substring(headLen);
+            } else
+                showError("File size " + len + " for " + filePath);
+        } catch (Exception e) {
+            showError("Some Problem in Key!");
+        }
+        return key;
+    }
+
+    String getKeyFromUser(String machineID) {
+        QueryDialog dlg = new QueryDialog(mainF, "Software keyString");
+        JTextField mcID = new JTextField(machineID);
+        mcID.setEditable(false);
+        JTextField keyF = new JTextField(machineID.length() + 1);
+        dlg.addQuery("Installation ID", mcID);
+        dlg.addQuery("Enter key for the above installation ID", keyF);
+        dlg.setLocation(100, 100);
+        dlg.setVisible(true);
+        if (dlg.isUpdated())
+            return keyF.getText();
+        else
+            return "";
+    }
+
+    public void close() {
         l2Furnace.prepareForDisconnection();
         if (uaClient != null)
             uaClient.disconnect();
-        super.destroy();
+        super.close();
     }
 
 
