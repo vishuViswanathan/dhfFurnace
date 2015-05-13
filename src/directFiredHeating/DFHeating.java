@@ -130,7 +130,7 @@ public class DFHeating extends JApplet implements InputControl {
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
 //    public Level2Furnace furnaceLevel2;
-    protected String releaseDate = "20150420AM";
+    protected String releaseDate = "20150507 16:18";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -309,6 +309,7 @@ public class DFHeating extends JApplet implements InputControl {
         furnace = new DFHFurnace(this, bTopBot, bAddTopSoak, lNameListener);
         debug("Created furnace");
         furnace.setTuningParams(tuningParams);
+        debug("tuning params set");
         if (onTest || asApplication) {
             createUIs();
             setTestData();
@@ -321,8 +322,10 @@ public class DFHeating extends JApplet implements InputControl {
                 win = null;
             }
             Object o;
+            debug("got win");
             o = win.eval("enableSpecsSave()");
             enableSpecsSave = (o != null) && o.equals("1");
+            debug("before creating UI");
             createUIs();
             debug("Created UI");
 //            testFunctions();
@@ -338,16 +341,22 @@ public class DFHeating extends JApplet implements InputControl {
     }
 
     protected void createUIs() {
+        debug("itsON = " + itsON);
         if (!itsON) {
             mainF.addWindowListener(new winListener());
+            debug("added WindowListeners");
             setMenuOptions();
+            debug("set Menu Options");
             inpPage = inputPage();
+            debug("got InputPage");
             opPage = OperationPage();
+            debug("got OperationPage");
             slate.setSize(new Dimension(900, 750));
             slate.setViewportView(inpPage);
             mainF.add(slate, BorderLayout.CENTER);
             mainF.setLocation(20, 10);
             mainF.pack();
+            debug("applet packed");
 //            switchPage(2);
             switchPage(InputType.INPUTPAGE);
             debug("switched to INPUTPAGE");
@@ -359,6 +368,7 @@ public class DFHeating extends JApplet implements InputControl {
         if (ena)
             furnace.resetSections();
         tfReference.setEditable(ena && !onProductionLine);
+        tfFceTitle.setEditable(ena && !onProductionLine);
         tfCustomer.setEditable(ena && !onProductionLine);
         ntfWidth.setEditable(ena && !onProductionLine);
         tfExcessAir.setEditable(ena);
@@ -618,6 +628,7 @@ public class DFHeating extends JApplet implements InputControl {
         gbcMf.gridheight = 1;
         gbcMf.gridy++;
         mainFrame.add(lossTablePanel(), gbcMf);
+        debug("lossTablePanel added");
         gbcMf.gridx = 0;
         gbcMf.gridy++;
 
@@ -626,13 +637,16 @@ public class DFHeating extends JApplet implements InputControl {
         gbcDP.gridx = 0;
         gbcDP.gridy = 0;
         detPan.add(getRowHeader(), gbcDP);
+        debug("rowHeader added");
         gbcDP.gridx++;
         detPan.add(secDetailsPanel(), gbcDP);
+        debug("secDetailsPanel added");
 
         mainFrame.add(detPan, gbcMf);
         gbcMf.gridx = 0;
         gbcMf.gridy++;
         adjustForLossNameChange();
+        debug("adjustForLossNameChange done");
         return mainFrame;
     }
 
@@ -1076,6 +1090,32 @@ public class DFHeating extends JApplet implements InputControl {
 
     @Override
     public void destroy() {
+        itsON = false;
+        debug("In destroy()");
+        super.destroy();
+        mainF.dispose();
+    }
+
+    public void close() {
+        boolean goAhead = true;
+        if (furnace.isPerformanceToBeSaved())
+            goAhead = decide("Unsaved Performance Data", "Some Performance data have been collected\n" +
+                                                "Do you want to ABANDON them and exit?");
+        if (goAhead) {
+            if (asApplication) {
+                System.exit(0);
+            }
+            else {
+                if (win != null)
+                    win.eval("gettingOut()");
+            }
+        }
+    }
+
+
+/*
+    @Override
+    public void destroy() {
         boolean goAhead = true;
         if (furnace.isPerformanceToBeSaved())
             goAhead = decide("Unsaved Performance Data", "Some Performance data have been collected\n" +
@@ -1083,10 +1123,10 @@ public class DFHeating extends JApplet implements InputControl {
         if (goAhead) {
             itsON = false;
             debug("In Destroy");
-            super.destroy();    //To change body of overridden methods use File | Settings | File Templates.
+            mainF.dispose();
+            super.destroy();
             if (win != null)
                 win.eval("gettingOut()");
-            mainF.dispose();
         }
     }
 
@@ -1099,6 +1139,7 @@ public class DFHeating extends JApplet implements InputControl {
 //        if (!onTest)
 //            win.eval("gettingOut()");
     } // close
+*/
 
     void showResultsPanel(String command) {
         DFHResult.Type type = DFHResult.Type.getEnum(command);
@@ -1168,6 +1209,7 @@ public class DFHeating extends JApplet implements InputControl {
         gbcLoss.gridx = 0;
         LossTypeList lossList = furnace.lossTypeList;
         Iterator<Integer> iter = lossList.keysIter();
+        debug("lossTypeList length " + lossList.size());
         Integer k;
         while (iter.hasNext()) {
             k = iter.next();
@@ -1613,8 +1655,11 @@ public class DFHeating extends JApplet implements InputControl {
 
     void adjustForLossNameChange() {
         furnace.takeLossParams();
+        debug("takeLossParams done");
         furnace.addToLossList();
+        debug("addToLossList done");
         rowHead.updateUI();
+        debug("adjustForLossNameChange-updateUI done");
     }
 
     public boolean canNotify() {
@@ -3751,7 +3796,8 @@ public class DFHeating extends JApplet implements InputControl {
 
         public void windowClosing(WindowEvent e) {
             debug("mainF CLOSING");
-            destroy();
+            close();
+//            destroy();
 //            if (asApplication)
 //                System.exit(0);
 //            //To change body of implemented methods use File | Settings | File Templates.
@@ -3791,6 +3837,7 @@ public class DFHeating extends JApplet implements InputControl {
                     tProfileForTFM();
                     break menuBlk;
                 }
+
 
                 if (command.equals("Save Furnace Ambients for FE Analysis")) {
                     saveAmbForFE();
