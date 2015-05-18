@@ -70,7 +70,7 @@ public class FurnaceSettings   {
         return totFuelRange;
     }
 
-    boolean takeDataFromXML(String xmlStr) {
+    boolean takeDataFromXML(String xmlStr) {  // TODO to add MaxExitZoneTemp
         boolean retVal = false;
         ValAndPos vp;
         errMsg = "Furnace Settings - Reading data:";

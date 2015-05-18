@@ -8,7 +8,6 @@ import mvUtils.mvXML.DoubleWithErrStat;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLgroupStat;
 import mvUtils.mvXML.XMLmv;
-import mvUtils.display.FramedPanel;
 import mvUtils.math.XYArray;
 //import netscape.javascript.JSException;
 import netscape.javascript.JSObject;
@@ -54,8 +53,8 @@ public class DFHeating extends JApplet implements InputControl {
         ONTEST("-onTest"),
         ALLOWSPECSSAVE("-allowSpecsSave"),
         ALLOWSPECSREAD("-allowSpecsRead"),
-        NOTLEVEL2("-notLevel2");
-
+        NOTLEVEL2("-notLevel2"),
+        DEBUGMSG("-withDebugMessages");
         private final String argName;
 
         CommandLineArgs(String argName) {
@@ -126,6 +125,7 @@ public class DFHeating extends JApplet implements InputControl {
     public static Logger log;
     static boolean onTest = false;
 
+    static boolean withDebugMessages = false;
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
@@ -1670,7 +1670,7 @@ public class DFHeating extends JApplet implements InputControl {
         canNotify = ena;
     }
 
-    public Frame parent() {
+    public JFrame parent() {
         return mainF;
     }
 
@@ -1767,8 +1767,10 @@ public class DFHeating extends JApplet implements InputControl {
         return "OK " + emiss.arrLen;
     }
 
-    protected void debug(String msg) {
-        System.out.println("DFHeating " + msg);
+
+    public static void debug(String msg) {
+        if (log != null)
+            log.debug("DFHeating:" + msg);
     }
 
     public void takeValuesFromUI() {
@@ -4125,6 +4127,9 @@ public class DFHeating extends JApplet implements InputControl {
                         break;
                     case NOTLEVEL2:
                         onProductionLine = false;
+                        break;
+                    case DEBUGMSG:
+                        withDebugMessages = true;
                         break;
                 }
         }

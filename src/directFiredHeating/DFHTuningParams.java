@@ -585,6 +585,10 @@ public class DFHTuningParams {
         controller.mainF.setVisible(true);
      }
 
+    public void setPerfTurndownSettings(double minOutputFactor, double minWidthFactor) {
+        this. minOutputFactor = minOutputFactor;
+        this.minWidthFactor = minWidthFactor;
+    }
 
     class PerfTableSetting extends JDialog {
          JButton ok = new JButton("OK");
@@ -621,7 +625,7 @@ public class DFHTuningParams {
              ok.addActionListener(li);
              cancel.addActionListener(li);
              Container dlgP = getContentPane();
-             MultiPairColPanel jp = new MultiPairColPanel("Setting for Performance Table", 200, 60);
+             MultiPairColPanel jp = new MultiPairColPanel("Settings for Performance Table", 200, 60);
              ntMinOutputFactor = new NumberTextField(controller, minOutputFactor, 6, false, 0.1, 0.9, "0.##", "Minimum Unit Output Factor:");
              ntOutputStep = new NumberTextField(controller, outputStep, 6, false, 0.05, 0.5, "0.##", "Unit Output Factor Step:");
              ntMinWidthFactor = new NumberTextField(controller, minWidthFactor, 6, false, 0.1, 0.9, "0.##", "Minimum Width Factor:");

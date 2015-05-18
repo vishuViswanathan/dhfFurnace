@@ -1,5 +1,8 @@
 package protection;
 
+import directFiredHeating.DFHFurnace;
+import directFiredHeating.DFHeating;
+
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -16,7 +19,7 @@ public class MachineCheck {
     public String getMachineID() {
         try {
             InetAddress ip = InetAddress.getLocalHost();
-            System.out.println("Current IP address : " + ip.getHostAddress());
+            debug("Current IP address : " + ip.getHostAddress());
 
             NetworkInterface network = NetworkInterface.getByInetAddress(ip);
 
@@ -68,5 +71,9 @@ public class MachineCheck {
 
     public boolean checkKey(String machineID, String key) {
         return getKey(machineID).equals(key);
+    }
+
+    void debug(String msg)  {
+        DFHeating.debug("MachineCheck: " + msg);
     }
 }

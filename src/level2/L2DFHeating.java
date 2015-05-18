@@ -32,7 +32,8 @@ public class L2DFHeating extends DFHeating {
     static String uaServerURI;
     L2DFHFurnace l2Furnace;
     public String equipment;
-    Hashtable<String, OneStripDFHProcess> stripProcessLookup;
+    StripDFHProcessList dfhProcessList;
+//    Hashtable<String, OneStripDFHProcess> stripProcessLookup;
     static boolean allowL2Changes = false;
     JMenu mL2Configuration;
     JMenuItem mIAddDFHStripProcess;
@@ -53,11 +54,11 @@ public class L2DFHeating extends DFHeating {
 
     public L2DFHeating(String equipment) {
         super();
-        releaseDate = "20150220";
+        releaseDate = "20150514";
         onProductionLine = true;
         asApplication = true;
         this.equipment = equipment;
-        stripProcessLookup = new Hashtable<String, OneStripDFHProcess>();
+//        stripProcessLookup = new Hashtable<String, OneStripDFHProcess>();
 //        init();
     }
 
@@ -148,6 +149,7 @@ public class L2DFHeating extends DFHeating {
             l2MenuSet = true;
             setFcefor(true);
         }
+        dfhProcessList = new StripDFHProcessList(this);
         if (!getStripDFHProcessList()) {
             showError("Problem loading test StripDFHProcess list data");
             setStripProcessLookup();
@@ -219,51 +221,37 @@ public class L2DFHeating extends DFHeating {
 
 
     void setStripProcessLookup() {
-        stripProcessLookup.clear();
-        stripProcessLookup.put("FH", new OneStripDFHProcess(this, "FH", "CR Lo-C emiss 0.32", "CR Lo-C emiss 0.34", 550, 0.00015));
-        stripProcessLookup.put("CQ", new OneStripDFHProcess(this, "CQ", "CR Lo-C emiss 0.32", "CR Lo-C emiss 0.34", 620, 0.0002));
+        dfhProcessList.clear();
+        dfhProcessList.addOneDFHProcess(new OneStripDFHProcess(this, "FH", "CR Lo-C emiss 0.32", "CR Lo-C emiss 0.34", 550, 0.00015));
+        dfhProcessList.addOneDFHProcess(new OneStripDFHProcess(this, "CQ", "CR Lo-C emiss 0.32", "CR Lo-C emiss 0.34", 620, 0.0002));
     }
 
     String stripDFHProcessListInXML() {
         StringBuffer xmlStr = new StringBuffer(XMLmv.putTag("exitTempAllowance", l2Furnace.getExitTempAllowance()));
-        xmlStr.append(XMLmv.putTag("pNum", stripProcessLookup.size()));
-        int pNum = 0;
-        for (OneStripDFHProcess oneProc: stripProcessLookup.values())
-            xmlStr.append(XMLmv.putTag("StripP" + ("" + ++pNum).trim(), oneProc.dataInXML().toString()) + "\n");
+        xmlStr.append(dfhProcessList.dataInXMl());
+//        xmlStr.append(XMLmv.putTag("pNum", stripProcessLookup.size()));
+//        int pNum = 0;
+//        for (OneStripDFHProcess oneProc: stripProcessLookup.values())
+//            xmlStr.append(XMLmv.putTag("StripP" + ("" + ++pNum).trim(), oneProc.dataInXML().toString()) + "\n");
         return xmlStr.toString();
     }
 
     boolean takeStripProcessListFromXML(String xmlStr) {
-        stripProcessLookup.clear();
+//        stripProcessLookup.clear();
         boolean retVal = false;
         ValAndPos vp;
-        oneBlk:
-        {
+        try {
             vp = XMLmv.getTag(xmlStr, "exitTempAllowance", 0);
-            if (vp.val.length() > 0 )
+            if (vp.val.length() > 0)
                 l2Furnace.setExitTempAllowance(Double.valueOf(vp.val));
             else
                 l2Furnace.setExitTempAllowance(5);
-            vp = XMLmv.getTag(xmlStr, "pNum", 0);
-            try {
-                int pNum = Integer.valueOf(vp.val);
-                for (int p = 0; p < pNum; p++) {
-                    vp = XMLmv.getTag(xmlStr, "StripP" + ("" + (p + 1)).trim(), vp.endPos);
-                    OneStripDFHProcess oneProc = new OneStripDFHProcess(this, vp.val);
-                    if (oneProc.inError) {
-                        showError("In reading StripDFHProc: \n" + oneProc.errMeg);
-                        retVal = false;
-                        break oneBlk;
-                    }
-                    else
-                        stripProcessLookup.put(oneProc.processName, oneProc);
-                }
-                retVal = true;
-            } catch (NumberFormatException e) {
-                showError("Error in Number of StripDFHProc");
-                break oneBlk;
-            }
+            retVal = true;
+        } catch (NumberFormatException e1) {
+            showError("Error in Number of StripDFHProc");
         }
+        if (retVal)
+            retVal = dfhProcessList.takeStripProcessListFromXML(xmlStr);
         return retVal;
     }
 
@@ -350,7 +338,8 @@ public class L2DFHeating extends DFHeating {
     }
 
     void addStripDFHProcess() {
-        showMessage("Not ready for Adding to StripDFHProcess!");
+        if (dfhProcessList.addStripDFHProcess())
+            showMessage("Strip DFh Process List updated");
     }
 
     void createFceSetting() {
@@ -509,8 +498,8 @@ public class L2DFHeating extends DFHeating {
     boolean evalForFieldProduction() {   // @TODO incomplete
         mIEvalWithFieldCorrection.setEnabled(true);
         if (l2Furnace.setFieldProductionData() ) {
-            showMessage("Unfreezing Recu Specs");
-            l2Furnace.newRecu();
+            showMessage("Recu Specs maintained as original");
+//            l2Furnace.newRecu();
             l2Furnace.setCurveSmoothening(false);
             calculateFce();
             return true;
@@ -519,7 +508,7 @@ public class L2DFHeating extends DFHeating {
             return false;
     }
 
-    boolean recalculateWithFieldCorrections() {   // @TODO incomplete
+    boolean recalculateWithFieldCorrections() {   //  TODO not complete
         if (l2Furnace.adjustForFieldResults()) {
             calculateFce(false); // without reset the loss Factors
             mIEvalForFieldProduction.setEnabled(false);
@@ -677,7 +666,7 @@ public class L2DFHeating extends DFHeating {
     }
 
     public OneStripDFHProcess getStripDFHProcess(String forProc) {
-        return stripProcessLookup.get(forProc);
+        return dfhProcessList.get(forProc.toUpperCase());
     }
 
     public void resultsReady(Observations observations) {

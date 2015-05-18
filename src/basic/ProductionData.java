@@ -33,7 +33,7 @@ public class ProductionData {
 
     }
 
-    public ProductionData(ProductionData fromProductionData) {  // TODO how different from copyFrom()
+    public ProductionData(ProductionData fromProductionData) {
         this();
         ProductionData fP = fromProductionData;
         charge = new Charge(fromProductionData.charge);

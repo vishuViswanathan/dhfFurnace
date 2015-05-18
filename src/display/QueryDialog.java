@@ -19,7 +19,7 @@ public class QueryDialog extends JDialog {
     JButton ok = new JButton("Ok");
     JButton cancel = new JButton("Cancel");
     boolean updated = false;
-    public QueryDialog(JFrame owner, String name) {
+    public QueryDialog(Frame owner, String name) {
         super(owner, name);
         setModal(true);
         Container container = getContentPane();
@@ -49,18 +49,18 @@ public class QueryDialog extends JDialog {
   }
 
     public void addTextLine(String text) {
-    qp.addTextLine(text);
-  }
+        qp.addTextLine(text);
+    }
 
     public boolean isUpdated() {
-    return updated;
-  }
+        return updated;
+    }
 
     class ButtonListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
-        Object caller = e.getSource();
-        if (caller == ok)
-            updated = true;
+            Object caller = e.getSource();
+            if (caller == ok)
+                updated = true;
             dispose();
         }
     }

@@ -2,7 +2,7 @@ package level2.fieldResults;
 
 import FceElements.heatExchanger.HeatExchProps;
 import basic.*;
-import com.sun.corba.se.spi.ior.TaggedComponentFactoryFinder;
+import directFiredHeating.DFHTuningParams;
 import directFiredHeating.FceSection;
 import level2.*;
 import mvUtils.mvXML.ValAndPos;
@@ -109,7 +109,9 @@ public class FieldResults {
                 production.production = output;
                 production.exitTemp = stripExitT;
                 production.exitZoneFceTemp = topZones[topZones.length - 1].frFceTemp;
-                production.minExitZoneTemp = 850; // TODO minExitZoneTemp is taken as 850
+                production.minExitZoneTemp = stripDFHProc.getMinExitZoneTemp();
+                DFHTuningParams tune = l2Furnace.tuningParams;
+                tune.setPerfTurndownSettings(stripDFHProc.minOutputFactor(), stripDFHProc.minWidthFactor());
                 retVal = true;
             }
             else
@@ -168,7 +170,7 @@ public class FieldResults {
      * the calculated data
      */
 
-    boolean compareResults() {
+    boolean compareResults() {   // TODO Losses in each Zone is adjusted for
         boolean retVal = false;
         // the field data
         if (!inError) {
@@ -186,7 +188,7 @@ public class FieldResults {
         return retVal;
     }
 
-    boolean compareResultsOLD() {
+    boolean compareResultsOLD() {  // @TODO OLD option with uniform correction
         boolean retVal = false;
         // the field data
         if (!inError) {
@@ -196,7 +198,6 @@ public class FieldResults {
             double calculLosses = l2Furnace.totLosses;
             double lossFactor = frTotalLosses / calculLosses;
             FieldZone[] zones = topZones;
-            // @TODO considering uniform loss correction factor now
             for (FieldZone z: zones)
                 z.lossFactor = lossFactor;
             if (l2Furnace.bTopBot) {
