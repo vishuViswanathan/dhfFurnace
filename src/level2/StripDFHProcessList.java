@@ -1,13 +1,13 @@
 package level2;
 
 import basic.ChMaterial;
-import mvUtils.display.EditResponse;
-import mvUtils.display.ErrorStatAndMsg;
-import mvUtils.display.InputControl;
+import mvUtils.display.*;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 
-import java.util.Hashtable;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
 import java.util.Vector;
 
 /**
@@ -22,7 +22,7 @@ public class StripDFHProcessList {
     Vector<ChMaterial> vChMaterial;
     InputControl inpC;
     Vector<OneStripDFHProcess> list;
-
+    StripDFHProcessList me;
     public StripDFHProcessList(L2DFHeating l2DFHeating) {
         this.vChMaterial = l2DFHeating.vChMaterial;
         this.l2DFHeating = l2DFHeating;
@@ -35,17 +35,31 @@ public class StripDFHProcessList {
     }
 
     public boolean addStripDFHProcess() {
-         boolean retVal = false;
-         String processName = "DDQ";
-         OneStripDFHProcess oneDFHProc = new OneStripDFHProcess(processName, vChMaterial, inpC);
-         if (oneDFHProc.getEditResponse() == EditResponse.Response.MODIFIED) {
-             list.add(oneDFHProc);
-             retVal = true;
-         }
-         return retVal;
+        boolean redo = true;
+        OneStripDFHProcess lastSelectedP = null;
+        EditResponse.Response lastResponse = EditResponse.Response.EXIT;
+        do {
+            AddProcessDlg dlg = new AddProcessDlg(this, true);
+            dlg.setLocation(100, 50);
+            if (lastResponse == EditResponse.Response.RESET)
+                dlg.setSelectedP(lastSelectedP);
+            dlg.setVisible(true);
+            lastResponse = dlg.getResponse();
+            if (lastResponse == EditResponse.Response.EXIT)
+                redo = false;
+            lastSelectedP = dlg.getLastSelectedP();
+        } while (redo);
+        return true;
     }
 
-    public OneStripDFHProcess get(String processName) {
+    public boolean viewStripDFHProcess() {
+        AddProcessDlg dlg = new AddProcessDlg(this, false);
+        dlg.setLocation(100, 50);
+        dlg.setVisible(true);
+        return true;
+    }
+
+    public OneStripDFHProcess getDFHProcess(String processName) {
         OneStripDFHProcess oneProcess = null;
         for (OneStripDFHProcess proc: list)
             if (proc.processName.equalsIgnoreCase(processName)) {
@@ -71,7 +85,7 @@ public class StripDFHProcessList {
                 int pNum = Integer.valueOf(vp.val);
                 for (int p = 0; p < pNum; p++) {
                     vp = XMLmv.getTag(xmlStr, "StripP" + ("" + (p + 1)).trim(), vp.endPos);
-                    OneStripDFHProcess oneProc = new OneStripDFHProcess(l2DFHeating, vp.val);
+                    OneStripDFHProcess oneProc = new OneStripDFHProcess(l2DFHeating, this, vp.val);
                     if (oneProc.inError) {
                             l2DFHeating.showError("In reading StripDFHProc: \n" + oneProc.errMeg);
                         retVal = false;
@@ -128,5 +142,165 @@ public class StripDFHProcessList {
             }
         }
         return retVal;
+    }
+
+    ErrorStatAndMsg checkDuplication(OneStripDFHProcess oneProcess, String processName) {
+        ErrorStatAndMsg status = new ErrorStatAndMsg(false, "ERROR: ");
+        if (processName.length() < 2 || processName.substring(0, 1).equals(".")) {
+            status.inError = true;
+            status.msg += "Enter proper process Name";
+        }
+        else {
+            for (OneStripDFHProcess p : list)
+                if ((p != oneProcess) && (p.processName.equalsIgnoreCase(processName))) {
+                    status.inError = true;
+                    status.msg += "This Process " + processName + " already Exists";
+                    break;
+                }
+        }
+        return status;
+    }
+
+    boolean saveOneProcess(OneStripDFHProcess oneProcess) {
+        list.add(oneProcess);
+        return true;
+    }
+
+
+
+    class AddProcessDlg extends JDialog implements DataHandler{
+        boolean bListBeingChanged = false;
+        JComboBox jcbExisting;
+        String enterNew = "...Enter Name";
+        JPanel detailsP;
+//        Vector<ChMaterial> vChMaterial;
+        InputControl ipc;
+        StripDFHProcessList pListManager;
+        OneStripDFHProcess selectedP;
+        DataListEditorPanel editorPanel;
+        boolean editable = false;
+        EditResponse.Response response;
+
+        AddProcessDlg(StripDFHProcessList pListManager, boolean editable) {
+            this.pListManager = pListManager;
+            this.editable = editable;
+            setModal(true);
+            init();
+        }
+
+        void init() {
+            addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    response = EditResponse.Response.EXIT;
+                    super.windowClosing(e);
+                }
+            });
+            JPanel outerP = new JPanel(new BorderLayout());
+            jcbExisting = new JComboBox();
+            populateJcbExisting();
+//            for (OneStripDFHProcess p: list)
+//                jcbExisting.addItem(p.processName);
+//            jcbExisting.addItem(enterNew);
+            jcbExisting.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    if (!bListBeingChanged)
+                        getSelectedProcess();
+                }
+            });
+            outerP.add(jcbExisting, BorderLayout.NORTH);
+            detailsP = new JPanel();
+//            detailsP.setPreferredSize(new Dimension(400, 300));
+            jcbExisting.setSelectedItem(0);
+            getSelectedProcess();
+            outerP.add(detailsP, BorderLayout.CENTER);
+            add(outerP);
+            pack();
+        }
+
+        EditResponse.Response getResponse() {
+            return response;
+        }
+
+
+
+        void populateJcbExisting() {
+            bListBeingChanged = true;
+//            ActionListener[] listeners = jcbExisting.getActionListeners();
+//            if (listeners != null)
+//                for (ActionListener li: listeners)
+//                    jcbExisting.removeActionListener(li);
+            jcbExisting.removeAllItems();
+            for (OneStripDFHProcess p: list)
+                jcbExisting.addItem(p.processName);
+            if (editable)
+                jcbExisting.addItem(enterNew);
+//            if (listeners != null)
+//                for (ActionListener li: listeners)
+//                    jcbExisting.addActionListener(li);
+            bListBeingChanged = false;
+        }
+
+        void setSelectedP(OneStripDFHProcess selectedP) {
+            jcbExisting.setSelectedItem(selectedP.processName);
+        }
+
+        OneStripDFHProcess getLastSelectedP() {
+            return selectedP;
+        }
+
+        void getSelectedProcess() {
+            String pName = (String)jcbExisting.getSelectedItem();
+            boolean bNew = (pName == enterNew);
+            if (bNew)
+                selectedP = new OneStripDFHProcess(pListManager, pName, vChMaterial, inpC);
+            else
+                selectedP = getDFHProcess(pName);
+            detailsP.removeAll();
+            editorPanel = selectedP.getEditPanel(vChMaterial, inpC, this, editable, bNew);
+            detailsP.add(editorPanel);
+            detailsP.updateUI();
+//            pack();
+        }
+
+        public ErrorStatAndMsg checkData() {
+            return selectedP.checkData();
+        }
+
+        public boolean saveData() {
+            boolean itsNew = true;
+            selectedP.noteDataFromUI();
+            for (OneStripDFHProcess p:list)
+                if (p == selectedP) {
+                    itsNew = false;
+                    break;
+                }
+            if (itsNew) {
+                list.add(selectedP);
+                populateJcbExisting();
+                jcbExisting.setSelectedItem(selectedP.processName);
+                response = EditResponse.Response.SAVE;
+            }
+            return itsNew;
+        }
+
+        public void deleteData() {
+            list.remove(selectedP);
+            populateJcbExisting();
+            jcbExisting.setSelectedItem(selectedP.processName);
+            response = EditResponse.Response.DELETE;
+            setVisible(false);
+        }
+
+        public void resetData() {
+            response = EditResponse.Response.RESET;
+            setVisible(false);
+        }
+
+        public void cancel() {
+//            dataDlg.setVisible(false);
+            response = EditResponse.Response.EXIT;
+            setVisible(false);
+        }
     }
 }

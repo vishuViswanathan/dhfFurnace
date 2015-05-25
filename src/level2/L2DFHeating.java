@@ -16,7 +16,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.util.Date;
-import java.util.Hashtable;
 import java.util.Vector;
 
 /**
@@ -36,7 +35,8 @@ public class L2DFHeating extends DFHeating {
 //    Hashtable<String, OneStripDFHProcess> stripProcessLookup;
     static boolean allowL2Changes = false;
     JMenu mL2Configuration;
-    JMenuItem mIAddDFHStripProcess;
+    JMenuItem mIEditDFHStripProcess;
+    JMenuItem mIViewDFHStripProcess;
     JMenuItem mIReadDFHStripProcess;
     JMenuItem mISaveDFHStripProcess;
     JMenuItem mICreateFceSettings;
@@ -101,7 +101,8 @@ public class L2DFHeating extends DFHeating {
             mIReadFceSettings = new JMenuItem("Read Furnace Settings");
             mISaveFceSettings = new JMenuItem("Save Furnace Settings");
 
-            mIAddDFHStripProcess = new JMenuItem("Add to StripDFHProcess List");
+            mIEditDFHStripProcess = new JMenuItem("Edit StripDFHProcess List");
+            mIViewDFHStripProcess = new JMenuItem("View StripDFHProcess List");
             mIReadDFHStripProcess = new JMenuItem("Read StripDFHProcess List from File");
             mISaveDFHStripProcess = new JMenuItem("Save StripDFHProcess List to File");
 
@@ -118,7 +119,8 @@ public class L2DFHeating extends DFHeating {
             mICreateFceSettings.addActionListener(li);
             mIReadFceSettings.addActionListener(li);
             mISaveFceSettings.addActionListener(li);
-            mIAddDFHStripProcess.addActionListener(li);
+            mIViewDFHStripProcess.addActionListener(li);
+            mIEditDFHStripProcess.addActionListener(li);
             mISaveDFHStripProcess.addActionListener(li);
             mIReadDFHStripProcess.addActionListener(li);
             mILevel1FieldResults.addActionListener(li);
@@ -131,7 +133,8 @@ public class L2DFHeating extends DFHeating {
             mL2Configuration.add(mIReadFceSettings);
             mL2Configuration.add(mISaveFceSettings);
             mL2Configuration.addSeparator();
-            mL2Configuration.add(mIAddDFHStripProcess);
+            mL2Configuration.add(mIViewDFHStripProcess);
+            mL2Configuration.add(mIEditDFHStripProcess);
             mL2Configuration.add(mIReadDFHStripProcess);
             mL2Configuration.add(mISaveDFHStripProcess);
             mL2Configuration.addSeparator();
@@ -166,8 +169,10 @@ public class L2DFHeating extends DFHeating {
                 readStripProcessLookup();
             else if (caller == mISaveDFHStripProcess)
                 saveSripProcessLookup();
-            else if (caller == mIAddDFHStripProcess)
-                addStripDFHProcess();
+            else if (caller == mIViewDFHStripProcess)
+                viewStripDFHProcess();
+            else if (caller == mIEditDFHStripProcess)
+                editStripDFHProcess();
             else if (caller == mICreateFceSettings)
                 createFceSetting();
             else if (caller == mIReadFceSettings)
@@ -195,7 +200,8 @@ public class L2DFHeating extends DFHeating {
                 if (forProc == DFHTuningParams.ForProcess.STRIP) {
                     mIReadDFHStripProcess.setVisible(true);
                     mISaveDFHStripProcess.setVisible(true);
-                    mIAddDFHStripProcess.setVisible(true);
+                    mIViewDFHStripProcess.setVisible(true);
+                    mIEditDFHStripProcess.setVisible(true);
                     mICreateFceSettings.setVisible(true);
                     mIReadFceSettings.setVisible(true);
                     mISaveFceSettings.setVisible(true);
@@ -206,7 +212,8 @@ public class L2DFHeating extends DFHeating {
                 } else {
                     mIReadDFHStripProcess.setVisible(false);
                     mISaveDFHStripProcess.setVisible(false);
-                    mIAddDFHStripProcess.setVisible(false);
+                    mIViewDFHStripProcess.setVisible(false);
+                    mIEditDFHStripProcess.setVisible(false);
                     mICreateFceSettings.setVisible(false);
                     mIReadFceSettings.setVisible(false);
                     mISaveFceSettings.setVisible(false);
@@ -222,8 +229,8 @@ public class L2DFHeating extends DFHeating {
 
     void setStripProcessLookup() {
         dfhProcessList.clear();
-        dfhProcessList.addOneDFHProcess(new OneStripDFHProcess(this, "FH", "CR Lo-C emiss 0.32", "CR Lo-C emiss 0.34", 550, 0.00015));
-        dfhProcessList.addOneDFHProcess(new OneStripDFHProcess(this, "CQ", "CR Lo-C emiss 0.32", "CR Lo-C emiss 0.34", 620, 0.0002));
+        dfhProcessList.addOneDFHProcess(new OneStripDFHProcess(this, dfhProcessList, "FH", "CR Lo-C emiss 0.32", "CR Lo-C emiss 0.34", 550, 0.00015));
+        dfhProcessList.addOneDFHProcess(new OneStripDFHProcess(this, dfhProcessList, "CQ", "CR Lo-C emiss 0.32", "CR Lo-C emiss 0.34", 620, 0.0002));
     }
 
     String stripDFHProcessListInXML() {
@@ -337,9 +344,13 @@ public class L2DFHeating extends DFHeating {
         return retVal;
     }
 
-    void addStripDFHProcess() {
+    void editStripDFHProcess() {
         if (dfhProcessList.addStripDFHProcess())
             showMessage("Strip DFh Process List updated");
+    }
+
+    void viewStripDFHProcess() {
+        dfhProcessList.viewStripDFHProcess();
     }
 
     void createFceSetting() {
@@ -666,7 +677,7 @@ public class L2DFHeating extends DFHeating {
     }
 
     public OneStripDFHProcess getStripDFHProcess(String forProc) {
-        return dfhProcessList.get(forProc.toUpperCase());
+        return dfhProcessList.getDFHProcess(forProc.toUpperCase());
     }
 
     public void resultsReady(Observations observations) {
