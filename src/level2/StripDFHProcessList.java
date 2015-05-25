@@ -188,6 +188,7 @@ public class StripDFHProcessList {
             init();
         }
 
+
         void init() {
             addWindowListener(new WindowAdapter() {
                 @Override
