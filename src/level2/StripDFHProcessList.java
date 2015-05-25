@@ -227,18 +227,11 @@ public class StripDFHProcessList {
 
         void populateJcbExisting() {
             bListBeingChanged = true;
-//            ActionListener[] listeners = jcbExisting.getActionListeners();
-//            if (listeners != null)
-//                for (ActionListener li: listeners)
-//                    jcbExisting.removeActionListener(li);
             jcbExisting.removeAllItems();
             for (OneStripDFHProcess p: list)
                 jcbExisting.addItem(p.processName);
             if (editable)
                 jcbExisting.addItem(enterNew);
-//            if (listeners != null)
-//                for (ActionListener li: listeners)
-//                    jcbExisting.addActionListener(li);
             bListBeingChanged = false;
         }
 
