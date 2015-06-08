@@ -1,19 +1,22 @@
 package level2.fieldResults;
 
-import basic.FlowAndTemperature;
-import basic.Fluid;
-import basic.Fuel;
-import basic.FuelFiring;
+import basic.*;
 import directFiredHeating.FceSection;
+import display.SizedLabel;
 import level2.L2DFHFurnace;
 import level2.L2ParamGroup;
 import level2.L2Zone;
 import level2.Tag;
+import mvUtils.display.*;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import performance.stripFce.OneZone;
 
+import javax.swing.*;
+import javax.swing.border.Border;
+import java.awt.*;
 import java.text.DecimalFormat;
+import java.util.Vector;
 
 /**
  * Created by IntelliJ IDEA.
@@ -79,7 +82,7 @@ public class FieldZone {
         double afRatio;
         if (frFuelFlow > 0)
             afRatio = oneZone.getValue(L2ParamGroup.Parameter.AirFlow, Tag.TagName.PV).floatValue /
-                        frFuelFlow;
+                    frFuelFlow;
         else
             afRatio = 1.0;
         setValues(fceTemp, fuelFlow, airTemp, afRatio);
@@ -122,7 +125,6 @@ public class FieldZone {
     }
 
 
-
     public void setValues(double fceTemp, double fuelFlow, double airTemp, double afRatio) {
         this.frFceTemp = fceTemp;
         this.frFuelFlow = fuelFlow;
@@ -155,5 +157,98 @@ public class FieldZone {
 
     public String toString() {
         return " Field Zone - " + zNum;
+    }
+
+    static Dimension colHeadSize = new Dimension(250, 20);
+
+    static Insets headerIns = new Insets(1, 1, 1, 1);
+
+    static class LabelBorder implements Border {
+         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+             g.setColor(Color.LIGHT_GRAY);
+             g.drawRect(x, y, width - 1, height - 1);
+             //To change body of implemented methods use File | Settings | File Templates.
+         }
+
+         public Insets getBorderInsets(Component c) {
+             return headerIns;  //To change body of implemented methods use File | Settings | File Templates.
+         }
+
+         public boolean isBorderOpaque() {
+             return false;  //To change body of implemented methods use File | Settings | File Templates.
+         }
+    }
+
+    static JLabel sizedLabel(String name, Dimension d) {
+        JLabel lab = new JLabel(name);
+        lab.setPreferredSize(d);
+        lab.setBorder(new LabelBorder());
+        return lab;
+    }
+
+    public static JPanel getRowHeader() {
+        JPanel rowHead = new FramedPanel(new GridBagLayout());
+        GridBagConstraints gbcHeader = new GridBagConstraints();
+        gbcHeader.gridx = 0;
+        gbcHeader.gridy = 0;
+        rowHead.add(sizedLabel("Zone Number", colHeadSize), gbcHeader);
+        gbcHeader.gridy++;
+        rowHead.add(sizedLabel("Zone Temperature i (C)", colHeadSize), gbcHeader);
+        gbcHeader.gridy++;
+        rowHead.add(sizedLabel("Fuel flow (#/h)", colHeadSize), gbcHeader);
+        gbcHeader.gridy++;
+        rowHead.add(sizedLabel("Air Temperature (C)", colHeadSize), gbcHeader);
+        gbcHeader.gridy++;
+        rowHead.add(sizedLabel("\"Air Fuel Ratio (relative to Stoichiometric)", colHeadSize), gbcHeader);
+        gbcHeader.gridy++;
+        return rowHead;
+     }
+
+
+    NumberTextField ntFrFceTemp;
+    NumberTextField ntFrFuelFlow;
+    NumberTextField ntFrAirTemp;
+    NumberTextField ntFrAfRatio;
+    boolean panelInitiated = false;
+
+    JPanel dataPanel(InputControl ipc, boolean bEditable) {
+        ntFrFceTemp = new NumberTextField(ipc, frFceTemp, 6, false, 200, 2000, "#,###", "Furnace Temperature (C)");
+        ntFrFuelFlow = new NumberTextField(ipc, frFuelFlow, 6, false, 0, 20000, "#,###.00", "Fuel Flow (#/h");
+        ntFrAirTemp = new NumberTextField(ipc, frAirTemp, 6, false, 0, 2000, "#,###", "Air Temperature (C)");
+        ntFrAfRatio = new NumberTextField(ipc, frAfRatio, 6, false, 0, 100, "#,###.00", "Air Fuel Ratio (relative to Stoichiometric)");
+        JPanel detailsPanel = new FramedPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        detailsPanel.add(new TextLabel("#" + ("" + zNum).trim(), true), gbc);
+        gbc.gridy++;
+        detailsPanel.add(ntFrFceTemp, gbc);
+        gbc.gridy++;
+        detailsPanel.add(ntFrFuelFlow, gbc);
+        gbc.gridy++;
+        detailsPanel.add(ntFrAirTemp, gbc);
+        gbc.gridy++;
+        detailsPanel.add(ntFrAfRatio, gbc);
+        if (!bEditable)
+            for (Component c: detailsPanel.getComponents())
+                c.setEnabled(false);
+        panelInitiated = true;
+        return detailsPanel;
+    }
+
+    ErrorStatAndMsg takeDataFromUI() {
+        if (panelInitiated) {
+            if (ntFrFceTemp.inError || ntFrFuelFlow.inError || ntFrAirTemp.inError || ntFrAfRatio.inError)
+                return new ErrorStatAndMsg(true, "Data out of range for Zone " + ("" + zNum).trim());
+            else {
+                frFceTemp = ntFrFceTemp.getData();
+                frFuelFlow = ntFrFuelFlow.getData();
+                frAirTemp = ntFrAirTemp.getData();
+                frAfRatio = ntFrAfRatio.getData();
+                return new ErrorStatAndMsg(false, "");
+            }
+        } else
+            return new ErrorStatAndMsg(true, "Data Panel is not initiated for Zone "  + ("" + zNum).trim());
+
     }
 }

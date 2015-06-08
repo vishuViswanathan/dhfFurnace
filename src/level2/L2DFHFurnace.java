@@ -81,6 +81,10 @@ public class L2DFHFurnace extends DFHFurnace {
         return true;
     }
 
+    public boolean showEditFceSettings(boolean bEdit) {
+        return furnaceSettings.showEditData(bEdit);
+    }
+
     boolean createStripParam() {
         boolean retVal = false;
         String location = "";
@@ -323,6 +327,10 @@ public class L2DFHFurnace extends DFHFurnace {
         FieldResults fieldResults = new FieldResults(this);
         fieldResults.takeFromCalculations();
         return fieldResults;
+    }
+
+    boolean getFieldDataFromUser() {
+        return oneFieldResults.getDataFromUser();
     }
 
     public FceSection getOneSection(boolean bBot, int nSec) {

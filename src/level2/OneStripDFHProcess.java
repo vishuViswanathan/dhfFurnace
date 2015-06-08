@@ -294,7 +294,8 @@ public class OneStripDFHProcess {
         ntMinWidth = new NumberTextField(inpC, minWidth * 1000, 6, false, 200, 5000,
                 "#,##0", "Minimum Strip Width (mm)");
 
-        DataListEditorPanel editorPanel = new DataListEditorPanel("Strip Process Data", dataHandler, editable);
+        DataListEditorPanel editorPanel = new DataListEditorPanel("Strip Process Data", dataHandler, editable, editable);
+                                                        // if editable, it is also deletable
         editorPanel.addItemPair(tfProcessName);
         editorPanel.addBlank();
         editorPanel.addItemPair(cbChMaterialThin);

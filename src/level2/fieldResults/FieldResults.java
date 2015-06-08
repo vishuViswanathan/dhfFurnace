@@ -5,10 +5,15 @@ import basic.*;
 import directFiredHeating.DFHTuningParams;
 import directFiredHeating.FceSection;
 import level2.*;
+import mvUtils.display.*;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import performance.stripFce.OneZone;
 
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.text.DecimalFormat;
 
 /**
@@ -113,12 +118,10 @@ public class FieldResults {
                 DFHTuningParams tune = l2Furnace.tuningParams;
                 tune.setPerfTurndownSettings(stripDFHProc.minOutputFactor(), stripDFHProc.minWidthFactor());
                 retVal = true;
-            }
-            else
+            } else
                 l2Furnace.l2DFHeating.showError("Could not ascertain Charge Material for " +
                         forProcess + " with strip Thickness " + thick);
-        }
-        else
+        } else
             l2Furnace.l2DFHeating.showError("Could not ascertain Process data " + forProcess);
         return retVal;
     }
@@ -155,7 +158,7 @@ public class FieldResults {
         return retVal;
     }
 
-    public void setCommonData(double flueTempOut, double airTemp,  double fuelTemp) {
+    public void setCommonData(double flueTempOut, double airTemp, double fuelTemp) {
         this.flueTempOut = flueTempOut;
         this.commonAirTemp = airTemp;
         this.commonFuelTemp = fuelTemp;
@@ -198,7 +201,7 @@ public class FieldResults {
             double calculLosses = l2Furnace.totLosses;
             double lossFactor = frTotalLosses / calculLosses;
             FieldZone[] zones = topZones;
-            for (FieldZone z: zones)
+            for (FieldZone z : zones)
                 z.lossFactor = lossFactor;
             if (l2Furnace.bTopBot) {
                 zones = botZones;
@@ -211,15 +214,15 @@ public class FieldResults {
     }
 
 
-
     /**
      * Make necessary corrections in calculation based on field results
+     *
      * @return
      */
     public boolean adjustForFieldResults() {
         if (compareResults()) {
             FieldZone[] zones = topZones;
-            for (FieldZone z: zones)
+            for (FieldZone z : zones)
                 z.sec.setLossFactor(z.lossFactor);
             if (l2Furnace.bTopBot) {
                 zones = botZones;
@@ -227,15 +230,15 @@ public class FieldResults {
                     z.sec.setLossFactor(z.lossFactor);
             }
             return true;
-        }
-        else
+        } else
             return false;
     }
 
     public boolean takeFromXML(String xmlStr) {
         boolean bRetVal = true;
         ValAndPos vp;
-        blk:   {
+        blk:
+        {
             vp = XMLmv.getTag(xmlStr, "productionData", 0);
             production = new ProductionData(l2Furnace.controller, vp.val);
             if (production.inError) {
@@ -286,7 +289,7 @@ public class FieldResults {
                             }
                         }
                     }
-                } catch(NumberFormatException e){
+                } catch (NumberFormatException e) {
                     errMsg += "in Reading XML";
                     bRetVal = false;
                 }
@@ -330,10 +333,10 @@ public class FieldResults {
         return xmlStr;
     }
 
-    double totFuel(boolean bBot)  {
+    double totFuel(boolean bBot) {
         double totFuel = 0;
         FieldZone[] zones = getZones(bBot);
-        for (FieldZone oneZone: zones)
+        for (FieldZone oneZone : zones)
             totFuel += oneZone.frFuelFlow;
         return totFuel;
     }
@@ -355,12 +358,168 @@ public class FieldResults {
                     break;
                 }
             }
-        }
-        else {
+        } else {
             inError = true;
             errMsg += "Number of " + ((bBot) ? "Bottom" : "Top") + " zones does not match";
             retVal = false;
         }
         return retVal;
     }
+
+    public boolean getDataFromUser() {
+        FieldResultsDlg dlg = new FieldResultsDlg(true);
+        dlg.setLocation(10, 50);
+        dlg.setVisible(true);
+        return true;
+    }
+
+    class FieldResultsDlg extends JDialog {
+        DFHTuningParams.ForProcess proc;
+        InputControl ipc;
+        DataListEditorPanel editorPanel;
+        boolean editable = false;
+        EditResponse.Response response;
+        JComboBox<ChMaterial> cbChMaterial;
+        NumberTextField ntChWidth;
+        NumberTextField ntChLength;
+        NumberTextField ntChThickness;
+        NumberTextField ntChDia;
+        JComboBox<Charge.ChType> cbChType;
+        NumberTextField ntBottomShadow;
+        NumberTextField ntChPitch;
+
+        NumberTextField ntProduction;
+        NumberTextField ntEntryTemp;
+        NumberTextField ntExitTemp;
+        NumberTextField ntDeltaTemp;
+        NumberTextField ntChRows;
+
+        NumberTextField ntDischZoneFceTemp;
+        NumberTextField ntMinDischZoneTemp;
+
+        JComboBox<Fuel> cbFuel;
+        NumberTextField ntExcessAir;
+        NumberTextField ntAirTemp;
+        NumberTextField ntFuelTemp;
+        JCheckBox chkRegenBurner;
+
+        NumberTextField ntFlueTempOut;
+        NumberTextField ntCommonAirTemp;
+        NumberTextField ntCommonFuelTemp;
+
+        JCheckBox chkTopBot;
+
+        JCheckBox chkCounterFlow;
+        NumberTextField ntHeatingFlowBase;
+        NumberTextField ntHeatedFlowBase;
+        NumberTextField ntHeatingTinBase;
+        NumberTextField ntHeatingToutBase;
+        NumberTextField ntHeatedTinBase;
+        NumberTextField ntHeatedToutBase;
+        NumberTextField ntFFBase;
+        NumberTextField ntHTaBase;
+
+        int nZones;
+
+        FieldResultsDlg(boolean editable) {
+            this.editable = editable;
+            setModal(true);
+            proc = l2Furnace.l2DFHeating.proc;
+            init();
+        }
+
+
+        void init() {
+            JPanel outerP = new FramedPanel(new GridBagLayout());
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.gridx = 0;
+            gbc.gridy = 0;
+            outerP.add(chargePanel(), gbc);
+            gbc.gridx++;
+            outerP.add(chInFcePanel(), gbc);
+
+            gbc.gridy++;
+            gbc.gridx = 0;
+            gbc.gridwidth = 3;
+            JPanel zonalP = new FramedPanel();
+            zonalP.add(FieldZone.getRowHeader());
+            for (FieldZone z : topZones)
+                zonalP.add(z.dataPanel(ipc, editable));
+            outerP.add(zonalP, gbc);
+            add(outerP);
+            pack();
+        }
+
+        public void setVisible(boolean ena) {
+            if (ena && (proc != DFHTuningParams.ForProcess.STRIP))
+                l2Furnace.l2DFHeating.showError("This is available only for STRIP Furnace at the moment");
+            else
+                super.setVisible(ena);
+        }
+
+        JPanel chargePanel() {
+            JPanel outerP = new FramedPanel();
+            MultiPairColPanel mp = new MultiPairColPanel("Charge Details");
+            cbChMaterial = new JComboBox<ChMaterial>(l2Furnace.l2DFHeating.vChMaterial);
+            Charge ch = production.charge;
+            ntChLength = new NumberTextField(ipc,ch.getLength() * 1000, 6, false, 300, 6000, "#,###", "Strip Width (mm)");
+//            NumberTextField ntChLength;
+            ntChThickness =new NumberTextField(ipc,ch.getHeight() * 1000, 6, false, 0.05, 50, "#,###.00", "Strip Thickness (mm)");
+//            NumberTextField ntChDia;
+//            JComboBox<Charge.ChType> cbChType;
+            mp.addItemPair(cbChMaterial);
+            mp.addItemPair(ntChLength);
+            mp.addItemPair(ntChThickness);
+            outerP.add(mp);
+            return outerP;
+        }
+
+        JPanel chInFcePanel() {
+            JPanel outerP = new FramedPanel();
+            MultiPairColPanel mp = new MultiPairColPanel("Charge In Furnace");
+//            NumberTextField ntBottomShadow;
+//            NumberTextField ntChPitch;
+
+            ntProduction = new NumberTextField(ipc, production.production / 1000, 6, false, 0.5, 500, "#,###.00", "Production (t/h)");
+            ntEntryTemp = new NumberTextField(ipc, production.entryTemp, 6, false, 0, 1000, "#,###", "Strip Entry Temperature (C)");
+            ntExitTemp = new NumberTextField(ipc, production.exitTemp, 6, false, 200, 1500, "#,###", "Strip Exit temperature (C)");
+//            NumberTextField ntDeltaTemp;
+//            NumberTextField ntChRows;
+
+            ntDischZoneFceTemp = new NumberTextField(ipc, production.exitZoneFceTemp, 6, false, 300, 2000, "#,###", "Exit Zone Furnace Temperature (C)");
+            ntMinDischZoneTemp = new NumberTextField(ipc, production.minExitZoneTemp, 6, false, 300, 2000, "#,###", "Minimum Exit Zone Temperature (C)");
+            mp.addItemPair(ntProduction);
+            mp.addBlank();
+            mp.addItemPair(ntEntryTemp);
+            mp.addItemPair(ntExitTemp);
+            mp.addBlank();
+            mp.addItemPair(ntDischZoneFceTemp);
+            mp.addItemPair(ntMinDischZoneTemp);
+            outerP.add(mp);
+            return outerP;
+        }
+
+        EditResponse.Response getResponse() {
+            return response;
+        }
+
+        public ErrorStatAndMsg checkData() {
+            return new ErrorStatAndMsg(true, "Not Ready ro check");
+        }
+
+        ErrorStatAndMsg checkZoneData(int zNum) {
+            return new ErrorStatAndMsg(true, "Not Ready to check Zonal");
+        }
+
+        public boolean saveData() {
+            return false;
+        }
+
+        public void deleteData() {
+        }
+
+        public void cancel() {
+        }
+    }
+
 }

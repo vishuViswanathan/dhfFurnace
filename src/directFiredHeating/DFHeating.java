@@ -147,7 +147,7 @@ public class DFHeating extends JApplet implements InputControl {
     FuelFiring commFuelFiring;
     String nlSpace = ErrorStatAndMsg.nlSpace;
     Hashtable<DFHResult.Type, ResultPanel> resultPanels, printPanels;
-    protected DFHTuningParams.ForProcess proc = DFHTuningParams.ForProcess.BILLETS;
+    public DFHTuningParams.ForProcess proc = DFHTuningParams.ForProcess.BILLETS;
     protected DFHTuningParams tuningParams;
     JTextField tfReference, tfFceTitle, tfCustomer;
     NumberTextField ntfWidth;

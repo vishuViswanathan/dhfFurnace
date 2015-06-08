@@ -53,10 +53,16 @@ public class StripDFHProcessList {
     }
 
     public boolean viewStripDFHProcess() {
-        AddProcessDlg dlg = new AddProcessDlg(this, false);
-        dlg.setLocation(100, 50);
-        dlg.setVisible(true);
-        return true;
+        if (list.size() > 0) {
+            AddProcessDlg dlg = new AddProcessDlg(this, false);
+            dlg.setLocation(100, 50);
+            dlg.setVisible(true);
+            return true;
+        }
+        else {
+            l2DFHeating.showError("DFH process data list is empty.\n       Try Adding Process");
+            return false;
+        }
     }
 
     public OneStripDFHProcess getDFHProcess(String processName) {

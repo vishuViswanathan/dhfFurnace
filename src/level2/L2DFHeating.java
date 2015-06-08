@@ -43,9 +43,11 @@ public class L2DFHeating extends DFHeating {
     JMenuItem mISaveFceSettings;
     JMenuItem mIReadFceSettings;
 
+    JMenuItem mICreateFieldResultsData;
+    JMenuItem mISaveFieldResultsToFile;
     JMenuItem mILoadFieldResult;
     JMenuItem mILevel1FieldResults;
-    JMenuItem mISaveFieldResult;
+    JMenuItem mISaveAsFieldResult;
 
     JMenuItem mIEvalForFieldProduction;
     JMenuItem mIEvalWithFieldCorrection;
@@ -97,19 +99,21 @@ public class L2DFHeating extends DFHeating {
         enableDataEdit();
         if (allowL2Changes) {
             mL2Configuration = new JMenu("L2 Config");
-            mICreateFceSettings = new JMenuItem("Create Furnace Settings");
-            mIReadFceSettings = new JMenuItem("Read Furnace Settings");
-            mISaveFceSettings = new JMenuItem("Save Furnace Settings");
+            mICreateFceSettings = new JMenuItem("View/Edit Furnace Settings");
+            mIReadFceSettings = new JMenuItem("Read Furnace Settings from file");
+            mISaveFceSettings = new JMenuItem("Save Furnace Settings to file");
 
-            mIEditDFHStripProcess = new JMenuItem("Edit StripDFHProcess List");
+            mIEditDFHStripProcess = new JMenuItem("Add/Edit StripDFHProcess List");
             mIViewDFHStripProcess = new JMenuItem("View StripDFHProcess List");
             mIReadDFHStripProcess = new JMenuItem("Read StripDFHProcess List from File");
             mISaveDFHStripProcess = new JMenuItem("Save StripDFHProcess List to File");
 
+            mICreateFieldResultsData = new JMenuItem("Enter Field Results Data");
+            mISaveFieldResultsToFile = new JMenuItem("Save Field Results to file");
             mILevel1FieldResults = new JMenuItem("Take Results From Level1");
             mILoadFieldResult = new JMenuItem("Load Field Results from File");
-            mISaveFieldResult = new JMenuItem("Save As Field Results");
-            mISaveFieldResult.setEnabled(false);
+            mISaveAsFieldResult = new JMenuItem("Save As Field Results");
+            mISaveAsFieldResult.setEnabled(false);
             mIEvalForFieldProduction = new JMenuItem("Calculate for Field Production");
             mIEvalForFieldProduction.setEnabled(false);
             mIEvalWithFieldCorrection = new JMenuItem("Re-Calculate With Field Corrections");
@@ -123,9 +127,11 @@ public class L2DFHeating extends DFHeating {
             mIEditDFHStripProcess.addActionListener(li);
             mISaveDFHStripProcess.addActionListener(li);
             mIReadDFHStripProcess.addActionListener(li);
+            mICreateFieldResultsData.addActionListener(li);
+            mISaveFieldResultsToFile.addActionListener(li);
             mILevel1FieldResults.addActionListener(li);
             mILoadFieldResult.addActionListener(li);
-            mISaveFieldResult.addActionListener(li);
+            mISaveAsFieldResult.addActionListener(li);
             mIEvalForFieldProduction.addActionListener(li);
             mIEvalWithFieldCorrection.addActionListener(li);
 
@@ -138,12 +144,15 @@ public class L2DFHeating extends DFHeating {
             mL2Configuration.add(mIReadDFHStripProcess);
             mL2Configuration.add(mISaveDFHStripProcess);
             mL2Configuration.addSeparator();
+            mL2Configuration.add(mICreateFieldResultsData);
+            mL2Configuration.add(mISaveFieldResultsToFile);
+            mL2Configuration.addSeparator();
             mL2Configuration.add(mILevel1FieldResults);
             mL2Configuration.add(mILoadFieldResult);
             mL2Configuration.add(mIEvalForFieldProduction);
             mL2Configuration.add(mIEvalWithFieldCorrection);
             mL2Configuration.addSeparator();
-            mL2Configuration.add(mISaveFieldResult);
+            mL2Configuration.add(mISaveAsFieldResult);
             mL2Configuration.setEnabled(true);
 
 
@@ -179,7 +188,11 @@ public class L2DFHeating extends DFHeating {
                 readFurnaceSettings();
             else if (caller == mISaveFceSettings)
                 saveFurnaceSettings();
-            else if (caller == mISaveFieldResult)
+            else if (caller == mICreateFieldResultsData)
+                takeFieldResultsFromUser();
+            else if (caller == mISaveFieldResultsToFile)
+                saveFieldResultsToFile();
+            else if (caller == mISaveAsFieldResult)
                 saveAsFieldResults();
             else if (caller == mILevel1FieldResults)
                 takeResultsFromLevel1();
@@ -205,7 +218,7 @@ public class L2DFHeating extends DFHeating {
                     mICreateFceSettings.setVisible(true);
                     mIReadFceSettings.setVisible(true);
                     mISaveFceSettings.setVisible(true);
-                    mISaveFieldResult.setVisible(true);
+                    mISaveAsFieldResult.setVisible(true);
                     mILoadFieldResult.setVisible(true);
                     mIEvalForFieldProduction.setVisible(true);
                     mIEvalWithFieldCorrection.setVisible(true);
@@ -217,7 +230,7 @@ public class L2DFHeating extends DFHeating {
                     mICreateFceSettings.setVisible(false);
                     mIReadFceSettings.setVisible(false);
                     mISaveFceSettings.setVisible(false);
-                    mISaveFieldResult.setVisible(false);
+                    mISaveAsFieldResult.setVisible(false);
                     mILoadFieldResult.setVisible(false);
                     mIEvalForFieldProduction.setVisible(false);
                     mIEvalWithFieldCorrection.setVisible(false);
@@ -354,7 +367,7 @@ public class L2DFHeating extends DFHeating {
     }
 
     void createFceSetting() {
-        showMessage("Not ready for Creating Furnace Settings!");
+        l2Furnace.showEditFceSettings(true);
     }
 
     boolean saveFurnaceSettings() {
@@ -438,6 +451,10 @@ public class L2DFHeating extends DFHeating {
             }
         }
         return retVal;
+    }
+
+    boolean takeFieldResultsFromUser() {
+        return l2Furnace.getFieldDataFromUser();
     }
 
     boolean takeResultsFromLevel1()  {
@@ -552,6 +569,11 @@ public class L2DFHeating extends DFHeating {
             showError("Some Problem in getting file!");
         }
         return retVal;
+    }
+
+    boolean saveFieldResultsToFile() {
+        showError("Not ready toSave Field Results to file yet") ;
+        return false;
     }
 
     boolean saveAsFieldResults() {
@@ -684,14 +706,14 @@ public class L2DFHeating extends DFHeating {
         super.resultsReady(observations);
         l2Furnace.setCurveSmoothening(true);
         if (proc == DFHTuningParams.ForProcess.STRIP) {
-            mISaveFieldResult.setEnabled(true);
+            mISaveAsFieldResult.setEnabled(true);
         }
     }
 
     protected void enableResultsMenu(boolean enable) {
         super.enableResultsMenu(enable);
         if (l2MenuSet) {
-            mISaveFieldResult.setEnabled(enable);
+            mISaveAsFieldResult.setEnabled(enable);
         }
     }
 
