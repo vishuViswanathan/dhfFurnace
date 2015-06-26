@@ -71,7 +71,7 @@ public class L2DFHeating extends DFHeating {
         setUIDefaults();
         mainF = new JFrame();
         mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        if (log == null) {
+        if (!asJNLP && (log == null)) {
             log = Logger.getLogger(DFHeating.class);
             // Load Log4j configurations from external file
         }

@@ -3,6 +3,7 @@ package directFiredHeating;
 import FceElements.RegenBurner;
 import basic.*;
 import display.*;
+import jnlp.JNLPFileHandler;
 import mvUtils.display.*;
 import mvUtils.mvXML.DoubleWithErrStat;
 import mvUtils.mvXML.ValAndPos;
@@ -18,6 +19,7 @@ import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.ss.usermodel.*;
 import performance.stripFce.Performance;
 
+import javax.jnlp.FileContents;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.PageRanges;
@@ -37,6 +39,7 @@ import java.io.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.logging.FileHandler;
 
 
 /**
@@ -54,6 +57,7 @@ public class DFHeating extends JApplet implements InputControl {
         ALLOWSPECSSAVE("-allowSpecsSave"),
         ALLOWSPECSREAD("-allowSpecsRead"),
         NOTLEVEL2("-notLevel2"),
+        JNLP("-asJNLP"),
         DEBUGMSG("-withDebugMessages");
         private final String argName;
 
@@ -161,6 +165,7 @@ public class DFHeating extends JApplet implements InputControl {
     RegenBurner regenBurnerStudy;
     Locale locale;
     public boolean asApplication = false;
+    public static boolean asJNLP = false;
     boolean bDataEntryON = true;
     JScrollPane slate = new JScrollPane();
     JPanel opPage;
@@ -297,7 +302,7 @@ public class DFHeating extends JApplet implements InputControl {
             else
                 mainF.setTitle("DFH Furnace " + releaseDate);
         } else {
-            if (log == null) {
+            if (!asJNLP && log == null) {
                 log = Logger.getLogger(DFHeating.class);
                 // Load Log4j configurations from external file
             }
@@ -452,7 +457,7 @@ public class DFHeating extends JApplet implements InputControl {
         furnace.setSectionType(true, 2, false);
         furnace.changeSubSecData(true, 3, 0, 7, 2, 2, 0);
         furnace.setSectionType(true, 3, false);
-        if (asApplication) {
+        if (asApplication && !asJNLP) {
             fuelSpecsFromFile("defData\\FuelSpecifications.dfhSpecs");
             chMaterialSpecsFromFile("defData\\ChMaterialSpecifications.dfhSpecs");
         }
@@ -2918,44 +2923,97 @@ public class DFHeating extends JApplet implements InputControl {
     }
 
     void saveFceToFile(boolean withPerformance) {
-        takeValuesFromUI();
+        if (asJNLP)
+            saveFceToFileJNLP(withPerformance);
+        else {
+            takeValuesFromUI();
 //        String xmlData = dataInXML(withPerformance);
-        String title = "Save DFH Furnace Data" + ((withPerformance)? " (with Performance Data)" : "");
-        FileDialog fileDlg =
-                new FileDialog(mainF, title,
-                        FileDialog.SAVE);
-        fileDlg.setFile("*.dfhDat");
-        fileDlg.setVisible(true);
+            String title = "Save DFH Furnace Data" + ((withPerformance) ? " (with Performance Data)" : "");
+            FileDialog fileDlg =
+                    new FileDialog(mainF, title,
+                            FileDialog.SAVE);
+            fileDlg.setFile("*.dfhDat");
+            fileDlg.setVisible(true);
 
-        String bareFile = fileDlg.getFile();
-        if (!(bareFile == null)) {
-            int len = bareFile.length();
-            if ((len < 8) || !(bareFile.substring(len - 7).equalsIgnoreCase(".dfhDat"))) {
-                showMessage("Adding '.dfhDat' to file name");
-                bareFile = bareFile + ".dfhDat";
-            }
-            String fileName = fileDlg.getDirectory() + bareFile;
-            debug("Save Data file name :" + fileName);
-            File f = new File(fileName);
-            boolean goAhead = true;
-            if (goAhead) {
-                try {
-                    BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(fileName));
-                    oStream.write(inputDataXML(withPerformance).getBytes());
-                    oStream.close();
-                    if (withPerformance)
-                        furnace.performaceIsSaved();
-                } catch (FileNotFoundException e) {
-                    showError("File " + fileName + " NOT found!");
-                } catch (IOException e) {
-                    showError("Some IO Error in writing to file " + fileName + "!");
+            String bareFile = fileDlg.getFile();
+            if (!(bareFile == null)) {
+                int len = bareFile.length();
+                if ((len < 8) || !(bareFile.substring(len - 7).equalsIgnoreCase(".dfhDat"))) {
+                    showMessage("Adding '.dfhDat' to file name");
+                    bareFile = bareFile + ".dfhDat";
+                }
+                String fileName = fileDlg.getDirectory() + bareFile;
+                debug("Save Data file name :" + fileName);
+                File f = new File(fileName);
+                boolean goAhead = true;
+                if (goAhead) {
+                    try {
+                        BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(fileName));
+                        oStream.write(inputDataXML(withPerformance).getBytes());
+                        oStream.close();
+                        if (withPerformance)
+                            furnace.performaceIsSaved();
+                    } catch (FileNotFoundException e) {
+                        showError("File " + fileName + " NOT found!");
+                    } catch (IOException e) {
+                        showError("Some IO Error in writing to file " + fileName + "!");
+                    }
                 }
             }
+            parent().toFront();
         }
+    }
+
+    void saveFceToFileJNLP(boolean withPerformance) {
+        takeValuesFromUI();
+        if (!JNLPFileHandler.saveToFile(inputDataXML(withPerformance), "dfhDat"))
+            showError("Some IO Error in writing to file!");
         parent().toFront();
     }
 
+    boolean getFceFromFileJNLP() {
+        disableCompare();
+        boolean bRetVal = false;
+        furnace.resetSections();
+        try {
+            FileContents fc = JNLPFileHandler.getReadFile(null, new String[]{"dfhDat", "xls"}, 0, 0);
+            if (fc != null) {
+                String fileName = fc.getName();
+                boolean bXL = (fileName.length() > 4) && (fileName.substring(fileName.length() - 4).equalsIgnoreCase(".xls"));
+                setResultsReady(false);
+                setItFromTFM(false);
+                furnace.resetLossAssignment();
+                hidePerformMenu();
+                debug("Data file name :" + fileName);
+                if (bXL) {
+                    String fceData = fceDataFromXL(fc);
+                    if (checkVersion(fceData)) {
+                        String msg = takeDataFromXML(fceData);
+                        if ((msg.equals("OK"))) {
+                            bRetVal = true;
+                            parent().toFront();
+                            if (!onProductionLine)
+                                showMessage("Fuel and Charge Material to be Selected/Checked before Calculation.");
+                        } else
+                            showError("in Furnace Data from XL file!\n" + msg);
+                    } else
+                        showError("This file does not contain proper DFHFurnace data!");
+                }
+                else {
+                    bRetVal = getFceFromFceDatFile(fc);
+                }
+            }
+        } catch (IOException e) {
+            showError("facing some problem in reading data : " + e.getMessage());
+            e.printStackTrace();
+        }
+        switchPage(InputType.INPUTPAGE);
+        return bRetVal;
+    }
+
     boolean getFceFromFile() {
+        if (asJNLP)
+            return getFceFromFileJNLP();
         disableCompare();
         boolean bRetVal = false;
         furnace.resetSections();
@@ -3073,6 +3131,35 @@ public class DFHeating extends JApplet implements InputControl {
         }
      }
 
+    protected boolean getFceFromFceDatFile(FileContents fc) {
+        boolean bRetVal = false;
+        try {
+            long len = fc.getLength();
+            if (len > 1300 && len < 10e6) {
+                String header = JNLPFileHandler.readFile(fc, 200);
+                if (checkVersion(header)) {
+                    String fceData = JNLPFileHandler.readFile(fc);
+                    if (fceData != null) {
+                        String stat = takeDataFromXML(fceData);
+                        if (stat.equals("OK")) {
+                            bRetVal = true;
+                            parent().toFront();
+                            if (!onProductionLine)
+                                showMessage("Fuel and Charge Material to be Selected/Checked before Calculation.");
+                        } else
+                            showError(stat);
+                    }
+                } else
+                    showError("This not a proper DFHFurnace data file!");
+            } else
+                showError("File size " + len + " for " + fc.getName());
+        } catch (Exception e) {
+            showError("Some Problem in getting file!");
+        }
+        return bRetVal;
+    }
+
+
     protected boolean getFceFromFceDatFile(String filePath) {
         boolean bRetVal = false;
         try {
@@ -3109,6 +3196,46 @@ public class DFHeating extends JApplet implements InputControl {
     void setItFromTFM(boolean bYes) {
         beamParamTFM.setEnabled(bYes);
         lossParamTFM.setEnabled(bYes);
+    }
+
+    String fceDataFromXL(FileContents fc) {
+        String data = "";
+        try {
+            InputStream xlInput = fc.getInputStream();
+            POIFSFileSystem xlFileSystem = new POIFSFileSystem(xlInput);
+
+            /** Create a workbook using the File System**/
+            HSSFWorkbook wB = new HSSFWorkbook(xlFileSystem);
+
+            /** Get the first sheet from workbook**/
+            HSSFSheet sh = wB.getSheet("Furnace Profile");
+            if (sh != null) {
+                Row r = sh.getRow(0);
+                Cell cell = r.getCell(0);
+                if (cell.getCellType() == Cell.CELL_TYPE_STRING) {
+                    if (cell.getStringCellValue().equals("mv7414")) {
+                        r = sh.getRow(1);
+                        cell = r.getCell(0);
+                        if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC)  { // data is multi column
+                            int nCols = (int)cell.getNumericCellValue();
+                            for (int c = 1; c <= nCols; c++) {
+                                cell = r.getCell(c);
+                                if (cell.getCellType() == Cell.CELL_TYPE_STRING)
+                                    data += cell.getStringCellValue();
+                            }
+                        }
+                        else {         // kept for backward compatibility
+                            if (cell.getCellType() == Cell.CELL_TYPE_STRING)
+                                data = cell.getStringCellValue();
+                        }
+                    }
+                }
+            }
+            xlInput.close();
+        } catch (Exception e) {
+            showError("Error in DFHEating:fceDataFromXL >" + e.getMessage());
+        }
+        return data;
     }
 
     String fceDataFromXL(String filePath) {
@@ -3436,6 +3563,109 @@ public class DFHeating extends JApplet implements InputControl {
     }
 
     void excelResultsFile() {
+        //  create a new workbook
+        Workbook wb = new HSSFWorkbook();
+        int nSheet = 0;
+        //  create a new sheet
+        ExcelStyles styles = new ExcelStyles(wb);
+        wb.createSheet("Basic Data");
+        xlFceBasicData(wb.getSheetAt(nSheet), styles);
+        nSheet++;
+        wb.createSheet("Heat Summary");
+        furnace.xlHeatSummary(wb.getSheetAt(nSheet), styles);
+        nSheet++;
+        wb.createSheet(furnace.topBotName(false) + "Sec Summary");
+        furnace.xlSecSummary(wb.getSheetAt(nSheet), styles, false);
+        if (furnace.bTopBot) {
+            nSheet++;
+            wb.createSheet("Bot Sec Summary");
+            furnace.xlSecSummary(wb.getSheetAt(nSheet), styles, true);
+        }
+        nSheet++;
+        wb.createSheet("Loss Details");
+        furnace.xlLossDetails(wb.getSheetAt(nSheet), styles);
+
+        nSheet++;
+        if (bAirHeatedByRecu || bFuelHeatedByRecu) {
+            wb.createSheet("Recu Balance");
+            furnace.xlRecuSummary(wb.getSheetAt(nSheet), styles);
+            nSheet++;
+        }
+        wb.createSheet("Furnace Fuel Summary");
+        furnace.xlFuelSummary(wb.getSheetAt(nSheet), styles);
+        nSheet++;
+        wb.createSheet(furnace.topBotName(false) + "Sec Fuel Summary");
+        furnace.xlSecFuelSummary(wb.getSheetAt(nSheet), styles, false);
+        if (bTopBot) {
+            nSheet++;
+            wb.createSheet("Bottom Sec Fuel Summary");
+            furnace.xlSecFuelSummary(wb.getSheetAt(nSheet), styles, true);
+        }
+        nSheet++;
+        wb.createSheet("Fuels Details");
+        furnace.xlUsedFuels(wb.getSheetAt(nSheet), styles);
+        nSheet++;
+        wb.createSheet(furnace.topBotName(false) + "Temp Profile");
+        furnace.xlTempProfile(wb.getSheetAt(nSheet), styles, false);
+        if (furnace.bTopBot) {
+            nSheet++;
+            wb.createSheet("Bot Temp Profile");
+            furnace.xlTempProfile(wb.getSheetAt(nSheet), styles, true);
+        }
+        nSheet++;
+        wb.createSheet("Furnace Profile");
+        wb.setSheetHidden(nSheet, true);
+        Sheet sh = wb.getSheetAt(nSheet);
+        xlFceProfile(sh, styles);  // performance is saved here
+
+        nSheet++;
+        //  create a new file
+        if (asJNLP) {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            try {
+                wb.write(bos);
+                byte[] bytes = bos.toByteArray();
+                if (!JNLPFileHandler.saveToFile(bytes, "dfhDat"))
+                    showError("Some problem in writing to Excel file!");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        else {
+            FileOutputStream out = null;
+            FileDialog fileDlg =
+                    new FileDialog(mainF, "Saving Results to Excel",
+                            FileDialog.SAVE);
+            fileDlg.setFile("Test workbook from Java.xls");
+            fileDlg.setVisible(true);
+            String bareFile = fileDlg.getFile();
+            if (bareFile != null) {
+                int len = bareFile.length();
+                if ((len < 4) || !(bareFile.substring(len - 4).equalsIgnoreCase(".xls"))) {
+                    showMessage("Adding '.xls' to file name");
+                    bareFile = bareFile + ".xls";
+                }
+                String fileName = fileDlg.getDirectory() + bareFile;
+                try {
+                    out = new FileOutputStream(fileName);
+                } catch (FileNotFoundException e) {
+                    showError("Some problem in file.\n" + e.getMessage());
+                    return;
+                }
+                try {
+                    wb.write(out);
+                    out.close();
+                    furnace.performaceIsSaved();
+                } catch (IOException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    showError("Some problem with file.\n" + e.getMessage());
+                }
+            }
+        }
+        parent().toFront();
+    }
+
+    void excelResultsFileOLD() {
 //  create a new file
         FileOutputStream out = null;
         FileDialog fileDlg =
@@ -4127,6 +4357,9 @@ public class DFHeating extends JApplet implements InputControl {
                         break;
                     case NOTLEVEL2:
                         onProductionLine = false;
+                        break;
+                    case JNLP:
+                        asJNLP = true;
                         break;
                     case DEBUGMSG:
                         withDebugMessages = true;

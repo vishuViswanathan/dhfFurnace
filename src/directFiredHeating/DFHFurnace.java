@@ -2603,20 +2603,20 @@ public class DFHFurnace {
             return null;
     }
 
-    ExcelAdapter excelAdapterTop, excelAdapterBot;
-    JTable tableTop, tableBot;
+//    ExcelAdapter excelAdapterTop, excelAdapterBot;
+//    JTable tableTop, tableBot;
 
     JPanel getResultsPanel(boolean bBot) {
         JTable table;
         table = (bBot) ? botTResults.getJTable() : topTResults.getJTable();
-        ExcelAdapter eA = new ExcelAdapter(table);
-        if (bBot) {
-            tableBot = table;
-            excelAdapterBot = eA;
-        } else {
-            tableTop = table;
-            excelAdapterTop = eA;
-        }
+//        ExcelAdapter eA = new ExcelAdapter(table);
+//        if (bBot) {
+//            tableBot = table;
+//            excelAdapterBot = eA;
+//        } else {
+//            tableTop = table;
+//            excelAdapterTop = eA;
+//        }
         JPanel resultsPan = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
