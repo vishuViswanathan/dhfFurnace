@@ -13,7 +13,7 @@ import mvUtils.math.XYArray;
  */
 public class ChMaterial {
     public String name;
-    String matID;
+    public String matID;
     XYArray tK; // thermal conductivity
     double tK0 = -1;
     XYArray heatC;  // specific heat
@@ -40,9 +40,47 @@ public class ChMaterial {
         this(name, matID, density, new XYArray(tkPairStr), new XYArray(hcPairStr), new XYArray(emPairStr));
     }
 
+    protected ChMaterial(String name, String matID) {
+        this.name = name;
+        this.matID = matID;
+    }
+
     public ChMaterial(String xmlStr) throws Exception {
+        if (!takeDataFromXML(xmlStr))
+             throw new Exception("ERROR: In Charge Material Specifications from xml :" + xmlStr);
+//        ValAndPos vp;
+//        boolean inError = true;
+//        vp = XMLmv.getTag(xmlStr, "Name", 0);
+//        name = vp.val;
+//        if (name.length() > 2) {
+//            vp = XMLmv.getTag(xmlStr, "matID", 0);
+//            matID = vp.val;
+//            vp = XMLmv.getTag(xmlStr, "density", 0);
+//
+//            density = Double.valueOf(vp.val);
+//            try {
+//                vp = XMLmv.getTag(xmlStr, "tK", 0);
+//                tK = new XYArray(vp.val);
+//                if (tK.nElements() < 2) {
+//                    if (tK.getXat(0) == 0)
+//                        tK0 = tK.getYat(0);
+//                }
+//                vp = XMLmv.getTag(xmlStr, "heatC", 0);
+//                heatC = new XYArray(vp.val);
+//                vp = XMLmv.getTag(xmlStr, "e", 0);
+//                e = new XYArray(vp.val);
+//                inError = false;
+//            } catch (Exception e1) {
+//                inError = true;
+//            }
+//        }
+//        if (inError)
+//             throw new Exception("ERROR: In Charge Material Specifications from xml :" + xmlStr);
+    }
+
+    public boolean takeDataFromXML(String xmlStr) {
         ValAndPos vp;
-        boolean inError = true;
+        boolean retVal = false;
         vp = XMLmv.getTag(xmlStr, "Name", 0);
         name = vp.val;
         if (name.length() > 2) {
@@ -62,13 +100,12 @@ public class ChMaterial {
                 heatC = new XYArray(vp.val);
                 vp = XMLmv.getTag(xmlStr, "e", 0);
                 e = new XYArray(vp.val);
-                inError = false;
+                retVal = true;
             } catch (Exception e1) {
-                inError = true;
+                retVal = false;
             }
         }
-        if (inError)
-             throw new Exception("ERROR: In Charge Material Specifications from xml :" + xmlStr);
+        return retVal;
     }
 
     public String getName() {

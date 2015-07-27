@@ -1,6 +1,7 @@
 package basic;
 
 import display.*;
+import jsp.JSPConnection;
 import mvUtils.display.InputControl;
 import mvUtils.display.MultiPairColPanel;
 import mvUtils.mvXML.XMLmv;
@@ -22,6 +23,7 @@ import java.util.Vector;
  * To change this template use File | Settings | File Templates.
  */
 public class Fuel extends Fluid{
+    static JSPConnection jspC;
     int id;
     public String name;
     public String units;
@@ -133,8 +135,46 @@ public class Fuel extends Fluid{
     }
 
     public Fuel(String xmlStr, boolean itIsXML) throws Exception{
+        if (!takeDataFromXML(xmlStr))
+//        mvUtils.mvXML.ValAndPos vp;
+//        boolean inError = true;
+//        vp = mvUtils.mvXML.XMLmv.getTag(xmlStr, "Name", 0);
+//        name = vp.val;
+//        if (name.length() >  2) {
+//            vp = mvUtils.mvXML.XMLmv.getTag(xmlStr, "units", 0);
+//            units = vp.val;
+//            vp = mvUtils.mvXML.XMLmv.getTag(xmlStr, "calVal", 0);
+//            try {
+//                calVal = Double.valueOf(vp.val);
+//                vp = mvUtils.mvXML.XMLmv.getTag(xmlStr, "airFuelRatio", 0);
+//                airFuelRatio = Double.valueOf(vp.val);
+//                vp = XMLmv.getTag(xmlStr, "flueFuelRatio", 0);
+//                flueFuelRatio = Double.valueOf(vp.val);
+//                if (calVal > 0 && airFuelRatio > 0 && flueFuelRatio > 0) {
+//                    vp = XMLmv.getTag(xmlStr, "sensHeat", 0);
+//                    if (vp.val.length() > 2)
+//                        sensHeat = new XYArray(vp.val);
+//                    vp = XMLmv.getTag(xmlStr, "flueCompo", 0);
+//                    if (vp.val.length() > 30) {
+//                        try {
+//                            flueComp = new FlueComposition("", vp.val) ;
+//                            inError = false;
+//                        } catch (Exception e) {
+//                            inError = true;
+//                        }
+//                    }
+//                }
+//            } catch (NumberFormatException e) {
+//                inError = true;
+//            }
+//        }
+//        if (inError)
+            throw new Exception("ERROR: In Fuel Specifications from xml :" + xmlStr);
+    }
+
+    protected boolean takeDataFromXML(String xmlStr) {
+        boolean retVal = false;
         mvUtils.mvXML.ValAndPos vp;
-        boolean inError = true;
         vp = mvUtils.mvXML.XMLmv.getTag(xmlStr, "Name", 0);
         name = vp.val;
         if (name.length() >  2) {
@@ -155,18 +195,17 @@ public class Fuel extends Fluid{
                     if (vp.val.length() > 30) {
                         try {
                             flueComp = new FlueComposition("", vp.val) ;
-                            inError = false;
+                            retVal = true;
                         } catch (Exception e) {
-                            inError = true;
+                            retVal = false;
                         }
                     }
                 }
             } catch (NumberFormatException e) {
-                inError = true;
+                retVal = false;
             }
         }
-        if (inError)
-            throw new Exception("ERROR: In Fuel Specifications from xml :" + xmlStr);
+        return retVal;
     }
 
     public void setID(int id) {
@@ -260,8 +299,9 @@ public class Fuel extends Fluid{
 
     static JPanel fuelsPanelP;
 
-    public static JPanel mixedFuelPanel(InputControl control, Vector<Fuel> mainFuelList) {
+    public static JPanel mixedFuelPanel(InputControl control, JSPConnection jspConnection, Vector<Fuel> mainFuelList) {
 //        if (fuelsPanelP == null) {
+            jspC = jspConnection;
             controller = control;
             fuelList = mainFuelList;
             JPanel outerP = new JPanel();
@@ -304,10 +344,10 @@ public class Fuel extends Fluid{
             for (Fuel f: fuelList)
                 if (!f.bMixedFuel)
                     existFuels.add(f);
-            baseFuelD = new FuelDisplay(controller, existFuels);
+            baseFuelD = new FuelDisplay(controller, jspC, existFuels);
             jp.add(baseFuelD.fuelData(), gbc);
             gbc.gridx++;
-            addFuelD = new FuelDisplay(controller, existFuels);
+            addFuelD = new FuelDisplay(controller, jspC, existFuels);
             jp.add(addFuelD.fuelData(), gbc);
             gbc.gridx++;
             mixedFuelD = new FuelDisplay(controller, baseFuelD, addFuelD);

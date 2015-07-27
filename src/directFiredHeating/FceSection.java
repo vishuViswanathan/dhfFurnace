@@ -3,6 +3,7 @@ package directFiredHeating;
 import appReporting.Reporter;
 import basic.*;
 import display.*;
+import jsp.JSPComboBox;
 import mvUtils.display.*;
 import mvUtils.math.DoublePoint;
 import mvUtils.math.MultiColData;
@@ -310,7 +311,8 @@ public class FceSection {
     ProductionData production;
     NumberTextField tfFlueExhPercent, tfRegenPHtemp, tfExcessAir, tfFuelTemp;
     NumberTextField tfTCLocation;
-    JComboBox<Fuel> cbFuels = new JComboBox<Fuel>(DFHeating.fuelList);
+//    JComboBox<Fuel> cbFuels = new JComboBox<Fuel>(DFHeating.fuelList);
+    JSPComboBox<Fuel> cbFuels = new JSPComboBox<Fuel>(DFHeating.jspConnection, DFHeating.fuelList);
     JComboBox<String> cbSecType = new JComboBox<String>(new String[]{"Recuperative", "With Burners"});
     JComboBox<String> cbFuelChoice = new JComboBox<String>(new String[]{"Common Fuel", "Individual Fuel"});
     JComboBox<String> cbBurnerType = new JComboBox<String>(new String[]{"Normal", "Regenerative"});

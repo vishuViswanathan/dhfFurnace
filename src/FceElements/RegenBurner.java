@@ -1,6 +1,8 @@
 package FceElements;
 
 import basic.*;
+import jsp.JSPComboBox;
+import jsp.JSPConnection;
 import mvUtils.display.InputControl;
 import mvUtils.display.MultiPairColPanel;
 import mvUtils.display.NumberLabel;
@@ -70,6 +72,7 @@ public class RegenBurner {
     Restriction airTRestrict = Restriction.NOTREADY, fuelTRestrict = Restriction.NOTREADY;
 
     InputControl control;
+    JSPConnection jspConnection;
     Fuel selFuel;
     FuelFiring fuelFiring;
     FlueCompoAndQty unitFlueIn, unitFlueOut;  // flue per unit fuel
@@ -77,13 +80,15 @@ public class RegenBurner {
     boolean fuelOK = false;
     double adiaFlameT;
 
-    public RegenBurner(Vector<Fuel> fuelList, InputControl control) {
+    public RegenBurner(Vector<Fuel> fuelList, JSPConnection jspConnection, InputControl control) {
         this.fuelList = new Vector<Fuel>(fuelList); // does it create a copy or uses original elements?
+        this.jspConnection = jspConnection;
         this.control = control;
         init();
     }
 
-    JComboBox<Fuel> coBFuel;
+//    JComboBox<Fuel> coBFuel;
+    JSPComboBox<Fuel> coBFuel;
     NumberTextField ntExcessAir, ntRegenFract, ntRegenEff;
     NumberTextField ntDeltaTRegen;
     NumberTextField ntFlueInTemp, ntFlueOutTemp;
@@ -102,7 +107,8 @@ public class RegenBurner {
         ChkBoxAction chkBoxAction = new ChkBoxAction();
         ExitTempAction exitTempAction = new ExitTempAction();
 
-        coBFuel = new JComboBox<Fuel>(fuelList);
+//        coBFuel = new JComboBox<Fuel>(fuelList);
+        coBFuel = new JSPComboBox<Fuel>(jspConnection, fuelList);
         coBFuel.addActionListener(fuelAction);
         ntExcessAir = new NumberTextField(control, excessAir * 100, 6, false, 0, 200, "###.00", "Excess Air (%)");
         ntExcessAir.addActionListener(fuelAction);

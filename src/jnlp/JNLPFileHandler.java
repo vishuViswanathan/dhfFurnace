@@ -74,16 +74,13 @@ package jnlp;
             return readFile(fc, 0);    // read all
         }
 
-        public static boolean saveToFile(String txt, String extension) {
+        public static boolean saveToFile(String txt, String extension, String defaultFileName) {
             boolean retVal = false;
+            initialize();
             try {
                 FileContents fc = fss.saveFileDialog(null, new String[]{extension},
-                        new ByteArrayInputStream(txt.getBytes()), "@." + extension);
+                        new ByteArrayInputStream(txt.getBytes()), defaultFileName);
                 if (fc != null) {
-////                    if (extension != null) {
-////
-////                    }
-//                        writeToFile(txt, fc);
                      retVal = true;
                 }
             } catch (IOException ioe) {
@@ -92,16 +89,13 @@ package jnlp;
             return retVal;
         }
 
-        public static boolean saveToFile(byte[] bytes, String extension) {
+        public static boolean saveToFile(byte[] bytes, String extension, String defaultFileName) {
             boolean retVal = false;
+            initialize();
             try {
                 FileContents fc = fss.saveFileDialog(null, new String[]{extension},
-                        new ByteArrayInputStream(bytes), "@." + extension);
+                        new ByteArrayInputStream(bytes), defaultFileName);
                 if (fc != null) {
-////                    if (extension != null) {
-////
-////                    }
-//                        writeToFile(txt, fc);
                      retVal = true;
                 }
             } catch (IOException ioe) {

@@ -2,6 +2,8 @@ package display;
 
 import basic.FlueComposition;
 import basic.Fuel;
+import jsp.JSPComboBox;
+import jsp.JSPConnection;
 import mvUtils.display.*;
 import mvUtils.display.FramedPanel;
 
@@ -21,6 +23,7 @@ import java.util.Vector;
  * To change this template use File | Settings | File Templates.
  */
 public class FuelDisplay {
+    JSPConnection jspConnection;
     Fuel fuel = null;
     String units = "";
     FlueComposition flue;
@@ -34,12 +37,14 @@ public class FuelDisplay {
     InputControl controller;
     double temperature = 0;
 
-    public FuelDisplay(InputControl controller, Vector<Fuel> fuelList)  {
+    public FuelDisplay(InputControl controller, JSPConnection jspConnection, Vector<Fuel> fuelList)  {
+        this.jspConnection = jspConnection;
         this.fuelList = fuelList;
         bExisting = true;
         this.controller = controller;
         init();
-        cbFuel = new JComboBox<Fuel>(fuelList);
+//        cbFuel = new JComboBox<Fuel>(fuelList);
+        cbFuel = new JSPComboBox<Fuel>(jspConnection, fuelList);
         cbFuel.addActionListener(new FuelChangeListener());
         cbFuel.setSelectedIndex(0);
         units = ((Fuel)(cbFuel.getSelectedItem())).units;
@@ -170,7 +175,8 @@ public class FuelDisplay {
         return rowHeader(true);
     }
 
-    public JComboBox<Fuel> cbFuel;
+//    public JComboBox<Fuel> cbFuel;
+    public JSPComboBox<Fuel> cbFuel;
     JTextField tfName;
     NumberLabel nlFlowShare, nlHeatShare;
     NumberLabel nlCalVal, nlAirFuelRatio, nlFlueFuelRatio;
