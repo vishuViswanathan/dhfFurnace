@@ -135,7 +135,7 @@ public class DFHeating extends JApplet implements InputControl {
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
 //    public Level2Furnace furnaceLevel2;
-    protected String releaseDate = "JNLP 20150708 16:44";
+    protected String releaseDate = "JNLP 20150803 12:04";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -346,7 +346,7 @@ public class DFHeating extends JApplet implements InputControl {
         }
         fuelMixP = Fuel.mixedFuelPanel(this, jspConnection, fuelList);
         regenBurnerStudy = new RegenBurner(fuelList, jspConnection, this);
-        info("DFHeating inited");
+        info("DFHeating initiated");
         enableDataEdit();
     }
 
@@ -1389,7 +1389,7 @@ public class DFHeating extends JApplet implements InputControl {
         labChLength = new JLabel("Billet/Slab Length (mm)");
         jp.addItemPair(labChLength, tfChLength);
 //        cbChMaterial = new XLComboBox(vChMaterial);
-        cbChMaterial = new JSPComboBox(jspConnection, vChMaterial);
+        cbChMaterial = new JSPComboBox<ChMaterial>(jspConnection, vChMaterial);
         cbChMaterial.setPreferredSize(new Dimension(200, 18));
         cbChMaterial.setSelectedItem(selChMaterial);
         addInputToListener(cbChMaterial);
@@ -1827,7 +1827,7 @@ public class DFHeating extends JApplet implements InputControl {
         fuelTemp = tfFuelTemp.getData();
         calculStep = tfCalculStep.getData() / 1000;
 
-        commFuel = (Fuel) cbFuel.getSelectedItem();
+//        commFuel = (Fuel) cbFuel.getSelectedItem();
 
         furnace.takeValuesFromUI();
     }
@@ -3891,14 +3891,12 @@ public class DFHeating extends JApplet implements InputControl {
     }
 
     void saveFuelSpecs() {
-        String fuelSpecsStr =  "# Fuel specifications saved on " + dateFormat.format(new Date()) + "\n\n" +
-                                fuelSpecsInXML();
-
-        if (asJNLP) {
-            if (!JNLPFileHandler.saveToFile(fuelSpecsStr, "dfhSpecs", "FuelSpecifications.dfhSpecs"))
-                showError("facing some problem in saving FuelSpecs fiel");
-        }
+        if (asJNLP)
+            saveFuelSpecsJNLP();
         else {
+            String fuelSpecsStr = "# Fuel specifications saved on " + dateFormat.format(new Date()) + "\n\n" +
+                    fuelSpecsInXML();
+
             FileOutputStream out = null;
             FileDialog fileDlg =
                     new FileDialog(mainF, "Saving Fuel Specifications to file",
@@ -3929,6 +3927,18 @@ public class DFHeating extends JApplet implements InputControl {
         }
     }
 
+    void saveFuelSpecsJNLP() {
+        if (cbFuel.confirmToSave(parent())) {
+            String xmlStr = fuelSpecsInXMLasJNLP();
+            if (!JNLPFileHandler.saveToFile(
+                    "# Fuel specifications saved on " + dateFormat.format(new Date()) + "\n\n" + xmlStr,
+                    "dfhSpecs", "FuelSpecifications.dfhSpecs"))
+                showError("Some IO Error in writing to file!");
+            parent().toFront();
+        }
+    }
+
+
     String fuelSpecsInXML() {
         String xmlStr = XMLmv.putTag("nFuels", fuelList.size()) + "\n";
         int fNum = 0;
@@ -3938,6 +3948,26 @@ public class DFHeating extends JApplet implements InputControl {
         }
         return xmlStr;
     }
+
+    String fuelSpecsInXMLasJNLP() {
+         int nF = 0;
+         for (Fuel f:fuelList) {
+             if (f instanceof JSPObject)
+                 if (((JSPObject)f).isDataCollected())
+                     nF++;
+         }
+         String xmlStr = XMLmv.putTag("nFuels", nF) + "\n";
+         int fNum = 0;
+         for (Fuel f:fuelList) {
+             if (f instanceof JSPObject)
+                 if (((JSPObject)f).isDataCollected()) {
+                     fNum++;
+                     xmlStr += XMLmv.putTag("F" + ("" + fNum).trim(), "\n" + f.fuelSpecInXML()) + "\n";
+                 }
+         }
+         return xmlStr;
+     }
+
 
     void clearFuelData() {
         fuelList.clear();
@@ -4035,18 +4065,16 @@ public class DFHeating extends JApplet implements InputControl {
     }
 
     void saveSteelSpecsJNLP() {
-        String xmlStr = chMaterialSpecsInXMLasJNLP();
-        showMessage(xmlStr);
-        if (xmlStr.length() > 30) {
+        if (cbChMaterial.confirmToSave(parent())) {
+            String xmlStr = chMaterialSpecsInXMLasJNLP();
             if (!JNLPFileHandler.saveToFile(
                     "# Charge Material specifications saved on " + dateFormat.format(new Date()) + "\n\n" + xmlStr,
                     "dfhSpecs", "ChMaterialSpecifications.dfhSpecs"))
                 showError("Some IO Error in writing to file!");
             parent().toFront();
         }
-        else
-            showError("Steel data not collected yet. The material has to selected at least once");
     }
+
 
     String chMaterialSpecsInXML() {
         String xmlStr = XMLmv.putTag("nCharge", vChMaterial.size()) + "\n";

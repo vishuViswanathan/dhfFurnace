@@ -100,8 +100,9 @@ public class JSPConnection {
                     queryStr.append("&");
                  queryStr.append(key + "=" + URLEncoder.encode(query.get(key), "utf-8"));
             }
-//            URL url = new URL("" + codeBase + jspPath + queryStr);
-            URL url = new URL("" + "http://127.0.0.1:9080/testing/jnlp/" + jspPath + queryStr);
+            URL url = new URL("" + codeBase + jspPath + queryStr);
+            System.out.println("[" + "" + codeBase + jspPath + queryStr+ "]");
+//            URL url = new URL("" + "http://10.67.10.34:9080/testing/jnlp/" + jspPath + queryStr);
             retVal = new UrlWithStatus(url);
         } catch (MalformedURLException e) {
             retVal = new UrlWithStatus(e.getMessage());

@@ -18,6 +18,7 @@ import basic.*;
 import display.*;
 
 public class TransientHeat extends JFrame {
+
   ChargeDef chargeDef;
   Hashtable surfaceAmbientSet;
   ThreeDCharge charge;

@@ -312,6 +312,7 @@ public class PerformanceTable {
                     fuelProfile = new ZonalFuelProfile(this, width, thickness, outputSteps, control);
                     baseP.fillFuelProfile(fuelProfile);
                 } catch (Exception e) {
+//                    showError("Error in creating ZOnal FuelProfile: " + e.getMessage());
                     e.printStackTrace();
                 }
             }

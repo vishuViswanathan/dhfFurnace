@@ -20,6 +20,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Vector;
 
 /**
  * Created by IntelliJ IDEA.
@@ -37,9 +38,9 @@ public class ZonalFuelProfile {
     PerformanceTable performanceTable;
     DFHeating controller;
 
-    double stripWidth;
-    double stripThickness;
-    protected int outputSteps;
+    double stripWidthInm;
+    double stripThickInm;
+    protected int nOutputSteps;
     protected int nTopZones;
     protected int nBotZones;
     protected Double[][] topZoneFuels;
@@ -52,23 +53,24 @@ public class ZonalFuelProfile {
     Reporter fuelHeatCharacteristicReport;
     // columns 1 - output, 2- Total Fuel, 3, 4 ... individual zone fuels
 
-    public ZonalFuelProfile(PerformanceTable performanceTable, double stripWidth, double stripThickness,
-                            int outputSteps, DFHeating controller) throws Exception {
-        this(performanceTable, outputSteps, controller);
-        if (!performanceTable.isWidthInRange(stripWidth))
+    public ZonalFuelProfile(PerformanceTable pTable, double stripWidth, double stripThickness,
+                            int outputSteps, DFHeating dfHeating) throws Exception {
+        this(pTable, outputSteps, dfHeating);
+        if (!pTable.isWidthInRange(stripWidth))
             throw new Exception("Strip Width is not in Range of Performance Table");
-        this.stripWidth = stripWidth;
-        this.stripThickness = stripThickness;
+        this.stripWidthInm = stripWidth;
+        this.stripThickInm = stripThickness;
+//        System.out.println("Before calling prepareFuelTable");
          if (!prepareFuelTable(stripWidth, stripThickness))
             throw new Exception("Facing some problem in creating Fuel Table");
     }
 
-    protected ZonalFuelProfile(PerformanceTable performanceTable, int outputSteps, DFHeating controller) {
-        this.performanceTable = performanceTable;
-        this.outputSteps = outputSteps;
-        this.controller = controller;
-        nTopZones = performanceTable.nZones(false);
-        nBotZones = performanceTable.nZones(true);
+    protected ZonalFuelProfile(PerformanceTable pTable, int outputSteps, DFHeating dfHeating) {
+        this.performanceTable = pTable;
+        this.nOutputSteps = outputSteps;
+        this.controller = dfHeating;
+        nTopZones = pTable.nZones(false);
+        nBotZones = pTable.nZones(true);
         topZoneFuels = new Double[outputSteps][nTopZones + 3];
         topZoneFuelHeat = new Double[outputSteps][nTopZones + 3];
         if (nBotZones > 0) {
@@ -79,13 +81,13 @@ public class ZonalFuelProfile {
 
     protected boolean prepareFuelTable(double stripWidth, double stripThickness) {
         boolean allOk = true;
-        this.stripWidth = stripWidth;
-        this.stripThickness = stripThickness;
+        this.stripWidthInm = stripWidth;
+        this.stripThickInm = stripThickness;
         InterpolatedParams iParam;
         double outputFactor;
         double maxOutputFactor = performanceTable.getMaxOutputFactor();
         double minOutputFactor = performanceTable.getMinOutputFactor();
-        double step = (maxOutputFactor - minOutputFactor) / (outputSteps - 1);
+        double step = (maxOutputFactor - minOutputFactor) / (nOutputSteps - 1);
         outputFactor = minOutputFactor;
         double thicknessFactor = stripThickness / performanceTable.baseP.chThick;
         double topTotalFuel;
@@ -95,7 +97,7 @@ public class ZonalFuelProfile {
         double fuelFlow;
         double fuelHeat; // comprising combustion + fuel sensible + air sensible
         OneZone oneZone;
-        for (int o = 0; o < outputSteps; o++) {
+        for (int o = 0; o < nOutputSteps; o++) {
             iParam = new InterpolatedParams();
             if (performanceTable.getOperationData(iParam, stripWidth, outputFactor)) {
                 topTotalFuel = 0;
@@ -142,25 +144,19 @@ public class ZonalFuelProfile {
         if (allOk) {
             speedFuelArray(false);
             speedFHArray(false);
-//            speedZonelFuelTop = new XYArray[nTopZones];
-//            for (int z = 0; z < nTopZones; z++)
-//                speedZonelFuelTop[z] = speedFuelArray(z, false);
             if (nBotZones > 0) {
                 speedFuelArray(true);
                 speedFHArray(false);
-//                speedZonelFuelBot = new XYArray[nBotZones];
-//                for (int z = 0; z < nBotZones; z++)
-//                    speedZonelFuelBot[z] = speedFuelArray(z, true);
             }
         }
         return allOk;
     }
 
     public double[][] oneZoneFuelArray(int zNum, boolean bBot) {
-        double[][] zoneFuel = new double[outputSteps][(bBot) ? nBotZones : nTopZones];
+        double[][] zoneFuel = new double[nOutputSteps][(bBot) ? nBotZones : nTopZones];
         if (zNum >=0 && zNum < ((bBot) ? nBotZones : nTopZones)) {
             Double[][] allZoneFuels = (bBot) ? botZoneFuels : topZoneFuels;
-            for (int r = 0; r < outputSteps; r++) {
+            for (int r = 0; r < nOutputSteps; r++) {
                 zoneFuel[r][0] = allZoneFuels[r][TotFuelCol];
                 zoneFuel[r][1] = allZoneFuels[r][zNum + FirstZoneCol];
             }
@@ -169,10 +165,10 @@ public class ZonalFuelProfile {
     }
 
     public double[][] oneZoneFuelHeatArray(int zNum, boolean bBot) {
-        double[][] zoneFuelHeat = new double[outputSteps][(bBot) ? nBotZones : nTopZones];
+        double[][] zoneFuelHeat = new double[nOutputSteps][(bBot) ? nBotZones : nTopZones];
         if (zNum >=0 && zNum < ((bBot) ? nBotZones : nTopZones)) {
             Double[][] allZoneFuelHeats = (bBot) ? botZoneFuelHeat : topZoneFuelHeat;
-            for (int r = 0; r < outputSteps; r++) {
+            for (int r = 0; r < nOutputSteps; r++) {
                 zoneFuelHeat[r][0] = allZoneFuelHeats[r][TotHeatCol];
                 zoneFuelHeat[r][1] = allZoneFuelHeats[r][zNum + FirstZoneCol];
             }
@@ -208,30 +204,17 @@ public class ZonalFuelProfile {
         XYArray arr;
         Double[][] table;
         if (bBot) {
-            arr = speedTotalFuelBot;
+            arr = speedTotalFuelBot;    // TODO speedTotalFuelBot is never initiated for reuse
             table = botZoneFuels;
         }
         else {
-            arr = speedTotalFuelTop;
+            arr = speedTotalFuelTop;     // TODO speedTotalFuelTop is never initiated for reuse
             table = topZoneFuels;
         }
         if (arr == null)
             arr = new XYArray(table, 0, 2);
         else
             arr.setValues(table, 0, 2);
-        return arr;
-    }
-
-    XYArray speedFuelArrayOLD(boolean bBot) {
-        XYArray arr = null;
-        Double[][] table;
-        if (bBot) {
-            table = botZoneFuels;
-        }
-        else {
-            table = topZoneFuels;
-        }
-        arr = new XYArray(table, 0, 2);
         return arr;
     }
 
@@ -242,29 +225,19 @@ public class ZonalFuelProfile {
         XYArray arr;
         Double[][] table;
         if (bBot) {
-            arr = speedTotalFHBot;
+            arr = speedTotalFHBot;     // TODO speedTotalFHBot is nevr initiated for reuse
             table = botZoneFuelHeat;
         }
         else {
-            arr = speedTotalFHTop;
+            arr = speedTotalFHTop;  // TODO speedTotalFHTop is nevr initiated for reuse
             table = topZoneFuelHeat;
         }
-        arr = new XYArray(table, 0, 2);
+        if (arr == null)
+            arr = new XYArray(table, 0, 2);
+        else
+            arr.setValues(table, 0, 2);
         return arr;
     }
-
-    XYArray speedFHArrayOLD(boolean bBot) {
-         XYArray arr = null;
-         Double[][] table;
-         if (bBot) {
-             table = botZoneFuelHeat;
-         }
-         else {
-             table = topZoneFuelHeat;
-         }
-         arr = new XYArray(table, 0, 2);
-         return arr;
-     }
 
     public double recommendedSpeed(double totFuel, boolean bBot) {
         if (bBot)
@@ -405,25 +378,25 @@ public class ZonalFuelProfile {
     void addReportData(Reporter report, boolean bBot) {
 //        Double[][] dataSrc = (bBot) ? botZoneFuels : topZoneFuels;
         Double[][] dataSrc = (bBot) ? botZoneFuels : topZoneFuels;
-        for (int o = 0; o < outputSteps; o++)
+        for (int o = 0; o < nOutputSteps; o++)
             report.addResultLine(dataSrc[o]);
     }
 
     void addFHReportData(Reporter report, boolean bBot) {
         Double[][] dataSrc = (bBot) ? botZoneFuelHeat : topZoneFuelHeat;
-        for (int o = 0; o < outputSteps; o++)
+        for (int o = 0; o < nOutputSteps; o++)
             report.addResultLine(dataSrc[o]);
     }
 
     String headerName(boolean bBot) {
         return "For " + performanceTable.furnace.topBotName(bBot) + "zones - " +
-                "Strip size " + (stripWidth * 1000) + " x " + stripThickness * 1000;
+                "Strip size " + (stripWidthInm * 1000) + " x " + stripThickInm * 1000;
     }
 
     public Reporter fuelFlowCharacteristicReport(boolean bBot) {
         Reporter report = new Reporter("Fuel Flow Characteristic for " +
                 performanceTable.furnace.topBotName(bBot) + "zones - " +
-               "Strip size " + (stripWidth * 1000) + " x " + stripThickness * 1000 );
+               "Strip size " + (stripWidthInm * 1000) + " x " + stripThickInm * 1000 );
         addReportColumns(report, bBot);
         addReportData(report, bBot);
         return report;
@@ -432,7 +405,7 @@ public class ZonalFuelProfile {
     public Reporter fuelHeatCharacteristicReport(boolean bBot) {
         Reporter report = new Reporter("Fuel Heat Characteristic for " +
                 performanceTable.furnace.topBotName(bBot) + "zones - " +
-               "Strip size " + (stripWidth * 1000) + " x " + stripThickness * 1000 );
+               "Strip size " + (stripWidthInm * 1000) + " x " + stripThickInm * 1000 );
         addFHReportColumns(report, bBot);
         addFHReportData(report, bBot);
         return report;
