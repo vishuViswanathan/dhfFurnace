@@ -10,6 +10,7 @@ import com.prosysopc.ua.client.Subscription;
 import com.prosysopc.ua.client.SubscriptionAliveListener;
 import directFiredHeating.DFHFurnace;
 import directFiredHeating.FceSection;
+import directFiredHeating.ResultsReadyListener;
 import level2.fieldResults.FieldResults;
 import level2.listeners.L2SubscriptionListener;
 import mvUtils.mvXML.ValAndPos;
@@ -30,7 +31,7 @@ import java.util.LinkedHashMap;
  * Time: 10:59 AM
  * To change this template use File | Settings | File Templates.
  */
-public class L2DFHFurnace extends DFHFurnace {
+public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener {
     TMuaClient source;
     FurnaceSettings furnaceSettings;
     LinkedHashMap<FceSection, L2Zone> topL2Zones;
@@ -38,17 +39,21 @@ public class L2DFHFurnace extends DFHFurnace {
     ReadyNotedParam l2InfoMessages;
     ReadyNotedParam l2ErrorMessages;
     ReadyNotedParam l2StripSizeParams;
+    ReadyNotedParam fieldDataParams;
     L2Zone stripZone;  // all strip data size, speed temperature etc.
     L2Zone recuperatorZ;
     L2Zone commonDFHZ;
     String equipment;
     Subscription messageSub;
     Subscription stripSub;
+    Subscription fieldDataSub;
     boolean messagesON = false;
     Hashtable<MonitoredDataItem, Tag> monitoredTags;
     boolean monitoredTagsReady = false;
     public L2DFHeating l2DFHeating;
     double exitTempAllowance = 5;
+
+    boolean calculatedForFieldResults = false;
 
     public L2DFHFurnace(L2DFHeating l2DFHEating, boolean bTopBot, boolean bAddTopSoak, ActionListener listener) {
         super(l2DFHEating, bTopBot, bAddTopSoak, listener);
@@ -62,23 +67,6 @@ public class L2DFHFurnace extends DFHFurnace {
         createStripParam();
         createRecuParam();
         createCommonDFHZ();
-    }
-
-    boolean createStripParamOLD() { // TODO to be removed subsequently
-        boolean retVal = false;
-        stripSub = source.createSubscription(new SubAliveListener(), new StripListener());
-        Tag[] stripTags = {new Tag(L2ParamGroup.Parameter.Data, Tag.TagName.Process, false, false),
-                new Tag(L2ParamGroup.Parameter.Data, Tag.TagName.Ready, false, true),
-                new Tag(L2ParamGroup.Parameter.Data, Tag.TagName.Thick, false, false),
-                new Tag(L2ParamGroup.Parameter.Data, Tag.TagName.Width, false, false),
-                new Tag(L2ParamGroup.Parameter.Data, Tag.TagName.Noted, true, false)};
-        try {
-            l2StripSizeParams = new ReadyNotedParam(source, equipment, "Strip.Data", stripTags, stripSub);
-            noteMonitoredTags(stripTags);
-        } catch (TagCreationException e) {
-            e.printStackTrace();
-        }
-        return true;
     }
 
     public boolean showEditFceSettings(boolean bEdit) {
@@ -137,8 +125,8 @@ public class L2DFHFurnace extends DFHFurnace {
 
     boolean createCommonDFHZ() {
         boolean retVal = false;
-//        stripSub = source.createSubscription(new SubAliveListener(), new StripListener());
-        commonDFHZ = new L2Zone(this, "DFHCommon", null);
+        fieldDataSub = source.createSubscription(new SubAliveListener(), new FieldDataListener());
+        commonDFHZ = new L2Zone(this, "DFHCommon", fieldDataSub);
         try {
             Tag[] commonDFHTags1 = {
                     new Tag(L2ParamGroup.Parameter.FuelCharacteristic, Tag.TagName.Noted, false, false)};
@@ -148,6 +136,12 @@ public class L2DFHFurnace extends DFHFurnace {
                     new Tag(L2ParamGroup.Parameter.Flue, Tag.TagName.Temperature, false, false)};
             commonDFHZ.addOneParameter(L2ParamGroup.Parameter.Flue, commonDFHTags2);
             noteMonitoredTags(commonDFHTags2);
+            Tag[] commonDFHTags3 = {
+                    new Tag(L2ParamGroup.Parameter.FieldData, Tag.TagName.Noted, true, false),  // noted by Level2
+                    new Tag(L2ParamGroup.Parameter.FieldData, Tag.TagName.Ready, false, true)};  // is monitored
+            fieldDataParams = new ReadyNotedParam(source, equipment, "DFHCommon.FieldData", commonDFHTags3, fieldDataSub);
+            commonDFHZ.addOneParameter(L2ParamGroup.Parameter.FieldData, fieldDataParams);
+            noteMonitoredTags(commonDFHTags3);
         } catch (TagCreationException e) {
             showError("CommonDFH connection to Level1 :" + e.getMessage());
             retVal = false;
@@ -425,7 +419,21 @@ public class L2DFHFurnace extends DFHFurnace {
         }
     }
 
-    class SubAliveListener implements SubscriptionAliveListener {
+    void handleFieldData()  {
+//        controller.showMessage("Received Request to Take Field data");
+        if (l2DFHeating.takeResultsFromLevel1()) {
+            commonDFHZ.setValue(L2ParamGroup.Parameter.FieldData, Tag.TagName.Noted, true);
+            calculatedForFieldResults = l2DFHeating.evalForFieldProduction(this);
+        }
+    }
+
+    public void noteResultsReady() {
+//        controller.showMessage("results ready Noted by L2DFHFurnace");
+        if (calculatedForFieldResults)
+            l2DFHeating.recalculateWithFieldCorrections();
+    }
+
+    class SubAliveListener implements SubscriptionAliveListener {     // TODO This is common dummy class used everywhere to be made proper
         public void onAlive(Subscription s) {
         }
 
@@ -438,7 +446,7 @@ public class L2DFHFurnace extends DFHFurnace {
         public void onDataChange(Subscription subscription, MonitoredDataItem monitoredDataItem, DataValue dataValue) {
             if (monitoredTagsReady) {
                 String fromElement = monitoredDataItem.toString();
-                controller.info("From L2Zones " + "Messages" + ":fromElement-" + fromElement + ", VALUE: " + dataValue.getValue().toStringWithType());
+//                controller.info("From L2Zones " + "Messages" + ":fromElement-" + fromElement + ", VALUE: " + dataValue.getValue().toStringWithType());
                 Tag theTag = monitoredTags.get(monitoredDataItem);
                 if (theTag.element == L2ParamGroup.Parameter.InfoMsg) {
                     if (l2InfoMessages.isNewData(theTag)) {  // the data will be already read if new data
@@ -461,10 +469,23 @@ public class L2DFHFurnace extends DFHFurnace {
     class StripListener extends L2SubscriptionListener {
         @Override
         public void onDataChange(Subscription subscription, MonitoredDataItem monitoredDataItem, DataValue dataValue) {
-            Tag theTag = monitoredTags.get(monitoredDataItem);
-            if (l2StripSizeParams.isNewData(theTag))   // the data will be already read if new data
-                handleNewStrip();
+            if (l2DFHeating.isL2SystemReady()) {
+                Tag theTag = monitoredTags.get(monitoredDataItem);
+                if (l2StripSizeParams.isNewData(theTag))   // the data will be already read if new data
+                    handleNewStrip();
+            }
         }
     }
+
+    class FieldDataListener extends L2SubscriptionListener {
+         @Override
+         public void onDataChange(Subscription subscription, MonitoredDataItem monitoredDataItem, DataValue dataValue) {
+             if (l2DFHeating.isL2SystemReady()) {
+                 Tag theTag = monitoredTags.get(monitoredDataItem);
+                 if (fieldDataParams.isNewData(theTag))   // the data will be already read if new data
+                     handleFieldData();
+             }
+         }
+     }
 
 }

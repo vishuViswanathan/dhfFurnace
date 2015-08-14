@@ -304,12 +304,14 @@ public class DFHTuningParams {
     }
 
     public void showSectionProgress(boolean bShow) {
-        bSectionProgress = bShow;
-        bSlotProgress = false;
+        cBbSectionProgress.setSelected(bShow);
+//        bSectionProgress = bShow;
+//        bSlotProgress = false;
     }
     public void showSlotProgress(boolean bShow) {
-        bSectionProgress = false;
-        bSlotProgress = bShow;
+        cBbSlotProgress.setSelected(bShow);
+//        bSectionProgress = false;
+//        bSlotProgress = bShow;
     }
 
     public String dataInXML() {
@@ -480,12 +482,16 @@ public class DFHTuningParams {
     public boolean bOnProductionLine = false;
     JCheckBox cBbOnProductionLine;
     // parameters for Performance Table
+//    double outputOverRange = 1.1;
     double minOutputFactor = 0.7;
     double outputStep = 0.2;
+    double widthOverRange = 1.1;
     double minWidthFactor = 0.8;
     double widthStep = 0.1;
+    NumberTextField ntOutputOverRange;
     NumberTextField ntMinOutputFactor;
     NumberTextField ntOutputStep;
+    NumberTextField ntWidthOverRange;
     NumberTextField ntMinWidthFactor;
     NumberTextField ntWidthStep;
 
@@ -626,14 +632,19 @@ public class DFHTuningParams {
              cancel.addActionListener(li);
              Container dlgP = getContentPane();
              MultiPairColPanel jp = new MultiPairColPanel("Settings for Performance Table", 200, 60);
+//             ntOutputOverRange = new NumberTextField(controller, outputOverRange, 6, false, 1.01, 1.5, "0.##", "Output OverRange Factor:");
              ntMinOutputFactor = new NumberTextField(controller, minOutputFactor, 6, false, 0.1, 0.9, "0.##", "Minimum Unit Output Factor:");
              ntOutputStep = new NumberTextField(controller, outputStep, 6, false, 0.05, 0.5, "0.##", "Unit Output Factor Step:");
+
+             ntWidthOverRange = new NumberTextField(controller, widthOverRange, 6, false, 1.01, 1.5, "0.##", "Width OverRange Factor:");
              ntMinWidthFactor = new NumberTextField(controller, minWidthFactor, 6, false, 0.1, 0.9, "0.##", "Minimum Width Factor:");
              ntWidthStep = new NumberTextField(controller, widthStep, 6, false, 0.05, 0.5, "0.##", "Width Factor Step:");
 
+//             jp.addItemPair(ntOutputOverRange);
              jp.addItemPair(ntMinOutputFactor);
              jp.addItemPair(ntOutputStep);
              jp.addBlank();
+             jp.addItemPair(ntWidthOverRange);
              jp.addItemPair(ntMinWidthFactor);
              jp.addItemPair(ntWidthStep);
              jp.addBlank();

@@ -4,6 +4,7 @@ import TMopcUa.TMuaClient;
 import basic.*;
 import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
+import directFiredHeating.ResultsReadyListener;
 import display.QueryDialog;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
@@ -62,6 +63,12 @@ public class L2DFHeating extends DFHeating {
         this.equipment = equipment;
 //        stripProcessLookup = new Hashtable<String, OneStripDFHProcess>();
 //        init();
+    }
+
+    public boolean l2SystemReady = false;
+
+    public boolean isL2SystemReady() {
+        return l2SystemReady;
     }
 
     public void init() {
@@ -169,6 +176,10 @@ public class L2DFHeating extends DFHeating {
         if (!getFurnaceSettings()) {
             showError("Problem in loading Furnace Settings");
         }
+//        if (!showDebugMessages) {
+//            tuningParams.showSectionProgress(false);
+//            tuningParams.showSlotProgress(false);
+//        }
     }
 
     class StripProcMenuListener implements ActionListener {
@@ -344,7 +355,8 @@ public class L2DFHeating extends DFHeating {
                     byte[] data = new byte[iLen + 10];
                     if (iStream.read(data) > 50) {
                         if (takeStripProcessListFromXML(new String(data))) {
-                            showMessage("StripDFHProcess list loaded");
+                            if (showDebugMessages)
+                                showMessage("StripDFHProcess list loaded");
                             retVal = true;
                         }
                     }
@@ -439,7 +451,8 @@ public class L2DFHeating extends DFHeating {
                     byte[] data = new byte[iLen + 10];
                     if (iStream.read(data) > 50) {
                         if (l2Furnace.takeFceSettingsFromXML(new String(data))) {
-                            showMessage("Furnace Settings loaded");
+                            if (showDebugMessages)
+                                showMessage("Furnace Settings loaded");
                             retVal = true;
                         }
                     }
@@ -523,22 +536,26 @@ public class L2DFHeating extends DFHeating {
     }
 
 
-    boolean evalForFieldProduction() {   // @TODO incomplete
+    public boolean evalForFieldProduction(ResultsReadyListener resultsReadyListener) {   // @TODO incomplete
         mIEvalWithFieldCorrection.setEnabled(true);
         if (l2Furnace.setFieldProductionData() ) {
-            showMessage("Recu Specs maintained as original");
+//            showMessage("Recu Specs maintained as original");
 //            l2Furnace.newRecu();
             l2Furnace.setCurveSmoothening(false);
-            calculateFce();
+            calculateFce(true, resultsReadyListener);
             return true;
         }
         else
             return false;
     }
 
-    boolean recalculateWithFieldCorrections() {   //  TODO not complete
+    public boolean evalForFieldProduction() {
+        return evalForFieldProduction(null);
+    }
+
+    public boolean recalculateWithFieldCorrections() {   //  TODO not complete
         if (l2Furnace.adjustForFieldResults()) {
-            calculateFce(false); // without reset the loss Factors
+            calculateFce(false, null); // without reset the loss Factors
             mIEvalForFieldProduction.setEnabled(false);
             return true;
         }
@@ -828,12 +845,15 @@ public class L2DFHeating extends DFHeating {
         if (level2Heating.parseCmdLineArgs(args)) {
             if (level2Heating.setupUaClient()) {
                 level2Heating.init();
+                level2Heating.l2SystemReady = true;
+                level2Heating.setVisible(true);
             }
             else
-                level2Heating.showMessage("Facing problem connecting to Level1");
+                level2Heating.showMessage("Facing problem connecting to Level1. Aborting ...");
         }
 
-        level2Heating.setVisible(true);
+//        level2Heating.l2SystemReady = true;
+//        level2Heating.setVisible(true);
 /*
 
          try {

@@ -152,7 +152,7 @@ public class Performance {
     public void setTableFactors(double minOutputFactor, double outputStep, double minWidthFactor, double widthStep) {
 //        int nOutput = (int)((1.0 - minOutputFactor) / outputStep) + 1;
         Vector<Double> vOF = new Vector<Double>();
-        double of = 1.0;
+        double of = 1.0; //  + outputStep;
         while (of > minOutputFactor) {
             vOF.add(of);
             of -= outputStep;
@@ -166,7 +166,7 @@ public class Performance {
             outputFactors[n++] = o;
 
         Vector<Double> vWF = new Vector<Double>();
-        double wf = 1.0;
+        double wf = 1.0 + widthStep;
         while (wf > minWidthFactor) {
             vWF.add(wf);
             wf -= widthStep;

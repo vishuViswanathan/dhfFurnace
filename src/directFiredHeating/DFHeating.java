@@ -58,7 +58,7 @@ public class DFHeating extends JApplet implements InputControl {
         ALLOWSPECSREAD("-allowSpecsRead"),
         NOTLEVEL2("-notLevel2"),
         JNLP("-asJNLP"),
-        DEBUGMSG("-withDebugMessages");
+        DEBUGMSG("-showDebugMessages");
         private final String argName;
 
         CommandLineArgs(String argName) {
@@ -129,7 +129,7 @@ public class DFHeating extends JApplet implements InputControl {
     public static Logger log;
     static boolean onTest = false;
 
-    static boolean withDebugMessages = false;
+    static public boolean showDebugMessages = false;
     static public JSPConnection jspConnection;
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
@@ -2234,7 +2234,13 @@ public class DFHeating extends JApplet implements InputControl {
         return furnace.evaluate(master, forOutput, stripWidth);
     }
 
-    protected void calculateFce(boolean bResetLossFactor) {
+    ResultsReadyListener theResultsListener;
+
+    void addResultsListener(ResultsReadyListener resultReadyListener) {
+        theResultsListener = resultReadyListener;
+    }
+
+    protected void calculateFce(boolean bResetLossFactor, ResultsReadyListener resultsReadyListener) {
         initPrintGroups();
         enableResultsMenu(false);
         if (bResetLossFactor) {
@@ -2263,6 +2269,7 @@ public class DFHeating extends JApplet implements InputControl {
 
                     Thread evalThread = new Thread(evaluator = new FceEvaluator(this, slate, furnace, calculStep));
                     enablePauseCalcul();
+                    addResultsListener(resultsReadyListener);
                     evalThread.start();
                 } else
                     showError("Earlier Calculation is still ON!");
@@ -2272,7 +2279,7 @@ public class DFHeating extends JApplet implements InputControl {
     }
 
     protected void calculateFce() {
-        calculateFce(true);
+        calculateFce(true, null);
     }
 
     void enableCalculStat() {
@@ -2796,6 +2803,9 @@ public class DFHeating extends JApplet implements InputControl {
         pbEdit.getModel().setPressed(false);
         if (observations.isAnyThere())
             showMessage("Some observations on the results: \n" + observations, 5000);
+        if (theResultsListener != null)
+            theResultsListener.noteResultsReady();
+        theResultsListener = null; // clear all listeners
     }
 
     void initPrintGroups() {
@@ -2888,7 +2898,9 @@ public class DFHeating extends JApplet implements InputControl {
     public void showMessage(String msg) {
         info(msg);
         JOptionPane.showMessageDialog(parent(), msg, "FOR INFORMATION", JOptionPane.INFORMATION_MESSAGE);
-        parent().toFront();
+        Frame p = parent();
+        if (p != null)
+            p.toFront();
     }
 
     public static void error(String msg) {
@@ -4536,7 +4548,7 @@ public class DFHeating extends JApplet implements InputControl {
                         jspConnection = new JSPConnection();
                         break;
                     case DEBUGMSG:
-                        withDebugMessages = true;
+                        showDebugMessages = true;
                         break;
                 }
         }

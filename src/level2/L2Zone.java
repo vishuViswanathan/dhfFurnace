@@ -1,5 +1,6 @@
 package level2;
 
+import TMopcUa.ProcessValue;
 import com.prosysopc.ua.ServiceException;
 import com.prosysopc.ua.client.*;
 import directFiredHeating.FceSection;
@@ -117,12 +118,20 @@ public class L2Zone extends L2ParamGroup {
             String fromElement =  monitoredDataItem.toString();
             info("From L2Zones " + groupName + ":fromElement-" + fromElement + ", VALUE: " + dataValue.getValue().toStringWithType());
             Tag theTag = monitoredTags.get(monitoredDataItem);
-            if ((monitoredTagsReady) && theTag.element == Parameter.Temperature)
-                setValue(Parameter.Temperature, Tag.TagName.SP, theTag.getValue().floatValue + 100);
+            if ((monitoredTagsReady) && theTag.element == Parameter.Temperature) {
+                ProcessValue v = setValue(Parameter.Temperature, Tag.TagName.SP, theTag.getValue().floatValue + 100);
+                if (!v.valid)
+                    showError(v.errorMessage);
+            }
          }
+
     }
 
     void info(String msg) {
         l2Furnace.controller.info("L2Zone: " + msg);
+    }
+
+    void showError(String msg) {
+        l2Furnace.controller.showError("L2Zone: " + msg);
     }
 }

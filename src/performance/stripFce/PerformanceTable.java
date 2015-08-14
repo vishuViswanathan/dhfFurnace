@@ -329,6 +329,8 @@ public class PerformanceTable {
         TwoDTable tempT =  commTables.get(Performance.Params.AIRTEMP);
         double maxW =  tempT.getMaxRowHead();
         double maxS = tempT.getMaxColHead();
+        double selWidth = baseP.chLength;
+
         if (tableSelP == null) {
 //            double baseW = baseP.chLength;
             double minW = tempT.getMinRowHead();
@@ -343,7 +345,8 @@ public class PerformanceTable {
 
                 }
             };
-            ntWidth = new NumberTextField(control, maxW, 6, false, minW, maxW, tempT.rowHeadFmtStr, "Selected Width (m)");
+//            ntWidth = new NumberTextField(control, maxW, 6, false, minW, maxW, tempT.rowHeadFmtStr, "Selected Width (m)");
+            ntWidth = new NumberTextField(control, selWidth, 6, false, minW, maxW, tempT.rowHeadFmtStr, "Selected Width (m)");
             ntWidth.addFocusListener(li);
             ntOutput = new NumberTextField(control, maxS, 6, false, minS, maxS, tempT.colHeadFmtStr, "Selected output Factor");
             ntOutput.addFocusListener(li);
@@ -366,7 +369,7 @@ public class PerformanceTable {
 //            tableSelP.add(buttGetData, BorderLayout.EAST);
         }
         else {
-            ntWidth.setData(maxW);
+            ntWidth.setData(selWidth);
             ntOutput.setData(maxS);
             ntThick.setData(baseP.chThick * 1000);
         }

@@ -11,7 +11,6 @@ import mvUtils.display.XLcellData;
 import linkTFM.FceProfTFM;
 import mvUtils.display.*;
 import mvUtils.math.*;
-import mvUtils.math.ExcelAdapter;
 import mvUtils.mvXML.DoubleWithErrStat;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLgroupStat;
@@ -885,8 +884,17 @@ public class DFHFurnace {
 //                        int nPoints = performBase.getChInTempProfile(production, commFuelFiring.fuel,
 //                                chInTempProfile, 10, iFirstFiredSection);
                         if (nPoints == nTopActiveSecs) {
-                            considerChTempProfile = ((inPerfTableMode) || decide("Charge Temperature Profile",
-                                    "Do you want to consider the Charge Temperature Profile from the Reference Performance data?", 3000));
+                            if (inPerfTableMode)
+                                considerChTempProfile = true;
+                            else {
+                                if (!userActionAllowed())
+                                    considerChTempProfile = true;
+                                else
+                                    considerChTempProfile = decide("Charge Temperature Profile",
+                                            "Do you want to consider the Charge Temperature Profile from the Reference Performance data?", 3000);
+                            }
+//                            considerChTempProfile = ((inPerfTableMode) || (userActionAllowed() && decide("Charge Temperature Profile",
+//                                    "Do you want to consider the Charge Temperature Profile from the Reference Performance data?", 3000)));
                         } else {
                             considerChTempProfile = false;
                             if (tuningParams.bOnProductionLine) {
@@ -1053,6 +1061,10 @@ public class DFHFurnace {
         return uf;
     }
 
+    boolean userActionAllowed() {
+        return (!controller.isOnProductionLine() || controller.showDebugMessages);
+    }
+
     boolean getGasTempIfRequired(int iSec, boolean bBot, double nextSecGasT) {
         boolean allOK = true;
         FceSection sec = (bBot) ? botSections.get(iSec) : topSections.get(iSec);
@@ -1061,15 +1073,19 @@ public class DFHFurnace {
             if (controller.forProcess() == DFHTuningParams.ForProcess.STRIP)
                 suggTemp = (suggTemp > (nextSecGasT - 20)) ? (nextSecGasT - 20) : suggTemp;
             suggTemp = 10 * SPECIAL.roundToNDecimals(suggTemp / 10, -1) - 5;
-            String title = topBotName(bBot) + "Zone #" + (iSec + 1);
-            OneParamDialog tempDlg = new OneParamDialog(controller, title, 3000);
-            tempDlg.setValue("Zone Gas Temperature (C)", suggTemp, "#,##0", 100, 1700);
-            tempDlg.setLocation(300, 200);
-            tempDlg.setVisible(true);
-            if (tempDlg.isOk())
-                sec.setPresetGasTemp(tempDlg.getVal());
+            if (userActionAllowed()) {
+                String title = topBotName(bBot) + "Zone #" + (iSec + 1);
+                OneParamDialog tempDlg = new OneParamDialog(controller, title, 3000);
+                tempDlg.setValue("Zone Gas Temperature (C)", suggTemp, "#,##0", 100, 1700);
+                tempDlg.setLocation(300, 200);
+                tempDlg.setVisible(true);
+                if (tempDlg.isOk())
+                    sec.setPresetGasTemp(tempDlg.getVal());
+                else
+                    allOK = false;
+            }
             else
-                allOK = false;
+                sec.setPresetGasTemp(suggTemp);
         }
         return allOK;
     }
@@ -3576,10 +3592,10 @@ public class DFHFurnace {
                     else
                         manGasTZones += ", #" + (firedSecs[z] + 1);
                 }
-
-                showMessage("There are " + fired + " Burner Zones " + tOrP +
-                        "\nYou will be prompted for Gas Temperature" +
-                        ((fired > 3) ? "s for Zones " : " for Zone ") + manGasTZones);
+                if (userActionAllowed())
+                    showMessage("There are " + fired + " Burner Zones " + tOrP +
+                            "\nYou will be prompted for Gas Temperature" +
+                            ((fired > 3) ? "s for Zones " : " for Zone ") + manGasTZones);
                 break;
         }
         return retVal;

@@ -8,11 +8,12 @@ import com.prosysopc.ua.client.Subscription;
  * User: M Viswanathan
  * Date: 02-Feb-15
  * Time: 11:19 AM
- * To change this template use File | Settings | File Templates.
+ * A group of data with ready/Noted flags.
+ * I can be ready from Level1 and Noted from Level2 or the other way around
  */
 public class ReadyNotedParam extends L2ZoneParam {
-    boolean isReadyNotedRead = false;
-    boolean isReadyNotedWrite = false;
+    boolean isReadyNotedRead = false;   // ready inLevel1 and noted form Level2
+    boolean isReadyNotedWrite = false;  // ready in level2 and noted in Level1
 
     public ReadyNotedParam(TMuaClient source, String equipment, String processElement, Tag[] tags,
                            Subscription subscription) throws TagCreationException {
