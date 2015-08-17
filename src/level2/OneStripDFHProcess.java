@@ -1,12 +1,15 @@
 package level2;
 
 import basic.ChMaterial;
+import basic.ProductionData;
+import directFiredHeating.DFHTuningParams;
 import mvUtils.display.*;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 
 import javax.media.j3d.J3DBuffer;
 import javax.swing.*;
+import java.text.DecimalFormat;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -260,6 +263,56 @@ public class OneStripDFHProcess {
 //            noteDataFromUI();
 //        return response;
 //    }
+
+    public ErrorStatAndMsg fieldDataOkForProcess(String processName, ProductionData production) {
+        ErrorStatAndMsg retVal = new ErrorStatAndMsg(true, "ERROR: ");
+        DFHTuningParams tuning = l2DFHeating.getTuningParams();
+        DecimalFormat mmFmt = new DecimalFormat("#,###");
+        DecimalFormat outputFmt = new DecimalFormat("#,###.000");
+        DecimalFormat tempFmt = new DecimalFormat("#,###");
+        if (processName.equalsIgnoreCase(this.processName)) {
+            double chWidth = production.charge.length;  // remember it is strip
+            if (chWidth <= maxWidth) {
+                double minWallowed = Math.max(minWidth, maxWidth / tuning.widthOverRange);
+                if (chWidth >= minWallowed) {
+                    double output = production.production;
+                    double maxUnitOutputAllowed = maxUnitOutput * tuning.unitOutputOverRange;
+                    double minUnitOutputAllowed = Math.max(minUnitOutput, maxUnitOutput * tuning.unitOutputUnderRange);
+                    double unitOutputNow = output / chWidth;
+                    if (unitOutputNow >= minUnitOutputAllowed) {
+                        if (unitOutputNow <= maxUnitOutputAllowed) {
+                            double maxExitTempAllowed = tempDFHExit + tuning.exitTempTolerance;
+                            double minExitTempAllowed = tempDFHExit - tuning.exitTempTolerance;
+                            double nowExitTemp = production.exitTemp;
+                            if (nowExitTemp <= maxExitTempAllowed) {
+                                if (nowExitTemp >= minExitTempAllowed) {
+                                    if (production.exitZoneFceTemp > minExitZoneTemp)
+                                        retVal.inError = false;
+                                    else
+                                        retVal.msg += "Exit Zone Temperature Low (minimum allowed is " + tempFmt.format(minExitZoneTemp) + " C)";
+                                }
+                                else
+                                    retVal.msg += "Exit Temperature Low (minimum allowed is " + tempFmt.format(minExitTempAllowed) + " C)";
+                            }
+                            else
+                                retVal.msg += "Exit Temperature High (maximum allowed is " + tempFmt.format(maxExitTempAllowed) + " C)";
+                        }
+                        else
+                            retVal.msg += "Output too high (maximum allowed for this width is " + outputFmt.format(maxUnitOutputAllowed * chWidth / 1000) + " t/h)";
+                    }
+                    else
+                        retVal.msg += "Output too low (minimum required for this width is " + outputFmt.format(minUnitOutputAllowed * chWidth / 1000) + " t/h)";
+                }
+                else
+                    retVal.msg += "Strip is too narrow (minimum required " + mmFmt.format(minWallowed) + "mm)";
+            }
+            else
+                retVal.msg += "Strip is too Wide (max allowed is " + maxWidth * 1000 + " mm)";
+        }
+        else
+            retVal.msg += "Not acceptable process name (this is " + this.processName + ")";
+        return retVal;
+    }
 
     public DataListEditorPanel getEditPanel(Vector<ChMaterial> vChMaterial, InputControl inpC, DataHandler dataHandler,
                                        boolean editable, boolean startEditable) {

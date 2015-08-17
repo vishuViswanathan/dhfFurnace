@@ -53,4 +53,14 @@ public class ReadyNotedParam extends L2ZoneParam {
         if (isReadyNotedRead)
             setValue(Tag.TagName.Noted, true);
     }
+
+    public boolean markReady() {
+        boolean retVal = false;
+        if (isReadyNotedWrite)
+            if (getValue(Tag.TagName.Noted).booleanValue){
+            setValue(Tag.TagName.Ready, true);
+            retVal = true;
+        }
+        return retVal;
+    }
 }

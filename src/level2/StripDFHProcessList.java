@@ -1,6 +1,7 @@
 package level2;
 
 import basic.ChMaterial;
+import level2.fieldResults.FieldResults;
 import mvUtils.display.*;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
@@ -171,8 +172,6 @@ public class StripDFHProcessList {
         list.add(oneProcess);
         return true;
     }
-
-
 
     class AddProcessDlg extends JDialog implements DataHandler{
         boolean bListBeingChanged = false;

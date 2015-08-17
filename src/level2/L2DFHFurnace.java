@@ -13,6 +13,7 @@ import directFiredHeating.FceSection;
 import directFiredHeating.ResultsReadyListener;
 import level2.fieldResults.FieldResults;
 import level2.listeners.L2SubscriptionListener;
+import mvUtils.display.ErrorStatAndMsg;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import mvUtils.math.DoubleMV;
@@ -376,9 +377,12 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener {
         return retVal;
     }
 
-    public boolean takeFieldResultsFromLevel1() {
+    public ErrorStatAndMsg takeFieldResultsFromLevel1() {
         oneFieldResults = new FieldResults(this, true);
-         return !oneFieldResults.inError;
+        if (oneFieldResults.inError)
+            return new ErrorStatAndMsg(true, oneFieldResults.errMsg);
+        else
+            return oneFieldResults.processOkForFieldResults();
     }
 
     public HeatExchProps getAirHeatExchProps() {
@@ -421,7 +425,11 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener {
 
     void handleFieldData()  {
 //        controller.showMessage("Received Request to Take Field data");
-        if (l2DFHeating.takeResultsFromLevel1()) {
+        ErrorStatAndMsg stat = l2DFHeating.takeResultsFromLevel1();
+        if (stat.inError) {
+            showErrorInLevel1(stat.msg);
+        }
+        else {
             commonDFHZ.setValue(L2ParamGroup.Parameter.FieldData, Tag.TagName.Noted, true);
             calculatedForFieldResults = l2DFHeating.evalForFieldProduction(this);
         }
@@ -432,6 +440,13 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener {
         if (calculatedForFieldResults)
             l2DFHeating.recalculateWithFieldCorrections();
     }
+
+    public boolean showErrorInLevel1(String msg) {
+        l2ErrorMessages.setValue(Tag.TagName.Msg, msg);
+        return l2ErrorMessages.markReady();
+    }
+
+
 
     class SubAliveListener implements SubscriptionAliveListener {     // TODO This is common dummy class used everywhere to be made proper
         public void onAlive(Subscription s) {

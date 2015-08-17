@@ -6,6 +6,7 @@ import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
 import directFiredHeating.ResultsReadyListener;
 import display.QueryDialog;
+import mvUtils.display.ErrorStatAndMsg;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import org.apache.log4j.Logger;
@@ -214,6 +215,10 @@ public class L2DFHeating extends DFHeating {
             else if (caller == mIEvalWithFieldCorrection)
                 recalculateWithFieldCorrections();
         }
+    }
+
+    public DFHTuningParams getTuningParams() {
+        return tuningParams;
     }
 
     protected void setFcefor(boolean showSuggestion) {
@@ -470,15 +475,14 @@ public class L2DFHeating extends DFHeating {
         return l2Furnace.getFieldDataFromUser();
     }
 
-    boolean takeResultsFromLevel1()  {
+    ErrorStatAndMsg takeResultsFromLevel1()  {
         mIEvalForFieldProduction.setEnabled(false);
         mIEvalWithFieldCorrection.setEnabled(false);
         boolean retVal = false;
-        retVal = l2Furnace.takeFieldResultsFromLevel1();
-        if (retVal) {
+        ErrorStatAndMsg stat = l2Furnace.takeFieldResultsFromLevel1();
+        if (stat.inError)
             mIEvalForFieldProduction.setEnabled(true);
-        }
-        return retVal;
+        return stat;
     }
 
     boolean loadFieldResults() {

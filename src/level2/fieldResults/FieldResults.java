@@ -25,6 +25,7 @@ import java.text.DecimalFormat;
  */
 public class FieldResults {
     L2DFHFurnace l2Furnace;
+    OneStripDFHProcess stripDFHProc;
     public ProductionData production;
     FuelFiring fuelFiring;
     double flueTempOut;
@@ -91,6 +92,8 @@ public class FieldResults {
                         inError = false;
                     }
                 }
+                else
+                    errMsg = "FieldResults:" + "Some error in Getting Strip Data";
             }
         }
     }
@@ -103,7 +106,7 @@ public class FieldResults {
         double speed = stripZone.getValue(L2ParamGroup.Parameter.Speed, Tag.TagName.PV).floatValue * 60; // m/h
         double output = 7.85 * width * speed * thick * 1000; // kg/h
         String forProcess = stripZone.getValue(L2ParamGroup.Parameter.Data, Tag.TagName.Process).stringValue;
-        OneStripDFHProcess stripDFHProc = l2Furnace.l2DFHeating.getStripDFHProcess(forProcess);
+        stripDFHProc = l2Furnace.l2DFHeating.getStripDFHProcess(forProcess);
         if (stripDFHProc != null) {
             production = new ProductionData();
             ChMaterial chMat = stripDFHProc.getChMaterial(forProcess, thick);
@@ -124,6 +127,10 @@ public class FieldResults {
         } else
             l2Furnace.l2DFHeating.showError("Could not ascertain Process data " + forProcess);
         return retVal;
+    }
+
+    public ErrorStatAndMsg processOkForFieldResults() {
+        return stripDFHProc.fieldDataOkForProcess(stripDFHProc.processName, production);
     }
 
     boolean takeRecuData(L2Zone recu) {

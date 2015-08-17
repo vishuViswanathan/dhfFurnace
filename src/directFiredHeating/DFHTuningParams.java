@@ -44,15 +44,15 @@ public class DFHTuningParams {
         public static ForProcess getEnum(String text) {
             ForProcess retVal = null;
             if (text != null) {
-              for (ForProcess b : ForProcess.values()) {
-                if (text.equalsIgnoreCase(b.proName)) {
-                  retVal = b;
-                    break;
+                for (ForProcess b : ForProcess.values()) {
+                    if (text.equalsIgnoreCase(b.proName)) {
+                        retVal = b;
+                        break;
+                    }
                 }
-              }
             }
             return retVal;
-          }
+        }
     }
     boolean bOnTest = false;
     JCheckBox cBOnTest;
@@ -154,10 +154,10 @@ public class DFHTuningParams {
         tfTFMStep = new NumberTextField(controller, tfmStep * 1000, 6,false, 200, 5000, "#,###", "Length Step for TFM Temperaure Profile");
         cBbAutoTempForLosses = new JCheckBox();
         cBbAutoTempForLosses.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        allowManualTempForLosses(!cBbAutoTempForLosses.isSelected());
-                    }
-                });
+            public void actionPerformed(ActionEvent e) {
+                allowManualTempForLosses(!cBbAutoTempForLosses.isSelected());
+            }
+        });
         cBbConsiderChTempProfile = new JCheckBox();
         cBbConsiderChTempProfile.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -342,7 +342,7 @@ public class DFHTuningParams {
         xmlStr += XMLmv.putTag("underUP", underUP);
         xmlStr += XMLmv.putTag("bOnProductionLine", (bOnProductionLine) ? 1: 0);
 //        xmlStr += XMLmv.putTag("takeEmissivityCorrFactor", (takeEmissivityCorrFactor) ? 1: 0);
-         return xmlStr;
+        return xmlStr;
     }
 
     public boolean takeDataFromXML(String xmlStr) {
@@ -431,7 +431,7 @@ public class DFHTuningParams {
         gbc.gridy++;
         jp.add(performancePan(), gbc);
 
-       return jp;
+        return jp;
     }
 
     JPanel getProcSetPanel() {
@@ -475,20 +475,26 @@ public class DFHTuningParams {
     public boolean bConsiderChTempProfile = true;
     JCheckBox cBbConsiderChTempProfile;
     public double overUP = 1.05, underUP = 0.2; // allowed upper and lower factors with respect to
-                            // output per unit Strip width (charge length)
+    // output per unit Strip width (charge length)
     public boolean bAdjustChTempProfile = true;    // while respecting last zone minimum fce temp
     JCheckBox cBbAdjustChTempProfile;
     NumberTextField tfOverUP, tfUnderUP;
     public boolean bOnProductionLine = false;
     JCheckBox cBbOnProductionLine;
+    // parameters for Field reference Data
+    public double unitOutputOverRange = 1.05;
+    public double unitOutputUnderRange = 0.9;
+    public double exitTempTolerance = 5;
+    NumberTextField ntUnitOutputOverRange;
+    NumberTextField ntUnitOutputUnderRange;
+    NumberTextField ntExitTempTolerance;
+
     // parameters for Performance Table
-//    double outputOverRange = 1.1;
     double minOutputFactor = 0.7;
     double outputStep = 0.2;
-    double widthOverRange = 1.1;
+    public double widthOverRange = 1.1;
     double minWidthFactor = 0.8;
     double widthStep = 0.1;
-    NumberTextField ntOutputOverRange;
     NumberTextField ntMinOutputFactor;
     NumberTextField ntOutputStep;
     NumberTextField ntWidthOverRange;
@@ -589,7 +595,7 @@ public class DFHTuningParams {
         dlg.setLocationRelativeTo(c);
         dlg.setVisible(true);
         controller.mainF.setVisible(true);
-     }
+    }
 
     public void setPerfTurndownSettings(double minOutputFactor, double minWidthFactor) {
         this. minOutputFactor = minOutputFactor;
@@ -597,96 +603,123 @@ public class DFHTuningParams {
     }
 
     class PerfTableSetting extends JDialog {
-         JButton ok = new JButton("OK");
-         JButton cancel = new JButton("Cancel");
-         ActionListener li;
-         Frame parent;
+        JButton ok = new JButton("OK");
+        JButton cancel = new JButton("Cancel");
+        ActionListener li;
+        Frame parent;
 
-         PerfTableSetting(Frame parent) {
-             super(parent, "", Dialog.ModalityType.DOCUMENT_MODAL);
-             this.parent = parent;
-             jbInit();
-             pack();
-          }
+        PerfTableSetting(Frame parent) {
+            super(parent, "", Dialog.ModalityType.DOCUMENT_MODAL);
+            this.parent = parent;
+            jbInit();
+            pack();
+        }
 
-         void jbInit() {
-             Dimension d = new Dimension(100, 25);
-             ok.setPreferredSize(d);
-             cancel.setPreferredSize(d);
-             li = new ActionListener() {
-                 public void actionPerformed(ActionEvent e) {
-                     Object src = e.getSource();
-                     if (src == ok) {
-                         if (!isInError()) {
-                             takeSetValues();
-                             closeThisWindow();
-                         }
-                     } else if (src == cancel) {
-//                         setValuesToUI();
-//                         setComboBoxes();
-                         closeThisWindow();
-                     }
-                 }
-             };
-             ok.addActionListener(li);
-             cancel.addActionListener(li);
-             Container dlgP = getContentPane();
-             MultiPairColPanel jp = new MultiPairColPanel("Settings for Performance Table", 200, 60);
-//             ntOutputOverRange = new NumberTextField(controller, outputOverRange, 6, false, 1.01, 1.5, "0.##", "Output OverRange Factor:");
-             ntMinOutputFactor = new NumberTextField(controller, minOutputFactor, 6, false, 0.1, 0.9, "0.##", "Minimum Unit Output Factor:");
-             ntOutputStep = new NumberTextField(controller, outputStep, 6, false, 0.05, 0.5, "0.##", "Unit Output Factor Step:");
+        void jbInit() {
+            Dimension d = new Dimension(100, 25);
+            ok.setPreferredSize(d);
+            cancel.setPreferredSize(d);
+            li = new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    Object src = e.getSource();
+                    if (src == ok) {
+                        if (!isInError()) {
+                            takeSetValues();
+                            closeThisWindow();
+                        }
+                    } else if (src == cancel) {
+                        closeThisWindow();
+                    }
+                }
+            };
+            ok.addActionListener(li);
+            cancel.addActionListener(li);
+            Container dlgP = getContentPane();
+            JPanel jp = new JPanel(new BorderLayout());
 
-             ntWidthOverRange = new NumberTextField(controller, widthOverRange, 6, false, 1.01, 1.5, "0.##", "Width OverRange Factor:");
-             ntMinWidthFactor = new NumberTextField(controller, minWidthFactor, 6, false, 0.1, 0.9, "0.##", "Minimum Width Factor:");
-             ntWidthStep = new NumberTextField(controller, widthStep, 6, false, 0.05, 0.5, "0.##", "Width Factor Step:");
+            jp.add(perfTableSettings(), BorderLayout.NORTH);
+            jp.add(fieldRefDataSettings(), BorderLayout.CENTER);
+            jp.add(buttonPanel(), BorderLayout.SOUTH);
+            dlgP.add(jp);
+        }
 
-//             jp.addItemPair(ntOutputOverRange);
-             jp.addItemPair(ntMinOutputFactor);
-             jp.addItemPair(ntOutputStep);
-             jp.addBlank();
-             jp.addItemPair(ntWidthOverRange);
-             jp.addItemPair(ntMinWidthFactor);
-             jp.addItemPair(ntWidthStep);
-             jp.addBlank();
-             jp.addItemPair(cancel, ok);
-             dlgP.add(jp);
-         }
+        JPanel fieldRefDataSettings() {
+            MultiPairColPanel jp = new MultiPairColPanel("Settings for Field Reference Data", 200, 60);
+            ntUnitOutputOverRange = new NumberTextField(controller, unitOutputOverRange, 6, false, 1.0, 1.2, "0.00", "Unit Output OverRange factor");
+            ntUnitOutputUnderRange = new NumberTextField(controller, unitOutputUnderRange, 6, false, 0.8, 1.0, "0.00", "Unit Output UnderRange factor");
+            ntExitTempTolerance = new NumberTextField(controller, exitTempTolerance, 6, false, 1, 20, "##", "Margin (+-) on Exit Temperature (degC)");
 
-         boolean isInError() {
-             boolean inError = false;
-             boolean stat;
-             String msg = "ERROR : ";
-             // new Values
-             double oMin = ntMinOutputFactor.getData();
+            jp.addItemPair(ntUnitOutputOverRange);
+            jp.addItemPair(ntUnitOutputUnderRange);
+            jp.addBlank();
+            jp.addItemPair(ntExitTempTolerance);
+            return jp;
+        }
+
+        JPanel perfTableSettings() {
+            MultiPairColPanel jp = new MultiPairColPanel("Settings for Performance Table", 200, 60);
+            ntMinOutputFactor = new NumberTextField(controller, minOutputFactor, 6, false, 0.1, 0.9, "0.00", "Minimum Unit Output Factor");
+            ntOutputStep = new NumberTextField(controller, outputStep, 6, false, 0.05, 0.5, "0.00", "Unit Output Factor Step");
+
+            ntWidthOverRange = new NumberTextField(controller, widthOverRange, 6, false, 1.01, 1.5, "0.00", "Width OverRange Factor");
+            ntMinWidthFactor = new NumberTextField(controller, minWidthFactor, 6, false, 0.1, 0.9, "0.00", "Minimum Width Factor");
+            ntWidthStep = new NumberTextField(controller, widthStep, 6, false, 0.05, 0.5, "0.00", "Width Factor Step");
+
+            jp.addItemPair(ntMinOutputFactor);
+            jp.addItemPair(ntOutputStep);
+            jp.addBlank();
+            jp.addItemPair(ntWidthOverRange);
+            jp.addItemPair(ntMinWidthFactor);
+            jp.addItemPair(ntWidthStep);
+            return jp;
+        }
+
+        JPanel buttonPanel() {
+            MultiPairColPanel jp = new MultiPairColPanel(80, 80);
+            jp.addItemPair(cancel, ok);
+            return jp;
+        }
+
+        boolean isInError() {
+            boolean inError = false;
+            boolean stat;
+            String msg = "ERROR : ";
+            // new Values
+            double oMin = ntMinOutputFactor.getData();
 //             double oStep =ntOutputStep.getData();
 //             double wMin = ntMinWidthFactor.getData();
 //             double wStep = ntWidthStep.getData();
 
-             if (oMin < underUP) {
-                 msg += "\n   Check Minimum Output Factor must be higher than " + underUP;
-                 inError = true;
-             }
-             if (inError) {
-                 controller.enableNotify(false);
-                 JOptionPane.showMessageDialog(this, msg, "Performance Table Settings", JOptionPane.ERROR_MESSAGE);
-                 controller.enableNotify(true);
-                 controller.parent().toFront();
-             }
-             return inError;
-         }
+            if (oMin < underUP) {
+                msg += "\n   Check Minimum Output Factor must be higher than " + underUP;
+                inError = true;
+            }
+            if (inError) {
+                controller.enableNotify(false);
+                JOptionPane.showMessageDialog(this, msg, "Performance Table Settings", JOptionPane.ERROR_MESSAGE);
+                controller.enableNotify(true);
+                controller.parent().toFront();
+            }
+            return inError;
+        }
 
-         void takeSetValues() {
-             minOutputFactor = ntMinOutputFactor.getData();
-             outputStep = ntOutputStep.getData();
-             minWidthFactor = ntMinWidthFactor.getData();
-             widthStep = ntWidthStep.getData();
-         }
+        void takeSetValues() {
+            minOutputFactor = ntMinOutputFactor.getData();
+            outputStep = ntOutputStep.getData();
+            minWidthFactor = ntMinWidthFactor.getData();
+            widthStep = ntWidthStep.getData();
+            widthOverRange = ntWidthOverRange.getData();
 
-         void closeThisWindow() {
-             setVisible(false);
-             dispose();
-         }
-     }
+            unitOutputOverRange = ntUnitOutputOverRange.getData();
+            unitOutputUnderRange = ntUnitOutputUnderRange.getData();
+            exitTempTolerance = ntExitTempTolerance.getData();
+        }
+
+        void closeThisWindow() {
+            setVisible(false);
+            dispose();
+        }
+    }
 
 
     class PreSetTunes {

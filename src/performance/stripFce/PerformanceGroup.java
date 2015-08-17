@@ -113,35 +113,6 @@ public class PerformanceGroup implements ActionListener{
         return bNoted;
     }
 
-    // @TODO - To be REMOVED
-    public int noteBasePerformanceOLD(Performance performance, boolean fromXML) {
-        boolean requiresInterpolCheck = false;
-        int foundAt = checkIfDuplicate(performance, 1.0);
-        if (foundAt >= 0) {
-            // replace data
-            refPerformance.remove(foundAt);
-            refPerformance.add(foundAt, performance);
-            if (foundAt < 2)
-                requiresInterpolCheck = true;
-            showMessage("Replaced earlier data" + ((requiresInterpolCheck) ? " with interpolation check": ""));
-        }
-        else
-            refPerformance.add(performance);
-        if (checkChTempProfAvailable() && !fromXML)
-            tobeSaved = true;
-//        if (!fromXML) {
-//            if (decide("Performance Table", "Do you want to create Performance Table?")) {
-//                controller.calculateForPerformanceTable(performance);
-////                performance.createPerfTable();
-//            }
-//        }
-        int nPerf = refPerformance.size();
-        if (nPerf == 2 || requiresInterpolCheck)
-            checkIfCanInterpolate();
-        return nPerf;
-    }
-
-
     public boolean isValid() {
         return (refPerformance.size() > 0);
     }
