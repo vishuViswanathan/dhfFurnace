@@ -39,7 +39,8 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener {
     LinkedHashMap<FceSection, L2Zone> botL2Zones;
     ReadyNotedParam l2InfoMessages;
     ReadyNotedParam l2ErrorMessages;
-    ReadyNotedParam l2StripSizeParams;
+    ReadyNotedParam l2StripSizeNow;
+    ReadyNotedParam l2StripSizeNext;
     ReadyNotedParam fieldDataParams;
     L2Zone stripZone;  // all strip data size, speed temperature etc.
     L2Zone recuperatorZ;
@@ -82,16 +83,30 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener {
             stripSub = source.createSubscription(new SubAliveListener(), new StripListener());
             stripZone = new L2Zone(this, "Strip", stripSub);
             try {
-                Tag[] stripDataTags = {
-                        new Tag(L2ParamGroup.Parameter.Data, Tag.TagName.Process, false, false),
-                        new Tag(L2ParamGroup.Parameter.Data, Tag.TagName.Ready, false, true),
-                        new Tag(L2ParamGroup.Parameter.Data, Tag.TagName.Thick, false, false),
-                        new Tag(L2ParamGroup.Parameter.Data, Tag.TagName.Width, false, false),
-                        new Tag(L2ParamGroup.Parameter.Data, Tag.TagName.Noted, true, false)};
-                location = "Strip size tags";
-                l2StripSizeParams = new ReadyNotedParam(source, equipment, "Strip.Data", stripDataTags, stripSub);
-                stripZone.addOneParameter(L2ParamGroup.Parameter.Data, l2StripSizeParams);
-                noteMonitoredTags(stripDataTags);
+                Tag[] stripDataNowTags = {
+                        new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Process, false, false),
+                        new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Ready, false, false),  // TODO not used
+                        new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Thick, false, false),
+                        new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Width, false, false),
+                        new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Noted, true, false)};  // TODO not used
+                location = "Strip size Now tags";   // for error messages
+                l2StripSizeNow = new ReadyNotedParam(source, equipment, "Strip.Now", stripDataNowTags, stripSub);
+                stripZone.addOneParameter(L2ParamGroup.Parameter.Now, l2StripSizeNow);
+//                stripZone.addOneParameter(L2ParamGroup.Parameter.Next, l2StripSizeNow);
+                noteMonitoredTags(stripDataNowTags);
+
+                Tag[] stripDataNextTags = {
+                        new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.Process, false, false),
+                        new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.Ready, false, true),
+                        new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.Thick, false, false),
+                        new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.Width, false, false),
+                        new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.Noted, true, false)};
+                location = "Strip size Next tags";
+                l2StripSizeNext = new ReadyNotedParam(source, equipment, "Strip.Next", stripDataNextTags, stripSub);
+                stripZone.addOneParameter(L2ParamGroup.Parameter.Next, l2StripSizeNext);
+//                stripZone.addOneParameter(L2ParamGroup.Parameter.Now, l2StripSizeNext);
+                noteMonitoredTags(stripDataNextTags);
+
                 Tag[] stripTemperatureTags = {
                         new Tag(L2ParamGroup.Parameter.Temperature, Tag.TagName.SP, false, false),
                         new Tag(L2ParamGroup.Parameter.Temperature, Tag.TagName.SP, true, false),   // SP from Level2
@@ -397,12 +412,12 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener {
 //        controller.showMessage(msg);
 //        l2StripSizeParams.setAsNoted();
 
-        double stripWidth = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Data, Tag.TagName.Width).floatValue, 3) / 1000;
-        double  stripThick = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Data, Tag.TagName.Thick).floatValue, 3) / 1000;
-        String process = stripZone.getValue(L2ParamGroup.Parameter.Data, Tag.TagName.Process).stringValue;
+        double stripWidth = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Width).floatValue, 3) / 1000;
+        double  stripThick = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Thick).floatValue, 3) / 1000;
+        String process = stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Process).stringValue;
         String msg = "New Strip " + stripWidth + " x " + stripThick + " for process " + process;
         controller.showMessage(msg);
-        stripZone.setValue(L2ParamGroup.Parameter.Data, Tag.TagName.Noted, true);
+        stripZone.setValue(L2ParamGroup.Parameter.Next, Tag.TagName.Noted, true);
 
         Performance refP = getBasePerformance(process, stripThick);
         if (refP != null) {
@@ -486,7 +501,7 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener {
         public void onDataChange(Subscription subscription, MonitoredDataItem monitoredDataItem, DataValue dataValue) {
             if (l2DFHeating.isL2SystemReady()) {
                 Tag theTag = monitoredTags.get(monitoredDataItem);
-                if (l2StripSizeParams.isNewData(theTag))   // the data will be already read if new data
+                if (l2StripSizeNext.isNewData(theTag))   // the data will be already read if new data
                     handleNewStrip();
             }
         }

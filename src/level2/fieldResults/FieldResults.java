@@ -101,11 +101,11 @@ public class FieldResults {
     boolean takeStripData(L2Zone stripZone) {
         boolean retVal = false;
         double stripExitT = stripZone.getValue(L2ParamGroup.Parameter.Temperature, Tag.TagName.PV).floatValue;
-        double width = stripZone.getValue(L2ParamGroup.Parameter.Data, Tag.TagName.Width).floatValue / 1000; // m
-        double thick = stripZone.getValue(L2ParamGroup.Parameter.Data, Tag.TagName.Thick).floatValue / 1000; // m
+        double width = stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Width).floatValue / 1000; // m
+        double thick = stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Thick).floatValue / 1000; // m
         double speed = stripZone.getValue(L2ParamGroup.Parameter.Speed, Tag.TagName.PV).floatValue * 60; // m/h
         double output = 7.85 * width * speed * thick * 1000; // kg/h
-        String forProcess = stripZone.getValue(L2ParamGroup.Parameter.Data, Tag.TagName.Process).stringValue;
+        String forProcess = stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Process).stringValue;
         stripDFHProc = l2Furnace.l2DFHeating.getStripDFHProcess(forProcess);
         if (stripDFHProc != null) {
             production = new ProductionData();

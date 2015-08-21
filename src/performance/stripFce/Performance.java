@@ -412,9 +412,12 @@ public class Performance {
 
     public String toString() {
         DecimalFormat tempFmt = new DecimalFormat("#,##0");
-        return chMaterial +
+        if (chMaterial != null)
+            return chMaterial +
                 ", size " + (chLength* 1000) + " x " + (chThick * 1000) +  " to " + tempFmt.format(exitTemp()) +
                 " at " + (output / 1000) + " t/h with " + fuelName + " as fuel";
+        else
+            return super.toString();
     }
 
     String dateStr() {

@@ -14,48 +14,50 @@ import java.util.Hashtable;
  */
 public class L2ParamGroup {
     static public enum Parameter {
-         Temperature("Temperature"),
-         FuelFlow("FuelFlow"),
-         AirFlow("AirFlow"),
-         AFRatio("AFRatio"),
-         Pressure("Pressure"),
-         Speed("Speed"),
-         Flue("Flue"),
-         FuelCharacteristic("FuelCharacteristic"),
-         FieldData("FieldData"),  // from which level2 to work out performance data
-         Data("Data"),
-         Status("Status"),
-         ErrMsg("ErrorMsg"),
-         InfoMsg("InfoMsg"),
-         L2Stat("Level2Stat");
-         private final String elementName;
+        Temperature("Temperature"),
+        FuelFlow("FuelFlow"),
+        AirFlow("AirFlow"),
+        AFRatio("AFRatio"),
+        Pressure("Pressure"),
+        Speed("Speed"),
+        Flue("Flue"),
+        FuelCharacteristic("FuelCharacteristic"),
+        FieldData("FieldData"),  // from which level2 to work out performance data
+        Now("Now"),
+        Next("Next"),
+        Status("Status"),
+        ErrMsg("ErrorMsg"),
+        InfoMsg("InfoMsg"),
+        L2Stat("Level2Stat");
+        private final String elementName;
 
-         Parameter(String elementName) {
-             this.elementName = elementName;
-         }
+        Parameter(String elementName) {
+            this.elementName = elementName;
+        }
 
-         public String getValue() {
-             return name();
-         }
+        public String getValue() {
+            return name();
+        }
 
-         @Override
-         public String toString() {
-             return elementName;
-         }
+        @Override
+        public String toString() {
+            return elementName;
+        }
 
-         public static Parameter getEnum(String text) {
-             Parameter retVal = null;
-             if (text != null) {
-                 for (Parameter b : Parameter.values()) {
-                     if (text.equalsIgnoreCase(b.elementName)) {
-                         retVal = b;
-                         break;
-                     }
-                 }
-             }
-             return retVal;
-         }
-     }
+        public static Parameter getEnum(String text) {
+            Parameter retVal = null;
+            if (text != null) {
+                for (Parameter b : Parameter.values()) {
+                    if (text.equalsIgnoreCase(b.elementName)) {
+                        retVal = b;
+                        break;
+                    }
+                }
+            }
+            return retVal;
+        }
+    }
+
     String groupName;
     Hashtable<Parameter, L2ZoneParam> paramList;
     L2DFHFurnace l2Furnace;
@@ -63,6 +65,7 @@ public class L2ParamGroup {
 
     /**
      * For common sections with external subscription
+     *
      * @param l2Furnace
      * @param groupName
      * @param subscription
@@ -87,15 +90,15 @@ public class L2ParamGroup {
     }
 
     public ProcessValue setValue(Parameter element, Tag.TagName tagName, float newValue) {
-         return getL2Param(element).setValue(tagName, newValue);
+        return getL2Param(element).setValue(tagName, newValue);
     }
 
     public ProcessValue setValue(Parameter element, Tag.TagName tagName, String strValue) {
-         return getL2Param(element).setValue(tagName, strValue);
+        return getL2Param(element).setValue(tagName, strValue);
     }
 
     public ProcessValue setValue(Parameter element, Tag.TagName tagName, boolean bValue) {
-         return getL2Param(element).setValue(tagName, bValue);
+        return getL2Param(element).setValue(tagName, bValue);
     }
 
     public ProcessValue getValue(Parameter element, Tag.TagName tagName) {
@@ -107,13 +110,13 @@ public class L2ParamGroup {
         String basePath = "";
         try {
             L2ZoneParam param = new L2ZoneParam(l2Furnace.source, l2Furnace.equipment,
-                                (basePath = groupName + "." + element),
-                                tags, subscription);
+                    (basePath = groupName + "." + element),
+                    tags, subscription);
             paramList.put(element, param);
             retVal = true;
         } catch (TagCreationException e) {
             e.setElement(basePath, "");
-            throw(e);
+            throw (e);
         }
         return retVal;
     }
