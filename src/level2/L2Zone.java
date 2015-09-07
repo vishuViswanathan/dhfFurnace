@@ -27,6 +27,7 @@ public class L2Zone extends L2ParamGroup {
 
     Hashtable<MonitoredDataItem, Tag> monitoredTags;
     boolean monitoredTagsReady = false;
+    int fuelCharSteps;
 
     public L2Zone(L2DFHFurnace l2Furnace, String zoneName, FceSection theSection,
                   boolean bSubscribe) throws TagCreationException {
@@ -45,23 +46,33 @@ public class L2Zone extends L2ParamGroup {
                 new Tag(Parameter.FuelFlow, Tag.TagName.Auto, false, false),
                 new Tag(Parameter.FuelFlow, Tag.TagName.Remote, false, false),
                 new Tag(Parameter.FuelFlow, Tag.TagName.Span, false, false),
-                new Tag(Parameter.FuelFlow, Tag.TagName.SP, false, false)};
+                new Tag(Parameter.FuelFlow, Tag.TagName.SP, false, false),
+                new Tag(Parameter.FuelFlow, Tag.TagName.SP, true, false)};
         Tag[] airFlowTags = {new Tag(Parameter.AirFlow, Tag.TagName.SP, false, false),
                 new Tag(Parameter.AirFlow, Tag.TagName.PV, false, true),
                 new Tag(Parameter.AirFlow, Tag.TagName.Auto, false, false),
                 new Tag(Parameter.AirFlow, Tag.TagName.Remote, false, false),
                 new Tag(Parameter.AirFlow, Tag.TagName.Temperature, false, true)};
-        Tag[] fuelCharTags = {new Tag(Parameter.FuelCharacteristic, Tag.TagName.X1, true, false),
-                new Tag(Parameter.FuelCharacteristic, Tag.TagName.X2, true, false),
-                new Tag(Parameter.FuelCharacteristic, Tag.TagName.X3, true, false),
-                new Tag(Parameter.FuelCharacteristic, Tag.TagName.X4, true, false),
-                new Tag(Parameter.FuelCharacteristic, Tag.TagName.X5, true, false),
-                new Tag(Parameter.FuelCharacteristic, Tag.TagName.Y1, true, false),
-                new Tag(Parameter.FuelCharacteristic, Tag.TagName.Y2, true, false),
-                new Tag(Parameter.FuelCharacteristic, Tag.TagName.Y3, true, false),
-                new Tag(Parameter.FuelCharacteristic, Tag.TagName.Y4, true, false),
-                new Tag(Parameter.FuelCharacteristic, Tag.TagName.Y5, true, false)
-        };
+        fuelCharSteps = l2Furnace.furnaceSettings.fuelCharSteps;
+        Tag[] fuelCharTags = new Tag[fuelCharSteps * 2];
+        int pos = 0;
+        for (int s = 1; s <= fuelCharSteps; s++) {
+            fuelCharTags[pos++] = new Tag(Parameter.FuelCharacteristic,
+                    Tag.TagName.getEnum("X" + ("" + s).trim()), true, false);
+            fuelCharTags[pos++] = new Tag(Parameter.FuelCharacteristic,
+                    Tag.TagName.getEnum("Y" + ("" + s).trim()), true, false);
+        }
+//        Tag[] fuelCharTags = {new Tag(Parameter.FuelCharacteristic, Tag.TagName.X1, true, false),
+//                new Tag(Parameter.FuelCharacteristic, Tag.TagName.X2, true, false),
+//                new Tag(Parameter.FuelCharacteristic, Tag.TagName.X3, true, false),
+//                new Tag(Parameter.FuelCharacteristic, Tag.TagName.X4, true, false),
+//                new Tag(Parameter.FuelCharacteristic, Tag.TagName.X5, true, false),
+//                new Tag(Parameter.FuelCharacteristic, Tag.TagName.Y1, true, false),
+//                new Tag(Parameter.FuelCharacteristic, Tag.TagName.Y2, true, false),
+//                new Tag(Parameter.FuelCharacteristic, Tag.TagName.Y3, true, false),
+//                new Tag(Parameter.FuelCharacteristic, Tag.TagName.Y4, true, false),
+//                new Tag(Parameter.FuelCharacteristic, Tag.TagName.Y5, true, false)
+//        };
         monitoredTags = new Hashtable<MonitoredDataItem, Tag>();
         addOneParameter(Parameter.Temperature, temperatureTags);
         addOneParameter(Parameter.FuelFlow, fuelFlowTags);
@@ -87,6 +98,19 @@ public class L2Zone extends L2ParamGroup {
         for (Tag tag : tags)
             if (tag.isMonitored())
                 monitoredTags.put(tag.getMonitoredDataItem(), tag);
+    }
+
+    public boolean setFuelCharacteristic(L2ZonalFuelProfile zFP) {
+        boolean retVal = true;
+        double[][] fuelTable = zFP.oneZoneFuelArray(theSection.secNum - 1, theSection.botSection);
+        if (theSection != null) {
+            int steps = fuelTable.length;
+            for (int s = 0; s < steps; s++) {
+                setValue(Parameter.FuelCharacteristic, Tag.TagName.getEnum("X" + ("" + (s + 1)).trim()), (float)fuelTable[s][0]);
+                setValue(Parameter.FuelCharacteristic, Tag.TagName.getEnum("Y" + ("" + (s + 1)).trim()), (float)fuelTable[s][1]);
+            }
+        }
+        return retVal;
     }
 
     public void closeSubscriptions() {

@@ -19,6 +19,7 @@ public class Tag {
         Noted("noted"),
         Ready("ready"),
         Mode("Mode"),   // eg Strip mode for DFH control
+        StripMode("StripMode"),
         //floats
         PV("PV"),
         SP("SP"),
@@ -33,11 +34,22 @@ public class Tag {
         X3("x3"),
         X4("x4"),
         X5("x5"),
+        X6("x6"),
+        X7("x7"),
+        X8("x8"),
+        X9("x9"),
+        X10("x10"),
+
         Y1("y1"),
         Y2("y2"),
         Y3("y3"),
         Y4("y4"),
         Y5("y5"),
+        Y6("y6"),
+        Y7("y7"),
+        Y8("y8"),
+        Y9("y9"),
+        Y10("y10"),
         // Strings
         Process("process"),
         Msg("msg");
@@ -72,22 +84,22 @@ public class Tag {
         }
     }
 
-    TagName tagName;
-    boolean subscribe = false;
+    public TagName tagName;
+    public boolean bSubscribe = false;
     L2ParamGroup.Parameter element;
-    ProcessData.DataType dataType;
-    ProcessData.Source dataSource;  // Level2 or Process
-    ProcessData.Access access;
-    ProcessData processData;
+    public ProcessData.DataType dataType;
+    public ProcessData.Source dataSource;  // Level2 or Process
+    public ProcessData.Access access;
+    protected ProcessData processData;
     ProcessValue value = new ProcessValue();
 
-    public Tag(L2ParamGroup.Parameter element, TagName tagName, boolean rw, boolean subscribe) {
+    public Tag(L2ParamGroup.Parameter element, TagName tagName, boolean rw, boolean bSubscribe) {
         this.element = element;
         this.tagName = tagName;
         this.dataType = getDataType(tagName);
         access = (rw) ? ProcessData.Access.RW : ProcessData.Access.READONLY;
         dataSource = (rw) ? ProcessData.Source.LEVEL2 : ProcessData.Source.PROCESS;
-        this.subscribe = subscribe;
+        this.bSubscribe = bSubscribe;
     }
 
     public void setProcessData(ProcessData processData) {
@@ -102,7 +114,7 @@ public class Tag {
         return processData.getMonitoredDataItem();
     }
 
-    ProcessValue getValue() {
+    protected ProcessValue getValue() {
         processData.getValue(value);
         return value;
     }
@@ -111,25 +123,25 @@ public class Tag {
         return value;
     }
 
-    ProcessValue setValue(float newValue) {
+    protected ProcessValue setValue(float newValue) {
         value.floatValue = newValue;
         processData.setValue(value);
         return value;
     }
 
-    ProcessValue setValue(boolean newValue) {
+    protected ProcessValue setValue(boolean newValue) {
         value.booleanValue = newValue;
         processData.setValue(value);
         return value;
     }
 
-    ProcessValue setValue(double newValue) {
+    protected ProcessValue setValue(double newValue) {
          value.doubleValue = newValue;
          processData.setValue(value);
          return value;
      }
 
-    ProcessValue setValue(String newValue) {
+    protected ProcessValue setValue(String newValue) {
          value.stringValue = newValue;
          processData.setValue(value);
          return value;
@@ -160,5 +172,16 @@ public class Tag {
 
     ProcessData.DataType getDataType() {
         return dataType;
+    }
+
+    public boolean checkConnection() {
+        boolean retVal;
+        TMopcUa.ProcessValue pValue = getValue();
+        retVal = pValue.valid;
+        if ((access == ProcessData.Access.RW) && retVal) {
+            processData.setValue(pValue);
+            retVal = pValue.valid;
+        }
+        return retVal;
     }
 }

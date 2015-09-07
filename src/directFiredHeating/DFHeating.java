@@ -353,7 +353,7 @@ public class DFHeating extends JApplet implements InputControl {
     protected void createUIs() {
         debug("itsON = " + itsON);
         if (!itsON) {
-            mainF.addWindowListener(new winListener());
+            mainF.addWindowListener(new WinListener());
             debug("added WindowListeners");
             setMenuOptions();
             debug("set Menu Options");
@@ -4215,7 +4215,7 @@ public class DFHeating extends JApplet implements InputControl {
         }
     }
 
-    class winListener implements WindowListener {
+    class WinListener implements WindowListener {
         public void windowOpened(WindowEvent e) {
         }
 

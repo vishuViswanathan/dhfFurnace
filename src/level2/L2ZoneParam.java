@@ -4,10 +4,9 @@ import TMopcUa.OneDataGroup;
 import TMopcUa.ProcessData;
 import TMopcUa.ProcessValue;
 import TMopcUa.TMuaClient;
-import com.prosysopc.ua.ServiceException;
-import com.prosysopc.ua.StatusException;
 import com.prosysopc.ua.client.Subscription;
-import directFiredHeating.FceSection;
+import level2.simulator.TagWithDisplay;
+import mvUtils.display.ErrorStatAndMsg;
 
 import java.util.Hashtable;
 
@@ -38,8 +37,8 @@ public class L2ZoneParam extends OneDataGroup {
         level2TagList = new Hashtable<Tag.TagName, Tag>();
         for (Tag tag : tags) {
             try {
-                tag.setProcessData(getProcessData(tag.dataSource, "" + tag, tag.dataType, tag.access, tag.subscribe));
-                if (tag.subscribe && (subscription == null))
+                tag.setProcessData(getProcessData(tag.dataSource, "" + tag, tag.dataType, tag.access, tag.bSubscribe));
+                if (tag.bSubscribe && (subscription == null))
                     throw new TagCreationException("" + tag, "Subscription is null");
                 if (tag.dataSource == ProcessData.Source.LEVEL2)
                     level2TagList.put(tag.tagName, tag);
@@ -57,7 +56,7 @@ public class L2ZoneParam extends OneDataGroup {
         processTagList = new Hashtable<Tag.TagName, Tag>();
         level2TagList = new Hashtable<Tag.TagName, Tag>();
         try {
-            tag.setProcessData(getProcessData(tag.dataSource, "" + tag, tag.dataType, tag.access, tag.subscribe));
+            tag.setProcessData(getProcessData(tag.dataSource, "" + tag, tag.dataType, tag.access, tag.bSubscribe));
             if (tag.dataSource == ProcessData.Source.LEVEL2)
                 level2TagList.put(tag.tagName, tag);
             else
@@ -113,6 +112,37 @@ public class L2ZoneParam extends OneDataGroup {
 //            return false;
 //    }
 
+
+    ErrorStatAndMsg checkConnections() {
+        ErrorStatAndMsg retVal = new ErrorStatAndMsg(false, "");
+        ErrorStatAndMsg processStat = new ErrorStatAndMsg(false, "process." + basePath + " tags:");
+        boolean additional = false;
+        for (Tag t: processTagList.values()) {
+             if (!t.checkConnection()) {
+                 processStat.inError = true;
+                 processStat.msg += ((additional) ? ", " : "") + t.tagName;
+                 additional = true;
+             }
+        }
+        if (processStat.inError) {
+            retVal.inError = true;
+            retVal.msg += "\n" + processStat.msg;
+        }
+        additional = false;
+        ErrorStatAndMsg level2Stat = new ErrorStatAndMsg(false, "level2." + basePath + " tags:");
+        for (Tag t: level2TagList.values()) {
+            if (!t.checkConnection()) {
+                level2Stat.inError = true;
+                level2Stat.msg += ((additional) ? ", " : "") +t.tagName;
+                additional = true;
+            }
+        }
+        if (level2Stat.inError) {
+            retVal.inError = true;
+            retVal.msg += "\n" + level2Stat.msg;
+        }
+        return retVal;
+    }
 
     public String toString() {
         return zoneAndParameter;

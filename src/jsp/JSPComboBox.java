@@ -2,6 +2,8 @@ package jsp;
 
 import jsp.JSPConnection;
 import jsp.JSPObject;
+import mvUtils.display.ValueForExcel;
+import mvUtils.display.XLcellData;
 
 import javax.swing.*;
 import java.awt.*;
@@ -14,7 +16,7 @@ import java.util.Vector;
  * Time: 10:08 AM
  * To change this template use File | Settings | File Templates.
  */
-public class JSPComboBox<E> extends JComboBox<E> {
+public class JSPComboBox<E> extends JComboBox<E> implements XLcellData{
     JSPConnection jspConnection;
     public JSPComboBox(JSPConnection jspConnection, Vector<E> items) {
         super(items);
@@ -79,5 +81,14 @@ public class JSPComboBox<E> extends JComboBox<E> {
          parent.toFront();
     }
 
+    public ValueForExcel getValueForExcel() {
+        if (getSelectedIndex() >= 0)
+            return new ValueForExcel(false, "" + getSelectedItem());
+        else
+            return new ValueForExcel(true, "No Selection");
+    }
 
+    public String getFmtStr() {
+        return null;
+    }
 }

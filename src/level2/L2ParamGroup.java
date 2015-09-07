@@ -2,6 +2,7 @@ package level2;
 
 import TMopcUa.ProcessValue;
 import com.prosysopc.ua.client.*;
+import mvUtils.display.ErrorStatAndMsg;
 
 import java.util.Hashtable;
 
@@ -102,7 +103,10 @@ public class L2ParamGroup {
     }
 
     public ProcessValue getValue(Parameter element, Tag.TagName tagName) {
-        return getL2Param(element).getValue(tagName);
+        ProcessValue pV = getL2Param(element).getValue(tagName);
+        if (!pV.valid)
+            pV.errorMessage = groupName + "." + element + "." + tagName + ":" + pV.errorMessage;
+        return pV;
     }
 
     public boolean addOneParameter(Parameter element, Tag[] tags) throws TagCreationException {
@@ -124,6 +128,21 @@ public class L2ParamGroup {
     public boolean addOneParameter(Parameter element, L2ZoneParam param) {
         paramList.put(element, param);
         return true;
+    }
+
+    ErrorStatAndMsg checkConnections() {
+        ErrorStatAndMsg retVal = new ErrorStatAndMsg(false, groupName + ".");
+        ErrorStatAndMsg oneParamStat;
+        boolean additional = false;
+        for (L2ZoneParam p: paramList.values()) {
+            oneParamStat = p.checkConnections();
+            if (oneParamStat.inError) {
+                retVal.inError = true;
+                retVal.msg += ((additional) ? "\n" : "") + oneParamStat.msg;
+                additional = true;
+            }
+        }
+        return retVal;
     }
 
     void info(String msg) {
