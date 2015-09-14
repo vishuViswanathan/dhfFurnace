@@ -24,6 +24,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Calendar;
 import java.util.Hashtable;
+import java.util.Vector;
 
 /**
  * Created by IntelliJ IDEA.
@@ -48,13 +49,61 @@ public class OneSection {
     boolean monitoredTagsReady = false;
 
     public OneSection(OpcSimulator opcSimulator, String xmlStr, boolean readWrite) throws TagCreationException {
+        this(opcSimulator, xmlStr, readWrite, false);
+//        this.opcSimulator = opcSimulator;
+//        this.source = opcSimulator.source;
+//        this.readWrite = readWrite;
+//        paramList = new Hashtable<L2ParamGroup.Parameter, OneParam>();
+//        if (!readWrite)
+//            subscription = source.createSubscription(new SubAliveListener(), new ZoneSubscriptionListener());
+//        takeFromXml(xmlStr);
+    }
+
+    public OneSection(OpcSimulator opcSimulator, String xmlStr, boolean readWrite, boolean fromKEP) throws TagCreationException {
         this.opcSimulator = opcSimulator;
         this.source = opcSimulator.source;
         this.readWrite = readWrite;
         paramList = new Hashtable<L2ParamGroup.Parameter, OneParam>();
         if (!readWrite)
             subscription = source.createSubscription(new SubAliveListener(), new ZoneSubscriptionListener());
-        takeFromXml(xmlStr);
+        if (fromKEP)
+            takeFromXmlKEP(xmlStr);
+        else
+            takeFromXml(xmlStr);
+    }
+
+    public OneSection(OpcSimulator opcSimulator, OpcTagGroup tagGrp, boolean rw) throws Exception {
+        this.opcSimulator = opcSimulator;
+        this.source = opcSimulator.source;
+        this.readWrite = rw;
+        paramList = new Hashtable<L2ParamGroup.Parameter, OneParam>();
+        if (!readWrite)
+            subscription = source.createSubscription(new SubAliveListener(), new ZoneSubscriptionListener());
+        createFromTagGroup(tagGrp);
+    }
+
+    boolean createFromTagGroup(OpcTagGroup tagGrp) throws Exception {
+        name = tagGrp.name;
+        return addParameters(tagGrp);
+    }
+
+    boolean takeFromXmlKEP(String xmlStr) throws TagCreationException {
+        boolean retVal = false;
+        ValAndPos vp;
+        vp = XMLmv.getTag(xmlStr, "servermain:Name", 0);
+        name = vp.val;
+        vp = XMLmv.getTag(xmlStr, "servermain:TagGroupList", 0);
+        String allGroups = vp.val;
+        vp.endPos = 0;
+        if (allGroups.length() > 10) {
+            do {
+                vp = XMLmv.getTag(allGroups, "servermain:TagGroup", vp.endPos);
+                if (!addOneParameterKEP(vp.val))
+                    break;
+                retVal = true;
+            } while (true);
+        }
+        return retVal;
     }
 
     boolean takeFromXml(String xmlStr) throws TagCreationException {
@@ -72,6 +121,48 @@ public class OneSection {
         return retVal;
     }
 
+    boolean addOneParameterKEP(String xmlStr) throws TagCreationException {
+        ValAndPos vp;
+        vp = XMLmv.getTag(xmlStr, "servermain:Name", 0);
+        L2ParamGroup.Parameter element = L2ParamGroup.Parameter.getEnum(vp.val);
+
+        vp = XMLmv.getTag(xmlStr, "servermain:TagList", 0);
+        Vector<TagWithDisplay> vTags = new Vector<TagWithDisplay>();
+        String allTags = vp.val;
+        vp.endPos = 0;
+        if (allTags.length() > 10) {
+            do {
+                vp = XMLmv.getTag(allTags, "servermain:Tag", vp.endPos);
+                if (!addOneTag(element, vp.val, vTags))
+                    break;
+            } while (true);
+        }
+        return addOneParameter(element, vTags);
+    }
+
+    boolean addOneTag(L2ParamGroup.Parameter element, String xmlStr, Vector<TagWithDisplay> vTags) {
+        boolean retVal = false;
+        if (xmlStr.length() > 10) {
+            ValAndPos vp;
+            vp = XMLmv.getTag(xmlStr, "servermain:Name", 0);
+            Tag.TagName tagName = Tag.TagName.getEnum(vp.val);
+            vp = XMLmv.getTag(xmlStr, "servermain:DataType", 0);
+            ProcessData.DataType dataType = ProcessData.DataType.getEnum(vp.val);
+            vp = XMLmv.getTag(xmlStr, "servermain:ReadWriteAccess", 0);
+            boolean rw =  vp.val.equalsIgnoreCase("Read/Write");
+            vTags.add(new TagWithDisplay(element, tagName, !rw, !rw, "#,##0.000", opcSimulator));
+            retVal = true;
+        }
+        return retVal;
+    }
+
+    boolean addParameters(OpcTagGroup tagGrp) throws Exception{
+        for (OpcTagGroup oneGrp:tagGrp .subGroups) {
+            addOneParameter(L2ParamGroup.Parameter.getEnum(oneGrp.name), oneGrp.getVTags(readWrite, opcSimulator));
+        }
+        return true;
+    }
+
     boolean addOneParameter(String xmlStr) throws TagCreationException {
         ValAndPos vp;
         vp = XMLmv.getTag(xmlStr, "pName", 0);
@@ -79,7 +170,8 @@ public class OneSection {
 
         vp = XMLmv.getTag(xmlStr, "nTags", 0);
         int nTags = Integer.valueOf(vp.val);
-        TagWithDisplay[] tagList = new TagWithDisplay[nTags];
+        Vector<TagWithDisplay> tagList = new Vector<TagWithDisplay>();
+//        TagWithDisplay[] tagList = new TagWithDisplay[nTags];
         ValAndPos oneTagVp;
         boolean tagReadWrite;
         String formatStr;
@@ -97,26 +189,42 @@ public class OneSection {
             ProcessData.DataType dataType = ProcessData.DataType.getEnum(oneTagVp.val);
             oneTagVp = XMLmv.getTag(tagXml, "format", 0);
             formatStr = oneTagVp.val;
-            tagList[t] = new TagWithDisplay(element, tagName, !readWrite, !readWrite, formatStr,
-                    opcSimulator);
+            tagList.add( new TagWithDisplay(element, tagName, !readWrite, !readWrite, formatStr,
+                    opcSimulator));
         }
         return addOneParameter(element, tagList);
     }
 
-    boolean addOneParameter(L2ParamGroup.Parameter element, TagWithDisplay[] tags) throws TagCreationException {
-         boolean retVal = false;
-         String basePath = "";
-         try {
-             OneParam param = new OneParam(opcSimulator.source, opcSimulator.equipment,
-                     (basePath = name + "." + element),
-                     tags, subscription);
-             paramList.put(element, param);
-             retVal = true;
-         } catch (TagCreationException e) {
-             e.setElement(basePath, "");
-             throw (e);
-         }
-         return retVal;
+//    boolean addOneParameter(L2ParamGroup.Parameter element, TagWithDisplay[] tags) throws TagCreationException {
+//         boolean retVal = false;
+//         String basePath = "";
+//         try {
+//             OneParam param = new OneParam(opcSimulator.source, opcSimulator.equipment,
+//                     (basePath = name + "." + element),
+//                     tags, subscription);
+//             paramList.put(element, param);
+//             retVal = true;
+//         } catch (TagCreationException e) {
+//             e.setElement(basePath, "");
+//             throw (e);
+//         }
+//         return retVal;
+//    }
+
+    boolean addOneParameter(L2ParamGroup.Parameter element, Vector<TagWithDisplay> vTags) throws TagCreationException {
+          boolean retVal = false;
+          String basePath = "";
+          try {
+              OneParam param = new OneParam(opcSimulator.source, opcSimulator.equipment,
+                      (basePath = name + "." + element),
+                      vTags, subscription);
+              paramList.put(element, param);
+              retVal = true;
+          } catch (TagCreationException e) {
+              e.setElement(basePath, "");
+              throw (e);
+          }
+          return retVal;
     }
 
     JPanel getDisplayPanel(int width) {

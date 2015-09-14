@@ -5,12 +5,15 @@ import TMopcUa.ProcessData;
 import TMopcUa.ProcessValue;
 import TMopcUa.TMuaClient;
 import com.prosysopc.ua.client.Subscription;
+import level2.L2ParamGroup;
 import level2.Tag;
 import level2.TagCreationException;
 import mvUtils.display.ErrorStatAndMsg;
 import mvUtils.display.MultiPairColPanel;
 
 import javax.swing.*;
+import java.util.Collection;
+import java.util.Vector;
 
 
 /**
@@ -21,10 +24,10 @@ import javax.swing.*;
  * To change this template use File | Settings | File Templates.
  */
 public class OneParam extends OneDataGroup {
-    TagWithDisplay[] tagList;
+    Collection<TagWithDisplay> tagList;
     String processElement;
 
-    public OneParam(TMuaClient source, String equipment, String processElement, TagWithDisplay[] tagList,
+    public OneParam(TMuaClient source, String equipment, String processElement, Vector<TagWithDisplay> tagList,
                        Subscription subscription) throws TagCreationException {
         super(source, equipment, processElement, subscription);
         this.processElement = processElement;
@@ -40,7 +43,7 @@ public class OneParam extends OneDataGroup {
                 throw new TagCreationException("" + tag, "Data Point could not be created!\n" + e.getMessage());
             }
         }
-     }
+    }
 
     JPanel getDisplayPanel() {
         MultiPairColPanel mp = new MultiPairColPanel("");

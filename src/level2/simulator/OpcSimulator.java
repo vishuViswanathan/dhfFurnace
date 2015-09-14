@@ -11,14 +11,21 @@ import mvUtils.display.FramedPanel;
 import mvUtils.display.InputControl;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.swing.*;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import java.awt.*;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.Vector;
 
 /**
@@ -29,6 +36,48 @@ import java.util.Vector;
  * To change this template use File | Settings | File Templates.
  */
 public class OpcSimulator implements InputControl {
+    static public enum TagAttrib {
+         NAME("servermain:Name"),
+         DATATYPE("servermain:DataType"),
+         RW("servermain:ReadWriteAccess"),
+         TAG("servermain:Tag"),
+         TAGLIST("servermain:TagList"),
+         TAGGROUP("servermain:TagGroup"),
+         TAGGROUPLIST("servermain:TagGroupList"),
+         CHANNELLIST("servermain:ChannelList"),
+         CHANNEL("servermain:Channel"),
+         DEVICELIST("servermain:DeviceList"),
+         DEVICE("servermain:Device"),
+         NOTFOUND("None");
+         private final String modeName;
+
+         TagAttrib(String modeName) {
+             this.modeName = modeName;
+         }
+
+         public String getValue() {
+             return name();
+         }
+
+         @Override
+         public String toString() {
+             return modeName;
+         }
+
+         public static TagAttrib getEnum(String text) {
+             TagAttrib retVal = NOTFOUND;
+             if (text != null) {
+               for (TagAttrib b : TagAttrib.values()) {
+                 if (text.equalsIgnoreCase(b.modeName)) {
+                   retVal = b;
+                     break;
+                 }
+               }
+             }
+             return retVal;
+           }
+     }
+
     JFrame mainF;
     TMuaClient source;
     static String uaServerURI;
@@ -136,7 +185,7 @@ public class OpcSimulator implements InputControl {
  //            showError("ServerListException :" + e.getMessage());
          }
          return retVal;
-     }
+    }
 
 
     boolean loadSimulator() {
@@ -144,7 +193,7 @@ public class OpcSimulator implements InputControl {
         FileDialog fileDlg =
                 new FileDialog(mainF, "Load Level1 side Simulator",
                         FileDialog.LOAD);
-        fileDlg.setFile("*.simul");
+        fileDlg.setFile("*.xml");
         fileDlg.setVisible(true);
         fileDlg.toFront();
         String fileName = fileDlg.getFile();
@@ -156,17 +205,16 @@ public class OpcSimulator implements InputControl {
                     //           FileInputStream iStream = new FileInputStream(fileName);
                     File f = new File(filePath);
                     long len = f.length();
-                    if (len > 1000 && len < 1e5) {
-                        int iLen = (int) len;
-                        byte[] data = new byte[iLen];
-                        if (iStream.read(data)== len) {
-                            if (takeDataFromXMl(new String(data)))  {
+                    if (len > 1000 && len < 1e6) {
+                            if (takeDataFromXMLKEP(iStream))  {
                                 showMessage("Simulator loaded");
+                                level2Zones = collectSections("furnace:level2", false);
+                                processZones = collectSections("furnace:process", true);
                                 retVal = true;
                             }
-                        }
                     } else
                         showError("File size " + len + " for " + filePath);
+                    iStream.close();
                 } catch (Exception e) {
                     showError("Some Problem in getting file!: " + e.getMessage());
                 }
@@ -174,6 +222,180 @@ public class OpcSimulator implements InputControl {
         }
         return retVal;
     }
+
+    OpcTagGroup allGroups;
+
+    boolean takeDataFromXMLKEP(InputStream iStream) throws Exception {
+        boolean retVal = false;
+        DocumentBuilderFactory factory =
+                DocumentBuilderFactory.newInstance();
+        //Get the DOM Builder
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        //Load and Parse the XML document
+        //document contains the complete XML as a Tree.
+        Document document =
+                builder.parse(iStream);
+        allGroups = new OpcTagGroup("Outer");
+        OpcTagGroup oneChannel = null;
+        //Iterating through the nodes and extracting the data.
+        NodeList nodeList = document.getDocumentElement().getChildNodes();
+        int nodeListLen = nodeList.getLength();
+        for (int i = 0; i < nodeListLen; i++) {
+            Node node = nodeList.item(i);
+            if (node instanceof Element) {
+                if (TagAttrib.getEnum(node.getNodeName()) == TagAttrib.CHANNELLIST) {
+                    NodeList channelNodeList = node.getChildNodes();
+                    int channelListLen = channelNodeList.getLength();
+                    for (int c = 0; c < channelListLen; c++) {
+                        Node channelNode = channelNodeList.item(c);
+                        if (channelNode instanceof Element) {
+                            if (TagAttrib.getEnum(channelNode.getNodeName()) == TagAttrib.CHANNEL) {
+                                allGroups.addGroup(getOneChannel(channelNode.getChildNodes()));
+                                retVal = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return retVal;
+    }
+
+    OpcTagGroup getOneChannel(NodeList nodes) {
+         OpcTagGroup oneGrp = null;
+         int tagGroupNodeLen = nodes.getLength();
+         for (int j = 0; j < tagGroupNodeLen; j++) {
+             Node oneNode = nodes.item(j);
+             if (oneNode instanceof Element) {
+                 switch (TagAttrib.getEnum(oneNode.getNodeName())) {
+                     case NAME:
+                         String channelName = oneNode.getLastChild().getTextContent().trim();
+                         equipment = channelName;
+                         oneGrp = new OpcTagGroup(channelName);
+                         break;
+                     case DEVICELIST:
+                         NodeList nodeList = oneNode.getChildNodes();
+                         int nodeListLen = nodeList.getLength();
+                         for (int i = 0; i < nodeListLen; i++) {
+                             //We have encountered an <employee> tag.
+                             Node node = nodeList.item(i);
+                             if (node instanceof Element)
+                                 if (TagAttrib.getEnum(node.getNodeName()) == TagAttrib.DEVICE)
+                                     oneGrp.addGroup(getOneDevise(node.getChildNodes()));
+                         }
+                         break;
+                 }
+             }
+         }
+         return oneGrp;
+    }
+
+    OpcTagGroup getOneDevise(NodeList nodes) {
+         OpcTagGroup oneGrp = null;
+         int tagGroupNodeLen = nodes.getLength();
+         for (int j = 0; j < tagGroupNodeLen; j++) {
+             Node oneNode = nodes.item(j);
+             if (oneNode instanceof Element) {
+                 switch (TagAttrib.getEnum(oneNode.getNodeName())) {
+                     case NAME:
+                         String channelName = oneNode.getLastChild().getTextContent().trim();
+                         oneGrp = new OpcTagGroup(channelName);
+                         break;
+                     case TAGGROUPLIST:
+                         NodeList nodeList = oneNode.getChildNodes();
+                         int nodeListLen = nodeList.getLength();
+                         for (int i = 0; i < nodeListLen; i++) {
+                             //We have encountered an <employee> tag.
+                             Node node = nodeList.item(i);
+                             if (node instanceof Element)
+                                 if (TagAttrib.getEnum(node.getNodeName()) == TagAttrib.TAGGROUP)
+                                     oneGrp.addGroup(getTagGroup(node.getChildNodes()));
+                         }
+                         break;
+                 }
+             }
+         }
+         return oneGrp;
+
+    }
+
+    OpcTagGroup getTagGroup(NodeList nodes) {
+         OpcTagGroup oneGrp = new OpcTagGroup();
+         int tagGroupNodeLen = nodes.getLength();
+         for (int j = 0; j < tagGroupNodeLen; j++) {
+             Node oneTagGroup = nodes.item(j);
+             if (oneTagGroup instanceof Element) {
+                 switch (TagAttrib.getEnum(oneTagGroup.getNodeName())) {
+                     case TAGGROUPLIST:
+                         NodeList tagGroupNodes = oneTagGroup.getChildNodes();
+                         int tagGroupListLen = tagGroupNodes.getLength();
+                         for (int n = 0; n < tagGroupListLen; n++) {
+                             Node tNode = tagGroupNodes.item(n);
+                             if (tNode instanceof Element) {
+                                 String c2 = oneTagGroup.getLastChild().getTextContent().trim();
+                                 switch (TagAttrib.getEnum(tNode.getNodeName())) {
+                                     case TAGGROUP:
+                                         if (oneGrp != null)
+                                             oneGrp.addGroup(getTagGroup(tNode.getChildNodes()));
+                                         break;
+                                 }
+                             }
+                         }
+                         break;
+                      case NAME:
+                         String grpName = oneTagGroup.getLastChild().getTextContent().trim();
+                         oneGrp.setName(grpName);
+                         break;
+                     case TAGLIST:
+                         NodeList tagNodes = oneTagGroup.getChildNodes();
+                         int tagListLen = tagNodes.getLength();
+                         for (int n = 0; n < tagListLen; n++) {
+                             Node tNode = tagNodes.item(n);
+                             if (tNode instanceof Element) {
+                                 String c2 = oneTagGroup.getLastChild().getTextContent().trim();
+                                 switch (TagAttrib.getEnum(tNode.getNodeName())) {
+                                     case TAG:
+                                         if (oneGrp != null)
+                                             oneGrp.addTag(getTag(tNode.getChildNodes()));
+                                         break;
+                                 }
+                             }
+                         }
+                         break;
+                 }
+             }
+         }
+         return oneGrp;
+    }
+
+    OpcTag getTag(NodeList nodes) {
+         OpcTag tag = new OpcTag();
+         int childNodesLen = nodes.getLength();
+         for (int n = 0; n < childNodesLen; n++) {
+             Node cNode = nodes.item(n);
+             //Identifying the child tag of employee encountered.
+             if (cNode instanceof Element) {
+                 String content = cNode.getLastChild().
+                         getTextContent().trim();
+                 switch (TagAttrib.getEnum(cNode.getNodeName())) {
+                     case NAME:
+                         tag.name = content;
+                         break;
+                     case DATATYPE:
+                         tag.dataType = content;
+                         break;
+                     case RW:
+                         tag.readWriteAccess = content;
+                         tag.rW = content.equalsIgnoreCase("Read/Write");
+                         break;
+                     case NOTFOUND:
+                         break;
+                 }
+             }
+         }
+         return tag;
+    }
+
 
     boolean takeDataFromXMl(String xmlStr) {
         boolean retVal = false;
@@ -194,24 +416,84 @@ public class OpcSimulator implements InputControl {
         return retVal;
     }
 
-    boolean takeProcessFromXML(String xmlStr) {
-        boolean retVal = true;
-        ValAndPos vp;
-        vp = XMLmv.getTag(xmlStr, "nSections", 0);
-        int nSections = Integer.valueOf(vp.val);
-        processZones = new Vector<OneSection>(nSections);
-        for (int s = 0; s < nSections; s++) {
-            vp = XMLmv.getTag(xmlStr, "Section" + ("" + (s + 1)).trim(), vp.endPos);
-            try {
-                processZones.add(s, new OneSection(this, vp.val, true));
-            } catch (TagCreationException e) {
-                showError("Problem in setting process part of simulation: XML[" + vp.val + "] -> " + e.getMessage());
-                retVal = false;
-                break;
-            }
+    Vector<OneSection> collectSections(String path, boolean rw) {
+        Vector<OneSection> retVal = new Vector<OneSection>();
+        OpcTagGroup grp = allGroups.getSubGroup(path);
+        try {
+            for (OpcTagGroup subGrp: grp.subGroups)
+                retVal.add(new OneSection(this, subGrp, rw));
+        } catch (Exception e) {
+            showError("Some problem in creating Collection for " + path + "> " + e.getMessage());
         }
         return retVal;
     }
+
+    boolean takeProcessFromXMLKEP(String xmlStr) {
+        boolean retVal = true;
+        ValAndPos vp;
+        vp = XMLmv.getTag(xmlStr, "servermain:TagGroupList", 0);
+        String allGroups = vp.val;
+        vp.endPos = 0;
+        int s = 0;
+        if (allGroups.length() > 10) {
+            do {
+                vp = XMLmv.getTag(allGroups, "servermain:TagGroup", vp.endPos);
+                if (vp.val.length() < 10)
+                    break;
+                try {
+                   processZones.add(s++, new OneSection(this, vp.val, true, true));
+                } catch (TagCreationException e) {
+                   showError("Problem in setting process part of simulation: XML[" + vp.val + "] -> " + e.getMessage());
+                   retVal = false;
+                   break;
+                }
+            } while (true);
+        }
+        return retVal;
+    }
+
+    boolean takeProcessFromXML(String xmlStr) {
+         boolean retVal = true;
+         ValAndPos vp;
+         vp = XMLmv.getTag(xmlStr, "nSections", 0);
+         int nSections = Integer.valueOf(vp.val);
+         processZones = new Vector<OneSection>(nSections);
+         for (int s = 0; s < nSections; s++) {
+             vp = XMLmv.getTag(xmlStr, "Section" + ("" + (s + 1)).trim(), vp.endPos);
+             try {
+                 processZones.add(s, new OneSection(this, vp.val, true));
+             } catch (TagCreationException e) {
+                 showError("Problem in setting process part of simulation: XML[" + vp.val + "] -> " + e.getMessage());
+                 retVal = false;
+                 break;
+             }
+         }
+         return retVal;
+     }
+
+    boolean takeLevel2FromXMLKEP(String xmlStr) {
+         boolean retVal = true;
+         ValAndPos vp;
+         vp = XMLmv.getTag(xmlStr, "servermain:TagGroupList", 0);
+         String allGroups = vp.val;
+         vp.endPos = 0;
+         int s = 0;
+         if (allGroups.length() > 10) {
+             do {
+                 vp = XMLmv.getTag(allGroups, "servermain:TagGroup", vp.endPos);
+                 if (vp.val.length() < 10)
+                     break;
+                 try {
+                     level2Zones.add(s++, new OneSection(this, vp.val, false, true));
+                 } catch (TagCreationException e) {
+                    showError("Problem in setting process part of simulation: XML[" + vp.val + "] -> " + e.getMessage());
+                    retVal = false;
+                    break;
+                 }
+             } while (true);
+         }
+         return retVal;
+     }
 
     boolean takeLevel2FromXML(String xmlStr) {
         boolean retVal = true;
