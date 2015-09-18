@@ -2,11 +2,10 @@ package level2.fieldResults;
 
 import basic.*;
 import directFiredHeating.FceSection;
-import display.SizedLabel;
 import level2.L2DFHFurnace;
-import level2.L2ParamGroup;
+import level2.common.L2ParamGroup;
 import level2.L2Zone;
-import level2.Tag;
+import level2.common.Tag;
 import mvUtils.display.*;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
@@ -16,7 +15,6 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
 import java.text.DecimalFormat;
-import java.util.Vector;
 
 /**
  * Created by IntelliJ IDEA.

@@ -1,11 +1,7 @@
 package level2.simulator;
 
-import TMopcUa.ProcessData;
-import level2.L2ParamGroup;
-import level2.Tag;
+import level2.common.L2ParamGroup;
 import mvUtils.display.InputControl;
-import mvUtils.mvXML.ValAndPos;
-import mvUtils.mvXML.XMLmv;
 
 import java.util.Vector;
 

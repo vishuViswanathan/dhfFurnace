@@ -2803,9 +2803,11 @@ public class DFHeating extends JApplet implements InputControl {
         pbEdit.getModel().setPressed(false);
         if (observations.isAnyThere())
             showMessage("Some observations on the results: \n" + observations, 5000);
-        if (theResultsListener != null)
-            theResultsListener.noteResultsReady();
-        theResultsListener = null; // clear all listeners
+        if (theResultsListener != null) {
+            ResultsReadyListener theNowListener = theResultsListener;
+            theResultsListener = null;
+            theNowListener.noteResultsReady();
+        }
     }
 
     void initPrintGroups() {

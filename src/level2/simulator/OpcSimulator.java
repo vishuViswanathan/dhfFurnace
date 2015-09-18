@@ -2,13 +2,12 @@ package level2.simulator;
 
 import TMopcUa.TMuaClient;
 import com.prosysopc.ua.ServiceException;
-import com.sun.xml.internal.ws.encoding.xml.XMLMessage;
-import directFiredHeating.DFHeating;
-import directFiredHeating.FceSection;
 import display.SizedLabel;
-import level2.TagCreationException;
+import level2.common.L2Interface;
+import level2.common.TagCreationException;
 import mvUtils.display.FramedPanel;
 import mvUtils.display.InputControl;
+import mvUtils.display.MultiPairColPanel;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import org.w3c.dom.Document;
@@ -35,7 +34,7 @@ import java.util.Vector;
  * Time: 12:14 PM
  * To change this template use File | Settings | File Templates.
  */
-public class OpcSimulator implements InputControl {
+public class OpcSimulator implements InputControl, L2Interface {
     static public enum TagAttrib {
          NAME("servermain:Name"),
          DATATYPE("servermain:DataType"),
@@ -117,7 +116,8 @@ public class OpcSimulator implements InputControl {
     JComponent getProcessPane() {
         int width = 580;
         FramedPanel fp = new FramedPanel(new BorderLayout());
-        fp.add(new SizedLabel("The Process", new Dimension(100, 30), true), BorderLayout.NORTH);
+//        fp.add(new SizedLabel("The Process", new Dimension(100, 30), true), BorderLayout.NORTH);
+        fp.add(new MultiPairColPanel("The Process"), BorderLayout.NORTH);
         JScrollPane processPane = new JScrollPane();
         processPane.setPreferredSize(new Dimension(width + 40, 700));
         JPanel jp = new JPanel(new GridBagLayout());
@@ -140,7 +140,8 @@ public class OpcSimulator implements InputControl {
     JComponent getLevel2Pane() {
         int width = 580;
         FramedPanel fp = new FramedPanel(new BorderLayout());
-        fp.add(new SizedLabel("From Level2", new Dimension(100, 40), true), BorderLayout.NORTH);
+//        fp.add(new SizedLabel("From Level2", new Dimension(100, 40), true), BorderLayout.NORTH);
+        fp.add(new MultiPairColPanel("From Level2"), BorderLayout.NORTH);
         JScrollPane level2Pane = new JScrollPane();
         level2Pane.setPreferredSize(new Dimension(width + 40, 700));
         JPanel jp = new JPanel(new GridBagLayout());
@@ -539,6 +540,26 @@ public class OpcSimulator implements InputControl {
 
     public Window parent() {
         return null;
+    }
+
+    public TMuaClient source() {
+        return source;
+    }
+
+    public InputControl controller() {
+        return this;
+    }
+
+    public String equipment() {
+        return equipment;
+    }
+
+    public void info(String msg) {
+        showMessage(msg);
+    }
+
+    public void error(String msg) {
+        showError(msg);
     }
 
     void close() {

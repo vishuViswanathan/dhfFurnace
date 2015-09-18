@@ -1,7 +1,7 @@
 package level2.simulator;
 
-import level2.L2ParamGroup;
-import level2.Tag;
+import level2.common.L2ParamGroup;
+import level2.common.Tag;
 import mvUtils.display.InputControl;
 
 /**

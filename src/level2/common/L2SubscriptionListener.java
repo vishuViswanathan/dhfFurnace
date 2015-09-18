@@ -1,4 +1,4 @@
-package level2.listeners;
+package level2.common;
 
 import com.prosysopc.ua.client.MonitoredDataItem;
 import com.prosysopc.ua.client.MonitoredEventItem;

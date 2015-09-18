@@ -2,6 +2,9 @@ package level2;
 
 import TMopcUa.TMuaClient;
 import com.prosysopc.ua.client.Subscription;
+import level2.common.L2ZoneParam;
+import level2.common.Tag;
+import level2.common.TagCreationException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -36,6 +39,13 @@ public class ReadyNotedParam extends L2ZoneParam {
         return retVal;
     }
 
+    void initStatus() {
+        if (isReadyNotedRead)
+            setAsNoted(false);
+        if (isReadyNotedWrite)
+            markReady(false);
+    }
+
     /**
      * Read all values
      */
@@ -49,18 +59,26 @@ public class ReadyNotedParam extends L2ZoneParam {
         isReadyNotedWrite = level2TagList.containsKey(Tag.TagName.Ready) && processTagList.containsKey(Tag.TagName.Noted);
     }
 
-    public void setAsNoted() {
+    public void setAsNoted(boolean noted) {
         if (isReadyNotedRead)
-            setValue(Tag.TagName.Noted, true);
+            setValue(Tag.TagName.Noted, noted);
+     }
+
+    public boolean markReady(boolean ready) {
+        boolean retVal = false;
+        if (isReadyNotedWrite) {
+            setValue(Tag.TagName.Ready, ready);
+//            if (!getValue(Tag.TagName.Noted).booleanValue) {
+//                setValue(Tag.TagName.Ready, true);
+                retVal = true;
+        }
+
+        return retVal;
     }
 
-    public boolean markReady() {
-        boolean retVal = false;
-        if (isReadyNotedWrite)
-            if (getValue(Tag.TagName.Noted).booleanValue) {
-                setValue(Tag.TagName.Ready, true);
-                retVal = true;
-            }
-        return retVal;
+
+
+    public boolean isNoted() {
+        return (isReadyNotedWrite && getValue(Tag.TagName.Noted).booleanValue);
     }
 }

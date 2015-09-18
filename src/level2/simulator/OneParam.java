@@ -1,13 +1,9 @@
 package level2.simulator;
 
 import TMopcUa.OneDataGroup;
-import TMopcUa.ProcessData;
-import TMopcUa.ProcessValue;
 import TMopcUa.TMuaClient;
 import com.prosysopc.ua.client.Subscription;
-import level2.L2ParamGroup;
-import level2.Tag;
-import level2.TagCreationException;
+import level2.common.TagCreationException;
 import mvUtils.display.ErrorStatAndMsg;
 import mvUtils.display.MultiPairColPanel;
 

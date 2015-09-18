@@ -1,11 +1,12 @@
-package level2;
+package level2.common;
 
 import TMopcUa.OneDataGroup;
 import TMopcUa.ProcessData;
 import TMopcUa.ProcessValue;
 import TMopcUa.TMuaClient;
 import com.prosysopc.ua.client.Subscription;
-import level2.simulator.TagWithDisplay;
+import level2.common.Tag;
+import level2.common.TagCreationException;
 import mvUtils.display.ErrorStatAndMsg;
 
 import java.util.Hashtable;
@@ -20,8 +21,8 @@ import java.util.Hashtable;
 public class L2ZoneParam extends OneDataGroup {
     String zoneAndParameter;    // eg.DFHZone3.temperature
 //    Hashtable<Tag, ProcessData> tagList;
-    Hashtable<Tag.TagName, Tag> processTagList;
-    Hashtable<Tag.TagName, Tag> level2TagList;
+    public Hashtable<Tag.TagName, Tag> processTagList;
+    public Hashtable<Tag.TagName, Tag> level2TagList;
 
     /**
      * @param source         is TUaClient connecte to Level1
@@ -74,7 +75,7 @@ public class L2ZoneParam extends OneDataGroup {
         return level2TagList.get(tagName);
     }
 
-    ProcessValue getValue(Tag.TagName tagName) {
+    public ProcessValue getValue(Tag.TagName tagName) {
         Tag theTag = getProcessTag(tagName);
         return theTag.getValue();
     }
@@ -83,22 +84,22 @@ public class L2ZoneParam extends OneDataGroup {
         return getProcessTag(tagName).processValue();
     }
 
-    ProcessValue setValue(Tag.TagName tagName, float newValue) {
+    public ProcessValue setValue(Tag.TagName tagName, float newValue) {
         Tag theTag = getLevel2Tag(tagName);
         return theTag.setValue(newValue);
     }
 
-    ProcessValue setValue(Tag.TagName tagName, boolean newValue) {
+    public ProcessValue setValue(Tag.TagName tagName, boolean newValue) {
         Tag theTag = getLevel2Tag(tagName);
         return theTag.setValue(newValue);
     }
 
-    ProcessValue setValue(Tag.TagName tagName, double newValue) {
+    public ProcessValue setValue(Tag.TagName tagName, double newValue) {
         Tag theTag = getLevel2Tag(tagName);
         return theTag.setValue(newValue);
      }
 
-    ProcessValue setValue(Tag.TagName tagName, String newValue) {
+    public ProcessValue setValue(Tag.TagName tagName, String newValue) {
         Tag theTag = getLevel2Tag(tagName);
         return theTag.setValue(newValue);
     }
@@ -113,7 +114,7 @@ public class L2ZoneParam extends OneDataGroup {
 //    }
 
 
-    ErrorStatAndMsg checkConnections() {
+    public ErrorStatAndMsg checkConnections() {
         ErrorStatAndMsg retVal = new ErrorStatAndMsg(false, "");
         ErrorStatAndMsg processStat = new ErrorStatAndMsg(false, "process." + basePath + " tags:");
         boolean additional = false;

@@ -5,6 +5,8 @@ import basic.*;
 import directFiredHeating.DFHTuningParams;
 import directFiredHeating.FceSection;
 import level2.*;
+import level2.common.L2ParamGroup;
+import level2.common.Tag;
 import mvUtils.display.*;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
@@ -12,8 +14,6 @@ import performance.stripFce.OneZone;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.text.DecimalFormat;
 
 /**

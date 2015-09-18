@@ -1,7 +1,8 @@
-package level2;
+package level2.common;
 
 import TMopcUa.*;
 import com.prosysopc.ua.client.MonitoredDataItem;
+import level2.common.L2ParamGroup;
 
 /**
  * Created by IntelliJ IDEA.
@@ -19,7 +20,8 @@ public class Tag {
         Noted("noted"),
         Ready("ready"),
         Mode("Mode"),   // eg Strip mode for DFH control
-        StripMode("StripMode"),
+//        StripMode("StripMode"),
+        Response("Response"),
         //floats
         PV("PV"),
         SP("SP"),
@@ -29,6 +31,7 @@ public class Tag {
         Length("balanceLength"),
         Temperature("Temperature"),    // for Air and fuel
         Span("span"),
+        Data("Data"),
         X1("x1"),
         X2("x2"),
         X3("x3"),
@@ -86,7 +89,7 @@ public class Tag {
 
     public TagName tagName;
     public boolean bSubscribe = false;
-    L2ParamGroup.Parameter element;
+    public L2ParamGroup.Parameter element;
     public ProcessData.DataType dataType;
     public ProcessData.Source dataSource;  // Level2 or Process
     public ProcessData.Access access;
@@ -106,15 +109,15 @@ public class Tag {
         this.processData = processData;
     }
 
-    boolean isMonitored() {
+    public boolean isMonitored() {
         return processData.isMonitored();
     }
 
-    MonitoredDataItem getMonitoredDataItem() {
+    public MonitoredDataItem getMonitoredDataItem() {
         return processData.getMonitoredDataItem();
     }
 
-    protected ProcessValue getValue() {
+    public ProcessValue getValue() {
         processData.getValue(value);
         return value;
     }
@@ -123,25 +126,25 @@ public class Tag {
         return value;
     }
 
-    protected ProcessValue setValue(float newValue) {
+    public ProcessValue setValue(float newValue) {
         value.floatValue = newValue;
         processData.setValue(value);
         return value;
     }
 
-    protected ProcessValue setValue(boolean newValue) {
+    public ProcessValue setValue(boolean newValue) {
         value.booleanValue = newValue;
         processData.setValue(value);
         return value;
     }
 
-    protected ProcessValue setValue(double newValue) {
+    public ProcessValue setValue(double newValue) {
          value.doubleValue = newValue;
          processData.setValue(value);
          return value;
      }
 
-    protected ProcessValue setValue(String newValue) {
+    public ProcessValue setValue(String newValue) {
          value.stringValue = newValue;
          processData.setValue(value);
          return value;
@@ -160,6 +163,7 @@ public class Tag {
             case Noted:
             case Ready:
             case Mode:
+            case Response:
                 type = ProcessData.DataType.BOOLEAN;
                 break;
             case Process:

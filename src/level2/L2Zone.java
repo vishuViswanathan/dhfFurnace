@@ -4,7 +4,10 @@ import TMopcUa.ProcessValue;
 import com.prosysopc.ua.ServiceException;
 import com.prosysopc.ua.client.*;
 import directFiredHeating.FceSection;
-import level2.listeners.L2SubscriptionListener;
+import level2.common.L2ParamGroup;
+import level2.common.L2SubscriptionListener;
+import level2.common.Tag;
+import level2.common.TagCreationException;
 import org.opcfoundation.ua.builtintypes.*;
 
 import java.util.Calendar;
@@ -152,10 +155,10 @@ public class L2Zone extends L2ParamGroup {
     }
 
     void info(String msg) {
-        l2Furnace.controller.info("L2Zone: " + msg);
+        l2Interface.info("L2Zone: " + msg);
     }
 
     void showError(String msg) {
-        l2Furnace.controller.showError("L2Zone: " + msg);
+        l2Interface.error("L2Zone: " + msg);
     }
 }

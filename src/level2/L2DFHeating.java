@@ -175,8 +175,10 @@ public class L2DFHeating extends DFHeating {
                     ErrorStatAndMsg connStat = l2Furnace.checkConnection();
                     if (connStat.inError)
                         showError(connStat.msg);
-                    else
+                    else {
+                        l2Furnace.initForLevel2Operation();
                         l2SystemReady = true;
+                    }
                 }
             } else
                 showError("Problem in loading Furnace Settings");
@@ -527,9 +529,9 @@ public class L2DFHeating extends DFHeating {
         return evalForFieldProduction(null);
     }
 
-    public boolean recalculateWithFieldCorrections() {   //  TODO not complete
+    public boolean recalculateWithFieldCorrections(ResultsReadyListener resultsReadyListener) {   //  TODO not complete
         if (l2Furnace.adjustForFieldResults()) {
-            calculateFce(false, null); // without reset the loss Factors
+            calculateFce(false, resultsReadyListener); // without reset the loss Factors
             mIEvalForFieldProduction.setEnabled(false);
             return true;
         }
@@ -856,7 +858,7 @@ public class L2DFHeating extends DFHeating {
              else if (caller == mIEvalForFieldProduction)
                  evalForFieldProduction();
              else if (caller == mIEvalWithFieldCorrection)
-                 recalculateWithFieldCorrections();
+                 recalculateWithFieldCorrections(null);
          }
     }
 

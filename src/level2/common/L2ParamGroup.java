@@ -1,7 +1,8 @@
-package level2;
+package level2.common;
 
 import TMopcUa.ProcessValue;
 import com.prosysopc.ua.client.*;
+import level2.L2DFHFurnace;
 import mvUtils.display.ErrorStatAndMsg;
 
 import java.util.Hashtable;
@@ -29,6 +30,8 @@ public class L2ParamGroup {
         Status("Status"),
         ErrMsg("ErrorMsg"),
         InfoMsg("InfoMsg"),
+        YesNoQuery("YesNoQuery"),
+        DataQuery("dataQuery"),
         L2Stat("Level2Stat");
         private final String elementName;
 
@@ -59,34 +62,34 @@ public class L2ParamGroup {
         }
     }
 
-    String groupName;
+    public String groupName;
     Hashtable<Parameter, L2ZoneParam> paramList;
-    L2DFHFurnace l2Furnace;
+    public L2Interface l2Interface;   // was public public L2DFHFurnace l2Furnace;
     Subscription subscription = null;
 
     /**
      * For common sections with external subscription
      *
-     * @param l2Furnace
+     * @param l2Interface
      * @param groupName
      * @param subscription
      */
-    public L2ParamGroup(L2DFHFurnace l2Furnace, String groupName, Subscription subscription) {
-        this.l2Furnace = l2Furnace;
+    public L2ParamGroup(L2Interface l2Interface, String groupName, Subscription subscription) {
+        this.l2Interface = l2Interface;
         this.groupName = groupName;
         this.subscription = subscription;
         paramList = new Hashtable<Parameter, L2ZoneParam>();
     }
 
-    public L2ParamGroup(L2DFHFurnace l2Furnace, String groupName) {
+    public L2ParamGroup(L2Interface l2Furnace, String groupName) {
         this(l2Furnace, groupName, null);
     }
 
-    void setSubscription(Subscription sub) {
+    public void setSubscription(Subscription sub) {
         this.subscription = sub;
     }
 
-    L2ZoneParam getL2Param(Parameter element) {
+    public L2ZoneParam getL2Param(Parameter element) {
         return paramList.get(element);
     }
 
@@ -113,7 +116,7 @@ public class L2ParamGroup {
         boolean retVal = false;
         String basePath = "";
         try {
-            L2ZoneParam param = new L2ZoneParam(l2Furnace.source, l2Furnace.equipment,
+            L2ZoneParam param = new L2ZoneParam(l2Interface.source(), l2Interface.equipment(),
                     (basePath = groupName + "." + element),
                     tags, subscription);
             paramList.put(element, param);
@@ -130,7 +133,7 @@ public class L2ParamGroup {
         return true;
     }
 
-    ErrorStatAndMsg checkConnections() {
+    public ErrorStatAndMsg checkConnections() {
         ErrorStatAndMsg retVal = new ErrorStatAndMsg(false, groupName + ".");
         ErrorStatAndMsg oneParamStat;
         boolean additional = false;
@@ -146,7 +149,7 @@ public class L2ParamGroup {
     }
 
     void info(String msg) {
-        l2Furnace.controller.info("L2DataGroup: " + msg);
+        l2Interface.info("L2DataGroup: " + msg);
     }
 
 }

@@ -1,4 +1,4 @@
-package level2;
+package level2.common;
 
 import net.sf.antcontrib.logic.Throw;
 

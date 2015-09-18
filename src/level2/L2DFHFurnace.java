@@ -13,9 +13,10 @@ import com.prosysopc.ua.client.SubscriptionAliveListener;
 import directFiredHeating.DFHFurnace;
 import directFiredHeating.FceSection;
 import directFiredHeating.ResultsReadyListener;
+import level2.common.*;
 import level2.fieldResults.FieldResults;
-import level2.listeners.L2SubscriptionListener;
 import mvUtils.display.ErrorStatAndMsg;
+import mvUtils.display.InputControl;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import mvUtils.math.DoubleMV;
@@ -23,10 +24,10 @@ import org.opcfoundation.ua.builtintypes.DataValue;
 import performance.stripFce.Performance;
 
 import java.awt.event.ActionListener;
-import java.text.DecimalFormat;
 import java.util.Calendar;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
+import java.util.Vector;
 
 /**
  * Created by IntelliJ IDEA.
@@ -35,8 +36,8 @@ import java.util.LinkedHashMap;
  * Time: 10:59 AM
  * To change this template use File | Settings | File Templates.
  */
-public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener {
-    TMuaClient source;
+public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2Interface {
+    public TMuaClient source;
     FurnaceSettings furnaceSettings;
     LinkedHashMap<FceSection, L2Zone> topL2Zones;
     LinkedHashMap<FceSection, L2Zone> botL2Zones;
@@ -46,11 +47,16 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener {
     ReadyNotedParam l2StripSizeNext;
     ReadyNotedParam fieldDataParams;
     ReadyNotedParam fuelCharParams;
+    ReadyNotedParam l2YesNoQuery;
+    ReadyNotedParam l2DataQuery;
+    Vector<ReadyNotedParam> readyNotedParamList = new Vector<ReadyNotedParam>();
+    GetLevelResponse yesNoResponse;
+    GetLevelResponse dataResponse;
     L2Zone basicZone;
     L2Zone stripZone;  // all strip data size, speed temperature etc.
     L2Zone recuperatorZ;
     L2Zone commonDFHZ;
-    String equipment;
+    public String equipment;
     public boolean level2Enabled = false;
     Tag tagLevel2Enabled;
     TMSubscription basicSub;
@@ -64,6 +70,7 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener {
     public L2DFHeating l2DFHeating;
     double exitTempAllowance = 5;
     boolean calculatedForFieldResults = false;
+    boolean reCalculateWithFieldCorrections = false;
     public boolean basicsSet = false;
 
     public L2DFHFurnace(L2DFHeating l2DFHEating, boolean bTopBot, boolean bAddTopSoak, ActionListener listener) {
@@ -124,6 +131,7 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener {
                         new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Noted, true, false)};  // TODO not used
                 location = "Strip size Now tags";   // for error messages
                 l2StripSizeNow = new ReadyNotedParam(source, equipment, "Strip.Now", stripDataNowTags, stripSub);
+                readyNotedParamList.add(l2StripSizeNow);
                 stripZone.addOneParameter(L2ParamGroup.Parameter.Now, l2StripSizeNow);
 //                stripZone.addOneParameter(L2ParamGroup.Parameter.Next, l2StripSizeNow);
                 noteMonitoredTags(stripDataNowTags);
@@ -136,6 +144,7 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener {
                         new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.Noted, true, false)};
                 location = "Strip size Next tags";
                 l2StripSizeNext = new ReadyNotedParam(source, equipment, "Strip.Next", stripDataNextTags, stripSub);
+                readyNotedParamList.add(l2StripSizeNext);
                 stripZone.addOneParameter(L2ParamGroup.Parameter.Next, l2StripSizeNext);
 //                stripZone.addOneParameter(L2ParamGroup.Parameter.Now, l2StripSizeNext);
                 noteMonitoredTags(stripDataNextTags);
@@ -180,6 +189,7 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener {
                     new Tag(L2ParamGroup.Parameter.FuelCharacteristic, Tag.TagName.Noted, false, true),
                     new Tag(L2ParamGroup.Parameter.FuelCharacteristic, Tag.TagName.Ready, true, false)};
             fuelCharParams = new ReadyNotedParam(source, equipment, "DFHCommon.FuelCharacteristic", commonDFHTags1, fuelCharSub);
+            readyNotedParamList.add(fuelCharParams);
             commonDFHZ.addOneParameter(L2ParamGroup.Parameter.FuelCharacteristic, fuelCharParams);
             noteMonitoredTags(commonDFHTags1);
             Tag[] commonDFHTags2 = {
@@ -190,6 +200,7 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener {
                     new Tag(L2ParamGroup.Parameter.FieldData, Tag.TagName.Noted, true, false),  // noted by Level2
                     new Tag(L2ParamGroup.Parameter.FieldData, Tag.TagName.Ready, false, true)};  // is monitored
             fieldDataParams = new ReadyNotedParam(source, equipment, "DFHCommon.FieldData", commonDFHTags3, fieldDataSub);
+            readyNotedParamList.add(fieldDataParams);
             commonDFHZ.addOneParameter(L2ParamGroup.Parameter.FieldData, fieldDataParams);
             noteMonitoredTags(commonDFHTags3);
             retVal = true;
@@ -236,11 +247,39 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener {
                 new Tag(L2ParamGroup.Parameter.InfoMsg, Tag.TagName.Noted, true, false),  // sending 'Noted' to Process
                 new Tag(L2ParamGroup.Parameter.InfoMsg, Tag.TagName.Noted, false, true)   // reading 'Noted' from Process
         };
+        Tag[] yesNoQueryTags = {new Tag(L2ParamGroup.Parameter.YesNoQuery, Tag.TagName.Msg, false, false),
+                new Tag(L2ParamGroup.Parameter.YesNoQuery, Tag.TagName.Ready, false, true),
+                new Tag(L2ParamGroup.Parameter.YesNoQuery, Tag.TagName.Msg, true, false),
+                new Tag(L2ParamGroup.Parameter.YesNoQuery, Tag.TagName.Ready, true, false),
+                new Tag(L2ParamGroup.Parameter.YesNoQuery, Tag.TagName.Noted, true, false),  // sending 'Noted' to Process
+                new Tag(L2ParamGroup.Parameter.YesNoQuery, Tag.TagName.Noted, false, true),  // reading 'Noted' from Process
+                new Tag(L2ParamGroup.Parameter.YesNoQuery, Tag.TagName.Response, true, false),
+                new Tag(L2ParamGroup.Parameter.YesNoQuery, Tag.TagName.Response, false, true)
+        };
+        Tag[] dataQueryTags = {new Tag(L2ParamGroup.Parameter.DataQuery, Tag.TagName.Msg, false, false),
+                new Tag(L2ParamGroup.Parameter.DataQuery, Tag.TagName.Ready, false, true),
+                new Tag(L2ParamGroup.Parameter.DataQuery, Tag.TagName.Msg, true, false),
+                new Tag(L2ParamGroup.Parameter.DataQuery, Tag.TagName.Ready, true, false),
+                new Tag(L2ParamGroup.Parameter.DataQuery, Tag.TagName.Noted, true, false),  // sending 'Noted' to Process
+                new Tag(L2ParamGroup.Parameter.DataQuery, Tag.TagName.Noted, false, true),  // reading 'Noted' from Process
+                new Tag(L2ParamGroup.Parameter.DataQuery, Tag.TagName.Data, true, false),
+                new Tag(L2ParamGroup.Parameter.DataQuery, Tag.TagName.Data, false, true)
+        };
         try {
             l2InfoMessages = new ReadyNotedParam(source, equipment, "Messages.InfoMsg", infoMessageTags, messageSub);
+            readyNotedParamList.add(l2InfoMessages);
             l2ErrorMessages = new ReadyNotedParam(source, equipment, "Messages.ErrorMsg", errMessageTags, messageSub);
+            readyNotedParamList.add(l2ErrorMessages);
+            l2YesNoQuery = new ReadyNotedParam(source, equipment, "Messages.YesNoQuery", yesNoQueryTags, messageSub);
+            readyNotedParamList.add(l2YesNoQuery);
+            yesNoResponse = new GetLevelResponse(l2YesNoQuery);
+            l2DataQuery = new ReadyNotedParam(source, equipment, "Messages.DataQuery", dataQueryTags, messageSub);
+            readyNotedParamList.add(l2DataQuery);
+            dataResponse = new GetLevelResponse(l2DataQuery);
             noteMonitoredTags(errMessageTags);
             noteMonitoredTags(infoMessageTags);
+            noteMonitoredTags(yesNoQueryTags);
+            noteMonitoredTags(dataQueryTags);
             monitoredTagsReady = true;
             messagesON = true;
             retVal = true;
@@ -248,6 +287,11 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener {
             showError("Message connection to Level1 :" + e.getMessage());
         }
         return retVal;
+    }
+
+    public void initForLevel2Operation() {
+        for (ReadyNotedParam p: readyNotedParamList)
+            p.initStatus();
     }
 
     void noteMonitoredTags(Tag[] tags) {
@@ -485,18 +529,17 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener {
                         sendFuelCharacteristics(zFP);
                     else
                         showErrorInLevel1("Unable to prepare Fuel Characteristics");
-
-                    String fuelMsg = "";
-                    DecimalFormat fmt = new DecimalFormat("#,##0.0");
-                    for (int z = 0; z < nTopActiveSecs; z++) {
-                        double[][] z2fuelTable = zFP.oneZoneFuelArray(z, false);
-                        fuelMsg += "Fuel Table for Zone#" + z + "\n";
-                        for (int r = 0; r < z2fuelTable.length; r++)
-                            fuelMsg += "Total " + fmt.format(z2fuelTable[r][0]) + ", Zonal " +
-                                    fmt.format(z2fuelTable[r][1]) + "\n";
-                        fuelMsg += "\n";
-                    }
-                    controller.showMessage(fuelMsg);
+//                    String fuelMsg = "";
+//                    DecimalFormat fmt = new DecimalFormat("#,##0.0");
+//                    for (int z = 0; z < nTopActiveSecs; z++) {
+//                        double[][] z2fuelTable = zFP.oneZoneFuelArray(z, false);
+//                        fuelMsg += "Fuel Table for Zone#" + z + "\n";
+//                        for (int r = 0; r < z2fuelTable.length; r++)
+//                            fuelMsg += "Total " + fmt.format(z2fuelTable[r][0]) + ", Zonal " +
+//                                    fmt.format(z2fuelTable[r][1]) + "\n";
+//                        fuelMsg += "\n";
+//                    }
+//                    controller.showMessage(fuelMsg);
                 }
             }
             else
@@ -512,7 +555,7 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener {
 
         for (L2Zone oneZone: topL2Zones.values())
             if (!oneZone.setFuelCharacteristic(zFP)) {
-                showError("Some problem in setting fuel Characterestic for " + oneZone.groupName);
+                showError("Some problem in setting fuel Characteristic for " + oneZone.groupName);
                 retVal = false;
                 break;
             }
@@ -528,6 +571,7 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener {
             if (stat.inError) {
                 showErrorInLevel1(stat.msg);
             } else {
+                showInfoInLevel1("Evaluating from Model");
                 commonDFHZ.setValue(L2ParamGroup.Parameter.FieldData, Tag.TagName.Noted, true);
                 calculatedForFieldResults = l2DFHeating.evalForFieldProduction(this);
             }
@@ -538,16 +582,54 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener {
 
     public void noteResultsReady() {
 //        controller.showMessage("results ready Noted by L2DFHFurnace");
-        if (calculatedForFieldResults)
-            l2DFHeating.recalculateWithFieldCorrections();
+        if (calculatedForFieldResults) {
+            calculatedForFieldResults = false;
+            reCalculateWithFieldCorrections = true;
+            l2DFHeating.recalculateWithFieldCorrections(this);
+        }
+        else if (reCalculateWithFieldCorrections) {
+            reCalculateWithFieldCorrections = false;
+            boolean response = getYesNoResponseFromLevel1(
+                    String.format("%s, %tc",
+                                        "Do you want to save as reference ", Calendar.getInstance()), 10);
+            l2DFHeating.showMessage("The response was " +
+                    ((response) ? ("" + l2YesNoQuery.getValue(Tag.TagName.Response).booleanValue) : " No Response"));
+        }
     }
 
     public boolean showErrorInLevel1(String msg) {
         l2ErrorMessages.setValue(Tag.TagName.Msg, msg);
-        return l2ErrorMessages.markReady();
+        return l2ErrorMessages.markReady(true);
     }
 
+    public boolean showInfoInLevel1(String msg) {
+        l2InfoMessages.setValue(Tag.TagName.Msg, msg);
+        return l2InfoMessages.markReady(true);
+    }
 
+    public boolean getYesNoResponseFromLevel1(String msg, int waitSeconds) {
+        return yesNoResponse.getResponse(msg, waitSeconds);
+    }
+
+    public TMuaClient source() {
+        return source;
+    }
+
+    public InputControl controller() {
+        return controller;
+    }
+
+    public String equipment() {
+        return equipment;
+    }
+
+    public void info(String msg) {
+        controller.info(msg);
+    }
+
+    public void error(String msg) {
+        showError(msg);
+    }
 
     class SubAliveListener implements SubscriptionAliveListener {     // TODO This is common dummy class used everywhere to be made proper
         public void onAlive(Subscription s) {
@@ -574,14 +656,14 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener {
                     if (l2InfoMessages.isNewData(theTag)) {  // the data will be already read if new data
                         String msg = l2InfoMessages.processValue(Tag.TagName.Msg).stringValue;
                         controller.showMessage(msg);
-                        l2InfoMessages.setAsNoted();
+                        l2InfoMessages.setAsNoted(true);
                     }
                 }
                 if (theTag.element == L2ParamGroup.Parameter.ErrMsg) {
                     if (l2ErrorMessages.isNewData(theTag)) {  // the data will be already read if new data
                         String msg = l2ErrorMessages.processValue(Tag.TagName.Msg).stringValue;
                         controller.showError(msg);
-                        l2ErrorMessages.setAsNoted();
+                        l2ErrorMessages.setAsNoted(true);
                     }
                 }
             }

@@ -295,7 +295,7 @@ public class PerformanceTable {
     NumberTextField ntThick;
     JButton buttGetData;
     JPanel tableSelP;
-    int outputSteps = 16;
+    int outputSteps = 3;
 
     void showSelDataSet() {
         if (ntWidth.isInError() || ntOutput.isInError())
