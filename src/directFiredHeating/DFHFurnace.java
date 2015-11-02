@@ -705,7 +705,7 @@ public class DFHFurnace {
 
     TrendsPanel progressGraph;
 
-    boolean canRun() {
+    public boolean canRun() {
         return master.isRunOn();
     }
 

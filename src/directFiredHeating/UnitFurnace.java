@@ -20,24 +20,25 @@ import java.util.Vector;
  */
 public class UnitFurnace {
     int MAXNEIGHBORS = 100;
-    ProductionData production;
-    boolean bRecuType;
+    protected ProductionData production;
+    protected boolean bRecuType;
     boolean bAddedTopSoak = false;
     double height, heightEntry, heightExit;
     double width, length, stPos, endPos;
     double chargeArea;
-    double psi, tau, gThick;
-    double delTime, endTime;
-    double eO, eW;
+    public double psi, tau, gThick;
+    public double delTime, endTime;
+    public double eO, eW;
     double losses;
 //    double alpha;
-    double tempWO, tempWcore, tempWmean, tempG, tempO;
-    double chargeHeat = 0;
+    public double tempWO, tempWcore, tempWmean, tempG, tempO;
+    public double tempOMean, tempWOMean;
+    protected double chargeHeat = 0;
     double heatToCharge, heatFromWall, heatFromGas, heatAbsorbed;
     public MultiColDataPoint dpTempWO = null, dpTempWcore = null, dpTempWmean, dpTempG, dpTempO, dpEndTime;
     public MultiColDataPoint dpTotAlpha, dpAlphaGas, dpAlphaWall, dpAlphaAbsorb;
     public MultiColDataPoint dpChargeHeat, dpHeatToCharge, dpHeatFromWall, dpHeatFromGas, dpHeatAbsorbed;
-    double gRatio;
+    protected double gRatio;
     boolean bNoShare = true;  // no coresponding bottom zone
     double s152;
     double alphaGasPart, alphaWallPart, alphaTOW;
@@ -49,12 +50,12 @@ public class UnitFurnace {
     boolean bWallFacingExit, bWallFacingEntry;
     double vWallTop, vWallBot;
     FceSubSection fceSubSec;
-    FceSection fceSec;
-    DFHTuningParams.ForProcess forProcess;
+    public FceSection fceSec;
+    public DFHTuningParams.ForProcess forProcess;
 //    FlueComposition flue;
-    DFHFurnace furnace;
-    ChMaterial ch;
-    DFHTuningParams tuning;
+    protected DFHFurnace furnace;
+    protected ChMaterial ch;
+    protected DFHTuningParams tuning;
     public double g;
     public boolean bBot = false;
     double lastDeltaT;
@@ -158,7 +159,7 @@ public class UnitFurnace {
             tempG = ufFrom.tempG;
     }
 
-   public double setInitialChHeat(double tIn, double rate) {
+    public double setInitialChHeat(double tIn, double rate) {
        double tOut;
        tOut = tIn  + rate * length;
        chargeHeat = ch.getDeltaHeat(tIn, tOut) * gRatio * production.production ;
@@ -424,7 +425,7 @@ public class UnitFurnace {
 
 
 
-     double evalTau(double alpha, double tk, double gX) {
+     protected double evalTau(double alpha, double tk, double gX) {
          // The following formula if for a.t/X2 greatrer than 0.2
          // as per fig.83 of Heilingenstaedt for Plates
         double retVal = 1;
@@ -757,7 +758,8 @@ public class UnitFurnace {
             prevSlot.tempG = tempGB;
             prevSlot.tempWO = two;
             prevSlot.tempWmean = tWMassume;
-
+            tempOMean = (tempO + prevSlot.tempO) / 2;
+            tempWOMean = (tempWO + prevSlot.tempWO) / 2;
             prevSlot.showResult();
         }
         return retVal;
@@ -851,6 +853,8 @@ public class UnitFurnace {
         tempWmean = tWMrevised;
         chargeHeat = chHeat;
         tempG = tempGE;
+        tempOMean = (tempO + prevSlot.tempO) / 2;
+        tempWOMean = (tempWO + prevSlot.tempWO) / 2;
 //        showOneResult(iSlot)
         showResult();
         deltaT = (tempWmean - prevSlot.tempWmean) / delTime;

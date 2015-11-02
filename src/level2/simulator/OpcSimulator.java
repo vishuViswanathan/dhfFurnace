@@ -101,7 +101,15 @@ public class OpcSimulator implements InputControl, L2Interface {
             }
     }
 
+//    void setDisabledColor(Color color) {
+//        UIManager.put("JTextField.disabledBackground", color);
+//        UIManager.put("JComboBox.disabledBackground", color);
+//        UIManager.put("JTextField.disabledBackground", color);
+//        UIManager.put("JTextArea.disabledBackground", color);
+//    }
+
     void showThem() {
+//        setDisabledColor(Color.DARK_GRAY);
         JPanel mainP= new JPanel(new BorderLayout());
         mainP.add(getProcessPane(), BorderLayout.WEST);
         mainP.add(getLevel2Pane(), BorderLayout.EAST);

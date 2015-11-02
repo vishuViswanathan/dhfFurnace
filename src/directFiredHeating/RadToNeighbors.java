@@ -314,7 +314,7 @@ public class RadToNeighbors {
         }
     }
 
-    public double calculate() {
+    public double calculateOLD() {
         interChF = evalInterChF();
         hHeatOut = interChF * totalFactor * SPECIAL.stefenBoltz * srcArea *
                 (Math.pow((slotFrom.tempO + 273), 4) - Math.pow((slotTo.tempWO + 273), 4));
@@ -332,6 +332,37 @@ public class RadToNeighbors {
             alphaGas =  flue.alphaGas(slotFrom.tempO, slotTo.tempWO, distWallCharge) * tuning.emmFactor;
             if (tuning.bTakeGasAbsorptionForInterRad)
                 vGasAbsorption = alphaGas * vTotalfactor * vSrcArea * (slotFrom.tempO - slotTo.tempWO);
+            else
+                vGasAbsorption = 0;
+            if (Math.abs(vGasAbsorption) > Math.abs(vHeatOut))
+                debug("vGasAbsorption = " + vGasAbsorption + ", vHeatOut = " + vHeatOut);
+        }
+        heatOut = (hHeatOut - hGasAbsorption) + (vHeatOut - vGasAbsorption);
+//        heatOut = (hHeatOut - hGasAbsorption);
+        pDestHeatIntensity = heatOut / destArea;
+        return heatOut;
+    }
+
+    public double calculate() {
+        interChF = evalInterChF();
+        double tFrom = slotFrom.tempOMean;
+        double tTo =  slotTo.tempWOMean;
+        hHeatOut = interChF * totalFactor * SPECIAL.stefenBoltz * srcArea *
+                (Math.pow((tFrom + 273), 4) - Math.pow((tTo + 273), 4));
+        // gas absorption
+        double alphaGas =  flue.alphaGas(tFrom, tTo, distRoofCharge) * tuning.emmFactor;
+        if (tuning.bTakeGasAbsorptionForInterRad)
+            hGasAbsorption = alphaGas * totalFactor * srcArea * (tFrom - tTo);
+        else
+            hGasAbsorption = 0;
+        if (Math.abs(hGasAbsorption) > Math.abs(hHeatOut))
+            debug("hGasAbsorption = " + hGasAbsorption + ", hHeatOut = " + hHeatOut);
+        vHeatOut = interChF * vTotalfactor * SPECIAL.stefenBoltz * vSrcArea *
+                (Math.pow((tFrom + 273), 4) - Math.pow((tTo + 273), 4));
+        if (distWallCharge > 0)  {
+            alphaGas =  flue.alphaGas(tFrom, tTo, distWallCharge) * tuning.emmFactor;
+            if (tuning.bTakeGasAbsorptionForInterRad)
+                vGasAbsorption = alphaGas * vTotalfactor * vSrcArea * (tFrom - tTo);
             else
                 vGasAbsorption = 0;
             if (Math.abs(vGasAbsorption) > Math.abs(vHeatOut))

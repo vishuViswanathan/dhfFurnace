@@ -300,7 +300,7 @@ public class FceSection {
     double chargeHeatFraction;
     double passFlueTin, tempFlueOut;
     public double heatPassingFlueIn, heatPassingFlueOut, heatFromPassingFlue;
-    double lastRate;
+    public double lastRate;
     double secTime;
     double pLosses, pInterRadLoss;
     double regenPHTemp;

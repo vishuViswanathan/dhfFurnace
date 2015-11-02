@@ -10,6 +10,8 @@ import mvUtils.display.NumberTextField;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.plaf.basic.BasicComboBoxEditor;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -25,6 +27,7 @@ public class TagWithDisplay extends Tag implements ActionListener, DocumentListe
     JComponent displayComponent;
     NumberTextField numberText;
     JTextArea textArea;
+    JTextField booleanStatus;
     JComboBox<String> comboBox;
     boolean uiReady = false;
 
@@ -34,25 +37,51 @@ public class TagWithDisplay extends Tag implements ActionListener, DocumentListe
         this.formatStr = formatStr;
         switch (dataType) {
             case BOOLEAN:
-                comboBox = new JComboBox<String>(new String[]{"No", "Yes"});
-                if (!subscribe)
+                if (bSubscribe) {
+                    booleanStatus = new JTextField(4);
+                    booleanStatus.setDisabledTextColor(Color.BLUE);
+                    booleanStatus.setEnabled(false);
+                    displayComponent = booleanStatus;
+                }
+                else {
+                    comboBox = new JComboBox<String>(new String[]{"No", "Yes"});
                     comboBox.addActionListener(this);
-                displayComponent = comboBox;
+                    displayComponent = comboBox;
+                }
+//                comboBox = new JComboBox<String>(new String[]{"No", "Yes"});
+//                if (!subscribe)
+//                    comboBox.addActionListener(this);
+//                else {
+//                    BasicComboBoxEditor editor = (BasicComboBoxEditor)comboBox.getEditor();
+//                    editor.getEditorComponent().setForeground(Color.BLUE);
+//                    editor.getEditorComponent().setBackground(Color.yellow);
+//                    comboBox.setEnabled(false);
+//                }
+//                displayComponent = comboBox;
                 break;
             case FLOAT:
                 numberText = new NumberTextField(controller, 0, 6, false, -1e6, +1e6, formatStr, "Enter Value");
                 if (!subscribe)
                     numberText.addActionListener(this);
+                else
+                if (subscribe) {
+                    numberText.setDisabledTextColor(Color.BLUE);
+                    numberText.setEnabled(false);
+                }
+
                 displayComponent = numberText;
                 break;
             case STRING:
                 textArea = new JTextArea(2, 40);
                 if (!subscribe)
                     textArea.getDocument().addDocumentListener(this);
+                else {
+                    textArea.setDisabledTextColor(Color.BLUE);
+                    textArea.setEnabled(false);
+                }
                 displayComponent = textArea;
                 break;
         }
-        displayComponent.setEnabled(!subscribe);
         uiReady = true;
     }
 
@@ -95,8 +124,11 @@ public class TagWithDisplay extends Tag implements ActionListener, DocumentListe
             ProcessValue pv = getValue();
             switch (dataType) {
                 case BOOLEAN:
+                    if (bSubscribe)
+                        booleanStatus.setText(pv.booleanValue ? "Yes" : "No");
+                    else
 //                    System.out.println(tagName + " - value = " + processData.getBooleanValue());
-                    comboBox.setSelectedIndex((pv.booleanValue) ? 1 : 0);
+                        comboBox.setSelectedIndex((pv.booleanValue) ? 1 : 0);
                     break;
                 case FLOAT:
                     numberText.setData(pv.floatValue);
