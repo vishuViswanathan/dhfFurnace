@@ -72,13 +72,16 @@ public class DFHFurnace {
     UnitFceArray ufsArrAS; // for added Soak
     Vector<UnitFurnace> vTopUnitFces, vBotUnitFces;
     Vector<UnitFurnace> vASUnitFces; // UnitFurnaces of added TopSoak
+    Vector<Double> vTopSlotTempOLast,  vBotSlotTempOLast;
     public DFHTuningParams tuningParams;
     public MultiColData topTResults, botTResults;
     ThreadController master;
     boolean bRecalculBot, bRecalculTop;
     double tempGZ1Bot, tempGZ1Top; // old value for recalculation
     LossListWithVal topLossValList, botLossValList, combiLossValList;
+    boolean bBaseOnOnlyWallRadiation = false;
     boolean resultsReady = false;
+    boolean bDisplayResults = true;
 
     public DFHFurnace(DFHeating controller, boolean bTopBot, boolean bAddTopSoak, ActionListener listener) {
         this.controller = controller;
@@ -251,7 +254,7 @@ public class DFHFurnace {
     }
 
     public void resetLossFactor() {
-        for (FceSection sec: topSections)
+        for (FceSection sec : topSections)
             sec.resetLossFactor();
         if (bTopBot)
             for (FceSection sec : botSections)
@@ -260,6 +263,74 @@ public class DFHFurnace {
 
     public boolean getReadyToCalcul() {
         return getReadyToCalcul(calculStep);
+    }
+
+    boolean setWallTemperatures() {
+        ZoneTemperatureDlg dlg = new ZoneTemperatureDlg(controller.parent(), false);
+        dlg.setLocation(400, 100);
+        dlg.setVisible(true);
+        boolean allOK = dlg.allOK;
+        if (allOK) {
+            setTempOForAllSlots1(false);
+            if (bTopBot) {
+                dlg = new ZoneTemperatureDlg(controller.parent(), true);
+                dlg.setLocation(400, 100);
+                dlg.setVisible(true);
+                allOK &= dlg.allOK;
+                if (allOK)
+                    setTempOForAllSlots1(true);
+            }
+        }
+        return allOK;
+    }
+
+    void setTempOForAllSlots(boolean bBot) {
+        Vector<UnitFurnace> vUf = (bBot) ? vBotUnitFces : vTopUnitFces;
+        int nActive = (bBot) ? nBotActiveSecs : nTopActiveSecs;
+        Vector<FceSection> vSec = (bBot) ? botSections : topSections;
+
+        XYArray zoneTemps = new XYArray();
+        for (int s = 0; s < nActive; s++) {
+            FceSection sec = vSec.get(s);
+            double tcLoc = sec.tcLoc();
+            zoneTemps.add(tcLoc, sec.tempAtTCLocation);
+        }
+        zoneTemps.extrapolate(true, false);
+        UnitFurnace uf;
+        double endPos;
+        for (int u = 0; u < vUf.size() - 1; u++) {
+            uf = vUf.get(u);
+            endPos = uf.endPos;
+            uf.setTempO(zoneTemps.getYat(endPos));
+//            topTResults.setData(fieldTempOTraceNo, u, zoneTemps.getYat(endPos));
+        }
+    }
+
+    void setTempOForAllSlots1(boolean bBot) {
+        Vector<UnitFurnace> vUf = (bBot) ? vBotUnitFces : vTopUnitFces;
+        int nActive = (bBot) ? nBotActiveSecs : nTopActiveSecs;
+        Vector<FceSection> vSec = (bBot) ? botSections : topSections;
+
+        XYArray zoneTemps = new XYArray();
+        for (int s = 0; s < nActive; s++) {
+            FceSection sec = vSec.get(s);
+            double tcLoc = sec.tcLoc();
+            zoneTemps.add(tcLoc, sec.tempAtTCLocation);
+        }
+        zoneTemps.extrapolate(true, false);
+        UnitFurnace uf;
+        FceSection sec;
+        double endPos;
+        for (int u = 0; u < vUf.size() - 1; u++) {
+            uf = vUf.get(u);
+            sec = uf.fceSec;
+            if (sec.bRecuType) {
+                endPos = uf.endPos;
+                uf.setTempO(zoneTemps.getYat(endPos));
+            }
+            else
+                uf.setTempO(sec.tempAtTCLocation);
+        }
     }
 
     public boolean getReadyToCalcul(double calculStep) {
@@ -297,7 +368,33 @@ public class DFHFurnace {
                 combiTrends = getCombiGraphsPanel();
             }
         }
+        bBaseOnOnlyWallRadiation = false;
+        boolean skipUserEntry = false;
+        if (tuningParams.bBaseOnZonalTemperature) {
+            if (resultsReady) {
+                if (decide("Use just evaluated data",
+                        "Do you want to work with earlier wall temperatures?" +
+                        "\nChoose 'Yes' only if Furnace physical params hane not been changed")) {
+                    copyTempoFromLastResults();
+                    skipUserEntry = true;
+                }
+            }
+            if (!skipUserEntry)
+                bRetVal = setWallTemperatures();
+            bBaseOnOnlyWallRadiation = bRetVal;
+        }
+
         return bRetVal;
+    }
+
+    void copyTempoFromLastResults() {
+        for (int s = 0; s < vTopUnitFces.size(); s++)
+            vTopUnitFces.get(s).tempO = vTopSlotTempOLast.get(s);
+        if (bTopBot) {
+            for (int s = 0; s < vBotUnitFces.size(); s++)
+                vBotUnitFces.get(s).tempO = vBotSlotTempOLast.get(s);
+
+        }
     }
 
     void resetResults() {
@@ -311,37 +408,130 @@ public class DFHFurnace {
     }
 
     public boolean doTheCalculation() {
+        if (bBaseOnOnlyWallRadiation)
+            return doTheCalculationWithOnlyWallRadiation();
+        else {
+            boolean allOk = true;
+            boolean reDo = true;
+            resetResults();
+            boolean bStart = true;
+            String addMsg = "";
+            bUnableToUsePerfData = false;
+            resultsReady = false;
+            skipReferenceDataCheck = false;
+            while (true) {
+                while (allOk && reDo) {
+                    allOk = false;
+                    if (tuningParams.bEvalBotFirst && !bAddTopSoak) {
+                        if (bTopBot)
+                            allOk = evalTopOrBottom(true, bStart, addMsg);
+                        if (allOk && canRun())
+                            allOk = evalTopOrBottom(false, bStart, addMsg);
+                    } else {
+                        allOk = evalTopOrBottom(false, bStart, addMsg);
+                        if (allOk && bTopBot && canRun())
+                            allOk = evalTopOrBottom(true, bStart, addMsg);
+                    }
+                    bStart = false;
+
+                    if (allOk && canRun() && prepareHeatBalance()) {
+                        if (redoWithRecuResults()) {
+                            reDo = true;
+                            addMsg = " [With revised Air Preheat " + (new DecimalFormat("#,##0 C")).format(commFuelFiring.airTemp) + "]";
+                            continue;
+                        }
+                    }
+
+                    if (allOk && bTopBot && canRun()) {
+                        double rmsDiff = getGratioStat();
+                        boolean resp = false;
+                        if (rmsDiff > 0.005) {
+                            resp = decide("Top and Bottom Heating",
+                                    "Heat Share Error of Top and Bottom is " + (new DecimalFormat("#0.00")).format(rmsDiff * 100) +
+                                            "%, Do you want to recalculate with Correction?");
+                            controller.parent().toFront();
+                        }
+                        if (resp) {
+                            combiData.noteCorrection();
+                        } else
+                            reDo = false;
+                    } else
+                        reDo = false;
+                }
+
+                if (allOk && canRun() && prepareHeatBalance()) {
+                    topTrendsP = getTrendsPanel(false);
+                    if (bTopBot) {
+                        botTrendsP = getTrendsPanel(true);
+                        combiTrendsP = getCombiTrendsPanel();
+                    }
+                }
+
+                if (inPerformanceBaseMode) {
+                    savePerformanceIfDue();
+                    inPerformanceBaseMode = false;
+                    if (resetToRequiredProduction()) {
+                        resetResults();
+                        addMsg = "Final Calculation ";
+                        reDo = true;
+                        continue;
+                    }
+                }
+                break;
+            }
+            if  (allOk & canRun()) {
+                for (int iSec = 0; iSec < nTopActiveSecs; iSec++)
+                    topSections.get(iSec).markZonalTemperature(topUfsArray.getMultiColdata(), topUfsArray.colFceTemp);
+                vTopSlotTempOLast = new Vector<Double>();
+                for (UnitFurnace uf: vTopUnitFces)
+                    vTopSlotTempOLast.add(uf.tempO);
+                if (bTopBot)  {
+                    for (int iSec = 0; iSec < nBotActiveSecs; iSec++)
+                        botSections.get(iSec).markZonalTemperature(botUfsArray.getMultiColdata(), botUfsArray.colFceTemp);
+                    vBotSlotTempOLast = new Vector<Double>();
+                    for (UnitFurnace uf: vBotUnitFces)
+                        vBotSlotTempOLast.add(uf.tempO);
+                }
+                return true;
+            }
+            else
+                return false;
+        }
+    }
+
+
+    void setEntrySlotChargeTemperatures() {
+        UnitFurnace uf = vTopUnitFces.get(0);
+        double temp = production.entryTemp;
+        uf.tempWO = uf.tempWmean = uf.tempWcore = temp;
+        if (bTopBot) {
+            uf = vBotUnitFces.get(0);
+            uf.tempWO = uf.tempWmean = uf.tempWcore = temp;
+        }
+    }
+
+    boolean doTheCalculationWithOnlyWallRadiation() {
         boolean allOk = true;
         boolean reDo = true;
         resetResults();
         boolean bStart = true;
         String addMsg = "";
-        bUnableToUsePerfData = false;
         resultsReady = false;
-        skipReferenceDataCheck = false;
+        setEntrySlotChargeTemperatures();
         while (true) {
             while (allOk && reDo) {
                 allOk = false;
                 if (tuningParams.bEvalBotFirst && !bAddTopSoak) {
                     if (bTopBot)
-                        allOk = evalTopOrBottom(true, bStart, addMsg);
+                        allOk = evalTopOrBottomWithOnlyWallRadiation(true, bStart, addMsg);
                     if (allOk && canRun())
-                        allOk = evalTopOrBottom(false, bStart, addMsg);
+                        allOk = evalTopOrBottomWithOnlyWallRadiation(false, bStart, addMsg);
                 } else {
-                    allOk = evalTopOrBottom(false, bStart, addMsg);
+                    allOk = evalTopOrBottomWithOnlyWallRadiation(false, bStart, addMsg);
                     if (allOk && bTopBot && canRun())
-                        allOk = evalTopOrBottom(true, bStart, addMsg);
+                        allOk = evalTopOrBottomWithOnlyWallRadiation(true, bStart, addMsg);
                 }
                 bStart = false;
-
-                if (allOk && canRun() && prepareHeatBalance()) {
-                    if (redoWithRecuResults()) {
-                        reDo = true;
-                        addMsg = " [With revised Air Preheat " + (new DecimalFormat("#,##0 C")).format(commFuelFiring.airTemp) + "]";
-                        continue;
-                    }
-                }
-
                 if (allOk && bTopBot && canRun()) {
                     double rmsDiff = getGratioStat();
                     boolean resp = false;
@@ -359,22 +549,11 @@ public class DFHFurnace {
                     reDo = false;
             }
 
-            if (allOk && canRun() && prepareHeatBalance()) {
+            if (allOk && canRun()) {
                 topTrendsP = getTrendsPanel(false);
                 if (bTopBot) {
                     botTrendsP = getTrendsPanel(true);
                     combiTrendsP = getCombiTrendsPanel();
-                }
-            }
-
-            if (inPerformanceBaseMode) {
-                savePerformanceIfDue();
-                inPerformanceBaseMode = false;
-                if (resetToRequiredProduction()) {
-                    resetResults();
-                    addMsg = "Final Calculation ";
-                    reDo = true;
-                    continue;
                 }
             }
             break;
@@ -382,45 +561,84 @@ public class DFHFurnace {
         return (allOk & canRun());
     }
 
+    /**
+     * Evaluating charge exit conditions for the existing furnace temperautures
+     * @return
+     */
+    public ChargeStatus processInFurnace(ChargeStatus chargeInStatus) {
+        chargeInStatus.setStatus(Double.NaN);
+        return chargeInStatus;
+    }
+
     public boolean evaluate(ThreadController master) {
+        return evaluate(master, true);
+    }
+    public boolean evaluate(ThreadController master, boolean bDisplayResults) {
+        this.bDisplayResults = bDisplayResults;
         this.master = master;
         inPerfTableMode = false;
         tuningParams.takeValuesFromUI();
 //        skipReferenceDataCheck = false;
+        DFHResult.Type switchDisplayto = DFHResult.Type.HEATSUMMARY;
         if (doTheCalculation()) {
-            controller.addResult(DFHResult.Type.HEATSUMMARY, heatSummary);
-            controller.addResult(DFHResult.Type.FUELSUMMARY, fuelSummaryP);
-            topResults = getResultsPanel(false);
-            topSecwise = getSecwisePanel(false);
-            if (controller.heatingMode == DFHeating.HeatingMode.TOPBOTSTRIP) {
-                controller.addResult(DFHResult.Type.TEMPRESULTS, topResults);
-                controller.addResult(DFHResult.Type.SECTIONWISE, topSecwise);
-                controller.addResult(DFHResult.Type.COMBItempTRENDS, topTrendsP);
-                controller.addResult(DFHResult.Type.FUELS, topFuelsP);
-            } else {
-                controller.addResult(DFHResult.Type.TOPtempRESULTS, topResults);
-                controller.addResult(DFHResult.Type.TOPSECTIONWISE, topSecwise);
-                controller.addResult(DFHResult.Type.TOPtempTRENDS, topTrendsP);
-                controller.addResult(DFHResult.Type.TOPFUELS, topFuelsP);
-            }
-            if (bTopBot) {
-                controller.addResult(DFHResult.Type.BOTFUELS, botFuelsP);
-                controller.addResult(DFHResult.Type.BOTtempTRENDS, botTrendsP);
-                botResults = getResultsPanel(true);
-                controller.addResult(DFHResult.Type.BOTtempRESULTS, botResults);
-                botSecwise = getSecwisePanel(true);
-                controller.addResult(DFHResult.Type.BOTSECTIONWISE, botSecwise);
-                if (combiTrends != null)
-                    controller.addResult(DFHResult.Type.COMBItempTRENDS, combiTrendsP);
-            }
-            if (recuBalance != null)
-                controller.addResult(DFHResult.Type.RECUBALANCE, recuBalance);
-            controller.addResult(DFHResult.Type.LOSSDETAILS, lossValueDetPan());
+            if (bBaseOnOnlyWallRadiation) {
+                switchDisplayto = DFHResult.Type.TOPtempTRENDS;
+                topResultsP = getResultsPanel(false);
+                topSecwiseP = getSecwisePanel(false);
+                if (controller.heatingMode == DFHeating.HeatingMode.TOPBOTSTRIP) {
+                    controller.addResult(DFHResult.Type.TEMPRESULTS, topResultsP);
+                    controller.addResult(DFHResult.Type.COMBItempTRENDS, topTrendsP);
+                    switchDisplayto = DFHResult.Type.COMBItempTRENDS;
+                } else {
+                    controller.addResult(DFHResult.Type.TOPtempRESULTS, topResultsP);
+                    controller.addResult(DFHResult.Type.TOPtempTRENDS, topTrendsP);
 
-            controller.resultsReady(getObservations());
+                }
+                if (bTopBot) {
+                    controller.addResult(DFHResult.Type.BOTtempTRENDS, botTrendsP);
+                    botResultsP = getResultsPanel(true);
+                    controller.addResult(DFHResult.Type.BOTtempRESULTS, botResultsP);
+                    botSecwiseP = getSecwisePanel(true);
+                    if (combiTrends != null) {
+                        controller.addResult(DFHResult.Type.COMBItempTRENDS, combiTrendsP);
+                        switchDisplayto = DFHResult.Type.COMBItempTRENDS;
+                    }
+                }
+            } else {
+                controller.addResult(DFHResult.Type.HEATSUMMARY, heatSummary);
+                controller.addResult(DFHResult.Type.FUELSUMMARY, fuelSummaryP);
+                topResultsP = getResultsPanel(false);
+                topSecwiseP = getSecwisePanel(false);
+                if (controller.heatingMode == DFHeating.HeatingMode.TOPBOTSTRIP) {
+                    controller.addResult(DFHResult.Type.TEMPRESULTS, topResultsP);
+                    controller.addResult(DFHResult.Type.SECTIONWISE, topSecwiseP);
+                    controller.addResult(DFHResult.Type.COMBItempTRENDS, topTrendsP);
+                    controller.addResult(DFHResult.Type.FUELS, topFuelsP);
+                } else {
+                    controller.addResult(DFHResult.Type.TOPtempRESULTS, topResultsP);
+                    controller.addResult(DFHResult.Type.TOPSECTIONWISE, topSecwiseP);
+                    controller.addResult(DFHResult.Type.TOPtempTRENDS, topTrendsP);
+                    controller.addResult(DFHResult.Type.TOPFUELS, topFuelsP);
+                }
+                if (bTopBot) {
+                    controller.addResult(DFHResult.Type.BOTFUELS, botFuelsP);
+                    controller.addResult(DFHResult.Type.BOTtempTRENDS, botTrendsP);
+                    botResultsP = getResultsPanel(true);
+                    controller.addResult(DFHResult.Type.BOTtempRESULTS, botResultsP);
+                    botSecwiseP = getSecwisePanel(true);
+                    controller.addResult(DFHResult.Type.BOTSECTIONWISE, botSecwiseP);
+                    if (combiTrends != null)
+                        controller.addResult(DFHResult.Type.COMBItempTRENDS, combiTrendsP);
+                }
+                if (recuBalance != null)
+                    controller.addResult(DFHResult.Type.RECUBALANCE, recuBalance);
+                controller.addResult(DFHResult.Type.LOSSDETAILS, lossValueDetPan());
+            }
+            controller.resultsReady(getObservations(), switchDisplayto);
             resultsReady = true;
             //            savePerformanceIfDue();
             enablePeformMenu();
+
             return true;
         } else {
             if (canRun())
@@ -472,9 +690,6 @@ public class DFHFurnace {
     }
 
     void enablePeformMenu() {
-//        if ((controller.proc == DFHTuningParams.ForProcess.STRIP) && !bTopBot
-//                && (nTopFired == 3) && (nTopActiveSecs == 4)
-//                && (anyIndividFuel(false) == 0)) {
         if ((controller.proc == DFHTuningParams.ForProcess.STRIP) && !bTopBot
                 && (anyIndividFuel(false) == 0)) {
             controller.enablePerfMenu(true);
@@ -482,7 +697,6 @@ public class DFHFurnace {
                 controller.enableCreatePerform(true);
             else {
                 controller.enableCreatePerform(false);
-//            else if (!perfBaseReady)
                 controller.enableAddToPerform(true);
             }
         } else
@@ -693,7 +907,8 @@ public class DFHFurnace {
     }
 
     public void updateUI() {
-        progressGraph.updateUI();
+        if (bDisplayResults)
+            progressGraph.updateUI();
     }
 
     void setAllowSecFuel(boolean allow) {
@@ -820,7 +1035,7 @@ public class DFHFurnace {
         String mainTitle = getMainTitle();
         double chTempProfileFactor = 1;    // for correction if (honorLastZoneMinFceTemp)
         double chInTempReqd;
-        if (tuningParams.bSlotProgress || tuningParams.bSectionProgress)
+        if (bDisplayResults && (tuningParams.bSlotProgress || tuningParams.bSectionProgress))
             master.setProgressGraph(mainTitle, title + add2ToTilte + addToTitle, progressGraph);
         String statusHead = (bBot) ? "Bottom Zone " : "Top Zone ";
         FceEvaluator.EvalStat response;
@@ -1018,10 +1233,58 @@ public class DFHFurnace {
                 }
             }
         }
-        if (allOk && smoothenCurve)
+        if (allOk && smoothenCurve && tuningParams.bSmoothenCurve) {
             smoothenProfile(bBot);
+        }
         return allOk;
     }
+
+    boolean evalTopOrBottomWithOnlyWallRadiation(boolean bBot, boolean bStart, String addMsg) {
+        boolean allOk = true;
+        Vector<FceSection> vSec;
+        String title;
+        String add2ToTilte = "";
+        String addToTitle = " ..." + addMsg;
+        int nActiveSecs;
+        if (bBot) {
+            vSec = botSections;
+            nActiveSecs = nBotActiveSecs;
+            progressGraph = botTrends;
+            title = "Bottom Zones";
+        } else {
+            vSec = topSections;
+            nActiveSecs = nTopActiveSecs;
+            progressGraph = topTrends;
+            title = topBotName(false) + "Zones";
+        }
+        evalDwellTime();
+        FceSection theSection;
+        String mainTitle = getMainTitle();
+        if (tuningParams.bSlotProgress || tuningParams.bSectionProgress)
+            master.setProgressGraph(mainTitle, title + add2ToTilte + addToTitle, progressGraph);
+        String statusHead = (bBot) ? "Bottom Zone " : "Top Zone ";
+        FceEvaluator.EvalStat response;
+        while (allOk && canRun()) {
+            FceSection nextSection;
+            for (int iSec = 0; iSec < nActiveSecs; iSec++) {
+                showStatus(statusHead + (iSec + 1));
+                theSection = vSec.get(iSec);
+                response = theSection.oneSectionInFwdWithWallRadiation();
+                if (!(response == FceEvaluator.EvalStat.OK)) {
+                    allOk = false;
+                    break;
+                }
+                if (iSec < (nActiveSecs - 1)) {
+                    nextSection = vSec.get(iSec + 1);
+                    nextSection.copyFromPrevSection(theSection);
+                }
+            }
+            break;
+        }
+        if (allOk && smoothenCurve && tuningParams.bSmoothenCurve)
+            smoothenProfile(bBot);
+        return allOk;
+     }
 
     double chTempFactorOLD(double[] nowProfile, int iSecNum, FceSection theSection) {
         double nowInTemp = theSection.chEntryTemp();
@@ -1083,8 +1346,7 @@ public class DFHFurnace {
                     sec.setPresetGasTemp(tempDlg.getVal());
                 else
                     allOK = false;
-            }
-            else
+            } else
                 sec.setPresetGasTemp(suggTemp);
         }
         return allOK;
@@ -1481,7 +1743,8 @@ public class DFHFurnace {
 
 
     void showStatus(String msg) {
-        master.showStatus(msg);
+        if (bDisplayResults)
+            master.showStatus(msg);
     }
 
     double getCommonFuelUsed(boolean bBot) {
@@ -1499,7 +1762,7 @@ public class DFHFurnace {
         return fUsed;
     }
 
-    JPanel heatSummary, topSecwise, botSecwise, topResults, botResults, combiResults;
+    JPanel heatSummary, topSecwiseP, botSecwiseP, topResultsP, botResultsP, combiResultsP;
     JPanel topTrendsP, botTrendsP, combiTrendsP;
     JPanel recuBalance;
     TrendsPanel topTrends, botTrends, combiTrends;
@@ -3116,6 +3379,8 @@ public class DFHFurnace {
             botTResults = ufsArr.getMultiColdata();
         else {
             topTResults = ufsArr.getMultiColdata();
+//            if (tuningParams.bBaseOnZonalTemperature)
+//                TESTINGcreateTrendForFieldTempO();
         }
     }
 
@@ -4507,18 +4772,6 @@ public class DFHFurnace {
 //        dialog.setVisible(true);
     }
 
-    class CloseDialogTask extends TimerTask {
-        JDialog dlg;
-
-        CloseDialogTask(JDialog dlg) {
-            this.dlg = dlg;
-        }
-
-        public void run() {
-            dlg.setVisible(false);
-        }
-    }
-
     void showMessage(String msg) {
         (new TimedMessage("In Furnace data", msg, TimedMessage.INFO, controller.parent(), 3000)).show();
     }
@@ -4526,75 +4779,6 @@ public class DFHFurnace {
     double gasTempZ2Top, gasTempZ2Bot;
 
     double flueTempTop, flueTempBot;
-
-    class ZoneTemperatureDlgREMOVE extends JDialog {
-        JButton okButt = new JButton("OK");
-        JButton cancel = new JButton("Cancel");
-        NumberTextField tfZoneTemp;
-        ActionListener li;
-        double zoneTemp;
-        String title;
-        InputControl control;
-        final String tempSel = "Zone Gas Temperature (C)";
-        boolean ok = false;
-
-        ZoneTemperatureDlgREMOVE(InputControl control, double zoneTemp, String title) {
-            super(control.parent(), title, Dialog.ModalityType.DOCUMENT_MODAL);
-            this.control = control;
-            this.zoneTemp = zoneTemp;
-            this.title = title;
-            jbInit();
-            pack();
-        }
-
-        void jbInit() {
-            Dimension d = new Dimension(100, 25);
-            okButt.setPreferredSize(d);
-            cancel.setPreferredSize(d);
-            li = new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    Object src = e.getSource();
-                    if (src == okButt) {
-                        noteValuesFromUI();
-                        ok = true;
-                        closeThisWindow();
-                    } else if (src == cancel) {
-                        closeThisWindow();
-                    }
-                }
-            };
-            okButt.addActionListener(li);
-            cancel.addActionListener(li);
-            Container dlgP = getContentPane();
-            tfZoneTemp = new NumberTextField(controller, zoneTemp, 6, false, 100, 1600, "#,###", tempSel);
-            tfZoneTemp.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    NumberTextField src = (NumberTextField) e.getSource();
-                    if (!src.isInError())
-                        okButt.doClick();
-                }
-            });
-            MultiPairColPanel jp = new MultiPairColPanel(title);
-            jp.addItemPair(tempSel, tfZoneTemp);
-            jp.addItemPair(cancel, okButt);
-            dlgP.add(jp);
-            getRootPane().setDefaultButton(okButt);
-        }
-
-        void noteValuesFromUI() {
-            zoneTemp = tfZoneTemp.getData();
-        }
-
-        double getZoneTemp() {
-            return zoneTemp;
-        }
-
-        void closeThisWindow() {
-            setVisible(false);
-            dispose();
-            control.parent().setVisible(true);
-        }
-    }
 
     class FlueFlowTempHeat {
         double flow;
@@ -4738,5 +4922,67 @@ public class DFHFurnace {
             return (traceProf.getYat(x) - baseY) / scale * 1000;
         }
     }
+
+    class ZoneTemperatureDlg extends JDialog {
+        JButton ok = new JButton("OK");
+        JButton cancel = new JButton("Cancel");
+        ActionListener li;
+        Frame parent;
+        boolean forBottomSections = false;
+        Vector<FceSection> vSec;
+        int nActive;
+        boolean allOK = false;
+
+        ZoneTemperatureDlg(Frame parent, boolean forBottomSections) {
+            super(parent, "Set Zonal Temperatures", Dialog.ModalityType.DOCUMENT_MODAL);
+            this.parent = parent;
+            this.forBottomSections = forBottomSections;
+            vSec = (forBottomSections) ? botSections : topSections;
+            nActive = (forBottomSections) ? nBotActiveSecs : nTopActiveSecs;
+            jbInit();
+            pack();
+        }
+
+        void jbInit() {
+            Dimension d = new Dimension(100, 25);
+            ok.setPreferredSize(d);
+            cancel.setPreferredSize(d);
+            li = new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    Object src = e.getSource();
+                    if (src == ok) {
+                        if (noteZonalTemperatures()) {
+                            closeThisWindow();
+                            allOK = true;
+                        } else
+                            showError("Some Error in Zonal Temperature Entries");
+                    } else if (src == cancel)
+                        closeThisWindow();
+                }
+            };
+            ok.addActionListener(li);
+            cancel.addActionListener(li);
+            Container dlgP = getContentPane();
+            MultiPairColPanel jp = new MultiPairColPanel("Set Zonal Temperatures");
+            for (int s = 0; s < nActive; s++) {
+                jp.addItem(vSec.get(s).jpTCLocationAndTemperature());
+            }
+            jp.addItemPair(cancel, ok);
+            dlgP.add(jp);
+        }
+
+        boolean noteZonalTemperatures() {
+            boolean retVal = true;
+            for (int s = 0; s < nActive; s++)
+                retVal &= vSec.get(s).noteZonalTemperature();
+            return retVal;
+        }
+
+        void closeThisWindow() {
+            setVisible(false);
+            dispose();
+        }
+    }
+
 
 }

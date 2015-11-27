@@ -54,7 +54,7 @@ public class DFHTuningParams {
             return retVal;
         }
     }
-    boolean bOnTest = false;
+    public boolean bOnTest = false;
     JCheckBox cBOnTest;
     public double epsilonO = 0.8;
     public double gasWallHTMultipler = 5;
@@ -80,10 +80,12 @@ public class DFHTuningParams {
     public boolean bAllowRegenAirTemp = true;
     public boolean bShowFlueCompo = true;
     public boolean bAutoTempForLosses = true;
+    public boolean bSmoothenCurve = true;
     public boolean bNoGasAbsorptionInWallBalance = false;
+    public boolean bBaseOnZonalTemperature = false;
 
     LinkedHashMap<ForProcess, PreSetTunes> preSets;
-    DFHeating controller;
+    final DFHeating controller;
     ForProcess selectedProc;
     PreSetTunes selectedPreset;
     UnitFceArray.ProfileBasis tfmBasis = UnitFceArray.ProfileBasis.FCETEMP;
@@ -117,6 +119,23 @@ public class DFHTuningParams {
 
         cBSlotRadInCalcul = new JCheckBox();
         cBTakeEndWalls = new JCheckBox();
+        cBbaseOnZonalTemperature = new JCheckBox();
+        cBbaseOnZonalTemperature.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                bBaseOnZonalTemperature = cBbaseOnZonalTemperature.isSelected();
+                if (bBaseOnZonalTemperature) {
+                    cBSlotRadInCalcul.setEnabled(false);
+                    bSlotRadInCalcul = false;
+                    cBTakeEndWalls.setEnabled(false);
+                    bTakeEndWalls = false;
+                }
+                else {
+                    cBSlotRadInCalcul.setEnabled(true);
+                    cBTakeEndWalls.setEnabled(true);
+                }
+                updateUI();
+            }
+        });
         cBTakeGasAbsorptionForInterRad = new JCheckBox();
         cBNoGasAbsorptionInWallBalance = new JCheckBox();
         cBbEvalBotFirst = new JCheckBox();
@@ -158,6 +177,7 @@ public class DFHTuningParams {
                 allowManualTempForLosses(!cBbAutoTempForLosses.isSelected());
             }
         });
+        cBbSmoothenCurve = new JCheckBox();
         cBbConsiderChTempProfile = new JCheckBox();
         cBbConsiderChTempProfile.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -183,9 +203,12 @@ public class DFHTuningParams {
         cBNoGasRadiationToCharge = new JCheckBox("(TESTING ONLY) No Gas Radiation To Charge");
         cBNoGasRadiationToCharge.setEnabled(false);
         cBOnTest = new JCheckBox("ON TEST.... ON TEST");
+        final DFHeating c = controller;
         cBOnTest.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (cBOnTest.isSelected()) {
+                bOnTest = cBOnTest.isSelected();
+                c.itIsOnTest(bOnTest);
+                if (bOnTest) {
                     noGasRadiationToCharge = false;
                     cBNoGasRadiationToCharge.setSelected(noGasRadiationToCharge);
                     cBNoGasRadiationToCharge.setEnabled(true);
@@ -254,6 +277,7 @@ public class DFHTuningParams {
         bAllowSecFuel = (cBAllowSecFuel.isSelected());
         bAllowRegenAirTemp = (cBAllowRegenAirTemp.isSelected());
         bAutoTempForLosses = cBbAutoTempForLosses.isSelected();
+        bSmoothenCurve = cBbSmoothenCurve.isSelected();
         bConsiderChTempProfile = cBbConsiderChTempProfile.isSelected();
         bAdjustChTempProfile= cBbAdjustChTempProfile.isSelected();
         overUP = tfOverUP.getData();
@@ -262,6 +286,7 @@ public class DFHTuningParams {
         bNoEmissivityCorrFactor = cBNoEmissivityCorrFactor.isSelected();
         noGasRadiationToCharge = cBNoGasRadiationToCharge.isSelected();
         bOnTest = cBOnTest.isSelected();
+        bBaseOnZonalTemperature = (cBbaseOnZonalTemperature.isSelected());
         setTFMStep();
 
     }
@@ -287,6 +312,7 @@ public class DFHTuningParams {
         cBProfileForTFM.setSelectedItem(tfmBasis);
         tfTFMStep.setData(tfmStep * 1000);
         cBbAutoTempForLosses.setSelected(bAutoTempForLosses);
+        cBbSmoothenCurve.setSelected(bSmoothenCurve);
         cBbConsiderChTempProfile.setSelected(bConsiderChTempProfile);
         cBbAdjustChTempProfile.setSelected(bAdjustChTempProfile);
         tfOverUP.setData(overUP);
@@ -295,6 +321,7 @@ public class DFHTuningParams {
         cBNoEmissivityCorrFactor.setSelected(bNoEmissivityCorrFactor);
         cBNoGasRadiationToCharge.setSelected(noGasRadiationToCharge);
         cBOnTest.setSelected(bOnTest);
+        cBbaseOnZonalTemperature.setSelected(bBaseOnZonalTemperature);
     }
 
     public void setSelectedProc(ForProcess selectedProc) {
@@ -409,6 +436,7 @@ public class DFHTuningParams {
         } catch (NumberFormatException e) {
             bRetVal = false;
         }
+        bBaseOnZonalTemperature = false;
         updateUI();
         return bRetVal;
     }
@@ -521,9 +549,11 @@ public class DFHTuningParams {
     JCheckBox cBSlotRadInCalcul, cBTakeEndWalls, cBTakeGasAbsorptionForInterRad;
     JCheckBox cBNoGasAbsorptionInWallBalance;
     JCheckBox cBbAutoTempForLosses;
+    JCheckBox cBbSmoothenCurve;
 
     JPanel setting2Pan() {
         MultiPairColPanel jp = new MultiPairColPanel(200, 60);
+        jp.addItemPair("Smoothen Temperature trends", cBbSmoothenCurve);
         jp.addItemPair("Evaluate Bottom Section First", cBbEvalBotFirst);
         jp.addItemPair("Show Section Progress", cBbSectionProgress);
         jp.addItemPair("Show Stepwise Progress", cBbSlotProgress);
@@ -531,7 +561,7 @@ public class DFHTuningParams {
         jp.addItemPair("Allow Section-wise Fuel", cBAllowSecFuel);
         jp.addItemPair("Allow REGEN Air Temperature", cBAllowRegenAirTemp);
         jp.addItemPair("Show Flue Composition", cBShowFlueCompo);
-        jp.addItemPair("Auto Section Temp for Losses", cBbAutoTempForLosses);
+//        jp.addItemPair("Auto Section Temp for Losses", cBbAutoTempForLosses);
         jp.addBlank();
         jp.addItemPair("Take Gas Absorption in Internal Rad", cBTakeGasAbsorptionForInterRad);
         jp.addItemPair("No Gas Absorption in Wall Balance", cBNoGasAbsorptionInWallBalance);
@@ -552,12 +582,16 @@ public class DFHTuningParams {
         return jp;
     }
 
+    JCheckBox cBbaseOnZonalTemperature;
+
+
     public JPanel userTunePan() {
-        MultiPairColPanel jp = new MultiPairColPanel("Evaluation Tuning", 200,6);
+        MultiPairColPanel jp = new MultiPairColPanel("Calculation Basis", 300,6);
         jp.addItemPair("Evaluate Internal Radiation", cBSlotRadInCalcul);
-        jp.addBlank();
-        jp.addBlank();
         jp.addItemPair("Evaluate EndWall Radiation", cBTakeEndWalls);
+        jp.addBlank();
+        jp.addItem(new JLabel("CAUTION: Choice below is on TRIAL"));
+        jp.addItemPair("Use Zonal Temperature (NO Heat Balance)", cBbaseOnZonalTemperature);
         return jp;
     }
 

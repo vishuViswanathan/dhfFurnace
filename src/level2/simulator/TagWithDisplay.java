@@ -14,6 +14,8 @@ import javax.swing.plaf.basic.BasicComboBoxEditor;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 
 /**
  * Created by IntelliJ IDEA.
@@ -22,7 +24,7 @@ import java.awt.event.ActionListener;
  * Time: 4:08 PM
  * To change this template use File | Settings | File Templates.
  */
-public class TagWithDisplay extends Tag implements ActionListener, DocumentListener{
+public class TagWithDisplay extends Tag implements ActionListener, FocusListener, DocumentListener{
     String formatStr;
     JComponent displayComponent;
     NumberTextField numberText;
@@ -60,9 +62,11 @@ public class TagWithDisplay extends Tag implements ActionListener, DocumentListe
 //                displayComponent = comboBox;
                 break;
             case FLOAT:
-                numberText = new NumberTextField(controller, 0, 6, false, -1e6, +1e6, formatStr, "Enter Value");
-                if (!subscribe)
+                numberText = new NumberTextField(controller, 0, 5, false, -1e6, +1e6, formatStr, "Enter Value");
+                if (!subscribe) {
                     numberText.addActionListener(this);
+                    numberText.addFocusListener(this);
+                }
                 else
                 if (subscribe) {
                     numberText.setDisabledTextColor(Color.BLUE);
@@ -72,7 +76,9 @@ public class TagWithDisplay extends Tag implements ActionListener, DocumentListe
                 displayComponent = numberText;
                 break;
             case STRING:
-                textArea = new JTextArea(2, 40);
+                textArea = new JTextArea(2, 10);
+                textArea.setLineWrap(true);
+                textArea.setWrapStyleWord(true);
                 if (!subscribe)
                     textArea.getDocument().addDocumentListener(this);
                 else {
@@ -94,6 +100,24 @@ public class TagWithDisplay extends Tag implements ActionListener, DocumentListe
     }
 
     public void actionPerformed(ActionEvent e) {
+        switch (dataType) {
+            case BOOLEAN:
+                setValue((comboBox.getSelectedIndex() == 1));
+                break;
+            case FLOAT:
+                setValue((float)numberText.getData());
+                break;
+            case STRING:
+                setValue(textArea.getText());
+                break;
+        }
+    }
+
+    public void focusGained(FocusEvent e) {
+
+    }
+
+    public void focusLost(FocusEvent e) {
         switch (dataType) {
             case BOOLEAN:
                 setValue((comboBox.getSelectedIndex() == 1));

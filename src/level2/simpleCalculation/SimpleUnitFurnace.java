@@ -4,6 +4,7 @@ import directFiredHeating.DFHTuningParams;
 import directFiredHeating.FceEvaluator;
 import directFiredHeating.FceSubSection;
 import directFiredHeating.UnitFurnace;
+import mvUtils.math.MultiColDataPoint;
 import mvUtils.math.SPECIAL;
 
 /**
@@ -17,6 +18,8 @@ public class SimpleUnitFurnace extends UnitFurnace {
     double fctTemp;  // of eash unitFurnace
     double sFactorFceCh = 1;
     double emissFceCh;
+    public MultiColDataPoint dpFieldTempO;  // evaluated from Furnace temperature of Section from the field
+    public double fieldTempO;
 
     public SimpleUnitFurnace(FceSubSection fceSubSec, boolean bRecuType, double length, double endPos, double width,
                         double heightEntry, double heightExit, DFHTuningParams.ForProcess forProcess) {
@@ -26,13 +29,13 @@ public class SimpleUnitFurnace extends UnitFurnace {
 
     public SimpleUnitFurnace(DFHTuningParams.ForProcess forProcess) {
         super(forProcess);
+        dpFieldTempO = new MultiColDataPoint();
     }
 
     public FceEvaluator.EvalStat evalInFwd(boolean bFirstSlot, UnitFurnace prevSlot) {
         double deltaT;
-        double tWMassume = 0, tWMrevised = 0, diff;
+        double tWMassume, tWMrevised = 0, diff;
         double chHeat = 0;
-        double tempGE = 0;
         double two = 0, lmDiff, twmAvg;
         boolean done = false;
         deltaT = (bFirstSlot) ? fceSec.lastRate : 0;
@@ -84,13 +87,8 @@ public class SimpleUnitFurnace extends UnitFurnace {
         return alpha;
     }
 
-    double chargeEndTemp(double tO, double twmFrom, double gc, double alpha, boolean inRev) {
-        double deltaT, phiFactor;
-        phiFactor = alpha * delTime / gc;
-        if (inRev) phiFactor = -phiFactor;
-        deltaT = (tO - twmFrom) * Math.exp(-phiFactor * tau);
-        return tO - deltaT;
+    protected void uploadData() {
+        super.uploadData();
+        dpFieldTempO.updateVal(fieldTempO);
     }
-
-
  }

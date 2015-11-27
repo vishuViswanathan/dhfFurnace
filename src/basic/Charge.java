@@ -84,7 +84,6 @@ public class Charge {
         type = ChType.getEnum(vp.val);
     }
 
-
     private void setData(ChMaterial chMaterial, double length,
                       double width, double height, double diameter, ChType type) {
         this.chMaterial = chMaterial;

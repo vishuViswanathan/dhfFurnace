@@ -131,6 +131,13 @@ public class DFHeating extends JApplet implements InputControl {
 
     static public boolean showDebugMessages = false;
     static public JSPConnection jspConnection;
+
+
+    protected FramedPanel mainAppPanel;
+//    FramedPanel panelLT;
+//    FramedPanel panelRT;
+//    FramedPanel panelLB;
+//    FramedPanel panelRB;
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
@@ -141,7 +148,7 @@ public class DFHeating extends JApplet implements InputControl {
     boolean canNotify = true;
     JSObject win;
     String header;
-    boolean itsON = false;
+    protected boolean itsON = false;
     JPanel mainFrame;
     String reference = "Reference", fceTtitle = "Furnace", customer = "Customer";
     double width = 10, excessAir = 0.1;
@@ -177,8 +184,8 @@ public class DFHeating extends JApplet implements InputControl {
     JPanel fuelMixP;
     GridBagConstraints gbcChDatLoc;
     protected JMenu fileMenu;
-    JMenu inputMenu;
-    JMenu resultsMenu;
+    protected JMenu inputMenu;
+    protected JMenu resultsMenu;
     JMenu printMenu;
     JMenu statMenu;
     JMenuItem progressP;
@@ -323,6 +330,7 @@ public class DFHeating extends JApplet implements InputControl {
 //                jspConnection = new JSPConnection();
             createUIs();
             setTestData();
+            switchPage(InputType.INPUTPAGE);
             displayIt();
         } else {
             try {
@@ -350,29 +358,79 @@ public class DFHeating extends JApplet implements InputControl {
         enableDataEdit();
     }
 
-    protected void createUIs() {
-        debug("itsON = " + itsON);
-        if (!itsON) {
-            mainF.addWindowListener(new WinListener());
-            debug("added WindowListeners");
-            setMenuOptions();
-            debug("set Menu Options");
-            inpPage = inputPage();
-            debug("got InputPage");
-            opPage = OperationPage();
-            debug("got OperationPage");
-            slate.setSize(new Dimension(900, 750));
-            slate.setViewportView(inpPage);
-            mainF.add(slate, BorderLayout.CENTER);
-            mainF.setLocation(20, 10);
-            mainF.pack();
-            debug("applet packed");
-//            switchPage(2);
-            switchPage(InputType.INPUTPAGE);
-            debug("switched to INPUTPAGE");
-            cbFceFor.setSelectedItem(proc);
-        }
+    String testingWarning = "  (IN TESTING MODE)";
+
+    public void itIsOnTest(boolean testing) {
+        DFHeating.onTest = testing;
+        String title = mainF.getTitle();
+        title = title.replace(testingWarning, "");
+        if (onTest)
+            title = title + testingWarning;
+        mainF.setTitle(title);
     }
+
+//    protected void createUIsOLD() {
+//        debug("itsON = " + itsON);
+//        if (!itsON) {
+//            JPanel outerP = new JPanel(new GridBagLayout());
+//            GridBagConstraints gbc = new GridBagConstraints();
+//            panelLT = new FramedPanel();
+//            panelLT.setPreferredSize(new Dimension(1000, 640));
+//            panelRT = new FramedPanel();
+//            panelRT.setPreferredSize(new Dimension(300, 640));
+//            panelLB = new FramedPanel();
+//            panelLB.setPreferredSize(new Dimension(1000, 80));
+//            panelRB = new FramedPanel();
+//            panelRB.setPreferredSize(new Dimension(300, 80));
+//            gbc.gridx = 0;
+//            gbc.gridy = 0;
+//            outerP.add(panelLT, gbc);
+//            gbc.gridx = 1;
+//            outerP.add(panelRT, gbc);
+//            gbc.gridx = 0;
+//            gbc.gridy = 1;
+//            outerP.add(panelLB, gbc);
+//            gbc.gridx = 1;
+//            outerP.add(panelRB, gbc);
+//            mainAppPanel = new FramedPanel(new BorderLayout());
+//            Dimension ltSize = panelLT.getPreferredSize();
+//            mainAppPanel.setPreferredSize(new Dimension(ltSize.width - 2, ltSize.height - 2));
+////            mainAppPanel.setPreferredSize(new Dimension(ltSize));
+//            mainF.addWindowListener(new WinListener());
+//            debug("added WindowListeners");
+//            setMenuOptions();
+//            debug("set Menu Options");
+//            inpPage = inputPage();
+//            debug("got InputPage");
+//            opPage = OperationPage();
+//            debug("got OperationPage");
+//            slate.setViewportView(inpPage);
+//            mainAppPanel.add(slate, BorderLayout.CENTER);
+//            panelLT.add(mainAppPanel);
+////            mainF.setLocation(20, 10);
+//            mainF.add(outerP);
+//            debug("applet packed");
+//            switchPage(InputType.INPUTPAGE);
+//            debug("switched to INPUTPAGE");
+//            cbFceFor.setSelectedItem(proc);
+//        }
+//    }
+
+    protected void createUIs() {
+         debug("itsON = " + itsON);
+         if (!itsON) {
+             mainAppPanel = new FramedPanel(new BorderLayout());
+             mainAppPanel.setPreferredSize(new Dimension(1000, 650));
+             mainF.addWindowListener(new WinListener());
+             setMenuOptions();
+             inpPage = inputPage();
+             opPage = OperationPage();
+             slate.setViewportView(inpPage);
+             mainAppPanel.add(slate, BorderLayout.CENTER);
+             switchPage(InputType.INPUTPAGE);
+             cbFceFor.setSelectedItem(proc);
+         }
+     }
 
     void enableDataEntry(boolean ena) {
         if (ena)
@@ -496,6 +554,7 @@ public class DFHeating extends JApplet implements InputControl {
                 vChMaterial.add(mat);
             }
         }
+        setDefaultSelections();
         adjustForLengthChange();
     }
 
@@ -558,27 +617,39 @@ public class DFHeating extends JApplet implements InputControl {
         return retVal;
     }
 
-    public void displayIt() {
+    public void displayItOLD() {
         if (!itsON /* && furnace != null */) {
             itsON = true;
-            setDefaultSelections();
-            switchPage(InputType.INPUTPAGE);
+//            setDefaultSelections();
+//            switchPage(InputType.INPUTPAGE);
             mainF.setFocusable(true);
-//            mainF.setVisible(true);
             mainF.requestFocus();
             mainF.toFront(); //setAlwaysOnTop(true);
-//            trendPanel.setTraceToShow(-1);
-            mainF.setSize(1000, 700);
-//            inpPage.updateUI();
+            mainF.pack();
+//            mainF.setLocation(20, 10);
             mainF.setVisible(true);
+            mainF.setResizable(false);
         }
     }
 
+    public void displayIt() {
+        if (!itsON /* && furnace != null */) {
+            itsON = true;
+            mainF.add(mainAppPanel);
+            mainF.setFocusable(true);
+            mainF.requestFocus();
+            mainF.toFront(); //setAlwaysOnTop(true);
+            mainF.pack();
+//            mainF.setLocation(20, 10);
+            mainF.setVisible(true);
+            mainF.setResizable(false);
+        }
+    }
 //    public void setVisible(boolean bVisible) {
 //        mainF.setVisible(bVisible);
 //    }
 
-    void setDefaultSelections() {
+    protected void setDefaultSelections() {
         if (cbFuel.getItemCount() == 1)
             cbFuel.setSelectedIndex(0);
         if (cbChMaterial.getItemCount() == 1)
@@ -844,10 +915,10 @@ public class DFHeating extends JApplet implements InputControl {
         });
     }
 
-    protected JMenuBar mb = new JMenuBar();
+    protected JMenuBar menuBarMainApp;
 
-    void setMenuOptions() {
-//        JMenuBar mb = new JMenuBar();
+    JMenuBar createMenuBar() {
+        JMenuBar mb = new JMenuBar();
         prepareMenuItems();
 
         fileMenu = new JMenu("File");
@@ -902,8 +973,73 @@ public class DFHeating extends JApplet implements InputControl {
 
         mb.add(getPerformMenu());
         mb.add(pbEdit);
-        mainF.setJMenuBar(mb);
+        return mb;
     }
+
+    void setMenuOptions() {
+        menuBarMainApp = createMenuBar();
+        mainAppPanel.add(menuBarMainApp, BorderLayout.NORTH);
+    }
+
+//    void setMenuOptionsOLD() {
+////        JMenuBar mb = new JMenuBar();
+//        prepareMenuItems();
+//
+//        fileMenu = new JMenu("File");
+//        if (!onProductionLine) {
+//            fileMenu.add(mIGetFceProfile);
+//            fileMenu.add(mILoadRecuSpecs);
+//
+//            fileMenu.addSeparator();
+//            fileMenu.add(mISaveFceProfile);
+//            fileMenu.add(saveToXL);
+//
+//            fileMenu.addSeparator();
+//            fileMenu.add(saveForTFM);
+//
+//            if (enableSpecsSave || onTest) {
+//                fileMenu.addSeparator();
+////                fileMenu.add(saveForFE);
+//                fileMenu.add(saveFuelSpecs);
+//                fileMenu.add(saveSteelSpecs);
+//            }
+//        }
+//        fileMenu.addSeparator();
+//        fileMenu.add(mIExit);
+//        menuBarMainApp.add(fileMenu);
+//
+//        inputMenu = new JMenu("Define Furnace");
+//        inputMenu.add(mIInputData);
+//        inputMenu.add(mIOpData);
+//
+//        if (!onProductionLine) {
+//            inputMenu.addSeparator();
+//            inputMenu.add(mICreateFuelMix);
+//            inputMenu.add(mIRegenBurnerStudy);
+//
+//            inputMenu.addSeparator();
+//            inputMenu.add(mITuningParams);
+//
+//            inputMenu.addSeparator();
+//            inputMenu.add(beamParamTFM);
+//            inputMenu.add(lossParamTFM);
+//        }
+//        menuBarMainApp.add(inputMenu);
+//
+//        statMenu = new JMenu("Calculation Status");
+//        statMenu.add(progressP);
+//        statMenu.setEnabled(false);
+//        menuBarMainApp.add(statMenu);
+//
+//        menuBarMainApp.add(getResultsMenu());
+//        menuBarMainApp.add(getPrintMenu());
+//        menuBarMainApp.add(getCompareMenu());
+//
+//        menuBarMainApp.add(getPerformMenu());
+//        menuBarMainApp.add(pbEdit);
+////        mainF.setJMenuBar(mb);
+//        mainAppPanel.add(menuBarMainApp, BorderLayout.NORTH);
+//    }
 
     public boolean isOnProductionLine() {
         return onProductionLine;
@@ -931,7 +1067,7 @@ public class DFHeating extends JApplet implements InputControl {
     JMenuItem addToPerfBase;
     JMenuItem clearPerfBase;
     JMenuItem showPerfBase;
-    JMenu perfMenu;
+    protected JMenu perfMenu;
     JMenuItem setPerfTablelimits;
 
     JMenu getPerformMenu() {
@@ -2226,6 +2362,7 @@ public class DFHeating extends JApplet implements InputControl {
         enableResultsMenu(false);
         enableCalculStat();
         Thread evalThread = new Thread(evaluator = new FceEvaluator(this, slate, furnace, calculStep, baseP));
+//        evaluator.setShowProgress(false);
         enablePauseCalcul();
         evalThread.start();
     }
@@ -2268,7 +2405,7 @@ public class DFHeating extends JApplet implements InputControl {
                     enableCalculStat();
 
                     Thread evalThread = new Thread(evaluator = new FceEvaluator(this, slate, furnace, calculStep));
-                    enablePauseCalcul();
+                    enablePauseCalcul();   // TODO to be removed since nothing happens?
                     addResultsListener(resultsReadyListener);
                     evalThread.start();
                 } else
@@ -2785,6 +2922,10 @@ public class DFHeating extends JApplet implements InputControl {
 //    }
 
     public void resultsReady(Observations observations) {
+        resultsReady(observations, DFHResult.Type.HEATSUMMARY);
+    }
+
+    public void resultsReady(Observations observations, DFHResult.Type switchDisplayTo) {
         setResultsReady(true);
         if (proc == DFHTuningParams.ForProcess.STRIP) {
             enableCompareMenu(true);
@@ -2792,7 +2933,7 @@ public class DFHeating extends JApplet implements InputControl {
         }
         enableResultsMenu(true);
         statMenu.setEnabled(false);
-        showResultsPanel("" + DFHResult.Type.HEATSUMMARY);
+        showResultsPanel("" + switchDisplayTo);
         enableDataEntry(false);
         fileMenu.setEnabled(true);
         inputMenu.setEnabled(true);
@@ -4536,9 +4677,9 @@ public class DFHeating extends JApplet implements InputControl {
             cmdArg = CommandLineArgs.getEnum(args[a]);
             if (cmdArg != null)
                 switch(cmdArg) {
-                    case ONTEST:
-                        onTest = true;
-                        break;
+//                    case ONTEST:
+//                        onTest = true;
+//                        break;
                     case ALLOWSPECSSAVE:
                         enableSpecsSave = true;
                         break;

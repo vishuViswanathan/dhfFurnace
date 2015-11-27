@@ -84,12 +84,21 @@ public class FceEvaluator implements Runnable, ThreadController{
         bShowProgress = true;
     }
 
+    public FceEvaluator(DFHeating control, DFHFurnace furnace, double calculStep) {
+        this(control, null, furnace, calculStep);
+        bShowProgress = false;
+    }
+
+    public void setShowProgress(boolean bShowProgress)  {
+        this.bShowProgress = bShowProgress;
+    }
+
     LocalControl locCtrl;
     JLabel mainTitle;
     JLabel calculTitle;
 
     JPanel progressPanel;
-    void init() {
+    boolean init() {
         localControl = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 String cmd =  e.getActionCommand();
@@ -113,6 +122,7 @@ public class FceEvaluator implements Runnable, ThreadController{
         mainFp.add(locCtrl, BorderLayout.SOUTH);
         progressPanel = progressPanel();
         mainFp.add(progressPanel, BorderLayout.CENTER);
+        return furnace.getReadyToCalcul(calculStep);
     }
 
     JButton pbAbort = new JButton("Abort");
@@ -177,13 +187,8 @@ public class FceEvaluator implements Runnable, ThreadController{
 
     JPanel progressPanel() {
         JPanel fp = new JPanel(new BorderLayout());
-//        GridBagConstraints gbc = new GridBagConstraints();
-        furnace.getReadyToCalcul(calculStep);
-//        setTestData();
-//        gbc.gridx = 0;
-//        gbc.gridy = 0;
+//        furnace.getReadyToCalcul(calculStep);
         status = new JLabel("Start");
-//        gbc.gridy++;
         fp.add(status, BorderLayout.SOUTH);
         return fp;
     }
@@ -240,10 +245,13 @@ public class FceEvaluator implements Runnable, ThreadController{
     public boolean done = false;
 
     public void run() {
-        init();
-        if (bShowProgress)
-            showProgress();
-        evaluate();
+        if (init()) {
+            if (bShowProgress)
+                showProgress();
+            evaluate();
+        }
+        else
+            control.abortingCalculation();
         done = true;
     }
 
@@ -251,7 +259,7 @@ public class FceEvaluator implements Runnable, ThreadController{
         slate.setViewportView(mainFp);
     }
 
-    public FramedPanel getProgressPanel() {
+    public FramedPanel getProgressPanel() {    // TODO to be removed (not used ?)
         return mainFp;
     }
 

@@ -7,6 +7,7 @@ import directFiredHeating.DFHeating;
 import directFiredHeating.ResultsReadyListener;
 import display.QueryDialog;
 import mvUtils.display.ErrorStatAndMsg;
+import mvUtils.display.FramedPanel;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import org.apache.log4j.Logger;
@@ -72,7 +73,7 @@ public class L2DFHeating extends DFHeating {
         return l2SystemReady;
     }
 
-    public void init() {
+    public boolean setItUp() {
         modifyJTextEdit();
         fuelList = new Vector<Fuel>();
         vChMaterial = new Vector<ChMaterial>();
@@ -94,77 +95,81 @@ public class L2DFHeating extends DFHeating {
             furnace.setTuningParams(tuningParams);
             createUIs();
             getFuelAndCharge();
+            setDefaultSelections();
             if (!testMachineID()) {
                 showError("Software key mismatch, Aborting ...");
                 close();
             }
-            displayIt();
+            showMainAppPanel();  // TODO TEMPERRORY -- TO be changed
+            switchPage(InputType.INPUTPAGE);
+//            displayIt();
             getL2FceFromFile();
             enableDataEdit();
-            if (allowL2Changes) {
-                mL2Configuration = new JMenu("L2 Config");
-                mICreateFceSettings = new JMenuItem("View/Edit Furnace Settings");
-                mIReadFceSettings = new JMenuItem("Read Furnace Settings from file");
-                mISaveFceSettings = new JMenuItem("Save Furnace Settings to file");
-
-                mIEditDFHStripProcess = new JMenuItem("Add/Edit StripDFHProcess List");
-                mIViewDFHStripProcess = new JMenuItem("View StripDFHProcess List");
-                mIReadDFHStripProcess = new JMenuItem("Read StripDFHProcess List from File");
-                mISaveDFHStripProcess = new JMenuItem("Save StripDFHProcess List to File");
-
-                mICreateFieldResultsData = new JMenuItem("Enter Field Results Data");
-                mISaveFieldResultsToFile = new JMenuItem("Save Field Results to file");
-                mILevel1FieldResults = new JMenuItem("Take Results From Level1");
-                mILoadFieldResult = new JMenuItem("Load Field Results from File");
-                mISaveAsFieldResult = new JMenuItem("Save As Field Results");
-                mISaveAsFieldResult.setEnabled(false);
-                mIEvalForFieldProduction = new JMenuItem("Calculate for Field Production");
-                mIEvalForFieldProduction.setEnabled(false);
-                mIEvalWithFieldCorrection = new JMenuItem("Re-Calculate With Field Corrections");
-                mIEvalWithFieldCorrection.setEnabled(false);
-
-                StripProcMenuListener li = new StripProcMenuListener();
-                mICreateFceSettings.addActionListener(li);
-                mIReadFceSettings.addActionListener(li);
-                mISaveFceSettings.addActionListener(li);
-                mIViewDFHStripProcess.addActionListener(li);
-                mIEditDFHStripProcess.addActionListener(li);
-                mISaveDFHStripProcess.addActionListener(li);
-                mIReadDFHStripProcess.addActionListener(li);
-                mICreateFieldResultsData.addActionListener(li);
-                mISaveFieldResultsToFile.addActionListener(li);
-                mILevel1FieldResults.addActionListener(li);
-                mILoadFieldResult.addActionListener(li);
-                mISaveAsFieldResult.addActionListener(li);
-                mIEvalForFieldProduction.addActionListener(li);
-                mIEvalWithFieldCorrection.addActionListener(li);
-
-                mL2Configuration.add(mICreateFceSettings);
-                mL2Configuration.add(mIReadFceSettings);
-                mL2Configuration.add(mISaveFceSettings);
-                mL2Configuration.addSeparator();
-                mL2Configuration.add(mIViewDFHStripProcess);
-                mL2Configuration.add(mIEditDFHStripProcess);
-                mL2Configuration.add(mIReadDFHStripProcess);
-                mL2Configuration.add(mISaveDFHStripProcess);
-                mL2Configuration.addSeparator();
-                mL2Configuration.add(mICreateFieldResultsData);
-                mL2Configuration.add(mISaveFieldResultsToFile);
-                mL2Configuration.addSeparator();
-                mL2Configuration.add(mILevel1FieldResults);
-                mL2Configuration.add(mILoadFieldResult);
-                mL2Configuration.add(mIEvalForFieldProduction);
-                mL2Configuration.add(mIEvalWithFieldCorrection);
-                mL2Configuration.addSeparator();
-                mL2Configuration.add(mISaveAsFieldResult);
-                mL2Configuration.setEnabled(true);
-
-
-                mb.add(mL2Configuration);
-                mb.updateUI();
+            createMenuBars();
+//            if (allowL2Changes) {
+//                mL2Configuration = new JMenu("L2 Config");
+//                mICreateFceSettings = new JMenuItem("View/Edit Furnace Settings");
+//                mIReadFceSettings = new JMenuItem("Read Furnace Settings from file");
+//                mISaveFceSettings = new JMenuItem("Save Furnace Settings to file");
+//
+//                mIEditDFHStripProcess = new JMenuItem("Add/Edit StripDFHProcess List");
+//                mIViewDFHStripProcess = new JMenuItem("View StripDFHProcess List");
+//                mIReadDFHStripProcess = new JMenuItem("Read StripDFHProcess List from File");
+//                mISaveDFHStripProcess = new JMenuItem("Save StripDFHProcess List to File");
+//
+//                mICreateFieldResultsData = new JMenuItem("Enter Field Results Data");
+//                mISaveFieldResultsToFile = new JMenuItem("Save Field Results to file");
+//                mILevel1FieldResults = new JMenuItem("Take Results From Level1");
+//                mILoadFieldResult = new JMenuItem("Load Field Results from File");
+//                mISaveAsFieldResult = new JMenuItem("Save As Field Results");
+//                mISaveAsFieldResult.setEnabled(false);
+//                mIEvalForFieldProduction = new JMenuItem("Calculate for Field Production");
+//                mIEvalForFieldProduction.setEnabled(false);
+//                mIEvalWithFieldCorrection = new JMenuItem("Re-Calculate With Field Corrections");
+//                mIEvalWithFieldCorrection.setEnabled(false);
+//
+//                StripProcMenuListener li = new StripProcMenuListener();
+//                mICreateFceSettings.addActionListener(li);
+//                mIReadFceSettings.addActionListener(li);
+//                mISaveFceSettings.addActionListener(li);
+//                mIViewDFHStripProcess.addActionListener(li);
+//                mIEditDFHStripProcess.addActionListener(li);
+//                mISaveDFHStripProcess.addActionListener(li);
+//                mIReadDFHStripProcess.addActionListener(li);
+//                mICreateFieldResultsData.addActionListener(li);
+//                mISaveFieldResultsToFile.addActionListener(li);
+//                mILevel1FieldResults.addActionListener(li);
+//                mILoadFieldResult.addActionListener(li);
+//                mISaveAsFieldResult.addActionListener(li);
+//                mIEvalForFieldProduction.addActionListener(li);
+//                mIEvalWithFieldCorrection.addActionListener(li);
+//
+//                mL2Configuration.add(mICreateFceSettings);
+//                mL2Configuration.add(mIReadFceSettings);
+//                mL2Configuration.add(mISaveFceSettings);
+//                mL2Configuration.addSeparator();
+//                mL2Configuration.add(mIViewDFHStripProcess);
+//                mL2Configuration.add(mIEditDFHStripProcess);
+//                mL2Configuration.add(mIReadDFHStripProcess);
+//                mL2Configuration.add(mISaveDFHStripProcess);
+//                mL2Configuration.addSeparator();
+//                mL2Configuration.add(mICreateFieldResultsData);
+//                mL2Configuration.add(mISaveFieldResultsToFile);
+//                mL2Configuration.addSeparator();
+//                mL2Configuration.add(mILevel1FieldResults);
+//                mL2Configuration.add(mILoadFieldResult);
+//                mL2Configuration.add(mIEvalForFieldProduction);
+//                mL2Configuration.add(mIEvalWithFieldCorrection);
+//                mL2Configuration.addSeparator();
+//                mL2Configuration.add(mISaveAsFieldResult);
+//                mL2Configuration.setEnabled(true);
+//
+//
+//                menuBarMainApp.add(mL2Configuration);
+//                menuBarMainApp.updateUI();
                 l2MenuSet = true;
                 setFcefor(true);
-            }
+//            }
             dfhProcessList = new StripDFHProcessList(this);
             if (!getStripDFHProcessList()) {
                 showError("Problem loading test StripDFHProcess list data");
@@ -183,10 +188,143 @@ public class L2DFHeating extends DFHeating {
             } else
                 showError("Problem in loading Furnace Settings");
         }
+        else
+            showError("Unable to start Level2 ERROR:001");
+        if (l2SystemReady)
+            displayIt();
+        return l2SystemReady;
 //        if (!showDebugMessages) {
 //            tuningParams.showSectionProgress(false);
 //            tuningParams.showSlotProgress(false);
 //        }
+    }
+
+    JMenuBar menuBarLevel2RT;
+    JMenuBar menuBarLevel2Edit;
+
+    void createMenuBars() {
+        menuBarLevel2Edit = new JMenuBar();
+        menuBarLevel2Edit.add(fileMenu);
+        menuBarLevel2Edit.add(inputMenu);
+        if (allowL2Changes) {
+            menuBarLevel2Edit.add(perfMenu);
+            mL2Configuration = new JMenu("L2 Config");
+            mICreateFceSettings = new JMenuItem("View/Edit Furnace Settings");
+            mIReadFceSettings = new JMenuItem("Read Furnace Settings from file");
+            mISaveFceSettings = new JMenuItem("Save Furnace Settings to file");
+
+            mIEditDFHStripProcess = new JMenuItem("Add/Edit StripDFHProcess List");
+            mIViewDFHStripProcess = new JMenuItem("View StripDFHProcess List");
+            mIReadDFHStripProcess = new JMenuItem("Read StripDFHProcess List from File");
+            mISaveDFHStripProcess = new JMenuItem("Save StripDFHProcess List to File");
+
+            mICreateFieldResultsData = new JMenuItem("Enter Field Results Data");
+            mISaveFieldResultsToFile = new JMenuItem("Save Field Results to file");
+            mILevel1FieldResults = new JMenuItem("Take Results From Level1");
+            mILoadFieldResult = new JMenuItem("Load Field Results from File");
+            mISaveAsFieldResult = new JMenuItem("Save As Field Results");
+            mISaveAsFieldResult.setEnabled(false);
+            mIEvalForFieldProduction = new JMenuItem("Calculate for Field Production");
+            mIEvalForFieldProduction.setEnabled(false);
+            mIEvalWithFieldCorrection = new JMenuItem("Re-Calculate With Field Corrections");
+            mIEvalWithFieldCorrection.setEnabled(false);
+
+            StripProcMenuListener li = new StripProcMenuListener();
+            mICreateFceSettings.addActionListener(li);
+            mIReadFceSettings.addActionListener(li);
+            mISaveFceSettings.addActionListener(li);
+            mIViewDFHStripProcess.addActionListener(li);
+            mIEditDFHStripProcess.addActionListener(li);
+            mISaveDFHStripProcess.addActionListener(li);
+            mIReadDFHStripProcess.addActionListener(li);
+            mICreateFieldResultsData.addActionListener(li);
+            mISaveFieldResultsToFile.addActionListener(li);
+            mILevel1FieldResults.addActionListener(li);
+            mILoadFieldResult.addActionListener(li);
+            mISaveAsFieldResult.addActionListener(li);
+            mIEvalForFieldProduction.addActionListener(li);
+            mIEvalWithFieldCorrection.addActionListener(li);
+
+            mL2Configuration.add(mICreateFceSettings);
+            mL2Configuration.add(mIReadFceSettings);
+            mL2Configuration.add(mISaveFceSettings);
+            mL2Configuration.addSeparator();
+            mL2Configuration.add(mIViewDFHStripProcess);
+            mL2Configuration.add(mIEditDFHStripProcess);
+            mL2Configuration.add(mIReadDFHStripProcess);
+            mL2Configuration.add(mISaveDFHStripProcess);
+            mL2Configuration.addSeparator();
+            mL2Configuration.add(mICreateFieldResultsData);
+            mL2Configuration.add(mISaveFieldResultsToFile);
+            mL2Configuration.addSeparator();
+            mL2Configuration.add(mILevel1FieldResults);
+            mL2Configuration.add(mILoadFieldResult);
+            mL2Configuration.add(mIEvalForFieldProduction);
+            mL2Configuration.add(mIEvalWithFieldCorrection);
+            mL2Configuration.addSeparator();
+            mL2Configuration.add(mISaveAsFieldResult);
+            mL2Configuration.setEnabled(true);
+            menuBarLevel2Edit.add(resultsMenu);
+            menuBarLevel2Edit.add(mL2Configuration);
+            mainAppPanel.remove(menuBarMainApp);
+        }
+        mainAppPanel.add(menuBarLevel2Edit, BorderLayout.NORTH);
+        menuBarMainApp.updateUI();
+    }
+
+    FramedPanel panelLT;
+    FramedPanel panelRT;
+    FramedPanel panelLB;
+    FramedPanel panelRB;
+    JPanel theOuterPanel = new JPanel(new GridBagLayout());
+    int SCREEENWIDTH = 1366;
+    int SCREENHEIGHT = 768;
+
+    protected void createUIs() {
+        super.createUIs();
+        theOuterPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        panelLT = new FramedPanel();
+        Dimension mainAppPanelSize = mainAppPanel.getPreferredSize();
+        int wl = mainAppPanelSize.width + 2;
+        int ht = mainAppPanelSize.height + 2;
+        int wr = SCREEENWIDTH - wl - 2;
+        int hb = SCREENHEIGHT - ht - 2;
+        panelLT.setPreferredSize(new Dimension(wl, ht));
+        panelRT = new FramedPanel();
+        panelRT.setPreferredSize(new Dimension(wr, ht));
+        panelLB = new FramedPanel();
+        panelLB.setPreferredSize(new Dimension(wl, hb));
+        panelRB = new FramedPanel();
+        panelRB.setPreferredSize(new Dimension(wr, hb));
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        theOuterPanel.add(panelLT, gbc);
+        gbc.gridx = 1;
+        theOuterPanel.add(panelRT, gbc);
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        theOuterPanel.add(panelLB, gbc);
+        gbc.gridx = 1;
+        theOuterPanel.add(panelRB, gbc);
+    }
+
+    void showMainAppPanel() {
+        panelLT.removeAll();
+        panelLT.add(mainAppPanel);
+    }
+
+    public void displayIt() {
+        if (!itsON) {
+            itsON = true;
+            mainF.add(theOuterPanel);
+            mainF.setFocusable(true);
+            mainF.requestFocus();
+            mainF.toFront(); //setAlwaysOnTop(true);
+            mainF.pack();
+            mainF.setVisible(true);
+            mainF.setResizable(false);
+        }
     }
 
     public DFHTuningParams getTuningParams() {
@@ -452,8 +590,10 @@ public class L2DFHeating extends DFHeating {
         mIEvalWithFieldCorrection.setEnabled(false);
         boolean retVal = false;
         ErrorStatAndMsg stat = l2Furnace.takeFieldResultsFromLevel1();
-        if (stat.inError)
+        if (stat.inError) {
             mIEvalForFieldProduction.setEnabled(true);
+            info("ERROR in L2DFeating.takeResultsFromLevel1, in return from takeResultsFromLevel1 " + stat.msg);
+        }
         return stat;
     }
 
@@ -865,10 +1005,11 @@ public class L2DFHeating extends DFHeating {
     public static void main(String[] args) {
         //        PropertyConfigurator.configureAndWatch(DFHeating.class
         //                .getResource("log.properties").getFile(), 5000);
+//        L2DFHeating.log = Logger.getLogger("L2DFHeating.class");
         final L2DFHeating level2Heating = new L2DFHeating("Furnace");
         if (level2Heating.parseCmdLineArgs(args)) {
             if (level2Heating.setupUaClient()) {
-                level2Heating.init();
+                level2Heating.setItUp();
                 if (level2Heating.l2SystemReady) {
                     level2Heating.informLevel2Ready();
                 }

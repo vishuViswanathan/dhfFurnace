@@ -55,7 +55,7 @@ public class UnitFurnace {
 //    FlueComposition flue;
     protected DFHFurnace furnace;
     protected ChMaterial ch;
-    protected DFHTuningParams tuning;
+    public DFHTuningParams tuning;
     public double g;
     public boolean bBot = false;
     double lastDeltaT;
@@ -96,10 +96,10 @@ public class UnitFurnace {
         dpAlphaWall = new MultiColDataPoint();
         dpAlphaAbsorb = new MultiColDataPoint();
         dpChargeHeat = new MultiColDataPoint();
-//        dpHeatToCharge = new MultiColDataPoint();
-//        dpHeatFromWall = new MultiColDataPoint();
-//        dpHeatFromGas = new MultiColDataPoint();
-//        dpHeatAbsorbed = new MultiColDataPoint();
+    }
+
+    public void setTempO(double tempVal) {
+        tempO = tempVal;
     }
 
     void noteSubSec(FceSubSection sub) {
@@ -128,11 +128,6 @@ public class UnitFurnace {
         radSink = new Vector<RadToNeighbors>();
         radSrc = new Stack<RadToNeighbors>();
     }
-
-//    void noteSharingUfce(UnitFurnace uf) {
-//        sharingUfce = uf;
-//        uf.sharingUfce = this;
-//    }
 
     public void copyParamesTo(UnitFurnace ufTo) {
         ufTo.bRecuType = bRecuType;
@@ -567,6 +562,18 @@ public class UnitFurnace {
         return alpha;
     }
 
+    /**
+     * Calculation considering only wall radiation
+     * @param twO
+     * @return
+     */
+    double getSimpleAlpha(double twO) {
+        double emissChO = ch.getEmiss(twO);
+        double epsilonOW = 1 / (1 / emissChO + psi * (1 / eO - 1));
+        double alpha = epsilonOW * 1 * SPECIAL.stefenBoltz * (Math.pow(tempO + 273, 4) - Math.pow(twO + 273, 4)) / (tempO - twO);
+        return alpha;
+    }
+
     double getDeltaTcharge(double gasT, double two) {
         double tk = ch.getTk(two);
         double alpha = fceTempAndAlpha(gasT, two);
@@ -620,14 +627,6 @@ public class UnitFurnace {
             }
 
 
-//  20141105   morning        if (tuning.noGasRadiationToCharge) {
-//                aOWeffective = alphaEOW;  // gas absorption neglected
-//            }
-//            else {
-//                aOWeffective = alphaEOW - alphaEGOW;  // subtracted gas absorption
-//            }
-//            tempOresult = (tempGAssume * aGOplusConv + psi * two * aOWeffective - tuning.wallLoss) /
-//                    (aGOplusConv + psi * aOWeffective);
             tempOresult = (tempGAssume * aGOplusConv + psi * two * aOWforTempO - tuning.wallLoss) /
                     (aGOplusConv + psi * aOWforTempO);
             diff = tempOresult - tempO1;
@@ -671,16 +670,37 @@ public class UnitFurnace {
         return twoAssume;
     }
 
+    /**
+     * Charge surfcae temperature base on only Wall radiation
+     * @param twm
+     * @return
+     */
+    double chargeSurfTempWithOnlyWallRadiation(double twm) {
+        double twoAssume, twoRevised, diff, alpha;
+        twoAssume = twm + 20;
+        boolean done = false;
+          while (!done  && furnace.canRun()) {
+              alpha = getSimpleAlpha(twoAssume);
+              twoRevised = tempO - evalTau(alpha, ch.getTk(twm), furnace.effectiveChThick * gRatio) * (tempO - twm);
+              diff = twoRevised - twoAssume;
+              if (Math.abs(diff) <= 0.5 * tuning.errorAllowed)
+                  done = true;
+              else
+                  twoAssume = twoRevised;
+          }
+          return twoAssume;
+    }
+
     double chargeSurfTemp() {
         return chargeSurfTemp(tempG, tempWmean);
     }
 
-    double chargeEndTemp(double tg, double twmFrom, double eW, double gc, double alpha, boolean inRev) {
+    protected double chargeEndTemp(double tempSrc, double twmFrom, double gc, double alpha, boolean inRev) {
         double deltaT, phiFactor;
         phiFactor = alpha * delTime / gc;
         if (inRev) phiFactor = -phiFactor;
-        deltaT = (tg - twmFrom) * Math.exp(-phiFactor * tau);
-        return tg - deltaT;
+        deltaT = (tempSrc - twmFrom) * Math.exp(-phiFactor * tau);
+        return tempSrc - deltaT;
     }
 
     double gasTempAfterHeat(double t1, double flueQty, double heatGained) {
@@ -732,7 +752,7 @@ public class UnitFurnace {
                 eW = ch.getEmiss(twmAvg);
                 alpha = fceTempAndAlpha(tgAvg, twoAvg);
                 tau = evalTau(alpha, ch.getTk(twmAvg), ((bAddedTopSoak) ? furnace.effectiveChThickAS : furnace.effectiveChThick) * gRatio);
-                tWMrevised = chargeEndTemp(tgAvg, tempWmean, eW,
+                tWMrevised = chargeEndTemp(tgAvg, tempWmean,
                         g * gRatio * ch.avgSpHt(tWMassume, tempWmean), alpha, inReverse);
                 if (tWMrevised < -100) {
                     retVal = FceEvaluator.EvalStat.TOOHIGHGAS;
@@ -793,7 +813,7 @@ public class UnitFurnace {
             furnace.updateUI();
     }
 
-    void uploadData() {
+    protected void uploadData() {
         dpTempG.updateVal(tempG);
         dpTempO.updateVal(tempO);
         if (forProcess != DFHTuningParams.ForProcess.STRIP) {
@@ -807,17 +827,14 @@ public class UnitFurnace {
             dpAlphaGas.updateVal(alphaGasPart);
             dpAlphaWall.updateVal(alphaWallPart);
             dpAlphaAbsorb.updateVal(alphaAbsorption);
-//            dpChargeHeat.updateVal(chargeHeat);
-//            dpHeatToCharge.updateVal(heatToCharge);
-//            dpHeatFromWall.updateVal(heatFromWall);
-//            dpHeatFromGas.updateVal(heatFromGas);
-//            dpHeatAbsorbed.updateVal(heatAbsorbed);
         }
     }
 
     public FceEvaluator.EvalStat evalInFwd(boolean bFirstSlot, UnitFurnace prevSlot) {
+        if (furnace.bBaseOnOnlyWallRadiation)
+            return evalWithWallRadiationInFwd(bFirstSlot, prevSlot);
         double deltaT;
-        double tWMassume = 0, tWMrevised = 0, diff;
+        double tWMassume, tWMrevised = 0, diff;
         double chHeat = 0, totheat;
         double tempGE = 0;
         double two = 0, lmDiff, twoAvg, tgAvg, twmAvg;
@@ -841,7 +858,7 @@ public class UnitFurnace {
             eW = ch.getEmiss(twmAvg);
             alpha = fceTempAndAlpha(tgAvg, twoAvg);
             tau = evalTau(alpha, ch.getTk(twmAvg), ((bAddedTopSoak) ? furnace.effectiveChThickAS : furnace.effectiveChThick)* gRatio);
-            tWMrevised = chargeEndTemp(tgAvg, prevSlot.tempWmean, eW,
+            tWMrevised = chargeEndTemp(tgAvg, prevSlot.tempWmean,
                     g * gRatio * ch.avgSpHt(tWMassume, prevSlot.tempWmean), alpha, false);
             diff = tWMassume - tWMrevised;
             if (Math.abs(diff) <= 0.5 * tuning.errorAllowed)
@@ -861,6 +878,45 @@ public class UnitFurnace {
         return FceEvaluator.EvalStat.OK;
     }
 
+    /**
+     *
+     * @param bFirstSlot
+     * @param prevSlot
+     * @return
+     */
+    public FceEvaluator.EvalStat evalWithWallRadiationInFwd(boolean bFirstSlot, UnitFurnace prevSlot) {
+        double deltaT;
+        double tWMassume, tWMrevised = 0, diff;
+        double chHeat = 0;
+        double two = 0, lmDiff, twmAvg;
+        boolean done = false;
+        deltaT = (bFirstSlot) ? fceSec.lastRate : 0;
+        tWMassume = prevSlot.tempWmean + deltaT * delTime;
+        double alpha;
+        while (!done  && furnace.canRun()) {
+            chHeat = production.production * gRatio *
+                     (ch.getHeatFromTemp(tWMassume) - ch.getHeatFromTemp(prevSlot.tempWmean));
+                                                                                                                                                                                                                                                                                                                                                                                        two = chargeSurfTempWithOnlyWallRadiation(tWMassume);
+            lmDiff = SPECIAL.lmtd((tempO - two), (tempO - prevSlot.tempWO));
+            twmAvg = tempO - lmDiff;
+            alpha = getSimpleAlpha(twmAvg);
+            tau = evalTau(alpha, ch.getTk(twmAvg), furnace.effectiveChThick* gRatio);
+            tWMrevised = chargeEndTemp(tempO, prevSlot.tempWmean,
+                     g * gRatio * ch.avgSpHt(tWMassume, prevSlot.tempWmean), alpha, false);
+            diff = tWMassume - tWMrevised;
+            if (Math.abs(diff) <= 0.5 * tuning.errorAllowed)
+                done = true;
+            else
+                tWMassume = (bRecuType) ? (tWMassume + tWMrevised) / 2 : tWMrevised;
+        }
+        tempWO = two;
+        tempWmean = tWMrevised;
+        chargeHeat = chHeat;
+        showResult();
+        return FceEvaluator.EvalStat.OK;
+    }
+
+
     void errMsg(String msg) {
         JOptionPane.showMessageDialog(null, "ERROR in UnitFUrnace: \n" + msg);
     }
@@ -868,6 +924,5 @@ public class UnitFurnace {
     void debug(String msg) {
         System.out.println("UnitFurnace " + msg);
     }
-
 }
 

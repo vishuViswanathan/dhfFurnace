@@ -16,9 +16,9 @@ import java.util.Vector;
  * To change this template use File | Settings | File Templates.
  */
 public class UnitFceArray {
-    boolean bBot;
-    Vector<UnitFurnace> vUfs;
-    MultiColData multiColData;
+    protected boolean bBot;
+    protected Vector<UnitFurnace> vUfs;
+    protected MultiColData multiColData;
     public enum ProfileBasis {
         FCETEMP("Furnace Temperature"),
         GASTEMP("Gas Temperature"),
@@ -52,12 +52,18 @@ public class UnitFceArray {
     }
 
     int colFceTemp = 0, colGasTemp = 0, colChTempMean = 0;
-    DFHTuningParams.ForProcess forProcess;
+    protected DFHTuningParams.ForProcess forProcess;
 
-    public UnitFceArray(boolean bBot, Vector<UnitFurnace> vUfs, DFHTuningParams.ForProcess forProcess){
-        this.vUfs = vUfs;
+    public UnitFceArray(boolean bBot, DFHTuningParams.ForProcess forProcess) {
         this.bBot = bBot;
         this.forProcess = forProcess;
+    }
+
+    public UnitFceArray(boolean bBot, Vector<UnitFurnace> vUfs, DFHTuningParams.ForProcess forProcess){
+        this(bBot, forProcess);
+        this.vUfs = vUfs;
+//        this.bBot = bBot;
+//        this.forProcess = forProcess;
     }
 
     public void setColData() {
@@ -152,26 +158,26 @@ public class UnitFceArray {
         return multiColData;
     }
 
-    class ColNumAndData {
+    protected class ColNumAndData {
         String name;
         int colNum;
         String format = "";
         Vector <MultiColDataPoint> dataPt;
-        ColNumAndData(String name, String format, Color color) {
+        public ColNumAndData(String name, String format, Color color) {
             this.name = name;
             this.format = format;
             this.colNum = multiColData.addColumn(name, format, color) -1;
             dataPt = new Vector<MultiColDataPoint>();
         }
 
-        ColNumAndData(String name, String format) {
+        protected ColNumAndData(String name, String format) {
             this.name = name;
             this.format = format;
             this.colNum = multiColData.addColumn(name, format) -1;
             dataPt = new Vector<MultiColDataPoint>();
         }
 
-        void addData(int x, MultiColDataPoint mcdp) {
+        public void addData(int x, MultiColDataPoint mcdp) {
             dataPt.add(x, mcdp);
         }
 

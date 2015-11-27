@@ -21,6 +21,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.awt.*;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -88,6 +90,7 @@ public class OpcSimulator implements InputControl, L2Interface {
     boolean uiReady = false;
 
     public OpcSimulator(String urlID) {
+        modifyJTextEdit();
         mainF = new JFrame();
         mainF.addWindowListener(new WinListener());
         mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -122,7 +125,7 @@ public class OpcSimulator implements InputControl, L2Interface {
     }
 
     JComponent getProcessPane() {
-        int width = 580;
+        int width = 620;
         FramedPanel fp = new FramedPanel(new BorderLayout());
 //        fp.add(new SizedLabel("The Process", new Dimension(100, 30), true), BorderLayout.NORTH);
         fp.add(new MultiPairColPanel("The Process"), BorderLayout.NORTH);
@@ -169,9 +172,9 @@ public class OpcSimulator implements InputControl, L2Interface {
         return fp;
      }
 
-    public void setProcessZones(Vector<OneSection> processZones) {
-        this.processZones = processZones;
-    }
+//    public void setProcessZones(Vector<OneSection> processZones) {
+//        this.processZones = processZones;
+//    }
 
     boolean setupUaClient(String urlId) {
          boolean retVal = false;
@@ -406,24 +409,24 @@ public class OpcSimulator implements InputControl, L2Interface {
     }
 
 
-    boolean takeDataFromXMl(String xmlStr) {
-        boolean retVal = false;
-        ValAndPos vp;
-        vp = XMLmv.getTag(xmlStr, "Simulation", 0);
-        vp = XMLmv.getTag(xmlStr, "nEquipment", 0);
-        int nEquipment = Integer.valueOf(vp.val);
-        int e = 1; // TODO only for one equipment now
-        ValAndPos oneEquipmentVp = XMLmv.getTag(xmlStr, "Equipment" + ("" + e).trim(), vp.endPos);
-        oneEquipmentVp = XMLmv.getTag(oneEquipmentVp.val, "equipName", 0);
-        equipment = oneEquipmentVp.val;
-        ValAndPos processVp = XMLmv.getTag(xmlStr, "Process", 0);
-        oneEquipmentVp.endPos = processVp.endPos;  // note down for next search for "level2"
-        if (takeProcessFromXML(processVp.val)) {
-            ValAndPos level2Vp = XMLmv.getTag(xmlStr, "Level2", 0);
-            retVal = takeLevel2FromXML(level2Vp.val);
-        }
-        return retVal;
-    }
+//    boolean takeDataFromXMl(String xmlStr) {
+//        boolean retVal = false;
+//        ValAndPos vp;
+//        vp = XMLmv.getTag(xmlStr, "Simulation", 0);
+//        vp = XMLmv.getTag(xmlStr, "nEquipment", 0);
+//        int nEquipment = Integer.valueOf(vp.val);
+//        int e = 1; // TODO only for one equipment now
+//        ValAndPos oneEquipmentVp = XMLmv.getTag(xmlStr, "Equipment" + ("" + e).trim(), vp.endPos);
+//        oneEquipmentVp = XMLmv.getTag(oneEquipmentVp.val, "equipName", 0);
+//        equipment = oneEquipmentVp.val;
+//        ValAndPos processVp = XMLmv.getTag(xmlStr, "Process", 0);
+//        oneEquipmentVp.endPos = processVp.endPos;  // note down for next search for "level2"
+//        if (takeProcessFromXML(processVp.val)) {
+//            ValAndPos level2Vp = XMLmv.getTag(xmlStr, "Level2", 0);
+//            retVal = takeLevel2FromXML(level2Vp.val);
+//        }
+//        return retVal;
+//    }
 
     Vector<OneSection> collectSections(String path, boolean rw) {
         Vector<OneSection> retVal = new Vector<OneSection>();
@@ -437,91 +440,91 @@ public class OpcSimulator implements InputControl, L2Interface {
         return retVal;
     }
 
-    boolean takeProcessFromXMLKEP(String xmlStr) {
-        boolean retVal = true;
-        ValAndPos vp;
-        vp = XMLmv.getTag(xmlStr, "servermain:TagGroupList", 0);
-        String allGroups = vp.val;
-        vp.endPos = 0;
-        int s = 0;
-        if (allGroups.length() > 10) {
-            do {
-                vp = XMLmv.getTag(allGroups, "servermain:TagGroup", vp.endPos);
-                if (vp.val.length() < 10)
-                    break;
-                try {
-                   processZones.add(s++, new OneSection(this, vp.val, true, true));
-                } catch (TagCreationException e) {
-                   showError("Problem in setting process part of simulation: XML[" + vp.val + "] -> " + e.getMessage());
-                   retVal = false;
-                   break;
-                }
-            } while (true);
-        }
-        return retVal;
-    }
+//    boolean takeProcessFromXMLKEP(String xmlStr) {
+//        boolean retVal = true;
+//        ValAndPos vp;
+//        vp = XMLmv.getTag(xmlStr, "servermain:TagGroupList", 0);
+//        String allGroups = vp.val;
+//        vp.endPos = 0;
+//        int s = 0;
+//        if (allGroups.length() > 10) {
+//            do {
+//                vp = XMLmv.getTag(allGroups, "servermain:TagGroup", vp.endPos);
+//                if (vp.val.length() < 10)
+//                    break;
+//                try {
+//                   processZones.add(s++, new OneSection(this, vp.val, true, true));
+//                } catch (TagCreationException e) {
+//                   showError("Problem in setting process part of simulation: XML[" + vp.val + "] -> " + e.getMessage());
+//                   retVal = false;
+//                   break;
+//                }
+//            } while (true);
+//        }
+//        return retVal;
+//    }
 
-    boolean takeProcessFromXML(String xmlStr) {
-         boolean retVal = true;
-         ValAndPos vp;
-         vp = XMLmv.getTag(xmlStr, "nSections", 0);
-         int nSections = Integer.valueOf(vp.val);
-         processZones = new Vector<OneSection>(nSections);
-         for (int s = 0; s < nSections; s++) {
-             vp = XMLmv.getTag(xmlStr, "Section" + ("" + (s + 1)).trim(), vp.endPos);
-             try {
-                 processZones.add(s, new OneSection(this, vp.val, true));
-             } catch (TagCreationException e) {
-                 showError("Problem in setting process part of simulation: XML[" + vp.val + "] -> " + e.getMessage());
-                 retVal = false;
-                 break;
-             }
-         }
-         return retVal;
-     }
+//    boolean takeProcessFromXML(String xmlStr) {
+//         boolean retVal = true;
+//         ValAndPos vp;
+//         vp = XMLmv.getTag(xmlStr, "nSections", 0);
+//         int nSections = Integer.valueOf(vp.val);
+//         processZones = new Vector<OneSection>(nSections);
+//         for (int s = 0; s < nSections; s++) {
+//             vp = XMLmv.getTag(xmlStr, "Section" + ("" + (s + 1)).trim(), vp.endPos);
+//             try {
+//                 processZones.add(s, new OneSection(this, vp.val, true));
+//             } catch (TagCreationException e) {
+//                 showError("Problem in setting process part of simulation: XML[" + vp.val + "] -> " + e.getMessage());
+//                 retVal = false;
+//                 break;
+//             }
+//         }
+//         return retVal;
+//     }
 
-    boolean takeLevel2FromXMLKEP(String xmlStr) {
-         boolean retVal = true;
-         ValAndPos vp;
-         vp = XMLmv.getTag(xmlStr, "servermain:TagGroupList", 0);
-         String allGroups = vp.val;
-         vp.endPos = 0;
-         int s = 0;
-         if (allGroups.length() > 10) {
-             do {
-                 vp = XMLmv.getTag(allGroups, "servermain:TagGroup", vp.endPos);
-                 if (vp.val.length() < 10)
-                     break;
-                 try {
-                     level2Zones.add(s++, new OneSection(this, vp.val, false, true));
-                 } catch (TagCreationException e) {
-                    showError("Problem in setting process part of simulation: XML[" + vp.val + "] -> " + e.getMessage());
-                    retVal = false;
-                    break;
-                 }
-             } while (true);
-         }
-         return retVal;
-     }
+//    boolean takeLevel2FromXMLKEP(String xmlStr) {
+//         boolean retVal = true;
+//         ValAndPos vp;
+//         vp = XMLmv.getTag(xmlStr, "servermain:TagGroupList", 0);
+//         String allGroups = vp.val;
+//         vp.endPos = 0;
+//         int s = 0;
+//         if (allGroups.length() > 10) {
+//             do {
+//                 vp = XMLmv.getTag(allGroups, "servermain:TagGroup", vp.endPos);
+//                 if (vp.val.length() < 10)
+//                     break;
+//                 try {
+//                     level2Zones.add(s++, new OneSection(this, vp.val, false, true));
+//                 } catch (TagCreationException e) {
+//                    showError("Problem in setting process part of simulation: XML[" + vp.val + "] -> " + e.getMessage());
+//                    retVal = false;
+//                    break;
+//                 }
+//             } while (true);
+//         }
+//         return retVal;
+//     }
 
-    boolean takeLevel2FromXML(String xmlStr) {
-        boolean retVal = true;
-        ValAndPos vp;
-        vp = XMLmv.getTag(xmlStr, "nSections", 0);
-        int nSections = Integer.valueOf(vp.val);
-        level2Zones = new Vector<OneSection>(nSections);
-        for (int s = 0; s < nSections; s++) {
-            vp = XMLmv.getTag(xmlStr, "Section" + ("" + (s + 1)).trim(), vp.endPos);
-            try {
-                level2Zones.add(s, new OneSection(this, vp.val, false));
-            } catch (TagCreationException e) {
-                showError("Problem in setting level2 part of simulation: XML\n [Error: " + e.getMessage() + "\n" + vp.val);
-                retVal = false;
-                break;
-            }
-        }
-        return retVal;
-    }
+//    boolean takeLevel2FromXML(String xmlStr) {
+//        boolean retVal = true;
+//        ValAndPos vp;
+//        vp = XMLmv.getTag(xmlStr, "nSections", 0);
+//        int nSections = Integer.valueOf(vp.val);
+//        level2Zones = new Vector<OneSection>(nSections);
+//        for (int s = 0; s < nSections; s++) {
+//            vp = XMLmv.getTag(xmlStr, "Section" + ("" + (s + 1)).trim(), vp.endPos);
+//            try {
+//                level2Zones.add(s, new OneSection(this, vp.val, false));
+//            } catch (TagCreationException e) {
+//                showError("Problem in setting level2 part of simulation: XML\n [Error: " + e.getMessage() + "\n" + vp.val);
+//                retVal = false;
+//                break;
+//            }
+//        }
+//        return retVal;
+//    }
 
 
     public void showError(String msg) {
@@ -587,6 +590,34 @@ public class OpcSimulator implements InputControl, L2Interface {
             source.disconnect();
         System.exit(0);
     }
+
+    protected void modifyJTextEdit() {
+         KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                 .addPropertyChangeListener("permanentFocusOwner", new PropertyChangeListener() {
+                     public void propertyChange(final PropertyChangeEvent e) {
+                         if (e.getOldValue() instanceof JTextField) {
+                             SwingUtilities.invokeLater(new Runnable() {
+
+                                 public void run() {
+                                     JTextField oldTextField = (JTextField) e.getOldValue();
+                                     oldTextField.setSelectionStart(0);
+                                     oldTextField.setSelectionEnd(0);
+                                 }
+                             });
+                         }
+                         if (e.getNewValue() instanceof JTextField) {
+                             SwingUtilities.invokeLater(new Runnable() {
+
+                                 public void run() {
+                                     JTextField textField = (JTextField) e.getNewValue();
+                                     textField.selectAll();
+                                 }
+                             });
+                         }
+                     }
+                 });
+    }
+
 
     class WinListener implements WindowListener {
         public void windowOpened(WindowEvent e) {

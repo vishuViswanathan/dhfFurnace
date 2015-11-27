@@ -22,11 +22,31 @@ import java.util.Vector;
 public class OneParam extends OneDataGroup {
     Collection<TagWithDisplay> tagList;
     String processElement;
+    String paramName;
 
-    public OneParam(TMuaClient source, String equipment, String processElement, Vector<TagWithDisplay> tagList,
+//    public OneParam(TMuaClient source, String equipment, String processElement, Vector<TagWithDisplay> tagList,
+//                       Subscription subscription) throws TagCreationException {
+//        super(source, equipment, processElement, subscription);
+//        this.processElement = processElement;
+//        this.tagList = tagList;
+//        for (TagWithDisplay tag : tagList) {
+//            try {
+//
+//                tag.setProcessData(getProcessData(tag.dataSource, "" + tag, tag.dataType, tag.access, tag.bSubscribe));
+//                if (tag.bSubscribe && (subscription == null))
+//                    throw new TagCreationException("" + tag, "Subscription is null");
+//
+//            } catch (Exception e) {
+//                throw new TagCreationException("" + tag, "Data Point could not be created!\n" + e.getMessage());
+//            }
+//        }
+//    }
+
+    public OneParam(TMuaClient source, String equipment, String sectionName, String paramName, Vector<TagWithDisplay> tagList,
                        Subscription subscription) throws TagCreationException {
-        super(source, equipment, processElement, subscription);
-        this.processElement = processElement;
+        super(source, equipment, sectionName + "." + paramName, subscription);
+        this.paramName = paramName;
+        this.processElement = sectionName + "." + paramName;
         this.tagList = tagList;
         for (TagWithDisplay tag : tagList) {
             try {
@@ -42,7 +62,7 @@ public class OneParam extends OneDataGroup {
     }
 
     JPanel getDisplayPanel() {
-        MultiPairColPanel mp = new MultiPairColPanel("");
+        MultiPairColPanel mp = new MultiPairColPanel(paramName);
         for (TagWithDisplay tag : tagList) {
             tag.addToMultiPairColPanel(mp);
         }

@@ -273,7 +273,7 @@ public class OneStripDFHProcess {
         if (processName.equalsIgnoreCase(this.processName)) {
             double chWidth = production.charge.length;  // remember it is strip
             if (chWidth <= maxWidth) {
-                double minWallowed = Math.max(minWidth, maxWidth / tuning.widthOverRange);
+                double minWallowed = minWidth; // Math.max(minWidth, maxWidth / tuning.widthOverRange);
                 if (chWidth >= minWallowed) {
                     double output = production.production;
                     double maxUnitOutputAllowed = maxUnitOutput * tuning.unitOutputOverRange;
@@ -304,7 +304,7 @@ public class OneStripDFHProcess {
                         retVal.msg += "Output too low (minimum required for this width is " + outputFmt.format(minUnitOutputAllowed * chWidth / 1000) + " t/h)";
                 }
                 else
-                    retVal.msg += "Strip is too narrow (minimum required " + mmFmt.format(minWallowed) + "mm)";
+                    retVal.msg += "Strip is too narrow (minimum required " + mmFmt.format(minWallowed * 1000) + "mm)";
             }
             else
                 retVal.msg += "Strip is too Wide (max allowed is " + maxWidth * 1000 + " mm)";

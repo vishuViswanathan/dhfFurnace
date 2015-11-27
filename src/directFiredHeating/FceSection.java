@@ -311,6 +311,9 @@ public class FceSection {
     ProductionData production;
     NumberTextField tfFlueExhPercent, tfRegenPHtemp, tfExcessAir, tfFuelTemp;
     NumberTextField tfTCLocation;
+    NumberLabel tlTCLocationFromEntry;
+    NumberTextField tfZoneTemperature;
+
 //    JComboBox<Fuel> cbFuels = new JComboBox<Fuel>(DFHeating.fuelList);
     JSPComboBox<Fuel> cbFuels = new JSPComboBox<Fuel>(DFHeating.jspConnection, DFHeating.fuelList);
     JComboBox<String> cbSecType = new JComboBox<String>(new String[]{"Recuperative", "With Burners"});
@@ -344,6 +347,7 @@ public class FceSection {
     FuelsAndUsage secFuelUsageBreakup;
     boolean bAddedSoak = false;
     double tcLocationFromZoneStart; // location of thermocouple fro the section start in m
+    double tempAtTCLocation = 0;
 
     public FceSection(DFHeating controller, DFHFurnace furnace,  boolean botSection, boolean bRecuType) {
         this.controller = controller;
@@ -358,6 +362,18 @@ public class FceSection {
         tfRegenPHtemp = new NumberTextField(controller, regenPHTemp, 5, false, 0, 1500, "#,###", "Air Preheat (C) ");
         tfFuelTemp = new NumberTextField(controller, fuelTemp, 5, false, 0, 1500, "#,###", "Fuel Temperature (C) ");
         tfTCLocation = new NumberTextField(controller, tcLocationFromZoneStart * 1000, 5, false, 0, 50000, "#,###", "T/c Location from Zone entry (mm) ");
+        tlTCLocationFromEntry = new NumberLabel(controller, tcLocationFromZoneStart * 1000, 60, "#,###");
+        tfTCLocation.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                tlTCLocationFromEntry.setData(tfTCLocation.getData() + secStartPos * 1000);
+            }
+        });
+        tfZoneTemperature = new NumberTextField(controller, tempAtTCLocation, 5, false, 0, 1500, "#,###", "Zone Temperature at TC (C) ");
+        tfZoneTemperature.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+
+            }
+        });
         ActionListener li = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 warnRegenPhTemp(e);
@@ -381,6 +397,32 @@ public class FceSection {
         preparePanel();
         passFlueCompAndQty = new FlueCompoAndQty(null, 0, 0);
         totFlueCompAndQty = new FlueCompoAndQty(null, 0, 0);
+    }
+
+    public JPanel jpTCLocationAndTemperature() {
+        MultiPairColPanel jp = new MultiPairColPanel(sectionName() + " (" + ((bRecuType) ? "Recuperative" : "With Burners") + ")");
+        setTCLocationLimits();
+        jp.addItemPair(tfTCLocation);
+        tlTCLocationFromEntry.setData(tfTCLocation.getData() + secStartPos * 1000);
+        jp.addItemPair("TC location from Furnace Entry", tlTCLocationFromEntry);
+        jp.addBlank();
+        jp.addItemPair(tfZoneTemperature);
+        return jp;
+    }
+
+    public boolean noteZonalTemperature() {
+        if (tfTCLocation.isInError() || tfZoneTemperature.isInError())
+            return false;
+        else {
+            tempAtTCLocation = tfZoneTemperature.getData();
+            tcLocationFromZoneStart = tfTCLocation.getData() / 1000;
+            return true;
+        }
+    }
+
+    void markZonalTemperature(MultiColData results, int trace) {
+        tempAtTCLocation = results.getYat(trace, tcLoc());
+        tfZoneTemperature.setData(tempAtTCLocation);
     }
 
     void setPresetGasTemp (double gTemp) {
@@ -638,6 +680,10 @@ public class FceSection {
             sub.resetLossAssignment();
     }
 
+    public boolean isTempAtTCLocationSet() {
+        return tempAtTCLocation > 0;
+    }
+
     public void getReadyToCalcul() {
         FceSubSection sSub;
         if (enabled) {
@@ -664,18 +710,6 @@ public class FceSection {
                 vUnitFurnaces.get(u).collectLosses();
         }
     }
-
-//    void redoLosses(MultiColData tResults, int trace) {
-//        if (enabled && isActive()) {
-//            for (FceSubSection sSub:subSections) {
-//                if (sSub.bActive) {
-//                    sSub.redoLosses(tResults, trace);
-//                 }
-//            }
-//            for (int u = firstSlot; u <= lastSlot; u++)
-//                vUnitFurnaces.get(u).collectLosses();
-//        }
-//    }
 
     public UnitFurnace getLastSlot() {
         return vUnitFurnaces.get(lastSlot);
@@ -1161,6 +1195,10 @@ public class FceSection {
             if (!bRecuType)
                 results.add(secFuelFlow);
         }
+    }
+
+    public double tcLoc() {
+        return secStartPos + tcLocationFromZoneStart;
     }
 
     JPanel secResults;
@@ -2122,7 +2160,7 @@ public class FceSection {
         }
         updateUI();
         return response;
-     }
+    }
 
     public FceEvaluator.EvalStat oneSectionInFwd() {
         FceEvaluator.EvalStat response = FceEvaluator.EvalStat.OK;
@@ -2136,6 +2174,27 @@ public class FceSection {
         for (int iSlot = firstSlot; iSlot <= lastSlot; iSlot++){
             theSlot = vUnitFurnaces.get(iSlot);
             response = theSlot.evalInFwd((iSlot == firstSlot), prevSlot);
+            if (response != FceEvaluator.EvalStat.OK)
+                break;
+            prevSlot = theSlot;
+        }
+        if (response == FceEvaluator.EvalStat.OK)
+            heatToCharge();
+        updateUI();
+        return response;
+    }
+
+    public FceEvaluator.EvalStat oneSectionInFwdWithWallRadiation() {
+        FceEvaluator.EvalStat response = FceEvaluator.EvalStat.OK;
+//        double two;
+        UnitFurnace theSlot, prevSlot;
+        prevSlot = vUnitFurnaces.get(firstSlot - 1);
+//        two = prevSlot.chargeSurfTemp();
+//        if (firstSlot > 1) prevSlot.tempWO = two;
+        prevSlot.showResult();
+        for (int iSlot = firstSlot; iSlot <= lastSlot; iSlot++){
+            theSlot = vUnitFurnaces.get(iSlot);
+            response = theSlot.evalWithWallRadiationInFwd((iSlot == firstSlot), prevSlot);
             if (response != FceEvaluator.EvalStat.OK)
                 break;
             prevSlot = theSlot;
@@ -2217,7 +2276,10 @@ public class FceSection {
             tcLocationFromZoneStart = sectionLength() * 0.6;
             tfTCLocation.setData(tcLocationFromZoneStart * 1000);
         }
+    }
 
+    void setTCLocationLimits()  {
+        tfTCLocation.setLimits(0, sectionLength() * 1000);
     }
 
     class SummButtActionListener implements ActionListener {
@@ -2225,8 +2287,6 @@ public class FceSection {
             getSummaryData((Component) e.getSource());
         }
     }
-
-
 
     class SectionSummaryDlg extends JDialog {
         JButton ok = new JButton("OK");
@@ -2323,6 +2383,7 @@ public class FceSection {
 
             gbcL.gridy++;
             gbcR.gridy++;
+            setTCLocationLimits();
             jp.add(tfTCLocation.getLabel(), gbcL);
             jp.add(tfTCLocation, gbcR);
 

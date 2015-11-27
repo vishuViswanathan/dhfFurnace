@@ -500,8 +500,10 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2
         oneFieldResults = new FieldResults(this, true);
         if (oneFieldResults.inError)
             return new ErrorStatAndMsg(true, oneFieldResults.errMsg);
-        else
+        else {
+            info("Strip Size = "  + oneFieldResults.production.charge.length);
             return oneFieldResults.processOkForFieldResults();
+        }
     }
 
     public HeatExchProps getAirHeatExchProps() {
