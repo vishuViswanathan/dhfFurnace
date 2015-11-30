@@ -792,6 +792,10 @@ public class FceSection {
         return vUnitFurnaces.get(lastSlot).tempWmean;
     }
 
+    public double chExitCoreTemp() { return vUnitFurnaces.get(lastSlot).tempWcore;}
+
+    public double chExitSurfaceTemp() { return vUnitFurnaces.get(lastSlot).tempWO;}
+
     public double getStartTime() {
         UnitFurnace uf = vUnitFurnaces.get(firstSlot);
         return uf.endTime - uf.delTime;
