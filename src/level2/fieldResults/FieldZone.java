@@ -86,6 +86,10 @@ public class FieldZone {
         setValues(fceTemp, fuelFlow, airTemp, afRatio);
     }
 
+    public void copyTempAtTCtoSection() {
+        sec.setTempAtTCLocation(frFceTemp);
+    }
+
     void testValidity() {
         bValid = (sec.bRecuType) ? (frFuelFlow == 0) : (frFuelFlow > 0);
         if (!bValid)

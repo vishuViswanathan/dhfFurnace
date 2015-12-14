@@ -57,14 +57,14 @@ public class FceSection {
         cHFuel.add(sL);
         grpPan.add(sL, gbcL);
         gbcL.gridy++;
-            sL = sizedLabel("Fuel Flow (#/h)", colHeadSize, true);
-            cHFuel.add(sL);
-            grpPan.add(sL, gbcL);
-            gbcL.gridy++;
-            sL = sizedLabel("Fuel Temperature (degC)", colHeadSize);
-            cHFuel.add(sL);
-            grpPan.add(sL, gbcL);
-            gbcL.gridy++;
+        sL = sizedLabel("Fuel Flow (#/h)", colHeadSize, true);
+        cHFuel.add(sL);
+        grpPan.add(sL, gbcL);
+        gbcL.gridy++;
+        sL = sizedLabel("Fuel Temperature (degC)", colHeadSize);
+        cHFuel.add(sL);
+        grpPan.add(sL, gbcL);
+        gbcL.gridy++;
         sL = sizedLabel("Total Fuel Sensible Heat (kcal/h)", colHeadSize, true);
         cHFuel.add(sL);
         grpPan.add(sL, gbcL);
@@ -680,6 +680,10 @@ public class FceSection {
             sub.resetLossAssignment();
     }
 
+    public void setTempAtTCLocation(double tempAtTCLocation) {
+        this.tempAtTCLocation = tempAtTCLocation;
+    }
+
     public boolean isTempAtTCLocationSet() {
         return tempAtTCLocation > 0;
     }
@@ -690,7 +694,7 @@ public class FceSection {
             for (int s = 0; s < subSections.size(); s++) {
                 sSub = subSections.get(s);
                 if (sSub.bActive) {
-                    sSub.setSection(this);
+                    sSub.setSection(this);   // TODO check if this is required
                     sSub.getReadyToCalcul();
                 }
                 else
@@ -873,6 +877,13 @@ public class FceSection {
 
     double roundedBalCom;
 
+    public double setProductionBasedParams(double startTime) {
+        UnitFurnace slot;
+        for (int iSlot = firstSlot; iSlot <= lastSlot; iSlot++)
+            startTime = vUnitFurnaces.get(iSlot).setProductionBasedParams(startTime);
+        return startTime;
+    }
+
     public CreateUFceReturn createUnitfces(Vector<Double> lenArr, Vector<UnitFurnace> ufs, CreateUFceReturn cReturn) {
         // iLloc and iSlot endTime are the last ones used
         UnitFurnace theSlot = null;
@@ -895,7 +906,7 @@ public class FceSection {
                     secLoss += sSec.totLosses;
                     balLength = sSec.length;
                     hBig = sSec.stHeight;
-                    slope = sSec.slope;
+                    slope = sSec.getRoofSlope(); // sSec.slope;
                     done = false;
                     slotLen = 0;
                     while (!done) {
@@ -1496,13 +1507,13 @@ public class FceSection {
         return topRow;
     }
 
-    public int addSubSection(FceSubSection sub) {
+    public int addSubSection(FceSubSection sub) {     // TODO REMOVE
         subSections.add(sub);
         seclength += sub.length;
         return subSections.size();
     }
 
-    public void addBalanceSectionsREMOVE() {
+    public void addBalanceSectionsREMOVE() {    // TODO REMOVE
         int nSec = subSections.size();
         for (int s = nSec; s < 3; s++)
             subSections.add(new FceSubSection(controller, this, 0, 0, 0, (s + 1)));

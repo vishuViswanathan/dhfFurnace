@@ -67,7 +67,7 @@ public class UnitFurnace {
         this(forProcess);
         noteSubSec(fceSubSec);
         bBot = fceSec.botSection;
-        g = (bBot) ? furnace.gBot : ((bAddedTopSoak) ? furnace.gTopAS : furnace.gTop);
+//        g = (bBot) ? furnace.gBot : ((bAddedTopSoak) ? furnace.gTopAS : furnace.gTop);
         this.bRecuType = bRecuType;
         this.length = length;
         this.endPos = endPos;
@@ -101,6 +101,17 @@ public class UnitFurnace {
     public void setTempO(double tempVal) {
         tempO = tempVal;
     }
+
+    public void setChargeTemperature(double temp) {
+        setChargeTemperature(temp, temp, temp);
+    }
+
+    public void setChargeTemperature(double tempWO, double tempWmean, double tempWcore) {
+        this.tempWO = tempWO;
+        this.tempWmean  = tempWmean;
+        this.tempWcore = tempWcore;
+    }
+
 
     void noteSubSec(FceSubSection sub) {
         this.fceSubSec = sub;
@@ -162,6 +173,7 @@ public class UnitFurnace {
    }
 
     void setOtherParams() {
+        g = (bBot) ? furnace.gBot : ((bAddedTopSoak) ? furnace.gTopAS : furnace.gTop);
         double fceUnitArea;
         ch = furnace.production.charge.chMaterial;
         if (furnace.bTopBot && !bAddedTopSoak)
@@ -192,6 +204,17 @@ public class UnitFurnace {
 //        losses = fceSubSec.totLosses / fceSubSec.length * length;
         eO = furnace.tuningParams.epsilonO;
         eW = 0.8; // to start with
+    }
+
+    /**
+     *
+      * @param startTime
+     * @return endTime of the slot
+     */
+    public double setProductionBasedParams(double startTime) {
+        setOtherParams();
+        endTime = startTime + delTime;
+        return endTime;
     }
 
     void collectLosses() {
@@ -571,6 +594,7 @@ public class UnitFurnace {
         double emissChO = ch.getEmiss(twO);
         double epsilonOW = 1 / (1 / emissChO + psi * (1 / eO - 1));
         double alpha = epsilonOW * 1 * SPECIAL.stefenBoltz * (Math.pow(tempO + 273, 4) - Math.pow(twO + 273, 4)) / (tempO - twO);
+        alpha *= tuning.radiationMultiplier;
         return alpha;
     }
 
@@ -896,7 +920,7 @@ public class UnitFurnace {
         while (!done  && furnace.canRun()) {
             chHeat = production.production * gRatio *
                      (ch.getHeatFromTemp(tWMassume) - ch.getHeatFromTemp(prevSlot.tempWmean));
-                                                                                                                                                                                                                                                                                                                                                                                        two = chargeSurfTempWithOnlyWallRadiation(tWMassume);
+            two = chargeSurfTempWithOnlyWallRadiation(tWMassume);
             lmDiff = SPECIAL.lmtd((tempO - two), (tempO - prevSlot.tempWO));
             twmAvg = tempO - lmDiff;
             alpha = getSimpleAlpha(twmAvg);

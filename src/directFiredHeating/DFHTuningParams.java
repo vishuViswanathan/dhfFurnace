@@ -83,7 +83,7 @@ public class DFHTuningParams {
     public boolean bSmoothenCurve = true;
     public boolean bNoGasAbsorptionInWallBalance = false;
     public boolean bBaseOnZonalTemperature = false;
-
+    public double radiationMultiplier = 1.0;  // used for calculation only with wall radiation for fuel furnace
     LinkedHashMap<ForProcess, PreSetTunes> preSets;
     final DFHeating controller;
     ForProcess selectedProc;
@@ -110,9 +110,9 @@ public class DFHTuningParams {
     public DFHTuningParams(DFHeating controller) {
         this.controller = controller;
         preSets = new LinkedHashMap<ForProcess, PreSetTunes>();
-        preSets.put(ForProcess.BILLETS, new PreSetTunes(1, 5, 30, 30, 1.12, false));
-        preSets.put(ForProcess.STRIP, new PreSetTunes(0.8, 1, 15, 15, 1, false));
-        preSets.put(ForProcess.MANUAL, new PreSetTunes(1, 5, 30, 30, 1, true));
+        preSets.put(ForProcess.BILLETS, new PreSetTunes(1, 5, 30, 30, 1.12, 1.0, false));
+        preSets.put(ForProcess.STRIP, new PreSetTunes(0.8, 1, 15, 15, 1, 1.0, false));
+        preSets.put(ForProcess.MANUAL, new PreSetTunes(1, 5, 30, 30, 1, 1.0, true));
         tferrorAllowed = new NumberTextField(controller, errorAllowed, 6, false, 0.001, 5, "#,###.00", "", true);
         tfwallLoss = new NumberTextField(controller, wallLoss, 6, false, 0, 1000, "#,###.00", "", true);
         tfsuggested1stCorrection = new NumberTextField(controller, suggested1stCorrection, 6, false, 0, 20, "#,###.00", "", true);
@@ -257,6 +257,7 @@ public class DFHTuningParams {
         gasWallHTMultipler = selectedPreset.gMulti;
         alphaConvFired = selectedPreset.aConvFired;
         alphaConvRecu = selectedPreset.aConvRecu;
+        radiationMultiplier = selectedPreset.radiationMultiplier;
         if (bNoEmissivityCorrFactor)
             emmFactor = 1;
         else
@@ -350,6 +351,7 @@ public class DFHTuningParams {
         xmlStr += XMLmv.putTag("alphaConv", pre.aConvFired);
         xmlStr += XMLmv.putTag("alphaConvRecu", pre.aConvRecu);
         xmlStr += XMLmv.putTag("emmFactor", pre.eFact);
+        xmlStr += XMLmv.putTag("radiationMultiplier", pre.radiationMultiplier);
 
         xmlStr += XMLmv.putTag("errorAllowed", errorAllowed);
         xmlStr += XMLmv.putTag("suggested1stCorrection", suggested1stCorrection);
@@ -390,6 +392,11 @@ public class DFHTuningParams {
                 pre.aConvRecu = pre.aConvFired;
             vp = XMLmv.getTag(xmlStr, "emmFactor", 0);
             pre.eFact = Double.valueOf(vp.val);
+            vp = XMLmv.getTag(xmlStr, "radiationMultiplier", 0);
+            if (vp.val.length() > 0)
+                pre.radiationMultiplier = Double.valueOf(vp.val);
+            else
+                pre.radiationMultiplier = 1.0;
             pre.putInUI();
 
 
@@ -599,7 +606,7 @@ public class DFHTuningParams {
         JPanel jp = new JPanel(new GridBagLayout());
         jp.setBackground(new JPanel().getBackground());
         GridBagConstraints gbc = new GridBagConstraints();
-        Dimension headSize = new Dimension(300, 20);
+        Dimension headSize = new Dimension(350, 20);
         gbc.gridx = 0;
         gbc.gridy = 0;
         JLabel h1 = new JLabel("Emissivity of Walls");
@@ -621,6 +628,10 @@ public class DFHTuningParams {
         JLabel h5 = new JLabel("Gas Emissivity Correction factor");
         h5.setPreferredSize(headSize);
         jp.add(h5, gbc);
+        gbc.gridy++;
+        JLabel h6 = new JLabel("Radiation Multiplier (for Wall-Radiation-only Calculation)");
+        h6.setPreferredSize(headSize);
+        jp.add(h6, gbc);
         return jp;
     }
 
@@ -762,15 +773,17 @@ public class DFHTuningParams {
         public double aConvFired = 20;
         public double aConvRecu = 20;
         public double eFact = 1;
+        public double radiationMultiplier = 1;
         boolean editable;
-        NumberTextField tfeO, tfgMulti, tfaConvFired, tfaConvRecu, tfeFact;
+        NumberTextField tfeO, tfgMulti, tfaConvFired, tfaConvRecu, tfeFact, tfRadiationMultiplier;
 
-        PreSetTunes (double eO, double gMulti, double aConvFired, double aConvRecu, double eFact, boolean editable) {
+        PreSetTunes (double eO, double gMulti, double aConvFired, double aConvRecu, double eFact, double radiationMultiplier,  boolean editable) {
             this.eO = eO;
             this.gMulti = gMulti;
             this.aConvFired = aConvFired;
             this.aConvRecu = aConvRecu;
             this.eFact = eFact;
+            this.radiationMultiplier = radiationMultiplier;
             this.editable = editable;
             if (editable) {
                 tfeO = new NumberTextField(controller, eO, 6, false, 0.01, 1, "#,##0.00", "");
@@ -778,15 +791,17 @@ public class DFHTuningParams {
                 tfaConvFired = new NumberTextField(controller, aConvFired, 6, false, 0, 50, "#,###.00", "", true);
                 tfaConvRecu = new NumberTextField(controller, aConvRecu, 6, false, 0, 50, "#,###.00", "", true);
                 tfeFact = new NumberTextField(controller, eFact, 6, false, 1, 2, "#,###.00", "");
+                tfRadiationMultiplier = new NumberTextField(controller, radiationMultiplier, 6, false, 0.8, 1.5, "#,###.00", "");
             }
         }
 
-        void setValues(double eO, double gMulti, double aConvFired, double aConvRecu, double eFact) {
+        void setValues(double eO, double gMulti, double aConvFired, double aConvRecu, double eFact, double radiationMultiplier) {
             this.eO = eO;
             this.gMulti = gMulti;
             this.aConvFired = aConvFired;
             this.aConvRecu = aConvRecu;
             this.eFact = eFact;
+            this.radiationMultiplier = radiationMultiplier;
             putInUI();
         }
 
@@ -797,6 +812,7 @@ public class DFHTuningParams {
                 tfaConvFired.setData(aConvFired);
                 tfaConvRecu.setData(aConvRecu);
                 tfeFact.setData(eFact);
+                tfRadiationMultiplier.setData(radiationMultiplier);
             }
         }
 
@@ -807,6 +823,7 @@ public class DFHTuningParams {
                 aConvFired = tfaConvFired.getData();
                 aConvRecu = tfaConvRecu.getData();
                 eFact = tfeFact.getData();
+                radiationMultiplier = tfRadiationMultiplier.getData();
             }
         }
 
@@ -826,6 +843,8 @@ public class DFHTuningParams {
                 jp.add(tfaConvRecu, gbc);
                 gbc.gridy++;
                 jp.add(tfeFact, gbc);
+                gbc.gridy++;
+                jp.add(tfRadiationMultiplier, gbc);
             }
             else {
                 jp.add(new NumberLabel(eO, 60, "#,##0.00"), gbc);
@@ -837,6 +856,8 @@ public class DFHTuningParams {
                 jp.add(new NumberLabel(aConvRecu, 60, "#,###.00"), gbc);
                 gbc.gridy++;
                 jp.add(new NumberLabel(eFact, 60, "#,###.00"), gbc);
+                gbc.gridy++;
+                jp.add(new NumberLabel(radiationMultiplier, 60, "#,###.00"), gbc);
             }
             return jp;
         }

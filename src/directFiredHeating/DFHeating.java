@@ -142,7 +142,7 @@ public class DFHeating extends JApplet implements InputControl {
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
 //    public Level2Furnace furnaceLevel2;
-    protected String releaseDate = "JNLP 20150803 12:04";
+    protected String releaseDate = "JNLP 20151213 10:38";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -151,7 +151,8 @@ public class DFHeating extends JApplet implements InputControl {
     protected boolean itsON = false;
     JPanel mainFrame;
     String reference = "Reference", fceTtitle = "Furnace", customer = "Customer";
-    double width = 10, excessAir = 0.1;
+    protected double width = 10;
+    double excessAir = 0.1;
     public HeatingMode heatingMode;
     boolean bTopBot = true;
     boolean bAddTopSoak = true;
@@ -189,7 +190,7 @@ public class DFHeating extends JApplet implements InputControl {
     JMenu printMenu;
     JMenu statMenu;
     JMenuItem progressP;
-    JButton pbEdit;
+    public JButton pbEdit;
     JMenuItem beamParamTFM, lossParamTFM;
     JMenu compareResults;
     JMenuItem saveComparisontoXL, appendComparisontoXL;
@@ -236,7 +237,7 @@ public class DFHeating extends JApplet implements InputControl {
     LengthChangeListener lengthListener = new LengthChangeListener();
     MultiPairColPanel mpChInFce;
     NumberTextField tfTotTime, tfSpTime, tfSpeed;
-    double calculStep = 1.0;
+    public double calculStep = 1.0;
     public double ambTemp = 30, airTemp = 500, fuelTemp = 30;
     protected NumberTextField tfCalculStep, tfAmbTemp, tfAirTemp, tfFuelTemp;
     JButton pbCalculate;
@@ -2377,7 +2378,69 @@ public class DFHeating extends JApplet implements InputControl {
         theResultsListener = resultReadyListener;
     }
 
-    protected void calculateFce(boolean bResetLossFactor, ResultsReadyListener resultsReadyListener) {
+    /**
+     *
+     * @param resultsReadyListener
+     */
+    public void calculateFce(ResultsReadyListener resultsReadyListener, boolean bShowResults, boolean bResetLossFactor, boolean bCheckData) {
+        if (bShowResults) {
+            initPrintGroups();
+            enableResultsMenu(false);
+        }
+        if (bResetLossFactor) {
+            furnace.resetLossFactor();
+//            if (checkData())    on 20151213
+                takeValuesFromUI();
+        }
+        boolean proceed = false;
+        if (bCheckData) {
+            if (checkData()) {
+                if (furnace.showZoneDataMsgIfRequired(pbCalculate)) {
+                    if (!commFuel.bMixedFuel && fuelTemp > 0 && !tuningParams.bOnProductionLine
+                            && !commFuel.isSensHeatSpecified(this, fuelTemp)) {
+                        commFuel.getSpHtData(this, tfFuelTemp);
+                    }
+                    furnace.setCommonFuel(new FuelFiring(commFuel, false, excessAir, airTemp, fuelTemp));  // as normal burner
+                    //                theCharge = new Charge(selChMaterial, chLength, chWidth, chThickness);
+                    theCharge = new Charge(selChMaterial, chLength, chWidth, chThickness, chDiameter, (Charge.ChType) cbChType.getSelectedItem());
+                    setProductionData(theCharge, tph * 1000);
+                }
+                proceed = true;
+            }
+        } else
+            proceed = true;
+        if (proceed) {
+            if (evaluator != null)
+                if (evaluator.stopped)
+                    evaluator = null;
+            if (evaluator == null) {
+                enableCalculStat();
+                evaluator = new FceEvaluator(this, slate, furnace, calculStep);
+                evaluator.setShowProgress(bShowResults);
+                Thread evalThread = new Thread(evaluator);
+//                enablePauseCalcul();   // TODO to be removed since nothing happens?
+                addResultsListener(resultsReadyListener);
+//                runOn = true;
+                evalThread.start();
+            } else
+                showError("Earlier Calculation is still ON!");
+        }
+    }
+
+    public boolean setProductionData(Charge charge, double output) {
+        production = new ProductionData();
+        production.setCharge(theCharge, chPitch);
+        production.setProduction(output, nChargeRows, entryTemp, exitTemp, deltaTemp, bottShadow);
+        production.setExitZoneTempData(exitZoneFceTemp, minExitZoneFceTemp);
+        furnace.setProduction(production);
+        return true;
+    }
+
+    public void calculateFce(boolean bResetLossFactor, ResultsReadyListener resultsReadyListener) {
+        calculateFce(resultsReadyListener, true, bResetLossFactor, true);
+    }
+
+    protected void calculateFceOLD(boolean bResetLossFactor, ResultsReadyListener resultsReadyListener) {    //TODO ro be removed
         initPrintGroups();
         enableResultsMenu(false);
         if (bResetLossFactor) {
@@ -2407,6 +2470,7 @@ public class DFHeating extends JApplet implements InputControl {
                     Thread evalThread = new Thread(evaluator = new FceEvaluator(this, slate, furnace, calculStep));
                     enablePauseCalcul();   // TODO to be removed since nothing happens?
                     addResultsListener(resultsReadyListener);
+//                    runOn = true;
                     evalThread.start();
                 } else
                     showError("Earlier Calculation is still ON!");
@@ -2415,7 +2479,7 @@ public class DFHeating extends JApplet implements InputControl {
         }
     }
 
-    protected void calculateFce() {
+    public void calculateFce() {
         calculateFce(true, null);
     }
 
@@ -2445,7 +2509,14 @@ public class DFHeating extends JApplet implements InputControl {
         return proc;
     }
 
+//    boolean runOn = false;
+
+//    public boolean isRunON() {
+//        return runOn;
+//    }
+
     public void abortingCalculation() {
+//        runOn = false;
         evaluator = null;
         enableDataEntry(true);
         inputMenu.setEnabled(true);

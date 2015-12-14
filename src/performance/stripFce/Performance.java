@@ -49,7 +49,7 @@ public class Performance {
     double chPitch;
     double speed;
     double piecesPerH;
-    String chMaterial;
+    public String chMaterial;
     DFHeating controller;
     DFHFurnace furnace;
     PerformanceTable perfTable;

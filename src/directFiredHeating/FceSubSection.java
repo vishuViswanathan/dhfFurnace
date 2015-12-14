@@ -227,7 +227,7 @@ public class FceSubSection {
     static DFHeating controller;
     public double length;
     public double width, stHeight, endHeight;
-    double stLen, endLen, slope;
+    double stLen, endLen;  // , slope;
     double temperature;
     double losses, fixedLoss;
     public double totLosses;
@@ -250,7 +250,7 @@ public class FceSubSection {
     public FceSubSection(DFHeating controller, FceSection theSec, double length, double stHeight, double endHeight, int subNum) {
         this.controller = controller;
         this.subNum = subNum;
-        this.theSec = theSec;
+        this.section = theSec;
         this.length = length;
         boolean allowZero = true;
         tfLength = new NumberTextField(controller, length * 1000, 6, false, 10, 50000, "#,###",
@@ -504,8 +504,12 @@ public class FceSubSection {
         calculAreas();
         updateLossStatus();
         calculLosses(temperature);
-        slope = (endHeight - stHeight) / length;
+//        slope = (endHeight - stHeight) / length;
         return true;
+    }
+
+    public double getRoofSlope() {
+        return (endHeight - stHeight) / length;
     }
 
     String checkData() {

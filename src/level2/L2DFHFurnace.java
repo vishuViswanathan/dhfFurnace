@@ -4,15 +4,14 @@ import FceElements.heatExchanger.HeatExchProps;
 import TMopcUa.ProcessValue;
 import TMopcUa.TMSubscription;
 import TMopcUa.TMuaClient;
+import basic.Charge;
 import basic.Fuel;
 import basic.FuelFiring;
 import com.prosysopc.ua.ServiceException;
 import com.prosysopc.ua.client.MonitoredDataItem;
 import com.prosysopc.ua.client.Subscription;
 import com.prosysopc.ua.client.SubscriptionAliveListener;
-import directFiredHeating.DFHFurnace;
-import directFiredHeating.FceSection;
-import directFiredHeating.ResultsReadyListener;
+import directFiredHeating.*;
 import level2.common.*;
 import level2.fieldResults.FieldResults;
 import mvUtils.display.ErrorStatAndMsg;
@@ -24,6 +23,7 @@ import org.opcfoundation.ua.builtintypes.DataValue;
 import performance.stripFce.Performance;
 
 import java.awt.event.ActionListener;
+import java.text.DecimalFormat;
 import java.util.Calendar;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
@@ -510,6 +510,92 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2
         return airRecu.getHeatExchProps(recuCounterFlow.isSelected());
     }
 
+    /**
+     * Evaluating charge exit conditions for the existing furnace temperautures
+     * @return
+     */
+    public ChargeStatus processInFurnace(ChargeStatus chargeStatus) {
+        if (controller.heatingMode == DFHeating.HeatingMode.TOPBOTSTRIP) {
+            setOnlyWallRadiation();
+            setDisplayResults(false);
+            chargeStatus.setProductionData(production);
+            getReadyToCalcul(true); // do not create new slots if already created
+            setEntrySlotChargeTemperature(production.entryTemp);
+            setProductionBasedSlotParams();
+            if (doTheCalculationWithOnlyWallRadiation()) {
+                chargeAtExit(chargeStatus, false);
+                chargeStatus.setStatus(true);
+            }
+            else
+                chargeStatus.setStatus(false);
+        }
+        else
+            showError("Not ready for processInFurnace for other than Top Bottom Strip Heating");
+        return chargeStatus;
+    }
+
+    void setEntrySlotChargeTemperature(double temp) {
+        vTopUnitFces.get(0).setChargeTemperature(temp);
+        if (bTopBot)
+            vBotUnitFces.get(0).setChargeTemperature(temp);
+    }
+
+    double getOutputWithFurnaceStatus(ChargeStatus chStatus, double exitTempRequired)  {
+        double outputAssumed = 0;
+        tuningParams.setSelectedProc(controller.proc);
+        ErrorStatAndMsg response = takeFieldResultsFromLevel1();
+        if (response.inError) {
+            info("Facing some problem in reading furnace field data");
+        }
+        else {
+            this.calculStep = controller.calculStep;
+            setProduction(oneFieldResults.production);
+//            getReadyToCalcul(controller.calculStep, true);
+//            if ((vTopUnitFces != null) || prepareSlots()) {
+            if (prepareSlots()) {
+                prepareSlotsWithTempO();
+                double tempAllowance = 2;
+                outputAssumed = production.production;    // chargeAtExit(false).output;
+                boolean done = false;
+                double nowExitTemp, diff;
+//                boolean firstTime = true;
+                int trials = 0;
+                while (!done) {
+                    trials++;
+                    chStatus.output = outputAssumed;
+                    processInFurnace(chStatus);
+                    if (chStatus.isValid()) {
+                        nowExitTemp = chStatus.tempWM;
+//                        if (firstTime) {
+//                            info("First pass in getOutputWithFurnaceStatus for " +
+//                                    production.chargeAndSize() + " at " + outputAssumed + "kg/h, exit Temp = " + nowExitTemp);
+//                            String chTemp = "";
+//                            firstTime = false;
+//                        }
+                        diff = exitTempRequired - nowExitTemp;
+                        if (Math.abs(diff) < tempAllowance)
+                            done = true;
+                        else
+                            outputAssumed = outputAssumed * (nowExitTemp - chTempIN) / (exitTempRequired - chTempIN);
+                    }
+                    else {
+                        showError("processInfurnace returned with error!");
+                        outputAssumed = 0;
+                        break;
+                    }
+                }
+                info("Trials in getOutputWithFurnaceStatus = " + trials);
+            } else
+                info("Facing problem in creating calculation steps");
+        }
+        return outputAssumed;
+    }
+
+    void prepareSlotsWithTempO() {
+        oneFieldResults.copyTempAtTCtoSection();
+        setTempOForAllSlots();
+    }
+
     void handleNewStrip() {
         if (level2Enabled) {
             ProcessValue pwW = stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Width);
@@ -527,8 +613,16 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2
                 if (refP != null) {
                     L2ZonalFuelProfile zFP = new L2ZonalFuelProfile(refP.getPerformanceTable(),
                             furnaceSettings.fuelCharSteps, l2DFHeating);
-                    if (zFP.prepareFuelTable(stripWidth, stripThick))
+                    if (zFP.prepareFuelTable(stripWidth, stripThick)) {
                         sendFuelCharacteristics(zFP);
+                        Charge ch = new Charge(controller.getSelChMaterial(refP.chMaterial), stripWidth, 1, stripThick);
+                        ChargeStatus chStatus = new ChargeStatus(ch, 0, refP.exitTemp());
+                        double output = getOutputWithFurnaceStatus(chStatus, refP.exitTemp());
+                        if (output >= 0)
+                            controller.showMessage("Recommend output based on Furnace temperatures is " + output);
+                        else
+                            showErrorInLevel1("Facing some problem in evaluation recommended Output");
+                    }
                     else
                         showErrorInLevel1("Unable to prepare Fuel Characteristics");
 //                    String fuelMsg = "";

@@ -153,4 +153,8 @@ public class ProductionData {
         }
         return bRetVal;
     }
+
+    public String chargeAndSize() {
+        return "" + charge;
+    }
   }

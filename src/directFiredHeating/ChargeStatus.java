@@ -12,25 +12,30 @@ import basic.ProductionData;
  */
 public class ChargeStatus {
     Charge charge;
-    double production;
-    double tempWO, tempWM, tempWCore;
+    public double output;
+    public double tempWO, tempWM, tempWCore;
+    boolean bValid;
 
-    public ChargeStatus(Charge charge, double production, double tempWO, double tempWM, double tempWCore) {
+    public ChargeStatus(Charge charge, double output, double tempWO, double tempWM, double tempWCore) {
         this.charge = new Charge(charge);
-        setStatus(production, tempWO, tempWM, tempWCore);
+        setStatus(output, tempWO, tempWM, tempWCore);
     }
 
-    public ChargeStatus(Charge charge, double production, double temp) {
-        this(charge, production, temp, temp, temp);
+    public ChargeStatus(Charge charge, double output, double temp) {
+        this(charge, output, temp, temp, temp);
     }
 
-    public void setStatus(double production, double tempWO, double tempWM, double tempWCore) {
-        this.production = production;
-        setStatus (tempWO, tempWM, tempWCore);
+    public void setStatus(double output, double tempWO, double tempWM, double tempWCore) {
+        this.output = output;
+        setStatus(tempWO, tempWM, tempWCore);
     }
 
-    public void setStatus(double production, double temp) {
-        setStatus(production, temp, temp, temp);
+    public void setStatus(double output, double temp) {
+        setStatus(output, temp, temp, temp);
+    }
+
+    public void setStatus(boolean bValid) {
+        this.bValid = bValid;
     }
 
     public void setStatus (double tempWO, double tempWM, double tempWCore) {
@@ -42,4 +47,12 @@ public class ChargeStatus {
     public void setStatus(double temp)  {
         setStatus(temp, temp, temp);
     }
+
+    public ProductionData setProductionData(ProductionData pData) {
+        pData.charge = charge;
+        pData.production = output;
+        return pData;
+    }
+
+    public boolean isValid() { return bValid; }
 }

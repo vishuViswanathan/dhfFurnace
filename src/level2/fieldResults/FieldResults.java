@@ -133,6 +133,15 @@ public class FieldResults {
         return stripDFHProc.fieldDataOkForProcess(stripDFHProc.processName, production);
     }
 
+    public void copyTempAtTCtoSection() {
+        for (FieldZone z: topZones)
+            z.copyTempAtTCtoSection();
+        if (l2Furnace.bTopBot) {
+            for (FieldZone z: botZones)
+                z.copyTempAtTCtoSection();
+        }
+    }
+
     boolean takeRecuData(L2Zone recu) {
         commonAirTemp = recu.getValue(L2ParamGroup.Parameter.AirFlow, Tag.TagName.Temperature).floatValue;
         commonFuelTemp = 30; // TODO  commonFuelTemp set as 30

@@ -233,7 +233,7 @@ public class FceEvaluator implements Runnable, ThreadController{
         if (baseP != null)
             baseP.createPerfTable(this);
         else
-            furnace.evaluate(this);
+            furnace.evaluate(this, bShowProgress);
         stopped = true;
     }
 

@@ -91,6 +91,7 @@ public class L2DFHeating extends DFHeating {
         l2Furnace = new L2DFHFurnace(this, false, false, lNameListener);
         if (l2Furnace.basicsSet) {
             furnace = l2Furnace;
+//            furnace.setWidth(width);
             debug("Created Level2furnace");
             furnace.setTuningParams(tuningParams);
             createUIs();
@@ -104,6 +105,7 @@ public class L2DFHeating extends DFHeating {
             switchPage(InputType.INPUTPAGE);
 //            displayIt();
             getL2FceFromFile();
+            furnace.setWidth(width);
             enableDataEdit();
             createMenuBars();
 //            if (allowL2Changes) {
@@ -207,6 +209,7 @@ public class L2DFHeating extends DFHeating {
         menuBarLevel2Edit.add(fileMenu);
         menuBarLevel2Edit.add(inputMenu);
         if (allowL2Changes) {
+            menuBarLevel2Edit.add(resultsMenu);
             menuBarLevel2Edit.add(perfMenu);
             mL2Configuration = new JMenu("L2 Config");
             mICreateFceSettings = new JMenuItem("View/Edit Furnace Settings");
@@ -264,8 +267,8 @@ public class L2DFHeating extends DFHeating {
             mL2Configuration.addSeparator();
             mL2Configuration.add(mISaveAsFieldResult);
             mL2Configuration.setEnabled(true);
-            menuBarLevel2Edit.add(resultsMenu);
             menuBarLevel2Edit.add(mL2Configuration);
+            menuBarLevel2Edit.add(pbEdit);
             mainAppPanel.remove(menuBarMainApp);
         }
         mainAppPanel.add(menuBarLevel2Edit, BorderLayout.NORTH);
