@@ -36,6 +36,7 @@ public class FceSection {
     static Insets headerIns = new Insets(1, 1, 1, 1);
     static Dimension dataColSize = new JTextField("0,000,000.00", 6).getPreferredSize();
 
+    static Vector<XLcellData> cHGeneral;
     static Vector<XLcellData> cHFuel, cHAir, cHPassFlueIN, cHTotIn;
     static Vector<XLcellData> cHCharge, cHLosses, cHPassFlueOut, cHRegenFlue, cHFceFlue, cHTotOut;
 
@@ -51,8 +52,26 @@ public class FceSection {
         FramedPanel grpPan = new FramedPanel(new GridBagLayout());
         GridBagConstraints gbcL = new GridBagConstraints();
         gbcL.gridx = 0;
+        cHGeneral = new Vector<XLcellData>();
+        grpPan = new FramedPanel(new GridBagLayout());
         gbcL.gridy = 0;
+//        sL = sizedLabel("Burner Type", colHeadSize);
+//        cHFuel.add(sL);
+//        grpPan.add(sL, gbcL);
+//        gbcL.gridy++;
+        sL = sizedLabel("TC Location from Entry (mm)", colHeadSize);
+        cHGeneral.add(sL);
+        grpPan.add(sL, gbcL);
+        gbcL.gridy++;
+        sL = sizedLabel("Temperature at TC (degC)", colHeadSize);
+        cHGeneral.add(sL);
+        grpPan.add(sL, gbcL);
+        rowHead.add(grpPan, gbcH);
+        gbcH.gridy++;
+
         cHFuel = new Vector<XLcellData>();
+        grpPan = new FramedPanel(new GridBagLayout());
+        gbcL.gridy = 0;
         sL = sizedLabel("Burner Type", colHeadSize);
         cHFuel.add(sL);
         grpPan.add(sL, gbcL);
@@ -263,6 +282,7 @@ public class FceSection {
 
     public static int xlSecSummaryHead(Sheet sheet, ExcelStyles style, int topRow, int leftCol) {
         sheet.setColumnWidth(leftCol, 9000);
+        topRow = style.xlAddXLCellData(sheet, topRow, leftCol, cHGeneral) + 1;
         topRow = style.xlAddXLCellData(sheet, topRow, leftCol, cHFuel) + 1;
         topRow = style.xlAddXLCellData(sheet, topRow, leftCol, cHAir) + 1;
         topRow = style.xlAddXLCellData(sheet, topRow, leftCol, cHPassFlueIN) + 1;
@@ -1217,6 +1237,7 @@ public class FceSection {
     }
 
     JPanel secResults;
+    Vector<XLcellData> vXLGeneral;
     Vector<XLcellData> vXLFuel, vXLAir, vXLPassFlueIN, vXLTotIn;
     Vector<XLcellData> vXLCharge, vXLLosses, vXLPassFlueOut, vXLRegenFlue, vXLFceFlue, vXLTotOut;
 
@@ -1235,8 +1256,24 @@ public class FceSection {
         NumberLabel nL;
         FramedPanel grpPan = new FramedPanel(new GridBagLayout());
         Dimension dim = new Dimension(datW, 20);
+        vXLGeneral = new Vector<XLcellData>();
+        gbcL.gridy = 0;
+        double tcPos = getTcPosition();
+        nL = new NumberLabel(tcPos * 1000, datW, "#,###");
+        vXLGeneral.add(nL);
+        grpPan.add(nL, gbcL);
+        gbcL.gridy++;
+        nL = new NumberLabel(furnace.getFceTempAt(tcPos, botSection), datW, "#,###");
+        vXLGeneral.add(nL);
+        grpPan.add(nL, gbcL);
+        gbc.gridy++;
+        jp.add(grpPan, gbc);
+
+
         vXLFuel = new Vector<XLcellData>();
         vXLAir = new Vector<XLcellData>();
+        grpPan = new FramedPanel(new GridBagLayout());
+        gbcL.gridy = 0;
         if (bRecuType)
             addBlanks(grpPan, gbcL, dim, 5, vXLFuel);
         else  {
@@ -1480,6 +1517,7 @@ public class FceSection {
 
     public int xlSecResults(Sheet sheet, ExcelStyles style, int topRow, int leftCol) {
         sheet.setColumnWidth(leftCol, 3000);
+        topRow = style.xlAddXLCellData(sheet, topRow, leftCol, vXLGeneral) + 1;
         if (!bRecuType) {
             topRow = style.xlAddXLCellData(sheet, topRow, leftCol, vXLFuel) + 1;
             topRow = style.xlAddXLCellData(sheet, topRow, leftCol, vXLAir) + 1;

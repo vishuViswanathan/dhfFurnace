@@ -14,6 +14,7 @@ import com.prosysopc.ua.client.SubscriptionAliveListener;
 import directFiredHeating.*;
 import level2.common.*;
 import level2.fieldResults.FieldResults;
+import mvUtils.display.DataWithMsg;
 import mvUtils.display.ErrorStatAndMsg;
 import mvUtils.display.InputControl;
 import mvUtils.mvXML.ValAndPos;
@@ -186,11 +187,11 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2
         commonDFHZ = new L2Zone(this, "DFHCommon", fieldDataSub);
         try {
             Tag[] commonDFHTags1 = {
-                    new Tag(L2ParamGroup.Parameter.FuelCharacteristic, Tag.TagName.Noted, false, true),
-                    new Tag(L2ParamGroup.Parameter.FuelCharacteristic, Tag.TagName.Ready, true, false)};
-            fuelCharParams = new ReadyNotedParam(source, equipment, "DFHCommon.FuelCharacteristic", commonDFHTags1, fuelCharSub);
+                    new Tag(L2ParamGroup.Parameter.L2Data, Tag.TagName.Noted, false, true),
+                    new Tag(L2ParamGroup.Parameter.L2Data, Tag.TagName.Ready, true, false)};
+            fuelCharParams = new ReadyNotedParam(source, equipment, "DFHCommon.L2Data", commonDFHTags1, fuelCharSub);
             readyNotedParamList.add(fuelCharParams);
-            commonDFHZ.addOneParameter(L2ParamGroup.Parameter.FuelCharacteristic, fuelCharParams);
+            commonDFHZ.addOneParameter(L2ParamGroup.Parameter.L2Data, fuelCharParams);
             noteMonitoredTags(commonDFHTags1);
             Tag[] commonDFHTags2 = {
                     new Tag(L2ParamGroup.Parameter.Flue, Tag.TagName.Temperature, false, false)};
@@ -595,48 +596,107 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2
         oneFieldResults.copyTempAtTCtoSection();
         setTempOForAllSlots();
     }
+    ProcessValue setRecommendedStripTemperature(double temp) {
+        return stripZone.setValue(L2ParamGroup.Parameter.Temperature, Tag.TagName.SP, (float)temp);
+    }
+
+    ProcessValue setRecommendedStripSpeed(double speed) {
+        return stripZone.setValue(L2ParamGroup.Parameter.Speed, Tag.TagName.SP, (float)speed);
+    }
 
     void handleNewStrip() {
         if (level2Enabled) {
-            ProcessValue pwW = stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Width);
-            if (!pwW.valid)
-                l2DFHeating.showError("Problem reading strip width: " + pwW.errorMessage) ;
+//            ProcessValue pwW = stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Width);
+//            if (!pwW.valid)
+//                l2DFHeating.showError("Problem reading strip width: " + pwW.errorMessage) ;
             double stripWidth = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Width).floatValue, 3) / 1000;
             double stripThick = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Thick).floatValue, 3) / 1000;
             String process = stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Process).stringValue;
             String msg = "New Strip " + stripWidth + " x " + stripThick + " for process " + process;
-            controller.showMessage(msg);
+            info(msg);
             if (level2Enabled) {
                 stripZone.setValue(L2ParamGroup.Parameter.Next, Tag.TagName.Noted, true);
-
-                Performance refP = getBasePerformance(process, stripThick);
-                if (refP != null) {
-                    L2ZonalFuelProfile zFP = new L2ZonalFuelProfile(refP.getPerformanceTable(),
-                            furnaceSettings.fuelCharSteps, l2DFHeating);
-                    if (zFP.prepareFuelTable(stripWidth, stripThick)) {
-                        sendFuelCharacteristics(zFP);
-                        Charge ch = new Charge(controller.getSelChMaterial(refP.chMaterial), stripWidth, 1, stripThick);
-                        ChargeStatus chStatus = new ChargeStatus(ch, 0, refP.exitTemp());
-                        double output = getOutputWithFurnaceStatus(chStatus, refP.exitTemp());
-                        if (output >= 0)
-                            controller.showMessage("Recommend output based on Furnace temperatures is " + output);
-                        else
-                            showErrorInLevel1("Facing some problem in evaluation recommended Output");
+                OneStripDFHProcess oneProcess = l2DFHeating.getStripDFHProcess(process);
+                if (oneProcess != null) {
+                    ErrorStatAndMsg sizeCheck = oneProcess.checkStripSize(stripWidth, stripThick);
+                    if (!sizeCheck.inError) {
+                        Performance refP = getBasePerformance(process, stripThick);
+                        if (refP != null) {
+                            Charge ch = new Charge(controller.getSelChMaterial(refP.chMaterial), stripWidth, 1, stripThick);
+                            ChargeStatus chStatus = new ChargeStatus(ch, 0, refP.exitTemp());
+                            double output = getOutputWithFurnaceStatus(chStatus, refP.exitTemp());
+                            DataWithMsg speedData = oneProcess.getRecommendedSpeed(output, stripWidth, stripThick);
+                            if (speedData.valid) {
+                                ProcessValue responseSpeed = setRecommendedStripSpeed(speedData.doubleValue / 60);
+                                if (responseSpeed.valid) {
+                                    ProcessValue responseTempSp = setRecommendedStripTemperature(oneProcess.tempDFHExit);
+                                    if (responseTempSp.valid) {
+                                        L2ZonalFuelProfile zFP = new L2ZonalFuelProfile(refP.getPerformanceTable(),
+                                                furnaceSettings.fuelCharSteps, l2DFHeating);
+                                        if (zFP.prepareFuelTable(stripWidth, stripThick)) {
+                                            if (sendFuelCharacteristics(zFP)) {
+                                                commonDFHZ.setValue(L2ParamGroup.Parameter.L2Data, Tag.TagName.Ready, true);
+                                            }
+                                            else
+                                                showErrorInLevel1("Unable to send Fuel Characteristics");
+                                        }
+                                        else
+                                            showErrorInLevel1("Unable to prepare Fuel Characteristics");
+                                    }
+                                    else
+                                        showErrorInLevel1("Unable to set Strip Exit Temperature");
+                                }
+                                else
+                                    showErrorInLevel1("Unable to Set recommended speed: " + responseSpeed.errorMessage);
+                            }
+                            else
+                                showErrorInLevel1("Unable to get recommended speed: " + speedData.errorMessage);
+                        } else
+                            showErrorInLevel1("Unable to get reference performance data");
                     }
                     else
-                        showErrorInLevel1("Unable to prepare Fuel Characteristics");
-//                    String fuelMsg = "";
-//                    DecimalFormat fmt = new DecimalFormat("#,##0.0");
-//                    for (int z = 0; z < nTopActiveSecs; z++) {
-//                        double[][] z2fuelTable = zFP.oneZoneFuelArray(z, false);
-//                        fuelMsg += "Fuel Table for Zone#" + z + "\n";
-//                        for (int r = 0; r < z2fuelTable.length; r++)
-//                            fuelMsg += "Total " + fmt.format(z2fuelTable[r][0]) + ", Zonal " +
-//                                    fmt.format(z2fuelTable[r][1]) + "\n";
-//                        fuelMsg += "\n";
-//                    }
-//                    controller.showMessage(fuelMsg);
+                        showErrorInLevel1("Strip size is not in range : " + sizeCheck.msg);
                 }
+                else
+                    showErrorInLevel1("Process " + process + " is not in record");
+
+
+//                    ProcessValue responseTempSp = setRecommendedStripTemperature(oneProcess.tempDFHExit);
+//                    if (responseTempSp.valid) {
+//                            Performance refP = getBasePerformance(process, stripThick);
+//                            if (refP != null) {
+//                                L2ZonalFuelProfile zFP = new L2ZonalFuelProfile(refP.getPerformanceTable(),
+//                                        furnaceSettings.fuelCharSteps, l2DFHeating);
+//                                if (zFP.prepareFuelTable(stripWidth, stripThick)) {
+//                                    Charge ch = new Charge(controller.getSelChMaterial(refP.chMaterial), stripWidth, 1, stripThick);
+//                                    ChargeStatus chStatus = new ChargeStatus(ch, 0, refP.exitTemp());
+//                                    double output = getOutputWithFurnaceStatus(chStatus, refP.exitTemp());
+//                                    if (output >= 0)
+//                                        controller.showMessage("Recommend output based on Furnace temperatures is " + output);
+//                                    else
+//                                        showErrorInLevel1("Facing some problem in evaluation recommended Output");
+//                                    if (sendFuelCharacteristics(zFP)) {
+//                                        Charge ch = new Charge(controller.getSelChMaterial(refP.chMaterial), stripWidth, 1, stripThick);
+//                                        ChargeStatus chStatus = new ChargeStatus(ch, 0, refP.exitTemp());
+//                                        double output = getOutputWithFurnaceStatus(chStatus, refP.exitTemp());
+//                                        if (output >= 0)
+//                                            controller.showMessage("Recommend output based on Furnace temperatures is " + output);
+//                                        else
+//                                            showErrorInLevel1("Facing some problem in evaluation recommended Output");
+//                                    } else
+//                                        showErrorInLevel1("Unable to send Fuel Characteristics");
+//                                } else
+//                                    showErrorInLevel1("Unable to prepare Fuel Characteristics");
+//                            } else
+//                                showErrorInLevel1("Unable to ger reference performance");
+//                        } else
+//                            showErrorInLevel1("Unable to set Strip Exit Temperature");
+//                    }
+//                    else
+//                        showErrorInLevel1("Strip size is not in range");
+//            }
+//                else
+//                    showErrorInLevel1("Process " + process + " is not in record");
             }
             else
                 l2DFHeating.showMessage("Level2 has been disabled before the data could be sent back!");
@@ -655,8 +715,8 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2
                 retVal = false;
                 break;
             }
-        if (retVal)
-            commonDFHZ.setValue(L2ParamGroup.Parameter.FuelCharacteristic, Tag.TagName.Ready, true);
+//        if (retVal)
+//            commonDFHZ.setValue(L2ParamGroup.Parameter.L2Data, Tag.TagName.Ready, true);
         return retVal;
     }
 
@@ -694,6 +754,7 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2
     }
 
     public boolean showErrorInLevel1(String msg) {
+        info(msg);
         l2ErrorMessages.setValue(Tag.TagName.Msg, msg);
         return l2ErrorMessages.markReady(true);
     }

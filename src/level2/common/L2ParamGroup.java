@@ -24,6 +24,7 @@ public class L2ParamGroup {
         Speed("Speed"),
         Flue("Flue"),
         FuelCharacteristic("FuelCharacteristic"),
+        L2Data("L2Data"),
         FieldData("FieldData"),  // from which level2 to work out performance data
         Now("Now"),
         Next("Next"),

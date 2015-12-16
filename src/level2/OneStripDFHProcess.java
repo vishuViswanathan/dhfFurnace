@@ -21,6 +21,7 @@ import java.util.Vector;
  * To change this template use File | Settings | File Templates.
  */
 public class OneStripDFHProcess {
+    double density = 7850;
     L2DFHeating l2DFHeating;
     public String processName;
     ChMaterial chMaterialThin;
@@ -31,7 +32,7 @@ public class OneStripDFHProcess {
     double thinUpperLimit = 0.0004;   // in m
     double maxThickness = 0.0015;  // m
     double minThickness = 0.0001; //m
-    double maxSpeed = 120; // m/min
+    double maxSpeed = 120 * 60; // m/h
     double maxWidth = 1.25;  // m
     double minWidth = 0.9;  // m
     double maxUnitOutput = 25000;  // kg/h for 1m with
@@ -93,6 +94,58 @@ public class OneStripDFHProcess {
             return 1;
     }
 
+    public ErrorStatAndMsg checkStripSize(double width, double thickness) {
+        ErrorStatAndMsg errStat = new ErrorStatAndMsg();
+        checkWidth(width, errStat);
+        checkThickness(thickness, errStat);
+        return errStat;
+    }
+
+    public ErrorStatAndMsg checkUnitOutput(double unitOutput, ErrorStatAndMsg errStat) {
+        if (unitOutput > maxUnitOutput)
+            errStat.addErrorMsg("Unit Output is high <" + unitOutput + ">");
+        else if (unitOutput < minUnitOutput)
+            errStat.addErrorMsg("Unit Output is low <" + unitOutput + ">");
+        return errStat;
+    }
+
+    public ErrorStatAndMsg checkWidth(double width, ErrorStatAndMsg errStat) {
+        if (width > maxWidth)
+            errStat.addErrorMsg("Strip Width is high <" + width + ">");
+        else if (width < minWidth)
+            errStat.addErrorMsg("Strip Width is low <" + width + ">");
+        return errStat;
+    }
+
+    public ErrorStatAndMsg checkThickness(double thick, ErrorStatAndMsg errStat) {
+        if (thick > maxThickness)
+            errStat.addErrorMsg("Strip Thickness is high <" + thick + ">");
+        else if (thick < minThickness)
+            errStat.addErrorMsg("Strip Thickness is low <" + thick + ">");
+        return errStat;
+    }
+
+
+    public ErrorStatAndMsg isStripAcceptable(double output, double width, double thickness) {
+        ErrorStatAndMsg response = checkStripSize(width , thickness);
+        if (!response.inError)
+            checkUnitOutput((output / width), response);
+        return response;
+    }
+
+    DataWithMsg getRecommendedSpeed(double output, double width, double thickness) {
+        DataWithMsg data = new DataWithMsg();
+        ErrorStatAndMsg response = isStripAcceptable(output, width, thickness);
+        if (!response.inError) {
+            double speed = output / (width * thickness * density);
+            data.doubleValue = (speed > maxSpeed) ? maxSpeed : speed;
+            data.valid = true;
+        }
+        else
+            data.setErrorMsg(response.msg);
+        return data;
+    }
+
     boolean takeDataFromXML(String xmlStr) {
         boolean retVal = false;
         ValAndPos vp;
@@ -134,7 +187,7 @@ public class OneStripDFHProcess {
                 minUnitOutput = Double.valueOf(vp.val) * 1000;
 
                 vp = XMLmv.getTag(xmlStr, "maxSpeed", 0);
-                maxSpeed = Double.valueOf(vp.val);
+                maxSpeed = Double.valueOf(vp.val) * 60;
 
                 vp = XMLmv.getTag(xmlStr, "maxThickness", 0);
                 maxThickness = Double.valueOf(vp.val) / 1000;
@@ -182,7 +235,7 @@ public class OneStripDFHProcess {
         xmlStr.append(XMLmv.putTag("thinUpperLimit", "" + (thinUpperLimit * 1000)));
         xmlStr.append(XMLmv.putTag("maxUnitOutput", "" + (maxUnitOutput / 1000)));
         xmlStr.append(XMLmv.putTag("minUnitOutput", "" + (minUnitOutput / 1000)));
-        xmlStr.append(XMLmv.putTag("maxSpeed", "" + maxSpeed));
+        xmlStr.append(XMLmv.putTag("maxSpeed", "" + maxSpeed / 60));
         xmlStr.append(XMLmv.putTag("maxThickness", "" + (maxThickness * 1000)));
         xmlStr.append(XMLmv.putTag("minThickness", "" + (minThickness * 1000)));
         xmlStr.append(XMLmv.putTag("maxWidth", "" + (maxWidth * 1000)));
@@ -203,66 +256,6 @@ public class OneStripDFHProcess {
     NumberTextField ntMinThickness;
     NumberTextField ntMaxWidth;
     NumberTextField ntMinWidth;
-
-//    public EditResponse.Response getDataFromUser(Vector<ChMaterial> vChMaterial, InputControl inpC) {
-//        tfProcessName = new JTextField(processName, 10);
-////        tfProcessName.setEditable(false);
-//        tfProcessName.setName("Process Name");
-//        cbChMaterialThin = new JComboBox(vChMaterial);
-//        cbChMaterialThin.setName("Select Material to be taken for Thin strips");
-//        cbChMaterialThin.setSelectedItem(chMaterialThin);
-//        ntThinUpperLimit = new NumberTextField(inpC, thinUpperLimit * 1000, 6, false, 0.05, 0.9,
-//                "0.00", "Upper thickness Limit for Thin material (mm)");
-//        cbChMaterialThick = new JComboBox(vChMaterial);
-//        cbChMaterialThick.setName("Select Material to be taken for Thick strips");
-//        cbChMaterialThick.setSelectedItem(chMaterialThick);
-//        ntTempDFHExit = new NumberTextField(inpC, tempDFHExit, 6, false, 400, 1000,
-//                "#,##0", "Strip Temperature at DFH Exit (deg C)");
-//        ntMinExitZoneTemp = new NumberTextField(inpC, minExitZoneTemp, 6, false, 800, 1200,
-//                "#,##0", "Minimum DFH Exit Zone Temperature (deg C)");
-//        ntMaxUnitOutput = new NumberTextField(inpC, maxUnitOutput / 1000, 6, false, 0.2, 1000.0,
-//                "#,##0.00", "Maximum output for 1m wide strip (t/h)");
-//        ntMinUnitOutput = new NumberTextField(inpC, minUnitOutput / 1000, 6, false, 0.2, 1000.0,
-//                "#,##0.00", "Maximum output for 1m wide strip (t/h)");
-//        ntMaxSpeed = new NumberTextField(inpC, maxSpeed, 6, false, 50, 1000.0,
-//                "##0.00", "Maximum Process speed (m/min)");
-//        ntMaxSpeed.setToolTipText("<html>Ensure speed is sufficient for <p> " + ntMinUnitOutput.getName() + "</html>");
-//        ntMaxThickness = new NumberTextField(inpC, maxThickness * 1000, 6, false, 0.0, 100.0,
-//                "##0.00", "Maximum Strip Thickness (mm)");
-//        ntMinThickness = new NumberTextField(inpC, minThickness * 1000, 6, false, 0.0, 100.0,
-//                "##0.00", "Minimum Strip Thickness (mm)");
-//        ntMaxWidth = new NumberTextField(inpC, maxWidth * 1000, 6, false, 200, 5000,
-//                "#,##0", "Maximum Strip Width (mm)");
-//        ntMinWidth = new NumberTextField(inpC, minWidth * 1000, 6, false, 200, 5000,
-//                "#,##0", "Minimum Strip Width (mm)");
-//
-//        DataListDialog dlg = new DataListDialog("Strip Process Data", this, true);
-//        dlg.addItemPair(tfProcessName);
-//        dlg.addBlank();
-//        dlg.addItemPair(cbChMaterialThin);
-//        dlg.addItemPair(ntThinUpperLimit);
-//        dlg.addItemPair(cbChMaterialThick);
-//        dlg.addBlank();
-//        dlg.addItemPair(ntTempDFHExit);
-//        dlg.addItemPair(ntMinExitZoneTemp);
-//        dlg.addBlank();
-//        dlg.addItemPair(ntMaxUnitOutput);
-//        dlg.addItemPair(ntMinUnitOutput);
-//        dlg.addBlank();
-//        dlg.addItemPair(ntMaxSpeed);
-//        dlg.addBlank();
-//        dlg.addItemPair(ntMaxThickness);
-//        dlg.addItemPair(ntMinThickness);
-//        dlg.addBlank();
-//        dlg.addItemPair(ntMaxWidth);
-//        dlg.addItemPair(ntMinWidth);
-//        dlg.setLocation(100, 50);
-//        dlg.setVisible(true);
-//        EditResponse.Response response = dlg.editResponse();
-//        if (response == EditResponse.Response.SAVE)
-//            noteDataFromUI();
-//        return response;
-//    }
 
     public ErrorStatAndMsg fieldDataOkForProcess(String processName, ProductionData production) {
         ErrorStatAndMsg retVal = new ErrorStatAndMsg(true, "ERROR: ");
@@ -335,7 +328,7 @@ public class OneStripDFHProcess {
                 "#,##0.00", "Maximum output for 1m wide strip (t/h)");
         ntMinUnitOutput = new NumberTextField(inpC, minUnitOutput / 1000, 6, false, 0.2, 1000.0,
                 "#,##0.00", "Maximum output for 1m wide strip (t/h)");
-        ntMaxSpeed = new NumberTextField(inpC, maxSpeed, 6, false, 50, 1000.0,
+        ntMaxSpeed = new NumberTextField(inpC, maxSpeed / 60, 6, false, 50, 1000.0,
                 "##0.00", "Maximum Process speed (m/min)");
         ntMaxSpeed.setToolTipText("<html>Ensure speed is sufficient for <p> " + ntMinUnitOutput.getName() + "</html>");
         ntMaxThickness = new NumberTextField(inpC, maxThickness * 1000, 6, false, 0.0, 100.0,
@@ -388,7 +381,7 @@ public class OneStripDFHProcess {
                 double minUnitOutputX = ntMinUnitOutput.getData();
                 double maxThicknessX = ntMaxThickness.getData();
                 double minThicknessX = ntMaxThickness.getData();
-                double maxSpeedX = ntMaxSpeed.getData();
+//                double maxSpeedX = ntMaxSpeed.getData();
                 double maxWidthX = ntMaxWidth.getData();
                 double minWidthX = ntMaxWidth.getData();
                 if (maxUnitOutputX < minUnitOutputX) {
@@ -432,7 +425,7 @@ public class OneStripDFHProcess {
         minUnitOutput = ntMinUnitOutput.getData() * 1000;
         maxThickness = ntMaxThickness.getData() / 1000;
         minThickness = ntMaxThickness.getData() / 1000;
-        maxSpeed = ntMaxSpeed.getData();
+        maxSpeed = ntMaxSpeed.getData() * 60;
         maxWidth = ntMaxWidth.getData() / 1000;
         minWidth = ntMaxWidth.getData() / 1000;
     }
