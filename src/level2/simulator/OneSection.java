@@ -28,7 +28,7 @@ import java.util.*;
  * Time: 12:17 PM
  * To change this template use File | Settings | File Templates.
  */
-public class OneSimulatorSection {
+public class OneSection {
     OpcSimulator opcSimulator;
     TMuaClient source;
     boolean readWrite = false;
@@ -39,7 +39,7 @@ public class OneSimulatorSection {
     Calendar lastAlive;
     Calendar switchTime;
     boolean subsTimeout = false;
-    LinkedHashMap<L2ParamGroup.Parameter, OneSimulatorParam> paramList;
+    LinkedHashMap<L2ParamGroup.Parameter, OneParam> paramList;
     Hashtable<MonitoredDataItem, Tag> monitoredTags;
     boolean monitoredTagsReady = false;
 
@@ -67,11 +67,11 @@ public class OneSimulatorSection {
 //            takeFromXml(xmlStr);
 //    }
 
-    public OneSimulatorSection(OpcSimulator opcSimulator, OpcTagGroup tagGrp, boolean rw) throws Exception {
+    public OneSection(OpcSimulator opcSimulator, OpcTagGroup tagGrp, boolean rw) throws Exception {
         this.opcSimulator = opcSimulator;
         this.source = opcSimulator.source;
         this.readWrite = rw;
-        paramList = new LinkedHashMap<L2ParamGroup.Parameter, OneSimulatorParam>();
+        paramList = new LinkedHashMap<L2ParamGroup.Parameter, OneParam>();
         if (!readWrite)
             subscription = source.createSubscription(new SubAliveListener(), new ZoneSubscriptionListener());
         createFromTagGroup(tagGrp);
@@ -210,13 +210,13 @@ public class OneSimulatorSection {
           boolean retVal = false;
           String basePath = "";
           try {
+              basePath = name + "." + element;
 //              OneParam param = new OneParam(opcSimulator.source, opcSimulator.equipment,
 //                      (basePath = name + "." + element),
 //                      vTags, subscription);
-              OneSimulatorParam param = new OneSimulatorParam(opcSimulator.source, opcSimulator.equipment,
+              OneParam param = new OneParam(opcSimulator.source, opcSimulator.equipment,
                       name, element.toString(),
                       vTags, subscription);
-              basePath = name + "." + element;
               paramList.put(element, param);
               retVal = true;
           } catch (TagCreationException e) {
@@ -229,7 +229,7 @@ public class OneSimulatorSection {
     JPanel getDisplayPanelOLD(int width) {
         FramedPanel outerP = new FramedPanel();
         JTabbedPane tabbedPane = new JTabbedPane();
-        for (OneSimulatorParam param: paramList.values())
+        for (OneParam param: paramList.values())
             tabbedPane.addTab(param.processElement, param.getDisplayPanel());
         Dimension dimension = tabbedPane.getPreferredSize();
         dimension.width = width;
@@ -244,7 +244,7 @@ public class OneSimulatorSection {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridy = 0;
         gbc.gridy = 0;
-        for (OneSimulatorParam param: paramList.values()) {
+        for (OneParam param: paramList.values()) {
 //            innerP.add(param.getDisplayPanel(), gbc);
             innerP.add(param.getDisplayPanel());
             gbc.gridx++;
@@ -254,7 +254,7 @@ public class OneSimulatorSection {
     }
 
     void updateUI() {
-        for (OneSimulatorParam param: paramList.values())
+        for (OneParam param: paramList.values())
             param.updateUI();
     }
 
@@ -262,7 +262,7 @@ public class OneSimulatorSection {
          ErrorStatAndMsg retVal = new ErrorStatAndMsg(false, "" + name + " params:");
          boolean additional = false;
         ErrorStatAndMsg oneParamRetVal;
-         for (OneSimulatorParam p: paramList.values()) {
+         for (OneParam p: paramList.values()) {
              oneParamRetVal = p.checkConnections();
              if (oneParamRetVal.inError) {
                  retVal.inError = true;
