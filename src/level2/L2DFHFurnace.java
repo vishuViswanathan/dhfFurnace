@@ -126,10 +126,16 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2
             try {
                 Tag[] stripDataNowTags = {
                         new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Process, false, false),
-                        new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Ready, false, false),  // TODO not used
+                        new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Ready, false, true),
                         new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Thick, false, false),
                         new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Width, false, false),
-                        new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Noted, true, false)};  // TODO not used
+                        new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Noted, false, true),
+
+                        new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Ready, true, false),
+                        new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.SpeedMax, true, false),
+                        new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.SpeedNow, true, false),
+                        new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Temperature, true, false),
+                        new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Noted, true, false)};
                 location = "Strip size Now tags";   // for error messages
                 l2StripSizeNow = new ReadyNotedParam(source, equipment, "Strip.Now", stripDataNowTags, stripSub);
                 readyNotedParamList.add(l2StripSizeNow);
@@ -142,6 +148,12 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2
                         new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.Ready, false, true),
                         new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.Thick, false, false),
                         new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.Width, false, false),
+                        new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.Noted, false, true),
+
+                        new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.Ready, true, false),
+                        new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.SpeedMax, true, false),
+                        new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.SpeedNow, true, false),
+                        new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.Temperature, true, false),
                         new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.Noted, true, false)};
                 location = "Strip size Next tags";
                 l2StripSizeNext = new ReadyNotedParam(source, equipment, "Strip.Next", stripDataNextTags, stripSub);
@@ -152,7 +164,6 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2
 
                 Tag[] stripTemperatureTags = {
                         new Tag(L2ParamGroup.Parameter.Temperature, Tag.TagName.SP, false, false),
-                        new Tag(L2ParamGroup.Parameter.Temperature, Tag.TagName.SP, true, false),   // SP from Level2
                         new Tag(L2ParamGroup.Parameter.Temperature, Tag.TagName.PV, false, true),   // TODO strip Temperature is monitored
                         new Tag(L2ParamGroup.Parameter.Temperature, Tag.TagName.CV, false, false),
                         new Tag(L2ParamGroup.Parameter.Temperature, Tag.TagName.Mode, false, false) };
@@ -161,7 +172,6 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2
                 noteMonitoredTags(stripTemperatureTags);
                 Tag[] stripSpeedTags = {
                         new Tag(L2ParamGroup.Parameter.Speed, Tag.TagName.SP, false, false),
-                        new Tag(L2ParamGroup.Parameter.Speed, Tag.TagName.SP, true, false),
                         new Tag(L2ParamGroup.Parameter.Speed, Tag.TagName.PV, false, true)}; // TODO strip speed is monitored
                 location = "Strip Speed tags";
                 stripZone.addOneParameter(L2ParamGroup.Parameter.Speed, stripSpeedTags);
@@ -597,11 +607,11 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2
         setTempOForAllSlots();
     }
     ProcessValue setRecommendedStripTemperature(double temp) {
-        return stripZone.setValue(L2ParamGroup.Parameter.Temperature, Tag.TagName.SP, (float)temp);
+        return stripZone.setValue(L2ParamGroup.Parameter.Next, Tag.TagName.Temperature, (float)temp);
     }
 
     ProcessValue setRecommendedStripSpeed(double speed) {
-        return stripZone.setValue(L2ParamGroup.Parameter.Speed, Tag.TagName.SP, (float)speed);
+        return stripZone.setValue(L2ParamGroup.Parameter.Next, Tag.TagName.SpeedNow, (float)speed);
     }
 
     void handleNewStrip() {
@@ -631,6 +641,7 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2
                                 if (responseSpeed.valid) {
                                     ProcessValue responseTempSp = setRecommendedStripTemperature(oneProcess.tempDFHExit);
                                     if (responseTempSp.valid) {
+                                        stripZone.setValue(L2ParamGroup.Parameter.Next, Tag.TagName.Ready, true);
                                         L2ZonalFuelProfile zFP = new L2ZonalFuelProfile(refP.getPerformanceTable(),
                                                 furnaceSettings.fuelCharSteps, l2DFHeating);
                                         if (zFP.prepareFuelTable(stripWidth, stripThick)) {
