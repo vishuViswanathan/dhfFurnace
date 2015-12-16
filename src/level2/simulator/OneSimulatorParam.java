@@ -19,7 +19,7 @@ import java.util.Vector;
  * Time: 12:26 PM
  * To change this template use File | Settings | File Templates.
  */
-public class OneParam extends OneDataGroup {
+public class OneSimulatorParam extends OneDataGroup {
     Collection<TagWithDisplay> tagList;
     String processElement;
     String paramName;
@@ -42,8 +42,8 @@ public class OneParam extends OneDataGroup {
 //        }
 //    }
 
-    public OneParam(TMuaClient source, String equipment, String sectionName, String paramName, Vector<TagWithDisplay> tagList,
-                    Subscription subscription) throws TagCreationException {
+    public OneSimulatorParam(TMuaClient source, String equipment, String sectionName, String paramName, Vector<TagWithDisplay> tagList,
+                             Subscription subscription) throws TagCreationException {
         super(source, equipment, sectionName + "." + paramName, subscription);
         this.paramName = paramName;
         this.processElement = sectionName + "." + paramName;

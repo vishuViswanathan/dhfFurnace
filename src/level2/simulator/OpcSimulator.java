@@ -80,8 +80,8 @@ public class OpcSimulator implements InputControl, L2Interface {
     static String uaServerURI;
     String equipment;
 
-    Vector<OneSection> processZones;
-    Vector<OneSection> level2Zones;
+    Vector<OneSimulatorSection> processZones;
+    Vector<OneSimulatorSection> level2Zones;
 
     boolean uiReady = false;
 
@@ -132,12 +132,12 @@ public class OpcSimulator implements InputControl, L2Interface {
         gbc.gridx = 0;
         gbc.gridy = 0;
         JPanel oneP;
-        for (OneSection sec: processZones) {
+        for (OneSimulatorSection sec: processZones) {
             oneP = sec.getDisplayPanel(width);
             jp.add(oneP, gbc);
             gbc.gridy++;
         }
-        for (OneSection sec: processZones)
+        for (OneSimulatorSection sec: processZones)
             sec.updateUI();
         processPane.setViewportView(jp);
         fp.add(processPane, BorderLayout.CENTER);
@@ -156,12 +156,12 @@ public class OpcSimulator implements InputControl, L2Interface {
         gbc.gridx = 0;
         gbc.gridy = 0;
         JPanel oneP;
-        for (OneSection sec: level2Zones) {
+        for (OneSimulatorSection sec: level2Zones) {
             oneP = sec.getDisplayPanel(width);
             jp.add(oneP, gbc);
             gbc.gridy++;
         }
-        for (OneSection sec: level2Zones)
+        for (OneSimulatorSection sec: level2Zones)
             sec.updateUI();
         level2Pane.setViewportView(jp);
         fp.add(level2Pane, BorderLayout.CENTER);
@@ -424,12 +424,12 @@ public class OpcSimulator implements InputControl, L2Interface {
 //        return retVal;
 //    }
 
-    Vector<OneSection> collectSections(String path, boolean rw) {
-        Vector<OneSection> retVal = new Vector<OneSection>();
+    Vector<OneSimulatorSection> collectSections(String path, boolean rw) {
+        Vector<OneSimulatorSection> retVal = new Vector<OneSimulatorSection>();
         OpcTagGroup grp = allGroups.getSubGroup(path);
         try {
             for (OpcTagGroup subGrp: grp.subGroups)
-                retVal.add(new OneSection(this, subGrp, rw));
+                retVal.add(new OneSimulatorSection(this, subGrp, rw));
         } catch (Exception e) {
             showError("Some problem in creating Collection for " + path + "> " + e.getMessage());
         }
@@ -572,10 +572,10 @@ public class OpcSimulator implements InputControl, L2Interface {
     void close() {
         try {
             if (processZones != null)
-                for (OneSection sec : processZones)
+                for (OneSimulatorSection sec : processZones)
                     sec.closeSubscription();
             if (level2Zones != null)
-                for (OneSection sec : level2Zones)
+                for (OneSimulatorSection sec : level2Zones)
                     sec.closeSubscription();
 //            messageSub.removeItems();
 //            stripSub.removeItems();
