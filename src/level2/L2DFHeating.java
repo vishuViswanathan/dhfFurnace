@@ -859,7 +859,7 @@ public class L2DFHeating extends DFHeating {
 
     protected void enableResultsMenu(boolean enable) {
         super.enableResultsMenu(enable);
-        if (l2MenuSet) {
+        if (l2MenuSet && allowL2Changes) {
             mISaveAsFieldResult.setEnabled(enable);
         }
     }

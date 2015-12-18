@@ -2,10 +2,14 @@ package level2.simulator;
 
 import TMopcUa.TMuaClient;
 import com.prosysopc.ua.ServiceException;
+import display.SizedLabel;
 import level2.common.L2Interface;
+import level2.common.TagCreationException;
 import mvUtils.display.FramedPanel;
 import mvUtils.display.InputControl;
 import mvUtils.display.MultiPairColPanel;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLmv;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;

@@ -10,6 +10,7 @@ import level2.common.L2ParamGroup;
  * Date: 07-Jan-15
  * Time: 5:03 PM
  * To change this template use File | Settings | File Templates.
+ * changed to test git
  */
 public class Tag {
     static public enum TagName {
@@ -29,7 +30,9 @@ public class Tag {
         Thick("thick"),
         Width("width"),
         Length("balanceLength"),
-        Temperature("Temperature"),    // for Air and fuel
+        Temperature("Temperature"),    // for Air and fuel and strip (from Level2)
+        SpeedNow("SpeedNow"),
+        SpeedMax("SpeedMax"),
         Span("span"),
         Data("Data"),
         X1("x1"),
