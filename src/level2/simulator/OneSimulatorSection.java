@@ -28,7 +28,7 @@ import java.util.*;
  * Time: 12:17 PM
  * To change this template use File | Settings | File Templates.
  */
-public class OneSection {
+public class OneSimulatorSection {
     OpcSimulator opcSimulator;
     TMuaClient source;
     boolean readWrite = false;
@@ -67,7 +67,7 @@ public class OneSection {
 //            takeFromXml(xmlStr);
 //    }
 
-    public OneSection(OpcSimulator opcSimulator, OpcTagGroup tagGrp, boolean rw) throws Exception {
+    public OneSimulatorSection(OpcSimulator opcSimulator, OpcTagGroup tagGrp, boolean rw) throws Exception {
         this.opcSimulator = opcSimulator;
         this.source = opcSimulator.source;
         this.readWrite = rw;
