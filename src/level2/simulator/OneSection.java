@@ -39,7 +39,7 @@ public class OneSection {
     Calendar lastAlive;
     Calendar switchTime;
     boolean subsTimeout = false;
-    LinkedHashMap<L2ParamGroup.Parameter, OneParam> paramList;
+    LinkedHashMap<L2ParamGroup.Parameter, OneSimulatorParam> paramList;
     Hashtable<MonitoredDataItem, Tag> monitoredTags;
     boolean monitoredTagsReady = false;
 
@@ -71,7 +71,7 @@ public class OneSection {
         this.opcSimulator = opcSimulator;
         this.source = opcSimulator.source;
         this.readWrite = rw;
-        paramList = new LinkedHashMap<L2ParamGroup.Parameter, OneParam>();
+        paramList = new LinkedHashMap<L2ParamGroup.Parameter, OneSimulatorParam>();
         if (!readWrite)
             subscription = source.createSubscription(new SubAliveListener(), new ZoneSubscriptionListener());
         createFromTagGroup(tagGrp);
@@ -213,7 +213,7 @@ public class OneSection {
 //              OneParam param = new OneParam(opcSimulator.source, opcSimulator.equipment,
 //                      (basePath = name + "." + element),
 //                      vTags, subscription);
-              OneParam param = new OneParam(opcSimulator.source, opcSimulator.equipment,
+              OneSimulatorParam param = new OneSimulatorParam(opcSimulator.source, opcSimulator.equipment,
                       name, element.toString(),
                       vTags, subscription);
               basePath = name + "." + element;
@@ -229,7 +229,7 @@ public class OneSection {
     JPanel getDisplayPanelOLD(int width) {
         FramedPanel outerP = new FramedPanel();
         JTabbedPane tabbedPane = new JTabbedPane();
-        for (OneParam param: paramList.values())
+        for (OneSimulatorParam param: paramList.values())
             tabbedPane.addTab(param.processElement, param.getDisplayPanel());
         Dimension dimension = tabbedPane.getPreferredSize();
         dimension.width = width;
@@ -244,7 +244,7 @@ public class OneSection {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridy = 0;
         gbc.gridy = 0;
-        for (OneParam param: paramList.values()) {
+        for (OneSimulatorParam param: paramList.values()) {
 //            innerP.add(param.getDisplayPanel(), gbc);
             innerP.add(param.getDisplayPanel());
             gbc.gridx++;
@@ -254,7 +254,7 @@ public class OneSection {
     }
 
     void updateUI() {
-        for (OneParam param: paramList.values())
+        for (OneSimulatorParam param: paramList.values())
             param.updateUI();
     }
 
@@ -262,7 +262,7 @@ public class OneSection {
          ErrorStatAndMsg retVal = new ErrorStatAndMsg(false, "" + name + " params:");
          boolean additional = false;
         ErrorStatAndMsg oneParamRetVal;
-         for (OneParam p: paramList.values()) {
+         for (OneSimulatorParam p: paramList.values()) {
              oneParamRetVal = p.checkConnections();
              if (oneParamRetVal.inError) {
                  retVal.inError = true;
