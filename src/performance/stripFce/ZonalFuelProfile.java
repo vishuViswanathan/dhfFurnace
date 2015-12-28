@@ -20,7 +20,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Vector;
 
 /**
  * Created by IntelliJ IDEA.
@@ -30,6 +29,8 @@ import java.util.Vector;
  * To change this template use File | Settings | File Templates.
  */
 public class ZonalFuelProfile {
+    enum SpeedAndCapacityUnits {TphMpmMm, TphMphM};
+
     protected final int USpeedCol = 0;
     protected final int UOutputCol = 1;
     protected final int TotFuelCol = 2;
@@ -37,7 +38,10 @@ public class ZonalFuelProfile {
     protected final int TotHeatCol = TotFuelCol;
     PerformanceTable performanceTable;
     DFHeating controller;
-
+    SpeedAndCapacityUnits units = SpeedAndCapacityUnits.TphMpmMm;
+    double speedConverter = 1;
+    double capacityConverter = 1;
+    double lengthConverter = 1;
     double stripWidthInm;
     double stripThickInm;
     protected int nOutputSteps;
@@ -47,8 +51,8 @@ public class ZonalFuelProfile {
     protected Double[][] topZoneFuelHeat; // total heat comprising combustion + fuel sensible + air sensible
     protected Double[][] botZoneFuels;
     protected Double[][] botZoneFuelHeat; // total heat comprising combustion + fuel sensible + air sensible
-    XYArray speedTotalFuelTop, speedTotalFuelBot;
-    XYArray speedTotalFHTop, speedTotalFHBot; // based on FuelHeat (Combustion + air and fuel sensible
+    protected XYArray speedTotalFuelTop, speedTotalFuelBot;
+    protected XYArray speedTotalFHTop, speedTotalFHBot; // based on FuelHeat (Combustion + air and fuel sensible
     Reporter fuelCharacteristicReport;
     Reporter fuelHeatCharacteristicReport;
     // columns 1 - output, 2- Total Fuel, 3, 4 ... individual zone fuels
@@ -77,9 +81,35 @@ public class ZonalFuelProfile {
             botZoneFuels = new Double[outputSteps][nBotZones + 3];
             botZoneFuelHeat = new Double[outputSteps][nBotZones + 3];
         }
+        setUnitsConverters();
     }
 
-    protected boolean prepareFuelTable(double stripWidth, double stripThickness) {
+    public void setCapacityAndSpeedUnits (SpeedAndCapacityUnits units) {
+        this.units = units;
+        setUnitsConverters();
+    }
+
+    void setUnitsConverters() {
+        switch(units) {
+            case TphMpmMm:
+                speedConverter = 1.0 / 60;
+                capacityConverter = 0.001;
+                lengthConverter = 1000;
+                break;
+            case TphMphM:
+                speedConverter = 1;
+                capacityConverter = 0.001;
+                lengthConverter = 1;
+                break;
+            default:
+                speedConverter = 1;
+                capacityConverter = 1;
+                lengthConverter = 1;
+                break;
+        }
+    }
+
+    protected boolean prepareFuelTable(double stripWidth, double stripThickness) {  // TODO only top zones are handled
         boolean allOk = true;
         this.stripWidthInm = stripWidth;
         this.stripThickInm = stripThickness;
@@ -111,11 +141,11 @@ public class ZonalFuelProfile {
                     topTotalFuel += fuelFlow;
                     topTotalFuelHeat += fuelHeat;
                 }
-                topZoneFuels[o][USpeedCol] = iParam.speed / thicknessFactor / 60;
-                topZoneFuels[o][UOutputCol] = iParam.output / 1000;
+                topZoneFuels[o][USpeedCol] = iParam.speed / thicknessFactor * speedConverter;
+                topZoneFuels[o][UOutputCol] = iParam.output * capacityConverter;
                 topZoneFuels[o][TotFuelCol] = topTotalFuel;
-                topZoneFuelHeat[o][USpeedCol] = iParam.speed / thicknessFactor / 60;
-                topZoneFuelHeat[o][UOutputCol] = iParam.output / 1000;
+                topZoneFuelHeat[o][USpeedCol] = iParam.speed / thicknessFactor * speedConverter;
+                topZoneFuelHeat[o][UOutputCol] = iParam.output * capacityConverter;
                 topZoneFuelHeat[o][TotHeatCol] = topTotalFuelHeat;
                 if (nBotZones > 0) {
                     botTotalFuel = 0;
@@ -129,11 +159,11 @@ public class ZonalFuelProfile {
                         botTotalFuel += fuelFlow;
                         botTotalFuelHeat += fuelHeat;
                     }
-                    botZoneFuels[o][USpeedCol] = iParam.speed / thicknessFactor / 60;
-                    botZoneFuels[o][UOutputCol] = iParam.output / 1000;
+                    botZoneFuels[o][USpeedCol] = iParam.speed / thicknessFactor * speedConverter;
+                    botZoneFuels[o][UOutputCol] = iParam.output * capacityConverter;
                     botZoneFuels[o][TotFuelCol] =botTotalFuel;
-                    botZoneFuelHeat[o][USpeedCol] = iParam.speed / thicknessFactor / 60;
-                    botZoneFuelHeat[o][UOutputCol] = iParam.output / 1000;
+                    botZoneFuelHeat[o][USpeedCol] = iParam.speed / thicknessFactor * speedConverter;
+                    botZoneFuelHeat[o][UOutputCol] = iParam.output * capacityConverter;
                     botZoneFuelHeat[o][TotHeatCol] = botTotalFuelHeat;
                 }
                 outputFactor += step;
@@ -142,16 +172,34 @@ public class ZonalFuelProfile {
                 allOk = false;
         }
         if (allOk) {
-            speedFuelArray(false);
-            speedFHArray(false);
+            speedTotalFuelTop = speedFuelArray(false);
+            speedTotalFHTop =  speedFHArray(false);
             if (nBotZones > 0) {
-                speedFuelArray(true);
-                speedFHArray(false);
+                speedTotalFuelBot = speedFuelArray(true);
+                speedTotalFHBot = speedFHArray(false);
             }
         }
         return allOk;
     }
 
+ /*
+    void prepareSpeedTotalFuelArray(boolean bBot) {
+        XYArray speedTotalFuel;
+        if (bBot)
+            speedTotalFuel = speedTotalFHBot = new XYArray();
+        else
+            speedTotalFuel = speedTotalFHTop = new XYArray();
+        Double[][] allZoneFuels = (bBot) ? botZoneFuels : topZoneFuels;
+        for (int r = 0; r < nOutputSteps; r++)
+            speedTotalFuel.add(allZoneFuels[r][TotFuelCol], allZoneFuels[r][USpeedCol]);
+    }
+
+    void prepareSpeedTotalFuelArray() {
+        prepareSpeedTotalFuelArray(false);
+        if (performanceTable.furnace.bTopBot)
+            prepareSpeedTotalFuelArray(true);
+    }
+*/
     public double[][] oneZoneFuelArray(int zNum, boolean bBot) {
         double[][] zoneFuel = new double[nOutputSteps][(bBot) ? nBotZones : nTopZones];
         if (zNum >=0 && zNum < ((bBot) ? nBotZones : nTopZones)) {
@@ -200,7 +248,7 @@ public class ZonalFuelProfile {
     /*
      based on total fuel
     */
-    XYArray speedFuelArray(boolean bBot) {
+    protected XYArray speedFuelArray(boolean bBot) {
         XYArray arr;
         Double[][] table;
         if (bBot) {
@@ -212,9 +260,9 @@ public class ZonalFuelProfile {
             table = topZoneFuels;
         }
         if (arr == null)
-            arr = new XYArray(table, 0, 2);
+            arr = new XYArray(table, USpeedCol, TotFuelCol);
         else
-            arr.setValues(table, 0, 2);
+            arr.setValues(table, USpeedCol, TotFuelCol);
         return arr;
     }
 
@@ -246,7 +294,7 @@ public class ZonalFuelProfile {
             return speedTotalFuelTop.getXat(totFuel);
     }
 
-    public double recommendedSpeedOnFH(double totalFH, boolean bBot) {
+    public double recommendedSpeedOnFuelHeat(double totalFH, boolean bBot) {
         if (bBot)
             return speedTotalFHBot.getXat(totalFH);
         else

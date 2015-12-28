@@ -314,7 +314,7 @@ public class FieldResults {
         return bRetVal;
     }
 
-    double totFuel() {
+    public double totFuel() {
         totalFuel = totFuel(false);
         if (l2Furnace.bTopBot)
             totalFuel += totFuel(true);

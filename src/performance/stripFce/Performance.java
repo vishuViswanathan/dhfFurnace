@@ -602,7 +602,7 @@ public class Performance {
             public void actionPerformed(ActionEvent e) {
                 double fh = ntTotFH.getData();
                 if (fh > 0) {
-                    nlSpeedFH.setData(fuelP.recommendedSpeedOnFH(fh, false));
+                    nlSpeedFH.setData(fuelP.recommendedSpeedOnFuelHeat(fh, false));
                 }
             }
         });

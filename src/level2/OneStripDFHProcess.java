@@ -4,6 +4,8 @@ import basic.ChMaterial;
 import basic.ProductionData;
 import directFiredHeating.DFHTuningParams;
 import mvUtils.display.*;
+import mvUtils.math.BooleanWithStatus;
+import mvUtils.math.DoubleWithStatus;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 
@@ -94,56 +96,84 @@ public class OneStripDFHProcess {
             return 1;
     }
 
-    public ErrorStatAndMsg checkStripSize(double width, double thickness) {
-        ErrorStatAndMsg errStat = new ErrorStatAndMsg();
-        checkWidth(width, errStat);
-        checkThickness(thickness, errStat);
-        return errStat;
+    public BooleanWithStatus checkStripSize(double width, double thickness) {
+        BooleanWithStatus stat = new BooleanWithStatus(true);
+        checkWidth(width, stat);
+        checkThickness(thickness, stat);
+        return stat;
     }
 
-    public ErrorStatAndMsg checkUnitOutput(double unitOutput, ErrorStatAndMsg errStat) {
+    public BooleanWithStatus checkUnitOutput(double unitOutput, BooleanWithStatus stat) {
         if (unitOutput > maxUnitOutput)
-            errStat.addErrorMsg("Unit Output is high <" + unitOutput + ">");
+            stat.setErrorMessage("Unit Output is high <" + unitOutput + ">");
         else if (unitOutput < minUnitOutput)
-            errStat.addErrorMsg("Unit Output is low <" + unitOutput + ">");
-        return errStat;
+            stat.setErrorMessage("Unit Output is low <" + unitOutput + ">");
+        return stat;
     }
 
-    public ErrorStatAndMsg checkWidth(double width, ErrorStatAndMsg errStat) {
-        if (width > maxWidth)
-            errStat.addErrorMsg("Strip Width is high <" + width + ">");
-        else if (width < minWidth)
-            errStat.addErrorMsg("Strip Width is low <" + width + ">");
-        return errStat;
+    public DoubleWithStatus checkAndLimitOutput(double output, double width, double thickness) {
+        BooleanWithStatus response = checkStripSize(width, thickness);
+        StatusWithMessage.DataStat stat = response.getDataStatus();
+        DoubleWithStatus outputWithStatus = new DoubleWithStatus(0);
+        if (stat == StatusWithMessage.DataStat.OK) {
+            if (response.getValue()) {
+                double unitOutput = output / width;
+                if (unitOutput > maxUnitOutput)
+                    outputWithStatus.setValue(maxUnitOutput * width, "Limited by Unit Output");
+                else if (unitOutput < minUnitOutput)
+                    outputWithStatus.setErrorMessage("Output is low <" + output + ">");
+                else
+                    outputWithStatus.setValue(output);
+            }
+        }
+        else
+            outputWithStatus.setErrorMessage(response.getErrorMessage());
+        return outputWithStatus;
     }
 
-    public ErrorStatAndMsg checkThickness(double thick, ErrorStatAndMsg errStat) {
-        if (thick > maxThickness)
-            errStat.addErrorMsg("Strip Thickness is high <" + thick + ">");
-        else if (thick < minThickness)
-            errStat.addErrorMsg("Strip Thickness is low <" + thick + ">");
-        return errStat;
+    public BooleanWithStatus checkWidth(double width, BooleanWithStatus stat) {
+        if (stat.getDataStatus() == StatusWithMessage.DataStat.OK) {
+            if (width > maxWidth)
+                stat.setErrorMessage("Strip Width is high <" + width + ">");
+            else if (width < minWidth)
+                stat.setErrorMessage("Strip Width is low <" + width + ">");
+        }
+        return stat;
+    }
+
+    public BooleanWithStatus checkThickness(double thick, BooleanWithStatus stat) {
+        if (stat.getDataStatus() == StatusWithMessage.DataStat.OK) {
+            if (thick > maxThickness)
+                stat.setErrorMessage("Strip Thickness is high <" + thick + ">");
+            else if (thick < minThickness)
+                stat.setErrorMessage("Strip Thickness is low <" + thick + ">");
+        }
+        return stat;
     }
 
 
-    public ErrorStatAndMsg isStripAcceptable(double output, double width, double thickness) {
-        ErrorStatAndMsg response = checkStripSize(width , thickness);
-        if (!response.inError)
+    public BooleanWithStatus isStripAcceptable(double output, double width, double thickness) {
+        BooleanWithStatus response = checkStripSize(width, thickness);
+        if ((response.getDataStatus() == StatusWithMessage.DataStat.OK) && (response.getValue()))
             checkUnitOutput((output / width), response);
         return response;
     }
 
-    DataWithMsg getRecommendedSpeed(double output, double width, double thickness) {
-        DataWithMsg data = new DataWithMsg();
-        ErrorStatAndMsg response = isStripAcceptable(output, width, thickness);
-        if (!response.inError) {
-            double speed = output / (width * thickness * density);
-            data.doubleValue = (speed > maxSpeed) ? maxSpeed : speed;
-            data.valid = true;
+    DoubleWithStatus getRecommendedSpeed(double output, double width, double thickness) {
+        DoubleWithStatus response = checkAndLimitOutput(output, width, thickness);
+        StatusWithMessage.DataStat status = response.getDataStatus();
+        if (status != StatusWithMessage.DataStat.WithErrorMsg) {
+            double speed = response.getValue() / (width * thickness * density);
+            if (speed > maxSpeed) {
+                speed = maxSpeed;
+                response.setValue(speed, "Restricted by Maximum Process Speed");
+            }
+            else {
+                if (status == StatusWithMessage.DataStat.WithInfoMsg)
+                    response.setValue(speed, response.getInfoMessage());   // if it had any infoMessage, it ic forwarded
+            }
         }
-        else
-            data.setErrorMsg(response.msg);
-        return data;
+        return response;
     }
 
     boolean takeDataFromXML(String xmlStr) {
