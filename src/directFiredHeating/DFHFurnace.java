@@ -788,7 +788,7 @@ public class DFHFurnace {
         return addResultsToPerfBase();
     }
 
-    boolean addToPerfBase() {
+    protected boolean addToPerfBase() {
         return addResultsToPerfBase();
     }
 

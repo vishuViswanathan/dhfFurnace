@@ -448,25 +448,37 @@ public class DFHTuningParams {
         return bRetVal;
     }
 
-
+    GridBagConstraints mainGbc = new GridBagConstraints();
+    JPanel mainTuningPanel = new FramedPanel(new GridBagLayout());
 
     JPanel getTuningPanel() {
-        JPanel jp = new FramedPanel(new GridBagLayout());
-        jp.setBackground(new JPanel().getBackground());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.gridwidth = 2;
-        jp.add(getProcSetPanel(), gbc);
-        gbc.gridy++;
-        gbc.gridwidth = 1;
-        jp.add(settings1Pan(), gbc);
-        gbc.gridx++;
-        jp.add(setting2Pan(), gbc);
-        gbc.gridy++;
-        jp.add(performancePan(), gbc);
+//        JPanel mainTuningPanel = new FramedPanel(new GridBagLayout());
+        mainTuningPanel.setBackground(new JPanel().getBackground());
+//        GridBagConstraints mainGbc = new GridBagConstraints();
+        mainGbc.gridx = 0;
+        mainGbc.gridy = 0;
+        mainGbc.gridwidth = 2;
+        mainTuningPanel.add(getProcSetPanel(), mainGbc);
+        mainGbc.gridy++;
+        mainGbc.gridwidth = 1;
+        mainTuningPanel.add(settings1Pan(), mainGbc);
+        mainGbc.gridx++;
+        mainTuningPanel.add(setting2Pan(), mainGbc);
+        mainGbc.gridx = 0;
+        mainGbc.gridy++;
+        mainTuningPanel.add(performancePan(), mainGbc);
 
-        return jp;
+        return mainTuningPanel;
+    }
+
+    public void addToTuningPanel(JPanel jp)  {
+        if (mainGbc.gridx == 0)
+            mainGbc.gridx++;
+        else {
+            mainGbc.gridy++;
+            mainGbc.gridx = 0;
+        }
+        mainTuningPanel.add(jp, mainGbc);
     }
 
     JPanel getProcSetPanel() {

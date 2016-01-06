@@ -2440,44 +2440,44 @@ public class DFHeating extends JApplet implements InputControl {
         calculateFce(resultsReadyListener, true, bResetLossFactor, true);
     }
 
-    protected void calculateFceOLD(boolean bResetLossFactor, ResultsReadyListener resultsReadyListener) {    //TODO ro be removed
-        initPrintGroups();
-        enableResultsMenu(false);
-        if (bResetLossFactor) {
-            furnace.resetLossFactor();
-            takeValuesFromUI();
-        }
-        while (checkData()) {
-            if (furnace.showZoneDataMsgIfRequired(pbCalculate)) {
-                if (!commFuel.bMixedFuel && fuelTemp > 0 && !tuningParams.bOnProductionLine
-                        && !commFuel.isSensHeatSpecified(this, fuelTemp)) {
-                    commFuel.getSpHtData(this, tfFuelTemp);
-                }
-                furnace.setCommonFuel(new FuelFiring(commFuel, false, excessAir, airTemp, fuelTemp));  // as normal burner
-//                theCharge = new Charge(selChMaterial, chLength, chWidth, chThickness);
-                theCharge = new Charge(selChMaterial, chLength, chWidth, chThickness, chDiameter, (Charge.ChType)cbChType.getSelectedItem());
-                production = new ProductionData();
-                production.setCharge(theCharge, chPitch);
-                production.setProduction(tph * 1000, nChargeRows, entryTemp, exitTemp, deltaTemp, bottShadow);
-                production.setExitZoneTempData(exitZoneFceTemp, minExitZoneFceTemp);
-                furnace.setProduction(production);
-                if (evaluator != null)
-                    if (evaluator.stopped)
-                        evaluator = null;
-                if (evaluator == null) {
-                    enableCalculStat();
-
-                    Thread evalThread = new Thread(evaluator = new FceEvaluator(this, slate, furnace, calculStep));
-                    enablePauseCalcul();   // TODO to be removed since nothing happens?
-                    addResultsListener(resultsReadyListener);
-//                    runOn = true;
-                    evalThread.start();
-                } else
-                    showError("Earlier Calculation is still ON!");
-            }
-            break;
-        }
-    }
+//    protected void calculateFceOLD(boolean bResetLossFactor, ResultsReadyListener resultsReadyListener) {    //TODO ro be removed
+//        initPrintGroups();
+//        enableResultsMenu(false);
+//        if (bResetLossFactor) {
+//            furnace.resetLossFactor();
+//            takeValuesFromUI();
+//        }
+//        while (checkData()) {
+//            if (furnace.showZoneDataMsgIfRequired(pbCalculate)) {
+//                if (!commFuel.bMixedFuel && fuelTemp > 0 && !tuningParams.bOnProductionLine
+//                        && !commFuel.isSensHeatSpecified(this, fuelTemp)) {
+//                    commFuel.getSpHtData(this, tfFuelTemp);
+//                }
+//                furnace.setCommonFuel(new FuelFiring(commFuel, false, excessAir, airTemp, fuelTemp));  // as normal burner
+////                theCharge = new Charge(selChMaterial, chLength, chWidth, chThickness);
+//                theCharge = new Charge(selChMaterial, chLength, chWidth, chThickness, chDiameter, (Charge.ChType)cbChType.getSelectedItem());
+//                production = new ProductionData();
+//                production.setCharge(theCharge, chPitch);
+//                production.setProduction(tph * 1000, nChargeRows, entryTemp, exitTemp, deltaTemp, bottShadow);
+//                production.setExitZoneTempData(exitZoneFceTemp, minExitZoneFceTemp);
+//                furnace.setProduction(production);
+//                if (evaluator != null)
+//                    if (evaluator.stopped)
+//                        evaluator = null;
+//                if (evaluator == null) {
+//                    enableCalculStat();
+//
+//                    Thread evalThread = new Thread(evaluator = new FceEvaluator(this, slate, furnace, calculStep));
+//                    enablePauseCalcul();   // TODO to be removed since nothing happens?
+//                    addResultsListener(resultsReadyListener);
+////                    runOn = true;
+//                    evalThread.start();
+//                } else
+//                    showError("Earlier Calculation is still ON!");
+//            }
+//            break;
+//        }
+//    }
 
     public void calculateFce() {
         calculateFce(true, null);
@@ -2616,7 +2616,7 @@ public class DFHeating extends JApplet implements InputControl {
         return (vp.val.equals(DFHversion));
     }
 
-    public String takeDataFromXML(String xmlStr) {
+    public String takeProfileDataFromXML(String xmlStr) {
         enableResultsMenu(false);
         String errMsg = "";
         boolean allOK = true;
@@ -3104,9 +3104,17 @@ public class DFHeating extends JApplet implements InputControl {
     }
 
     public void showError(String msg) {
+        showError(msg, null);
+//        error(msg);
+//        JOptionPane.showMessageDialog(parent(), msg, "ERROR", JOptionPane.ERROR_MESSAGE);
+//        parent().toFront();
+    }
+
+    public void showError(String msg, Window callerWindow) {
         error(msg);
-        JOptionPane.showMessageDialog(parent(), msg, "ERROR", JOptionPane.ERROR_MESSAGE);
-        parent().toFront();
+        if (callerWindow == null) callerWindow = parent();
+        JOptionPane.showMessageDialog(callerWindow, msg, "ERROR", JOptionPane.ERROR_MESSAGE);
+        callerWindow.toFront();
     }
 
     public void showMessage(String msg) {
@@ -3154,7 +3162,7 @@ public class DFHeating extends JApplet implements InputControl {
         debug("s = [" + s + "]");
     }
 
-    void saveFceToFile(boolean withPerformance) {
+    protected void saveFceToFile(boolean withPerformance) {
         if (asJNLP)
             saveFceToFileJNLP(withPerformance);
         else {
@@ -3220,7 +3228,7 @@ public class DFHeating extends JApplet implements InputControl {
                 if (bXL) {
                     String fceData = fceDataFromXL(fc);
                     if (checkVersion(fceData)) {
-                        String msg = takeDataFromXML(fceData);
+                        String msg = takeProfileDataFromXML(fceData);
                         if ((msg.equals("OK"))) {
                             bRetVal = true;
                             parent().toFront();
@@ -3268,7 +3276,7 @@ public class DFHeating extends JApplet implements InputControl {
                 if (bXL) {
                     String fceData = fceDataFromXL(filePath);
                     if (checkVersion(fceData)) {
-                        String msg = takeDataFromXML(fceData);
+                        String msg = takeProfileDataFromXML(fceData);
                         if ((msg.equals("OK"))) {
                             bRetVal = true;
                             parent().toFront();
@@ -3404,7 +3412,7 @@ public class DFHeating extends JApplet implements InputControl {
                 if (checkVersion(header)) {
                     String fceData = JNLPFileHandler.readFile(fc);
                     if (fceData != null) {
-                        String stat = takeDataFromXML(fceData);
+                        String stat = takeProfileDataFromXML(fceData);
                         if (stat.equals("OK")) {
                             bRetVal = true;
                             parent().toFront();
@@ -3436,7 +3444,7 @@ public class DFHeating extends JApplet implements InputControl {
                 if (iStream.read(data, 0, 200) == 200) {
                     if (checkVersion(new String(data, 0, 200))) {
                         iStream.read(data, 200, iLen - 200);
-                        String stat = takeDataFromXML(new String(data));
+                        String stat = takeProfileDataFromXML(new String(data));
                         if (stat.equals("OK")) {
                             bRetVal = true;
                             parent().toFront();

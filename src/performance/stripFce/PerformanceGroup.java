@@ -192,7 +192,7 @@ public class PerformanceGroup implements ActionListener{
 
     // @TODO - to be REMOVED
     public Performance getRefPerformance(ChMaterial chMaterial, double exitTemp) {
-        return getRefPerformance(chMaterial, exitTemp, 1.0);
+        return getRefPerformance(chMaterial, exitTemp, tuningParams.exitTempTolerance);
     }
 
 //    private Performance getNearerPerformance(ProductionData forProduction) {

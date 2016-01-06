@@ -143,14 +143,14 @@ public class L2Zone extends L2ParamGroup {
     class ZoneSubscriptionListener extends L2SubscriptionListener {
         public void onDataChange(Subscription subscription, MonitoredDataItem monitoredDataItem, DataValue dataValue) {
             String fromElement =  monitoredDataItem.toString();
-            info("From L2Zones " + groupName + ":fromElement-" + fromElement + ", VALUE: " + dataValue.getValue().toStringWithType());
+//            info("From L2Zones " + groupName + ":fromElement-" + fromElement + ", VALUE: " + dataValue.getValue().toStringWithType());
             Tag theTag = monitoredTags.get(monitoredDataItem);
-            if ((monitoredTagsReady) && theTag.element == Parameter.Temperature) {
-                info(groupName + ".Temperature changed to " + theTag.getValue().floatValue );
+//            if ((monitoredTagsReady) && theTag.element == Parameter.Temperature) {
+//                info(groupName + ".Temperature changed to " + theTag.getValue().floatValue );
 //                ProcessValue v = setValue(Parameter.Temperature, Tag.TagName.SP, theTag.getValue().floatValue + 100);
 //                if (!v.valid)
 //                    showError(v.errorMessage);
-            }
+//            }
          }
 
     }

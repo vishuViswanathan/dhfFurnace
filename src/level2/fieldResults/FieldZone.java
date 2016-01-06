@@ -108,7 +108,9 @@ public class FieldZone {
         double calculatedFlueTempOut = sec.getTempFlueOut();
         double calculatedFceTemp = oneZone.fceTemp;
         // assuming same ratio between the flueOutTemp and FceTemp calculated frFlueTempOut
-        double frFlueTempOut = calculatedFlueTempOut / calculatedFceTemp * frFceTemp;
+        double frFlueTempOut = (l2Furnace.furnaceSettings.considerFieldZoneTempForLossCorrection) ?
+                calculatedFlueTempOut / calculatedFceTemp * frFceTemp :
+                calculatedFlueTempOut;
         double frNetFuelHeat = frFuelFlow * zonalFuelFiring.netUsefulFromFuel(frFlueTempOut, frAirTemp);
 //        double frHeatFromPassingFlue = passingFlue.flow *
 //                (zonalFuelFiring.flueHeatPerUFuel(passingFlue.temperature, frFlueTempOut));

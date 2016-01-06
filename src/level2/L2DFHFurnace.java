@@ -41,7 +41,7 @@ import java.util.Vector;
  */
 public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2Interface {
     public TMuaClient source;
-    FurnaceSettings furnaceSettings;
+    public FurnaceSettings furnaceSettings;
     LinkedHashMap<FceSection, L2Zone> topL2Zones;
     LinkedHashMap<FceSection, L2Zone> botL2Zones;
     ReadyNotedParam l2InfoMessages;
@@ -166,7 +166,7 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2
 
                 Tag[] stripTemperatureTags = {
                         new Tag(L2ParamGroup.Parameter.Temperature, Tag.TagName.SP, false, false),
-                        new Tag(L2ParamGroup.Parameter.Temperature, Tag.TagName.PV, false, true),   // TODO strip Temperature is monitored
+                        new Tag(L2ParamGroup.Parameter.Temperature, Tag.TagName.PV, false, false),
                         new Tag(L2ParamGroup.Parameter.Temperature, Tag.TagName.CV, false, false),
                         new Tag(L2ParamGroup.Parameter.Temperature, Tag.TagName.Mode, false, false) };
                 location = "Strip Temperature tags";
@@ -174,12 +174,12 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2
                 noteMonitoredTags(stripTemperatureTags);
                 Tag[] stripSpeedTags = {
                         new Tag(L2ParamGroup.Parameter.Speed, Tag.TagName.SP, false, false),
-                        new Tag(L2ParamGroup.Parameter.Speed, Tag.TagName.PV, false, true)}; // TODO strip speed is monitored
+                        new Tag(L2ParamGroup.Parameter.Speed, Tag.TagName.PV, false, false)};
                 location = "Strip Speed tags";
                 stripZone.addOneParameter(L2ParamGroup.Parameter.Speed, stripSpeedTags);
                 noteMonitoredTags(stripSpeedTags);
                 Tag[] stripStatusTags = {
-                        new Tag(L2ParamGroup.Parameter.Status, Tag.TagName.Length, false, true)};  // TODO balance length monitored
+                        new Tag(L2ParamGroup.Parameter.Status, Tag.TagName.Length, false, false)};
                 location = "Strip Status tags";
                 stripZone.addOneParameter(L2ParamGroup.Parameter.Status, stripStatusTags);
                 noteMonitoredTags(stripStatusTags);
@@ -709,33 +709,45 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2
 
     void handleFieldData()  {
         if (level2Enabled) {
-            ErrorStatAndMsg stat = l2DFHeating.takeResultsFromLevel1();
-            if (stat.inError) {
-                showErrorInLevel1(stat.msg);
-            } else {
-                showInfoInLevel1("Evaluating from Model");
-                commonDFHZ.setValue(L2ParamGroup.Parameter.FieldData, Tag.TagName.Noted, true);
-                calculatedForFieldResults = l2DFHeating.evalForFieldProduction(this);
+            if (fieldDataIsBeingHandled)
+                showErrorInLevel1("Last field data is still being handled. Retry later");
+            else {
+                fieldDataIsBeingHandled = true;
+                ErrorStatAndMsg stat = l2DFHeating.takeResultsFromLevel1();
+                if (stat.inError) {
+                    showErrorInLevel1(stat.msg);
+                } else {
+                    showInfoInLevel1("Evaluating from Model");
+                    commonDFHZ.setValue(L2ParamGroup.Parameter.FieldData, Tag.TagName.Noted, true);
+                    calculatedForFieldResults = l2DFHeating.evalForFieldProduction(this);
+                }
             }
         }
         else
             l2DFHeating.showMessage("Level2 is not enabled from Level1");
     }
 
+    boolean fieldDataIsBeingHandled = false;
+
     public void noteResultsReady() {
 //        controller.showMessage("results ready Noted by L2DFHFurnace");
         if (calculatedForFieldResults) {
+            info("calculated for Field process ..............");
             calculatedForFieldResults = false;
             reCalculateWithFieldCorrections = true;
             l2DFHeating.recalculateWithFieldCorrections(this);
-        }
-        else if (reCalculateWithFieldCorrections) {
+        } else if (reCalculateWithFieldCorrections) {
+            info("recalculated with Field Corrections .......... ");
             reCalculateWithFieldCorrections = false;
             boolean response = getYesNoResponseFromLevel1(
                     String.format("%s, %tc",
-                                        "Do you want to save as reference ", Calendar.getInstance()), 10);
-            l2DFHeating.showMessage("The response was " +
-                    ((response) ? ("" + l2YesNoQuery.getValue(Tag.TagName.Response).booleanValue) : " No Response"));
+                            "Do you want to save as reference ", Calendar.getInstance()), 50);
+            boolean saveIt =  (response) && (l2YesNoQuery.getValue(Tag.TagName.Response).booleanValue);
+//            l2DFHeating.showMessage("The response was " +
+//                    ((response) ? ("" + l2YesNoQuery.getValue(Tag.TagName.Response).booleanValue) : " No Response"));
+            if (saveIt)
+                addToPerfBase();
+            fieldDataIsBeingHandled = false;
         }
     }
 

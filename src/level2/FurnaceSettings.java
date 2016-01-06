@@ -6,6 +6,8 @@ import mvUtils.mvXML.XMLmv;
 import mvUtils.math.DoubleRange;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -28,6 +30,7 @@ public class FurnaceSettings   {
     public boolean inError = false;
     double fuelTurnDown = 7;
     int fuelCharSteps = 7;
+    public boolean considerFieldZoneTempForLossCorrection = false;
 
     public FurnaceSettings(L2DFHeating l2DFHeating) {
         this.l2DFHeating = l2DFHeating;
@@ -93,6 +96,8 @@ public class FurnaceSettings   {
                 maxSpeed = Double.valueOf(vp.val);
                 vp = XMLmv.getTag(xmlStr, "fuelCharSteps", 0);
                 fuelCharSteps = Integer.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "considerFieldZoneTempForLossCorrection", 0);
+                considerFieldZoneTempForLossCorrection = (vp.val.equals("1"));
                 vp = XMLmv.getTag(xmlStr, "fuelRanges", 0);
                 retVal = takeFuelRangesFromXML(vp.val);
                 if (retVal)
@@ -110,6 +115,7 @@ public class FurnaceSettings   {
     public StringBuffer dataInXML() {
         StringBuffer xmlStr = new StringBuffer(XMLmv.putTag("maxSpeed", maxSpeed));
         xmlStr.append(XMLmv.putTag("fuelCharSteps", "" + fuelCharSteps));
+        xmlStr.append(XMLmv.putTag("considerFieldZoneTempForLossCorrection", considerFieldZoneTempForLossCorrection));
         xmlStr.append(XMLmv.putTag("fuelRanges", fuelRangesInXML()));
         return xmlStr;
     }
@@ -170,6 +176,7 @@ public class FurnaceSettings   {
         EditResponse.Response response;
         NumberTextField ntMaxSpeed;
         NumberTextField ntFuelSegments;
+        JRadioButton rbConsiderFieldZoneTempForLossCorrection;
         NumberTextField[] ntRangeMax;
         NumberTextField[] ntTurnDown;
         int nZones;
@@ -193,8 +200,20 @@ public class FurnaceSettings   {
             editorPanel = new DataListEditorPanel("Furnace Fuel Settings", this, true);
             ntMaxSpeed = new NumberTextField(ipc, maxSpeed, 6, false, 10, 500, "#,###", "Maximum Process Speed (m/mt)");
             ntFuelSegments = new NumberTextField(ipc, fuelCharSteps, 6, false, 3, 10, "##", "Fuel Characteristics-steps)");
+            rbConsiderFieldZoneTempForLossCorrection =
+                    new JRadioButton("Take Field Zone Temp For Loss Check", considerFieldZoneTempForLossCorrection);
+            rbConsiderFieldZoneTempForLossCorrection.addChangeListener(new ChangeListener() {
+                public void stateChanged(ChangeEvent e) {
+                    if (rbConsiderFieldZoneTempForLossCorrection.isSelected()) {
+                        l2DFHeating.showError("Not ready for this to be ON", FceSettingsDlg.this);
+                        rbConsiderFieldZoneTempForLossCorrection.setSelected(false);
+                    }
+                }
+            });
             editorPanel.addItemPair(ntMaxSpeed);
             editorPanel.addItemPair(ntFuelSegments);
+            editorPanel.addBlank();
+            editorPanel.addItem(rbConsiderFieldZoneTempForLossCorrection);
             editorPanel.addBlank();
             double max, td;
             nZones = l2DFHeating.l2Furnace.nTopActiveSecs;
@@ -242,6 +261,7 @@ public class FurnaceSettings   {
         public boolean saveData() {
             maxSpeed = ntMaxSpeed.getData();
             fuelCharSteps = (int)ntFuelSegments.getData();
+            considerFieldZoneTempForLossCorrection = rbConsiderFieldZoneTempForLossCorrection.isSelected();
             for (int z = 0; z < nZones; z++) {
                 zoneFuelRange[z].max = ntRangeMax[z].getData();
                 zoneFuelRange[z].min = zoneFuelRange[z].max / ntTurnDown[z].getData();

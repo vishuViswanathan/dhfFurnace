@@ -8,16 +8,19 @@ import directFiredHeating.ResultsReadyListener;
 import display.QueryDialog;
 import mvUtils.display.ErrorStatAndMsg;
 import mvUtils.display.FramedPanel;
+import mvUtils.file.FileChooserWithOptions;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import org.apache.log4j.Logger;
 import protection.MachineCheck;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
+import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.Vector;
 
@@ -54,6 +57,8 @@ public class L2DFHeating extends DFHeating {
 
     JMenuItem mIEvalForFieldProduction;
     JMenuItem mIEvalWithFieldCorrection;
+
+    JMenuItem mISavePerformaceData;
 
     boolean l2MenuSet = false;
 
@@ -104,91 +109,32 @@ public class L2DFHeating extends DFHeating {
             showMainAppPanel();  // TODO TEMPERRORY -- TO be changed
             switchPage(InputType.INPUTPAGE);
 //            displayIt();
-            getL2FceFromFile();
-            furnace.setWidth(width);
-            enableDataEdit();
-            createMenuBars();
-//            if (allowL2Changes) {
-//                mL2Configuration = new JMenu("L2 Config");
-//                mICreateFceSettings = new JMenuItem("View/Edit Furnace Settings");
-//                mIReadFceSettings = new JMenuItem("Read Furnace Settings from file");
-//                mISaveFceSettings = new JMenuItem("Save Furnace Settings to file");
-//
-//                mIEditDFHStripProcess = new JMenuItem("Add/Edit StripDFHProcess List");
-//                mIViewDFHStripProcess = new JMenuItem("View StripDFHProcess List");
-//                mIReadDFHStripProcess = new JMenuItem("Read StripDFHProcess List from File");
-//                mISaveDFHStripProcess = new JMenuItem("Save StripDFHProcess List to File");
-//
-//                mICreateFieldResultsData = new JMenuItem("Enter Field Results Data");
-//                mISaveFieldResultsToFile = new JMenuItem("Save Field Results to file");
-//                mILevel1FieldResults = new JMenuItem("Take Results From Level1");
-//                mILoadFieldResult = new JMenuItem("Load Field Results from File");
-//                mISaveAsFieldResult = new JMenuItem("Save As Field Results");
-//                mISaveAsFieldResult.setEnabled(false);
-//                mIEvalForFieldProduction = new JMenuItem("Calculate for Field Production");
-//                mIEvalForFieldProduction.setEnabled(false);
-//                mIEvalWithFieldCorrection = new JMenuItem("Re-Calculate With Field Corrections");
-//                mIEvalWithFieldCorrection.setEnabled(false);
-//
-//                StripProcMenuListener li = new StripProcMenuListener();
-//                mICreateFceSettings.addActionListener(li);
-//                mIReadFceSettings.addActionListener(li);
-//                mISaveFceSettings.addActionListener(li);
-//                mIViewDFHStripProcess.addActionListener(li);
-//                mIEditDFHStripProcess.addActionListener(li);
-//                mISaveDFHStripProcess.addActionListener(li);
-//                mIReadDFHStripProcess.addActionListener(li);
-//                mICreateFieldResultsData.addActionListener(li);
-//                mISaveFieldResultsToFile.addActionListener(li);
-//                mILevel1FieldResults.addActionListener(li);
-//                mILoadFieldResult.addActionListener(li);
-//                mISaveAsFieldResult.addActionListener(li);
-//                mIEvalForFieldProduction.addActionListener(li);
-//                mIEvalWithFieldCorrection.addActionListener(li);
-//
-//                mL2Configuration.add(mICreateFceSettings);
-//                mL2Configuration.add(mIReadFceSettings);
-//                mL2Configuration.add(mISaveFceSettings);
-//                mL2Configuration.addSeparator();
-//                mL2Configuration.add(mIViewDFHStripProcess);
-//                mL2Configuration.add(mIEditDFHStripProcess);
-//                mL2Configuration.add(mIReadDFHStripProcess);
-//                mL2Configuration.add(mISaveDFHStripProcess);
-//                mL2Configuration.addSeparator();
-//                mL2Configuration.add(mICreateFieldResultsData);
-//                mL2Configuration.add(mISaveFieldResultsToFile);
-//                mL2Configuration.addSeparator();
-//                mL2Configuration.add(mILevel1FieldResults);
-//                mL2Configuration.add(mILoadFieldResult);
-//                mL2Configuration.add(mIEvalForFieldProduction);
-//                mL2Configuration.add(mIEvalWithFieldCorrection);
-//                mL2Configuration.addSeparator();
-//                mL2Configuration.add(mISaveAsFieldResult);
-//                mL2Configuration.setEnabled(true);
-//
-//
-//                menuBarMainApp.add(mL2Configuration);
-//                menuBarMainApp.updateUI();
+            if (getL2FceFromFile()) {
+                furnace.setWidth(width);
+                enableDataEdit();
+                createMenuBars();
                 l2MenuSet = true;
                 setFcefor(true);
-//            }
-            dfhProcessList = new StripDFHProcessList(this);
-            if (!getStripDFHProcessList()) {
-                showError("Problem loading test StripDFHProcess list data");
-                setStripProcessLookup();
-            }
-            if (getFurnaceSettings()) {
-                if (createL2Zones()) {
-                    ErrorStatAndMsg connStat = l2Furnace.checkConnection();
-                    if (connStat.inError)
-                        showError(connStat.msg);
-                    else {
-                        l2Furnace.initForLevel2Operation();
-                        l2SystemReady = true;
-                    }
+                dfhProcessList = new StripDFHProcessList(this);
+                if (getStripDFHProcessList()) {
+                    if (getFurnaceSettings()) {
+                        if (createL2Zones()) {
+                            ErrorStatAndMsg connStat = l2Furnace.checkConnection();
+                            if (connStat.inError)
+                                showError(connStat.msg);
+                            else {
+                                l2Furnace.initForLevel2Operation();
+                                l2SystemReady = true;
+                            }
+                        }
+                    } else
+                        showError("Problem in loading Furnace Settings");
                 }
-            } else
-                showError("Problem in loading Furnace Settings");
+                else
+                    showError("Problem loading test StripDFHProcess list data");
+            }
+            else
+                showError("Unable to load Furnace Profile");
         }
         else
             showError("Unable to start Level2 ERROR:001");
@@ -404,45 +350,48 @@ public class L2DFHeating extends DFHeating {
         return retVal;
     }
 
-    boolean saveSripProcessLookup() {
-        boolean retVal = false;
-        String title = "Save StripDFHProcess list";
-        FileDialog fileDlg =
-                new FileDialog(mainF, title,
-                        FileDialog.SAVE);
-        fileDlg.setFile("*.stripProc");
-        fileDlg.setVisible(true);
+    String stripProcExtension = "stripProc";
+    File fceDataLocationDirectory = new File(fceDataLocation);
 
-        String bareFile = fileDlg.getFile();
-        if (!(bareFile == null)) {
-            int len = bareFile.length();
-            if ((len < 11) || !(bareFile.substring(len - 10).equalsIgnoreCase(".stripProc"))) {
-                showMessage("Adding '.stripProc' to file name");
-                bareFile = bareFile + ".stripProc";
-            }
-            String fileName = fileDlg.getDirectory() + bareFile;
-            debug("SaveStripDFHProcess list file name :" + fileName);
-            File f = new File(fileName);
-            boolean goAhead = true;
-            if (goAhead) {
+    boolean saveDFHProcessList() {
+        boolean retVal = false;
+        if (isProfileCodeOK()) {
+            FileChooserWithOptions fileDlg = new FileChooserWithOptions("Save StripDFHProcess list",
+                    "StripDFHProcess List (*." + stripProcExtension + ")", stripProcExtension);
+            fileDlg.setSelectedFile(new File(profileCode + " stripDFHProcessList." + stripProcExtension));
+            fileDlg.setCurrentDirectory(fceDataLocationDirectory);
+            fileDlg.setStartWithString(profileCode);
+            if (currentView != null)
+                fileDlg.setFileSystemView(currentView);
+            if (fileDlg.showSaveDialog(parent()) == JFileChooser.APPROVE_OPTION) {
+                File file = fileDlg.getSelectedFile();
+                if (fileDlg.isItDuplicate()) {
+                    String fName = file.getAbsolutePath();
+                    markThisFileAsBak(file);
+                    file = new File(fName);
+                }
+                deleteParticularFiles("" + fceDataLocation, profileCode, stripProcExtension);
                 try {
-                    BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(fileName));
+                    BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(file));
                     oStream.write(("# StripDFhProcess List saved on " + dateFormat.format(new Date()) + " \n\n").getBytes());
-                    oStream.write(stripDFHProcessListInXML().getBytes());
+                    oStream.write((profileCodeInXML() + stripDFHProcessListInXML()).getBytes());
                     oStream.close();
                     retVal = true;
                 } catch (FileNotFoundException e) {
-                    showError("File " + fileName + " NOT found!");
+                    showError("File " + file + " NOT found!");
                 } catch (IOException e) {
-                    showError("Some IO Error in writing to file " + fileName + "!");
+                    showError("Some IO Error in writing to file " + file + "!");
                 }
             }
+            currentView = fileDlg.getFileSystemView();
         }
-        parent().toFront();
+        else {
+            showError("Save Profile before saving DFH Process List");
+        }
         return retVal;
     }
 
-    boolean readStripProcessLookup() {
+    boolean loadStripDFHProcessList() {
         boolean retVal = false;
         String title = "Read StripDFHProcess list";
         FileDialog fileDlg =
@@ -464,25 +413,39 @@ public class L2DFHeating extends DFHeating {
         if (!filePath.equals("nullnull")) {
             debug("File for StripDFHProcess list :" + filePath);
             try {
-                BufferedInputStream iStream = new BufferedInputStream(new FileInputStream(filePath));
-                //           FileInputStream iStream = new FileInputStream(fileName);
-                File f = new File(filePath);
-                long len = f.length();
-                if (len > 50 && len < 10000) {
-                    int iLen = (int) len;
-                    byte[] data = new byte[iLen + 10];
-                    if (iStream.read(data) > 50) {
-                        if (takeStripProcessListFromXML(new String(data))) {
+                retVal = loadStripDFHProcessList(new File(filePath));
+            } catch (Exception e) {
+                showError("Some Problem in getting file!");
+            }
+        }
+        return retVal;
+    }
+
+    boolean loadStripDFHProcessList(File file) {
+        boolean retVal = false;
+        try {
+            BufferedInputStream iStream = new BufferedInputStream(new FileInputStream(file));
+            //           FileInputStream iStream = new FileInputStream(fileName);
+            long len = file.length();
+            if (len > 50 && len < 10000) {
+                int iLen = (int) len;
+                byte[] data = new byte[iLen + 10];
+                if (iStream.read(data) > 50) {
+                    String xmlStr = new String(data);
+                    if (checkProfileCodeInXML(xmlStr)) {
+                        if (takeStripProcessListFromXML(xmlStr)) {
                             if (showDebugMessages)
                                 showMessage("StripDFHProcess list loaded");
                             retVal = true;
                         }
                     }
-                } else
-                    showError("File size " + len + " for " + filePath);
-            } catch (Exception e) {
-                showError("Some Problem in getting file!");
-            }
+                    else
+                        showError("mismatch in DFH Process List file");
+                }
+            } else
+                showError("File size " + len + " for " + file);
+        } catch (Exception e) {
+            showError("Some Problem in getting file!");
         }
         return retVal;
     }
@@ -500,42 +463,65 @@ public class L2DFHeating extends DFHeating {
         l2Furnace.showEditFceSettings(true);
     }
 
+    FileSystemView currentView;
+    String fceSettExtension = "fceSett";
+
     boolean saveFurnaceSettings() {
         boolean retVal = false;
-        String title = "Save Furnace Settings";
-        FileDialog fileDlg =
-                new FileDialog(mainF, title,
-                        FileDialog.SAVE);
-        fileDlg.setFile("*.fceSett");
-        fileDlg.setVisible(true);
-
-        String bareFile = fileDlg.getFile();
-        if (!(bareFile == null)) {
-            int len = bareFile.length();
-            if ((len < 9) || !(bareFile.substring(len - 8).equalsIgnoreCase(".fceSett"))) {
-                showMessage("Adding '.fceSett' to file name");
-                bareFile = bareFile + ".fceSett";
-            }
-            String fileName = fileDlg.getDirectory() + bareFile;
-            debug("Save Furnace Settings file name :" + fileName);
-//            File f = new File(fileName);
-            boolean goAhead = true;
-            if (goAhead) {
+        if (isProfileCodeOK()) {
+            String title = "Save Furnace Settings";
+            FileChooserWithOptions fileDlg = new FileChooserWithOptions(title, "Furnace Settings (*." + fceSettExtension + ")", fceSettExtension);
+            fileDlg.setSelectedFile(new File(profileCode + " Furnace Settings." + fceSettExtension));
+            fileDlg.setCurrentDirectory(fceDataLocationDirectory);
+            fileDlg.setStartWithString(profileCode);
+            if (currentView != null)
+                fileDlg.setFileSystemView(currentView);
+            if (fileDlg.showSaveDialog(parent()) == JFileChooser.APPROVE_OPTION) {
+                File file = fileDlg.getSelectedFile();
+                if (fileDlg.isItDuplicate()) {
+                    String fName = file.getAbsolutePath();
+                    markThisFileAsBak(file);
+                    file = new File(fName);
+                }
+                deleteParticularFiles("" + fceDataLocation, profileCode, fceSettExtension);
                 try {
-                    BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(fileName));
+                    BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(file));
                     oStream.write(("# Furnace Settings saved on " + dateFormat.format(new Date()) + " \n\n").getBytes());
-                    oStream.write(l2Furnace.fceSettingsInXML().getBytes());
+                    oStream.write((profileCodeInXML() + l2Furnace.fceSettingsInXML()).getBytes());
                     oStream.close();
                     retVal = true;
                 } catch (FileNotFoundException e) {
-                    showError("File " + fileName + " NOT found!");
+                    showError("File " + file + " NOT found!");
                 } catch (IOException e) {
-                    showError("Some IO Error in writing to file " + fileName + "!");
+                    showError("Some IO Error in writing to file " + file + "!");
                 }
             }
+            currentView = fileDlg.getFileSystemView();
         }
-        parent().toFront();
+        else {
+            showError("Save Profile before saving Furnace Settings");
+        }
         return retVal;
+    }
+
+    void markThisFileAsBak(File file) {
+        String bakFilefullName = file.getAbsolutePath() + ".bak";
+        File existingBakFile = new  File(bakFilefullName);
+        if (existingBakFile.exists())
+            existingBakFile.delete();
+        file.renameTo(new File(bakFilefullName));
+    }
+
+    int deleteParticularFiles(String directory, final String startsWith, final String extension) {
+        File folder = new File(directory);
+        File[] files = folder.listFiles(new FilenameFilter() {
+            public boolean accept(File dir, String name) {
+                return name.endsWith(extension) && name.startsWith(startsWith);
+            }
+        });
+        for (File file: files)
+            file.delete();
+        return files.length;
     }
 
     boolean readFurnaceSettings() {
@@ -555,30 +541,44 @@ public class L2DFHeating extends DFHeating {
         return retVal;
     }
 
+    boolean loadFurnaceSettings(File file) {
+        boolean retVal = false;
+        try {
+            BufferedInputStream iStream = new BufferedInputStream(new FileInputStream(file));
+            //           FileInputStream iStream = new FileInputStream(fileName);
+            long len = file.length();
+            if (len > 50 && len < 10000) {
+                int iLen = (int) len;
+                byte[] data = new byte[iLen + 10];
+                if (iStream.read(data) > 50) {
+                    String xmlStr = new String(data);
+                    if (checkProfileCodeInXML(xmlStr)) {
+                        if (l2Furnace.takeFceSettingsFromXML(xmlStr)) {
+                            if (showDebugMessages)
+                                showMessage("Furnace Settings loaded");
+                            retVal = true;
+                        }
+                    } else
+                        showError("Mismatch in Furnace Settings Data");
+                }
+                iStream.close();
+            } else
+                showError("File size " + len + " for " + file);
+        } catch (Exception e) {
+            showError("Some Problem in getting Furnace Settings File!");
+        }
+        return retVal;
+    }
+
     boolean loadFurnaceSettings(String filePath) {
         boolean retVal = false;
         if (!filePath.equals("nullnull")) {
             debug("File for Furnace Settings :" + filePath);
             try {
-                BufferedInputStream iStream = new BufferedInputStream(new FileInputStream(filePath));
-                //           FileInputStream iStream = new FileInputStream(fileName);
-                File f = new File(filePath);
-                long len = f.length();
-                if (len > 50 && len < 10000) {
-                    int iLen = (int) len;
-                    byte[] data = new byte[iLen + 10];
-                    if (iStream.read(data) > 50) {
-                        if (l2Furnace.takeFceSettingsFromXML(new String(data))) {
-                            if (showDebugMessages)
-                                showMessage("Furnace Settings loaded");
-                            retVal = true;
-                        }
-                    }
-                    iStream.close();
-                } else
-                    showError("File size " + len + " for " + filePath);
+                File file = new File(filePath);
+                retVal = loadFurnaceSettings(file);
             } catch (Exception e) {
-                showError("Some Problem in getting file!");
+                showError("Some Problem in getting file " + filePath);
             }
         }
         return retVal;
@@ -589,12 +589,15 @@ public class L2DFHeating extends DFHeating {
     }
 
     ErrorStatAndMsg takeResultsFromLevel1()  {
-        mIEvalForFieldProduction.setEnabled(false);
-        mIEvalWithFieldCorrection.setEnabled(false);
-        boolean retVal = false;
+        if (allowL2Changes) {
+            mIEvalForFieldProduction.setEnabled(false);
+            mIEvalWithFieldCorrection.setEnabled(false);
+        }
+//        boolean retVal = false;
         ErrorStatAndMsg stat = l2Furnace.takeFieldResultsFromLevel1();
         if (stat.inError) {
-            mIEvalForFieldProduction.setEnabled(true);
+            if (allowL2Changes)
+                mIEvalForFieldProduction.setEnabled(true);
             info("ERROR in L2DFeating.takeResultsFromLevel1, in return from takeResultsFromLevel1 " + stat.msg);
         }
         return stat;
@@ -656,7 +659,8 @@ public class L2DFHeating extends DFHeating {
 
 
     public boolean evalForFieldProduction(ResultsReadyListener resultsReadyListener) {   // @TODO incomplete
-        mIEvalWithFieldCorrection.setEnabled(true);
+        if (allowL2Changes)
+            mIEvalWithFieldCorrection.setEnabled(true);
         if (l2Furnace.setFieldProductionData() ) {
 //            showMessage("Recu Specs maintained as original");
 //            l2Furnace.newRecu();
@@ -675,7 +679,8 @@ public class L2DFHeating extends DFHeating {
     public boolean recalculateWithFieldCorrections(ResultsReadyListener resultsReadyListener) {   //  TODO not complete
         if (l2Furnace.adjustForFieldResults()) {
             calculateFce(false, resultsReadyListener); // without reset the loss Factors
-            mIEvalForFieldProduction.setEnabled(false);
+            if (allowL2Changes)
+                mIEvalForFieldProduction.setEnabled(false);
             return true;
         }
         else
@@ -806,12 +811,6 @@ public class L2DFHeating extends DFHeating {
 
     public boolean getFceFromFceDatFile(String filePath) {
         boolean retVal = super.getFceFromFceDatFile(filePath);
-//        if (retVal) {
-//            if (l2Furnace.createL2Zones())
-//                info("DFHeatingLevel2 initiated");
-//            else
-//                showError("Facing some problem inL2 Connection!");
-//        }
         return retVal;
     }
 
@@ -835,14 +834,125 @@ public class L2DFHeating extends DFHeating {
 //        return super.getSelChMaterial(matName);
 //    }
 
+    String profileCode = "";
+    String profileCodeTag = "profileCode";
+    DecimalFormat profileCodeFormat = new DecimalFormat("000000");
+
+    String createProfileCode() {
+        profileCode = profileCodeFormat.format(Math.random() * 999999.0);
+        return profileCode;
+    }
+
+    boolean checkProfileCode(String withThis) {
+        return (withThis != null) && (profileCode.equals(withThis));
+    }
+
+    public String inputDataXML(boolean withPerformance) {
+        return profileCodeInXML() + super.inputDataXML(withPerformance);
+    }
+
+    boolean isProfileCodeOK() {
+        return (profileCode.length() == profileCodeFormat.format(0).length());
+    }
+
+    public boolean checkProfileCodeInXML(String xmlStr) {
+        ValAndPos vp;
+        vp = XMLmv.getTag(xmlStr, profileCodeTag);
+        return checkProfileCode(vp.val);
+    }
+
+    String profileCodeInXML() {
+        return XMLmv.putTag(profileCodeTag, profileCode);
+    }
+
+    public String takeProfileDataFromXML(String xmlStr) {
+        ValAndPos vp;
+        vp = XMLmv.getTag(xmlStr, profileCodeTag);
+        profileCode = vp.val;
+//        info("profile code <" + profileCode + ">");
+        if (isProfileCodeOK()) {
+            return super.takeProfileDataFromXML(xmlStr);
+        }
+        else
+            return "ERROR: Not a Level2 Furnace Profile";
+    }
+
+    protected void saveFceToFile(boolean withPerformance) {
+        takeValuesFromUI();
+        String title = "Save Level2 Furnace Data" + ((withPerformance) ? " (with Performance Data)" : "");
+        FileDialog fileDlg =
+                new FileDialog(mainF, title,
+                        FileDialog.SAVE);
+        createProfileCode();
+        fileDlg.setFile(profileCode + " FurnaceProfile.dfhDat");
+        fileDlg.setVisible(true);
+
+        String bareFile = fileDlg.getFile();
+        if (!(bareFile == null)) {
+            int len = bareFile.length();
+            if ((len < 8) || !(bareFile.substring(len - 7).equalsIgnoreCase(".dfhDat"))) {
+                showMessage("Adding '.dfhDat' to file name");
+                bareFile = bareFile + ".dfhDat";
+            }
+            String fileName = fileDlg.getDirectory() + bareFile;
+            debug("Save Data file name :" + fileName);
+            File f = new File(fileName);
+            boolean goAhead = true;
+            if (goAhead) {
+                try {
+                    BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(fileName));
+                    oStream.write(inputDataXML(withPerformance).getBytes());
+                    oStream.close();
+                    if (withPerformance)
+                        furnace.performaceIsSaved();
+                } catch (FileNotFoundException e) {
+                    showError("File " + fileName + " NOT found!");
+                } catch (IOException e) {
+                    showError("Some IO Error in writing to file " + fileName + "!");
+                }
+            }
+        }
+        parent().toFront();
+    }
+
     protected boolean getStripDFHProcessList() {
-        String filePath = fceDataLocation + "stripDFHProcessList.stripProc";
-        return loadStripDFHProcessList(filePath);
+        boolean retVal = false;
+        File file = getParticularFile(fceDataLocation, profileCode, "stripProc");
+        if (file != null) {
+            retVal = loadStripDFHProcessList(file);
+            info("loaded file " + file);
+        }
+        else
+            showError("Unable to locate StripDFHProcess List File");
+        return retVal;
     }
 
     protected boolean getFurnaceSettings() {
-        String filePath = fceDataLocation + "FurnaceSettings.fceSett";
-        return loadFurnaceSettings(filePath);
+        boolean retVal = false;
+        File file = getParticularFile(fceDataLocation, profileCode, "fceSett");
+        if (file != null) {
+            retVal = loadFurnaceSettings(file);
+            info("loaded file " + file);
+        }
+        else
+            showError("Unable to locate Furnace Settings File");
+        return retVal;
+    }
+
+    File getParticularFile(String directory, final String startName, final String extension) {
+        File selectedFile = null;
+        File folder = new File(directory);
+        File[] files = folder.listFiles(new FilenameFilter() {
+            public boolean accept(File dir, String name) {
+                return name.endsWith(extension) && name.startsWith(startName);
+            }
+        });
+        if (files.length > 0) {
+            selectedFile = files[0];
+            if (files.length > 1)
+                info("loading the first matching file " + files[0]);
+        }
+        return selectedFile;
     }
 
     public OneStripDFHProcess getStripDFHProcess(String forProc) {
@@ -975,9 +1085,9 @@ public class L2DFHeating extends DFHeating {
          public void actionPerformed(ActionEvent e) {
              Object caller = e.getSource();
              if (caller == mIReadDFHStripProcess)
-                 readStripProcessLookup();
+                 loadStripDFHProcessList();
              else if (caller == mISaveDFHStripProcess)
-                 saveSripProcessLookup();
+                 saveDFHProcessList();
              else if (caller == mIViewDFHStripProcess)
                  viewStripDFHProcess();
              else if (caller == mIEditDFHStripProcess)
