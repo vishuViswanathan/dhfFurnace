@@ -35,9 +35,9 @@ public class OneStripDFHProcess {
     double maxThickness = 0.0015;  // m
     double minThickness = 0.0001; //m
     double maxSpeed = 120 * 60; // m/h
-    double maxWidth = 1.25;  // m
+    public double maxWidth = 1.25;  // m
     double minWidth = 0.9;  // m
-    double maxUnitOutput = 25000;  // kg/h for 1m with
+    public double maxUnitOutput = 25000;  // kg/h for 1m with
     double minUnitOutput = 8500; // kg/h  for 1m width
     String errMeg = "Error reading StripDFHProcess :";
     public boolean inError = false;
@@ -296,7 +296,7 @@ public class OneStripDFHProcess {
         if (processName.equalsIgnoreCase(this.processName)) {
             double chWidth = production.charge.length;  // remember it is strip
             if (chWidth <= maxWidth) {
-                double minWallowed = minWidth; // Math.max(minWidth, maxWidth / tuning.widthOverRange);
+                double minWallowed = Math.max(minWidth, maxWidth / tuning.widthOverRange);
                 if (chWidth >= minWallowed) {
                     double output = production.production;
                     double maxUnitOutputAllowed = maxUnitOutput * tuning.unitOutputOverRange;

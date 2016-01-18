@@ -14,6 +14,6 @@ public interface L2Interface {
     public TMuaClient source();
     public InputControl controller();
     public String equipment();
-    public void info(String msg);
-    public void error(String msg);
+    public void logInfo(String msg);
+    public void logError(String msg);
 }

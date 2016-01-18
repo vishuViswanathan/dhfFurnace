@@ -52,6 +52,7 @@ import java.util.*;
 public class DFHeating extends JApplet implements InputControl {
 
     static public enum CommandLineArgs {
+        EXPERTMODE("-expertMode"),
         ALLOWCHANGES("-allowChanges"),
         ONTEST("-onTest"),
         ALLOWSPECSSAVE("-allowSpecsSave"),
@@ -121,6 +122,10 @@ public class DFHeating extends JApplet implements InputControl {
             return retVal;
           }
     }
+    
+    static public boolean bAllowProfileChange = true;
+    static public boolean bAllowManualCalculation = true;
+    static public boolean bAllowEditPerformanceList = true;
 
     static public JFrame mainF; // = new JFrame("DFH Furnace");
     static public Vector<Fuel> fuelList = new Vector<Fuel>();
@@ -128,7 +133,6 @@ public class DFHeating extends JApplet implements InputControl {
     static boolean enableSpecsSave = false;
     public static Logger log;
     static boolean onTest = false;
-
     static public boolean showDebugMessages = false;
     static public JSPConnection jspConnection;
 
@@ -431,56 +435,56 @@ public class DFHeating extends JApplet implements InputControl {
              switchPage(InputType.INPUTPAGE);
              cbFceFor.setSelectedItem(proc);
          }
-     }
+    }
 
     void enableDataEntry(boolean ena) {
+        ena &= bAllowManualCalculation;
         if (ena)
             furnace.resetSections();
-        tfReference.setEditable(ena && !onProductionLine);
-        tfFceTitle.setEditable(ena && !onProductionLine);
-        tfCustomer.setEditable(ena && !onProductionLine);
-        ntfWidth.setEditable(ena && !onProductionLine);
-        tfExcessAir.setEditable(ena);
+        titleAndFceCommon.setEnabled(ena && bAllowProfileChange);
+//        tfReference.setEditable(ena && !onProductionLine);
+//        tfFceTitle.setEditable(ena && !onProductionLine);
+//        tfCustomer.setEditable(ena && !onProductionLine);
+//        ntfWidth.setEditable(ena && !onProductionLine);
 
-        cbChType.setEnabled(ena && !onProductionLine);
+        cbChType.setEnabled((proc != DFHTuningParams.ForProcess.STRIP) && ena && bAllowProfileChange);
         tfChLength.setEditable(ena);
         tfChWidth.setEditable(ena);
         tfChDiameter.setEditable(ena);
         tfChThickness.setEditable(ena);
-        tfBottShadow.setEditable(ena);
-        tfChPitch.setEditable(ena);
-        tfChRows.setEditable(ena);
+        tfBottShadow.setEditable(ena && bAllowProfileChange);
+        tfChPitch.setEditable(ena && bAllowProfileChange);
+        tfChRows.setEditable(ena && bAllowProfileChange);
         tfProduction.setEditable(ena);
         tfEntryTemp.setEditable(ena);
         tfExitTemp.setEditable(ena);
         tfDeltaTemp.setEditable(ena);
-        tfAmbTemp.setEditable(ena);
+        tfAmbTemp.setEditable(ena  && bAllowProfileChange);
         tfAirTemp.setEditable(ena);
-        tfCalculStep.setEditable(ena && !onProductionLine);
-
-        cbFceFor.setEnabled(ena && !onProductionLine);
-//        cbHeatingType.setEnabled(ena && !onProductionLine);
-        cbHeatingMode.setEnabled(ena && !onProductionLine);
-        cbFuel.setEnabled(ena && !onProductionLine);
+        tfCalculStep.setEditable(ena && bAllowProfileChange);
+//        tfExcessAir.setEditable(ena);
+//        cbFceFor.setEnabled(ena && !onProductionLine);
+//        cbHeatingMode.setEnabled(ena && !onProductionLine);
+//        cbFuel.setEnabled(ena && !onProductionLine);
         cbChMaterial.setEnabled(ena);
 
 //        if (tfFuelTemp.isEnabled())
         tfFuelTemp.setEditable(ena);
 
-        ntdeltaTAirFromRecu.setEditable(ena);
-        ntDeltaTFlue.setEditable(ena);
-        ntMaxFlueTatRecu.setEditable(ena && !onProductionLine);
-        ntDeltaTFuelFromRecu.setEditable(ena);
-        cBAirHeatByRecu.setEnabled(ena && !onProductionLine);
-        cBFuelHeatByRecu.setEnabled(ena && !(commFuel != null && commFuel.bMixedFuel) && !onProductionLine);
+        ntdeltaTAirFromRecu.setEditable(ena && bAllowProfileChange);
+        ntDeltaTFlue.setEditable(ena && bAllowProfileChange);
+        ntMaxFlueTatRecu.setEditable(ena && bAllowProfileChange);
+        ntDeltaTFuelFromRecu.setEditable(ena && bAllowProfileChange);
+        cBAirHeatByRecu.setEnabled(ena && bAllowProfileChange);
+        cBFuelHeatByRecu.setEnabled(ena && !(commFuel != null && commFuel.bMixedFuel) && bAllowProfileChange);
 
         if (ena && cBAirHeatByRecu.isSelected() && cBFuelHeatByRecu.isSelected())
-            cBAirAfterFuel.setEnabled(ena && !onProductionLine);
+            cBAirAfterFuel.setEnabled(ena && bAllowProfileChange);
         else
-            cBAirAfterFuel.setEnabled(false && !onProductionLine);
+            cBAirAfterFuel.setEnabled(false && bAllowProfileChange);
         if (ena)
             setTimeValues(0, 0, 0);
-        furnace.enableDataEntry(ena && !onProductionLine);
+        furnace.enableDataEntry(ena && bAllowProfileChange);
 
         pbCalculate.setEnabled(ena);
         bDataEntryON = ena;
@@ -490,7 +494,7 @@ public class DFHeating extends JApplet implements InputControl {
             saveForTFM.setEnabled(false && !onProductionLine);
             saveToXL.setEnabled(false);
         }
-        tuningParams.enableDataEntry(ena && !onProductionLine);
+        tuningParams.enableDataEntry(ena && bAllowProfileChange);
 //        enableResultsMenu(false);
     }
 
@@ -788,6 +792,8 @@ public class DFHeating extends JApplet implements InputControl {
         }
     }
 
+    MultiPairColPanel userTunePanel;
+
     JPanel OperationPage() {
         JPanel jp = new JPanel(new GridBagLayout());
         jp.setBackground(new JPanel().getBackground());
@@ -813,7 +819,9 @@ public class DFHeating extends JApplet implements InputControl {
         jp.add(recuDataPanel(), gbcOP);
         gbcOP.gridy++;
         gbcOP.gridx = 0;
-        jp.add(tuningParams.userTunePan(), gbcOP);
+        userTunePanel = tuningParams.userTunePan();
+        userTunePanel.setEnabled(!onProductionLine);
+        jp.add(userTunePanel, gbcOP);
         gbcOP.gridx++;
         gbcOP.gridx++;
         jp.add(calCulDataPanel(), gbcOP);
@@ -926,11 +934,9 @@ public class DFHeating extends JApplet implements InputControl {
         if (!onProductionLine) {
             fileMenu.add(mIGetFceProfile);
             fileMenu.add(mILoadRecuSpecs);
-
             fileMenu.addSeparator();
             fileMenu.add(mISaveFceProfile);
             fileMenu.add(saveToXL);
-
             fileMenu.addSeparator();
             fileMenu.add(saveForTFM);
 
@@ -940,6 +946,11 @@ public class DFHeating extends JApplet implements InputControl {
                 fileMenu.add(saveFuelSpecs);
                 fileMenu.add(saveSteelSpecs);
             }
+        }
+        else if (bAllowProfileChange) {
+            fileMenu.add(mIGetFceProfile);
+            fileMenu.addSeparator();
+            fileMenu.add(mISaveFceProfile);
         }
         fileMenu.addSeparator();
         fileMenu.add(mIExit);
@@ -1116,8 +1127,13 @@ public class DFHeating extends JApplet implements InputControl {
         clearPerfBase.setEnabled(available);
     }
 
-    void enablePerfMenu(boolean ena)  {
-        perfMenu.setVisible(ena);
+    void showPerfMenu(boolean show) {
+        perfMenu.setVisible(show);
+    }
+
+    synchronized void enablePerfMenu(boolean ena)  {
+//        perfMenu.setVisible(ena);
+//        debug("enablePerfmenu<" + ena + ">");
         perfMenu.setEnabled(ena);
 //        if (!perfMenu.isEnabled()) {
 //            perfMenu.setEnabled(ena);
@@ -1410,8 +1426,10 @@ public class DFHeating extends JApplet implements InputControl {
         return titleAndFceCommon;
     }
 
+    MultiPairColPanel titlePanel;
+
     FramedPanel getTitlePanel() {
-        MultiPairColPanel titlePanel = new MultiPairColPanel("");
+        titlePanel = new MultiPairColPanel("");
         tfReference = new XLTextField(reference, 40);
         titlePanel.addItemPair("Reference ", tfReference);
         tfFceTitle = new XLTextField(fceTtitle, 40);
@@ -1435,15 +1453,17 @@ public class DFHeating extends JApplet implements InputControl {
         return titlePanel;
     }
 
+    MultiPairColPanel commonDataP;
+
     FramedPanel fceCommDataPanel() {
-        MultiPairColPanel panel = new MultiPairColPanel("");
+        commonDataP = new MultiPairColPanel("");
         cbHeatingMode = new XLComboBox(HeatingMode.values());
         cbHeatingMode.addActionListener(new HeatingModeListener());
         cbHeatingMode.setPreferredSize(new Dimension(200, 20));
         cbHeatingMode.setSelectedItem(HeatingMode.TOPONLY);
-        panel.addItemPair("Heating Mode ", cbHeatingMode);
+        commonDataP.addItemPair("Heating Mode ", cbHeatingMode);
         ntfWidth = new NumberTextField(this, width * 1000, 10, false, 500, 40000, "#,###", "Furnace Width (mm) ");
-        panel.addItemPair(ntfWidth);
+        commonDataP.addItemPair(ntfWidth);
 //        cbFuel = new XLComboBox(fuelList);
 //        cbFuel = new JComboBox(fuelList);
         cbFuel = new JSPComboBox<Fuel>(jspConnection, fuelList);
@@ -1483,11 +1503,11 @@ public class DFHeating extends JApplet implements InputControl {
             }
         });
         cbFuel.setPreferredSize(new Dimension(200, 20));
-        panel.addItemPair("Common Fuel ", cbFuel);
+        commonDataP.addItemPair("Common Fuel ", cbFuel);
         tfExcessAir = new NumberTextField(this, excessAir * 100, 5, false, 0, 100, "###", "Excess Air (%) ");
-        panel.addItemPair(tfExcessAir);
-        mpFceCommDataPanel = panel;
-        return panel;
+        commonDataP.addItemPair(tfExcessAir);
+        mpFceCommDataPanel = commonDataP;
+        return commonDataP;
     }
 
     public void noteFiringModeChange(boolean bTopBot) {
@@ -1995,6 +2015,7 @@ public class DFHeating extends JApplet implements InputControl {
             tfMinExitZoneFceTemp.setEnabled(bDataEntryON);
             tfDeltaTemp.setEnabled(false);
             setValuesToUI();
+            showPerfMenu(true);
             enablePerfMenu(true);
             if (showSuggestion && cbHeatingMode.getSelectedItem() != HeatingMode.TOPBOTSTRIP)
                 showMessage("Suggest selecting 'Heating Mode' to STRIP - TOP and BOTTOM");
@@ -2360,9 +2381,13 @@ public class DFHeating extends JApplet implements InputControl {
     }
 
     public void calculateForPerformanceTable(Performance baseP) {
+        calculateForPerformanceTable(baseP, null);
+    }
+
+    public void calculateForPerformanceTable(Performance baseP, CalculationsDoneListener doneListener) {
         enableResultsMenu(false);
         enableCalculStat();
-        Thread evalThread = new Thread(evaluator = new FceEvaluator(this, slate, furnace, calculStep, baseP));
+        Thread evalThread = new Thread(evaluator = new FceEvaluator(this, slate, furnace, calculStep, baseP, doneListener));
 //        evaluator.setShowProgress(false);
         enablePauseCalcul();
         evalThread.start();
@@ -2376,6 +2401,13 @@ public class DFHeating extends JApplet implements InputControl {
 
     void addResultsListener(ResultsReadyListener resultReadyListener) {
         theResultsListener = resultReadyListener;
+    }
+
+    Vector<CalculationsDoneListener> calculationListeners = new Vector<CalculationsDoneListener>();
+
+    public void addCalculationsDoneListener(CalculationsDoneListener listener) {
+        if (!calculationListeners.contains(listener))
+            calculationListeners.add(listener);
     }
 
     /**
@@ -2984,6 +3016,20 @@ public class DFHeating extends JApplet implements InputControl {
 
     protected boolean bResultsReady = false;
 
+    boolean busyInCalculation = false;
+
+    public void setBusyInCalculation (boolean busy) {
+        busyInCalculation = busy;
+        if (!busy) {
+            for (CalculationsDoneListener listener: calculationListeners)
+                listener.noteCalculationsDone();
+        }
+    }
+
+    public boolean isItBusyInCalculation() {
+        return busyInCalculation;
+    }
+
     public void setResultsReady(boolean bReady) {
         bResultsReady = bReady;
     }
@@ -3096,7 +3142,20 @@ public class DFHeating extends JApplet implements InputControl {
 
     //region Message functions
     public boolean decide(String title, String msg) {
-        int resp = JOptionPane.showConfirmDialog(parent(), msg, title, JOptionPane.YES_NO_OPTION);
+        return decide(title, msg,  true);
+//        int resp = JOptionPane.showConfirmDialog(parent(), msg, title, JOptionPane.YES_NO_OPTION);
+//        if (resp == JOptionPane.YES_OPTION)
+//            return true;
+//        else
+//            return false;
+    }
+
+    public boolean decide(String title, String msg, boolean defaultOption) {
+        String[] options = {UIManager.getString("OptionPane.yesButtonText"),
+                UIManager.getString("OptionPane.noButtonText")};
+        String defaultOptionString = (defaultOption) ? options[0] : options[1];
+        int resp = JOptionPane.showOptionDialog(parent(), msg, title, JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE, null, options, defaultOptionString);
         if (resp == JOptionPane.YES_OPTION)
             return true;
         else
@@ -4775,8 +4834,7 @@ public class DFHeating extends JApplet implements InputControl {
                 }
         }
         return retVal;
-     }
-
+    }
 
     public static void main(String[] args) {
 //        PropertyConfigurator.configureAndWatch(DFHeating.class

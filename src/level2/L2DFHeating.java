@@ -32,6 +32,49 @@ import java.util.Vector;
  * To change this template use File | Settings | File Templates.
  */
 public class L2DFHeating extends DFHeating {
+    public enum L2CommandLineArgs {
+        CHANGEPROFILE("-changeProfile"),
+        MANUALCALCULATIONS("-manual"),
+        FURNACESETTINGS("-furnaceSettings"),
+        DFHPROCESS("-dfhProcess"),
+        FROMFIELD("-fromField"),
+        L2DEBUG("-l2ShowDebugMessages"),
+        UNKNOWN("-UnKnown");
+        private final String argName;
+
+        L2CommandLineArgs(String argName) {
+            this.argName = argName;
+        }
+
+        public String getValue() {
+            return name();
+        }
+
+        @Override
+        public String toString() {
+            return argName;
+        }
+
+        public static L2CommandLineArgs getEnum(String text) {
+            L2CommandLineArgs retVal = UNKNOWN;
+            if (text != null) {
+                for (L2CommandLineArgs b : L2CommandLineArgs.values()) {
+                    if (text.equalsIgnoreCase(b.argName)) {
+                        retVal = b;
+                        break;
+                    }
+                }
+            }
+            return retVal;
+        }
+    }
+
+    static boolean bAllowEditDFHProcess = false;
+    static boolean bAllowEditFurnaceSettings = false;
+    static boolean bAllowUpdateWithFieldData = false;
+    static boolean bAllowL2Changes = false;
+    static boolean bl2ShowDebugMessages = false;
+
     String fceDataLocation = "level2FceData/";
     TMuaClient uaClient;
     static String uaServerURI;
@@ -39,7 +82,6 @@ public class L2DFHeating extends DFHeating {
     public String equipment;
     StripDFHProcessList dfhProcessList;
 //    Hashtable<String, OneStripDFHProcess> stripProcessLookup;
-    static boolean allowL2Changes = false;
     JMenu mL2Configuration;
     JMenuItem mIEditDFHStripProcess;
     JMenuItem mIViewDFHStripProcess;
@@ -58,13 +100,11 @@ public class L2DFHeating extends DFHeating {
     JMenuItem mIEvalForFieldProduction;
     JMenuItem mIEvalWithFieldCorrection;
 
-    JMenuItem mISavePerformaceData;
-
     boolean l2MenuSet = false;
 
     public L2DFHeating(String equipment) {
         super();
-        releaseDate = "20150514";
+        releaseDate = "20160106";
         onProductionLine = true;
         asApplication = true;
         this.equipment = equipment;
@@ -153,10 +193,14 @@ public class L2DFHeating extends DFHeating {
     void createMenuBars() {
         menuBarLevel2Edit = new JMenuBar();
         menuBarLevel2Edit.add(fileMenu);
-        menuBarLevel2Edit.add(inputMenu);
-        if (allowL2Changes) {
-            menuBarLevel2Edit.add(resultsMenu);
+        if (bAllowUpdateWithFieldData) {
             menuBarLevel2Edit.add(perfMenu);
+        }
+        if (bAllowL2Changes) {
+            if (bAllowManualCalculation)  {
+                menuBarLevel2Edit.add(inputMenu);
+                menuBarLevel2Edit.add(resultsMenu);
+            }
             mL2Configuration = new JMenu("L2 Config");
             mICreateFceSettings = new JMenuItem("View/Edit Furnace Settings");
             mIReadFceSettings = new JMenuItem("Read Furnace Settings from file");
@@ -193,32 +237,45 @@ public class L2DFHeating extends DFHeating {
             mISaveAsFieldResult.addActionListener(li);
             mIEvalForFieldProduction.addActionListener(li);
             mIEvalWithFieldCorrection.addActionListener(li);
-
-            mL2Configuration.add(mICreateFceSettings);
-            mL2Configuration.add(mIReadFceSettings);
-            mL2Configuration.add(mISaveFceSettings);
-            mL2Configuration.addSeparator();
-            mL2Configuration.add(mIViewDFHStripProcess);
-            mL2Configuration.add(mIEditDFHStripProcess);
-            mL2Configuration.add(mIReadDFHStripProcess);
-            mL2Configuration.add(mISaveDFHStripProcess);
-            mL2Configuration.addSeparator();
-            mL2Configuration.add(mICreateFieldResultsData);
-            mL2Configuration.add(mISaveFieldResultsToFile);
-            mL2Configuration.addSeparator();
-            mL2Configuration.add(mILevel1FieldResults);
-            mL2Configuration.add(mILoadFieldResult);
-            mL2Configuration.add(mIEvalForFieldProduction);
-            mL2Configuration.add(mIEvalWithFieldCorrection);
-            mL2Configuration.addSeparator();
-            mL2Configuration.add(mISaveAsFieldResult);
+            if (bAllowEditFurnaceSettings) {
+                mL2Configuration.add(mICreateFceSettings);
+                mL2Configuration.add(mIReadFceSettings);
+                mL2Configuration.add(mISaveFceSettings);
+                mL2Configuration.addSeparator();
+            }
+            if (bAllowEditDFHProcess) {
+                mL2Configuration.add(mIViewDFHStripProcess);
+                mL2Configuration.add(mIEditDFHStripProcess);
+                mL2Configuration.add(mIReadDFHStripProcess);
+                mL2Configuration.add(mISaveDFHStripProcess);
+                mL2Configuration.addSeparator();
+            }
+            if (bAllowManualCalculation) {
+                mL2Configuration.add(mICreateFieldResultsData);
+                mL2Configuration.add(mISaveFieldResultsToFile);
+                mL2Configuration.addSeparator();
+                mL2Configuration.add(mILevel1FieldResults);
+                mL2Configuration.add(mILoadFieldResult);
+                mL2Configuration.add(mIEvalForFieldProduction);
+                mL2Configuration.add(mIEvalWithFieldCorrection);
+                mL2Configuration.addSeparator();
+                mL2Configuration.add(mISaveAsFieldResult);
+            }
             mL2Configuration.setEnabled(true);
             menuBarLevel2Edit.add(mL2Configuration);
-            menuBarLevel2Edit.add(pbEdit);
+            if (bAllowManualCalculation) {
+                menuBarLevel2Edit.add(pbEdit);
+            }
             mainAppPanel.remove(menuBarMainApp);
         }
         mainAppPanel.add(menuBarLevel2Edit, BorderLayout.NORTH);
         menuBarMainApp.updateUI();
+    }
+
+    public void enablePerfMenu(boolean ena) {
+        if (bAllowUpdateWithFieldData) {
+            perfMenu.setEnabled(ena);
+        }
     }
 
     FramedPanel panelLT;
@@ -284,7 +341,7 @@ public class L2DFHeating extends DFHeating {
         super.setFcefor(showSuggestion);
         if (showSuggestion) {
             DFHTuningParams.ForProcess forProc = getFceFor();
-            if (allowL2Changes) {
+            if (bAllowL2Changes) {
                 if (forProc == DFHTuningParams.ForProcess.STRIP) {
                     mIReadDFHStripProcess.setVisible(true);
                     mISaveDFHStripProcess.setVisible(true);
@@ -322,32 +379,34 @@ public class L2DFHeating extends DFHeating {
     }
 
     String stripDFHProcessListInXML() {
-        StringBuffer xmlStr = new StringBuffer(XMLmv.putTag("exitTempAllowance", l2Furnace.getExitTempAllowance()));
-        xmlStr.append(dfhProcessList.dataInXMl());
+//        StringBuffer xmlStr = new StringBuffer(XMLmv.putTag("exitTempAllowance", l2Furnace.getExitTempAllowance()));
+//        xmlStr.append(dfhProcessList.dataInXMl());
 //        xmlStr.append(XMLmv.putTag("pNum", stripProcessLookup.size()));
 //        int pNum = 0;
 //        for (OneStripDFHProcess oneProc: stripProcessLookup.values())
 //            xmlStr.append(XMLmv.putTag("StripP" + ("" + ++pNum).trim(), oneProc.dataInXML().toString()) + "\n");
-        return xmlStr.toString();
+//        return xmlStr.toString();
+        return dfhProcessList.dataInXMl().toString();
     }
 
     boolean takeStripProcessListFromXML(String xmlStr) {
-//        stripProcessLookup.clear();
-        boolean retVal = false;
-        ValAndPos vp;
-        try {
-            vp = XMLmv.getTag(xmlStr, "exitTempAllowance", 0);
-            if (vp.val.length() > 0)
-                l2Furnace.setExitTempAllowance(Double.valueOf(vp.val));
-            else
-                l2Furnace.setExitTempAllowance(5);
-            retVal = true;
-        } catch (NumberFormatException e1) {
-            showError("Error in Number of StripDFHProc");
-        }
-        if (retVal)
-            retVal = dfhProcessList.takeStripProcessListFromXML(xmlStr);
-        return retVal;
+////        stripProcessLookup.clear();
+//        boolean retVal = false;
+//        ValAndPos vp;
+//        try {
+//            vp = XMLmv.getTag(xmlStr, "exitTempAllowance", 0);
+//            if (vp.val.length() > 0)
+//                l2Furnace.setExitTempAllowance(Double.valueOf(vp.val));
+//            else
+//                l2Furnace.setExitTempAllowance(5);
+//            retVal = true;
+//        } catch (NumberFormatException e1) {
+//            showError("Error in Number of StripDFHProc");
+//        }
+//        if (retVal)
+//            retVal = dfhProcessList.takeStripProcessListFromXML(xmlStr);
+//        return retVal;
+        return dfhProcessList.takeStripProcessListFromXML(xmlStr);
     }
 
     String stripProcExtension = "stripProc";
@@ -589,14 +648,14 @@ public class L2DFHeating extends DFHeating {
     }
 
     ErrorStatAndMsg takeResultsFromLevel1()  {
-        if (allowL2Changes) {
+        if (bAllowL2Changes) {
             mIEvalForFieldProduction.setEnabled(false);
             mIEvalWithFieldCorrection.setEnabled(false);
         }
 //        boolean retVal = false;
         ErrorStatAndMsg stat = l2Furnace.takeFieldResultsFromLevel1();
         if (stat.inError) {
-            if (allowL2Changes)
+            if (bAllowL2Changes)
                 mIEvalForFieldProduction.setEnabled(true);
             info("ERROR in L2DFeating.takeResultsFromLevel1, in return from takeResultsFromLevel1 " + stat.msg);
         }
@@ -659,7 +718,7 @@ public class L2DFHeating extends DFHeating {
 
 
     public boolean evalForFieldProduction(ResultsReadyListener resultsReadyListener) {   // @TODO incomplete
-        if (allowL2Changes)
+        if (bAllowL2Changes)
             mIEvalWithFieldCorrection.setEnabled(true);
         if (l2Furnace.setFieldProductionData() ) {
 //            showMessage("Recu Specs maintained as original");
@@ -679,7 +738,7 @@ public class L2DFHeating extends DFHeating {
     public boolean recalculateWithFieldCorrections(ResultsReadyListener resultsReadyListener) {   //  TODO not complete
         if (l2Furnace.adjustForFieldResults()) {
             calculateFce(false, resultsReadyListener); // without reset the loss Factors
-            if (allowL2Changes)
+            if (bAllowL2Changes)
                 mIEvalForFieldProduction.setEnabled(false);
             return true;
         }
@@ -772,13 +831,33 @@ public class L2DFHeating extends DFHeating {
         int i = 0;
         boolean retVal = false;
         if (DFHeating.parseCmdLineArgs(args)) {
-            CommandLineArgs cmdArg;
+            resetRightsForLevel2();
+            L2CommandLineArgs cmdArg;
             while ((args.length > i)
                     && ((args[i].startsWith("-")))) {
-                cmdArg = CommandLineArgs.getEnum(args[i]);
+                cmdArg = L2CommandLineArgs.getEnum(args[i]);
                 switch (cmdArg) {
-                    case ALLOWCHANGES:
-                        allowL2Changes = true;
+                    case DFHPROCESS:
+                        bAllowEditDFHProcess = true;
+                        break;
+                    case FURNACESETTINGS:
+                        bAllowEditFurnaceSettings = true;
+                        break;
+                    case FROMFIELD:
+                        bAllowUpdateWithFieldData = true;
+                        break;
+                    case CHANGEPROFILE:
+                        bAllowProfileChange = true;
+                        break;
+                    case MANUALCALCULATIONS:
+                        bAllowManualCalculation = true;
+                        break;
+                    case L2DEBUG:
+                        bl2ShowDebugMessages = true;
+                        break;
+//                     case ALLOWCHANGES:
+//                         allowL2Changes = true;
+//                         break;
                 }
                 i++;
             }
@@ -787,9 +866,37 @@ public class L2DFHeating extends DFHeating {
                 retVal = true;
             }
         }
+        if (retVal)
+            adjustRights();
         return retVal;
     }
 
+    static void resetRightsForLevel2() {
+        bAllowL2Changes = false;
+        bAllowManualCalculation = false;
+        bAllowProfileChange = false;
+        bAllowEditDFHProcess = false;
+        bAllowEditFurnaceSettings = false;
+        bAllowEditPerformanceList = false;
+        bAllowUpdateWithFieldData = false;
+    }
+
+    static void adjustRights() {
+        if (bAllowProfileChange) {
+            bAllowManualCalculation = true;
+        }
+        if (bAllowManualCalculation) {
+            bAllowEditFurnaceSettings = true;
+            bAllowEditPerformanceList = true;
+        }
+        if (bAllowEditFurnaceSettings) {
+            bAllowEditDFHProcess = true;
+        }
+        if (bAllowEditDFHProcess) {
+            bAllowUpdateWithFieldData = true;
+            bAllowL2Changes = true;
+        }
+    }
 
     boolean getL2FceFromFile() {
         disableCompare();
@@ -869,7 +976,7 @@ public class L2DFHeating extends DFHeating {
         ValAndPos vp;
         vp = XMLmv.getTag(xmlStr, profileCodeTag);
         profileCode = vp.val;
-//        info("profile code <" + profileCode + ">");
+//        l2Debug("profile code <" + profileCode + ">");
         if (isProfileCodeOK()) {
             return super.takeProfileDataFromXML(xmlStr);
         }
@@ -969,7 +1076,7 @@ public class L2DFHeating extends DFHeating {
 
     protected void enableResultsMenu(boolean enable) {
         super.enableResultsMenu(enable);
-        if (l2MenuSet && allowL2Changes) {
+        if (l2MenuSet && bAllowL2Changes) {
             mISaveAsFieldResult.setEnabled(enable);
         }
     }
@@ -1073,12 +1180,19 @@ public class L2DFHeating extends DFHeating {
         else
             return "";
     }
+    
+    public static void l2debug(String msg) {
+        if (bl2ShowDebugMessages)
+            debug("L2DFHeating:" + msg);
+    }
 
     public void close() {
-        l2Furnace.prepareForDisconnection();
-        if (uaClient != null)
-            uaClient.disconnect();
-        super.close();
+        if (decide("Quitting Level2", "Do you really want to Exit this Level2 Application?", false)) {
+            l2Furnace.prepareForDisconnection();
+            if (uaClient != null)
+                uaClient.disconnect();
+            super.close();
+        }
     }
 
     class StripProcMenuListener implements ActionListener {

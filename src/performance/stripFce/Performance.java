@@ -1,6 +1,7 @@
 package performance.stripFce;
 
 import basic.*;
+import directFiredHeating.CalculationsDoneListener;
 import directFiredHeating.DFHFurnace;
 import directFiredHeating.DFHeating;
 import display.*;
@@ -32,29 +33,6 @@ import java.util.Vector;
  */
 
 public class Performance {
-    public static final int STRIPWIDTH = 2;
-    public static final int STRIPTHICK = 4;
-    public static final int MATERIAL = 8;
-    public static final int FUEL = 16;
-    public static final int UNITOUTPUT = 32;
-    public static final int EXITTEMP = 64;
-    public double output;
-    public double unitOutput; // output per stripWidth
-    public Vector<OneZone> topZones, botZones;
-    GregorianCalendar dateOfResult;
-    String fuelName;
-    double airTemp;
-    double chLength, chWidth, chThick;
-    double chWt;
-    double chPitch;
-    double speed;
-    double piecesPerH;
-    public String chMaterial;
-    DFHeating controller;
-    DFHFurnace furnace;
-    PerformanceTable perfTable;
-    boolean interpolated = false;
-
     public enum Params {
         DATE("Date of Calculation"),
         CHMATERIAL("Charge Material"),
@@ -88,6 +66,29 @@ public class Performance {
         }
 
     }
+    public static final int STRIPWIDTH = 2;
+    public static final int STRIPTHICK = 4;
+    public static final int MATERIAL = 8;
+    public static final int FUEL = 16;
+    public static final int UNITOUTPUT = 32;
+    public static final int EXITTEMP = 64;
+    public double output;
+    public double unitOutput; // output per stripWidth
+    public Vector<OneZone> topZones, botZones;
+    GregorianCalendar dateOfResult;
+    String fuelName;
+    double airTemp;
+    double chLength, chWidth, chThick;
+    double chWt;
+    double chPitch;
+    double speed;
+    double piecesPerH;
+    public String chMaterial;
+    DFHeating controller;
+    DFHFurnace furnace;
+    PerformanceTable perfTable;
+    boolean interpolated = false;
+
 
     public Performance() {
 
@@ -284,6 +285,12 @@ public class Performance {
 
     boolean isProductionComparable(ChMaterial nowChMaterial, double nowExitTemp, double allowance) {
         boolean bComparable = chMaterial.equals(nowChMaterial.name);
+        bComparable &= (Math.abs(exitTemp() - nowExitTemp) < allowance);
+        return bComparable;
+    }
+
+    boolean isProductionComparable(String nowChMaterial, double nowExitTemp, double allowance) {
+        boolean bComparable = chMaterial.equals(nowChMaterial);
         bComparable &= (Math.abs(exitTemp() - nowExitTemp) < allowance);
         return bComparable;
     }

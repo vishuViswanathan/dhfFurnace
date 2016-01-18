@@ -604,7 +604,7 @@ public class DFHTuningParams {
     JCheckBox cBbaseOnZonalTemperature;
 
 
-    public JPanel userTunePan() {
+    public MultiPairColPanel userTunePan() {
         MultiPairColPanel jp = new MultiPairColPanel("Calculation Basis", 300,6);
         jp.addItemPair("Evaluate Internal Radiation", cBSlotRadInCalcul);
         jp.addItemPair("Evaluate EndWall Radiation", cBTakeEndWalls);

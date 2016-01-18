@@ -561,11 +561,11 @@ public class OpcSimulator implements InputControl, L2Interface {
         return equipment;
     }
 
-    public void info(String msg) {
+    public void logInfo(String msg) {
         showMessage(msg);
     }
 
-    public void error(String msg) {
+    public void logError(String msg) {
         showError(msg);
     }
 

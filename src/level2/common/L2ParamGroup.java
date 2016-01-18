@@ -2,7 +2,6 @@ package level2.common;
 
 import TMopcUa.ProcessValue;
 import com.prosysopc.ua.client.*;
-import level2.L2DFHFurnace;
 import mvUtils.display.ErrorStatAndMsg;
 
 import java.util.Hashtable;
@@ -150,7 +149,7 @@ public class L2ParamGroup {
     }
 
     void info(String msg) {
-        l2Interface.info("L2DataGroup: " + msg);
+        l2Interface.logInfo("L2DataGroup: " + msg);
     }
 
 }

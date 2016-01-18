@@ -1,6 +1,5 @@
 package level2;
 
-import TMopcUa.ProcessValue;
 import com.prosysopc.ua.ServiceException;
 import com.prosysopc.ua.client.*;
 import directFiredHeating.FceSection;
@@ -156,10 +155,10 @@ public class L2Zone extends L2ParamGroup {
     }
 
     void info(String msg) {
-        l2Interface.info("L2Zone: " + msg);
+        l2Interface.logInfo("L2Zone: " + msg);
     }
 
     void showError(String msg) {
-        l2Interface.error("L2Zone: " + msg);
+        l2Interface.logError("L2Zone: " + msg);
     }
 }

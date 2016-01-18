@@ -246,8 +246,10 @@ public class FieldResults {
                     z.sec.setLossFactor(z.lossFactor);
             }
             return true;
-        } else
+        } else {
+            l2Furnace.logInfo("compareResults returned false");
             return false;
+        }
     }
 
     public boolean takeFromXML(String xmlStr) {

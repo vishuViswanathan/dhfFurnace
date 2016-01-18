@@ -18,6 +18,7 @@ import java.awt.event.ActionListener;
  * To change this template use File | Settings | File Templates.
  */
 public class FceEvaluator implements Runnable, ThreadController{
+    CalculationsDoneListener doneListener;
     public static enum EvalStat {
         OK("OK"),
         TOOLOWGAS("Too Low Gas Temperature"),
@@ -69,6 +70,11 @@ public class FceEvaluator implements Runnable, ThreadController{
      * @param baseP if baseP is specified, it is for performance table
      */
     public FceEvaluator(DFHeating control, JScrollPane slate, DFHFurnace furnace, double calculStep, Performance baseP) {
+        this(control, slate, furnace, calculStep, baseP, null);
+    }
+
+    public FceEvaluator(DFHeating control, JScrollPane slate, DFHFurnace furnace, double calculStep, Performance baseP,
+                        CalculationsDoneListener doneListener) {
         this.furnace = furnace;
         this.control = control;
         this.slate = slate;
@@ -77,6 +83,7 @@ public class FceEvaluator implements Runnable, ThreadController{
         bShowProgress = true;
         production = furnace.production;
         tuningParams = furnace.tuningParams;
+        addDoneListener(doneListener);
     }
 
     public FceEvaluator(DFHeating control, JScrollPane slate, DFHFurnace furnace, double calculStep) {
@@ -87,6 +94,10 @@ public class FceEvaluator implements Runnable, ThreadController{
     public FceEvaluator(DFHeating control, DFHFurnace furnace, double calculStep) {
         this(control, null, furnace, calculStep);
         bShowProgress = false;
+    }
+
+    public void addDoneListener(CalculationsDoneListener listener) {
+        doneListener = listener;
     }
 
     public void setShowProgress(boolean bShowProgress)  {
@@ -245,14 +256,19 @@ public class FceEvaluator implements Runnable, ThreadController{
     public boolean done = false;
 
     public void run() {
-        if (init()) {
-            if (bShowProgress)
-                showProgress();
-            evaluate();
+        if (!control.isItBusyInCalculation()) {
+            control.setBusyInCalculation(true);
+            if (init()) {
+                if (bShowProgress)
+                    showProgress();
+                evaluate();
+            } else
+                control.abortingCalculation();
+            done = true;
+            control.setBusyInCalculation(false);
+            if (doneListener != null)
+                doneListener.noteCalculationsDone();
         }
-        else
-            control.abortingCalculation();
-        done = true;
     }
 
     public void showProgress() {

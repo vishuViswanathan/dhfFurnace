@@ -595,7 +595,8 @@ public class DFHFurnace {
         return evaluate(master, true);
     }
 
-    public boolean evaluate(ThreadController master, boolean bShowResults) {
+    synchronized public boolean evaluate(ThreadController master, boolean bShowResults) {
+        enablePeformMenu(false);
         setDisplayResults(bShowResults);
         this.master = master;
         inPerfTableMode = false;
@@ -660,7 +661,7 @@ public class DFHFurnace {
             resultsReady = true;
             //            savePerformanceIfDue();
             if (bDisplayResults)
-                enablePeformMenu();
+                enablePeformMenu(true);
             setDisplayResults(true);
             return true;
         } else {
@@ -717,10 +718,10 @@ public class DFHFurnace {
             addResultsToPerfBase();
     }
 
-    void enablePeformMenu() {
+    void enablePeformMenu(boolean ena) {
         if ((controller.proc == DFHTuningParams.ForProcess.STRIP) && !bTopBot
                 && (anyIndividFuel(false) == 0)) {
-            controller.enablePerfMenu(true);
+            controller.enablePerfMenu(ena);
             if (performBase == null)
                 controller.enableCreatePerform(true);
             else {
@@ -795,7 +796,7 @@ public class DFHFurnace {
     boolean perfBaseReady = false;
     boolean chTempProfAvailable = false;
 
-    boolean addResultsToPerfBase() {
+    protected boolean addResultsToPerfBase() {
         boolean retVal = false;
         Performance perform = getPerformance();
         if (perform != null && performBase != null) {
@@ -1124,7 +1125,7 @@ public class DFHFurnace {
                     honorLastZoneMinFceTemp = false;
                     if (!skipReferenceDataCheck) {
                         // TODO - exitTAllowance is fixed as 5 here
-                        int nPoints = performBase.getChInTempProfile(production, commFuelFiring.fuel, chInTempProfile, 5);
+                        int nPoints = performBase.getChInTempProfile(production, commFuelFiring.fuel, chInTempProfile);
 //                        int nPoints = performBase.getChInTempProfile(production, commFuelFiring.fuel,
 //                                chInTempProfile, 10, iFirstFiredSection);
                         if (nPoints == nTopActiveSecs) {
@@ -1353,7 +1354,7 @@ public class DFHFurnace {
         return uf;
     }
 
-    boolean userActionAllowed() {
+    protected boolean userActionAllowed() {
         return (!controller.isOnProductionLine() || controller.showDebugMessages);
     }
 

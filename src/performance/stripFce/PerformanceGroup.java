@@ -78,7 +78,7 @@ public class PerformanceGroup implements ActionListener{
     public boolean noteBasePerformance(Performance performance, boolean fromXML) {
         boolean bNoted = false;
         boolean requiresInterpolCheck = false;
-        int foundAt = checkIfDuplicate(performance, 5.0);  // @TODO - exit temperature allowance taken as 5
+        int foundAt = getIndexOfSimilarPerformace(performance);
         if (foundAt >= 0) {
             if (controller.decide("Existing Base", "Near Performance base for " +
                     "\n" + refPerformance.get(foundAt) +
@@ -100,12 +100,6 @@ public class PerformanceGroup implements ActionListener{
         if (bNoted) {
             if (checkChTempProfAvailable() && !fromXML)
                 tobeSaved = true;
-//        if (!fromXML) {
-//            if (decide("Performance Table", "Do you want to create Performance Table?")) {
-//                controller.calculateForPerformanceTable(performance);
-////                performance.createPerfTable();
-//            }
-//        }
             int nPerf = refPerformance.size();
             if (nPerf == 2 || requiresInterpolCheck)
                 checkIfCanInterpolate();
@@ -117,15 +111,39 @@ public class PerformanceGroup implements ActionListener{
         return (refPerformance.size() > 0);
     }
 
-    int checkIfDuplicate(Performance performance, double exitTallowance)   {
+    int checkIfDuplicate(Performance performance)   {
         int foundAt = -1;
         for (Performance per: refPerformance) {
-            if (per.isProductionComparable(performance, exitTallowance)) {
+            if (per.isProductionComparable(performance, tuningParams.exitTempTolerance)) {
                 foundAt = refPerformance.indexOf(per);
                 break;
             }
         }
         return foundAt;
+    }
+
+    public Performance similarPerformance(Performance performance) {
+        return getRefPerformance(performance.chMaterial, performance.exitTemp());
+    }
+
+    int getIndexOfSimilarPerformace(Performance performance) {
+        ChMaterial chMaterial = controller.getSelChMaterial(performance.chMaterial);
+        Performance similarPerformance = getRefPerformance(chMaterial, performance.exitTemp());
+        int index = -1;
+        if (similarPerformance != null)
+            index = refPerformance.indexOf(similarPerformance);
+        return index;
+    }
+
+    public boolean replaceExistingPerformance(Performance performance) {
+        boolean retVal = false;
+        int foundAt = getIndexOfSimilarPerformace(performance);
+        if (foundAt >= 0) {
+            refPerformance.remove(foundAt);
+            refPerformance.add(foundAt, performance);
+            retVal = true;
+        }
+        return retVal;
     }
 
 
@@ -162,12 +180,12 @@ public class PerformanceGroup implements ActionListener{
             }
     }
 
-    public Performance getRefPerformance(ProductionData forProduction, Fuel withFuel, double exitTAllowance) {
+    public Performance getRefPerformance(ProductionData forProduction, Fuel withFuel) {
         Performance refP = null;
         double requiredUP = forProduction.production / forProduction.charge.getLength();
         int compareOn = Performance.EXITTEMP + Performance.MATERIAL + Performance.FUEL;
         for (Performance p: refPerformance) {
-            if (p.isProductionComparable(forProduction, withFuel, compareOn, exitTAllowance)) {
+            if (p.isProductionComparable(forProduction, withFuel, compareOn, tuningParams.exitTempTolerance)) {
                 // check unit production limits
                 if (requiredUP <= (p.unitOutput * tuningParams.overUP) &&
                             requiredUP >= (p.unitOutput * tuningParams.underUP) )   {
@@ -179,20 +197,19 @@ public class PerformanceGroup implements ActionListener{
         return refP;
     }
 
-    public Performance getRefPerformance(ChMaterial chMaterial, double exitTemp, double allowance) {
+    public Performance getRefPerformance(ChMaterial chMaterial, double exitTemp) {
+        return getRefPerformance(chMaterial.name, exitTemp);
+    }
+
+    public Performance getRefPerformance(String chMaterial, double exitTemp) {
         Performance refP = null;
         for (Performance p : refPerformance) {
-            if (p.isProductionComparable(chMaterial, exitTemp, allowance)) {
+            if (p.isProductionComparable(chMaterial, exitTemp, tuningParams.exitTempTolerance)) {
                 refP = p;
                 break;
             }
         }
         return refP;
-    }
-
-    // @TODO - to be REMOVED
-    public Performance getRefPerformance(ChMaterial chMaterial, double exitTemp) {
-        return getRefPerformance(chMaterial, exitTemp, tuningParams.exitTempTolerance);
     }
 
 //    private Performance getNearerPerformance(ProductionData forProduction) {
@@ -224,9 +241,8 @@ public class PerformanceGroup implements ActionListener{
         return retVal;
     }
 
-    public int getChInTempProfile(ProductionData forProduction, Fuel withFuel, double[] chInTempProfile,
-                                  double exitTAllowance) {
-        Performance refP = getRefPerformance(forProduction, withFuel, exitTAllowance);
+    public int getChInTempProfile(ProductionData forProduction, Fuel withFuel, double[] chInTempProfile) {
+        Performance refP = getRefPerformance(forProduction, withFuel);
         int retVal = 0;
         if (refP != null)
             retVal = refP.getChInTempProfile(chInTempProfile, forProduction.exitTemp);
@@ -235,8 +251,8 @@ public class PerformanceGroup implements ActionListener{
 
     // @TODO - getChInTempProfile with keeping exit temp of first fired zone - NOT USED
     public int getChInTempProfile(ProductionData forProduction, Fuel withFuel, double[] chInTempProfile,
-                                  double exitTAllowance, int firstFiredSec) {
-        Performance refP = getRefPerformance(forProduction, withFuel, exitTAllowance);
+                                  int firstFiredSec) {
+        Performance refP = getRefPerformance(forProduction, withFuel);
         int retVal = 0;
         if (refP != null)
             retVal = refP.getChInTempProfile(chInTempProfile, forProduction.exitTemp, firstFiredSec);
