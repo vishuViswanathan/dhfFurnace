@@ -4187,7 +4187,7 @@ public class DFHFurnace {
         return XMLmv.putTag("ExistingAirRecu", existingHeatExch.dataInXML());
     }
 
-    String performanceInXML() {
+    public String performanceInXML() {
         String xmlStr = XMLmv.putTag("PerformanceData", performBase.dataInXML().toString());
         return xmlStr;
     }
