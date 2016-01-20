@@ -716,34 +716,32 @@ public class L2DFHeating extends DFHeating {
         tfFuelTemp.setData(fuelTemp);
     }
 
-
-    public boolean evalForFieldProduction(ResultsReadyListener resultsReadyListener) {   // @TODO incomplete
+    public Thread evalForFieldProduction(ResultsReadyListener resultsReadyListener) {   // @TODO incomplete
         if (bAllowL2Changes)
             mIEvalWithFieldCorrection.setEnabled(true);
         if (l2Furnace.setFieldProductionData() ) {
 //            showMessage("Recu Specs maintained as original");
 //            l2Furnace.newRecu();
             l2Furnace.setCurveSmoothening(false);
-            calculateFce(true, resultsReadyListener);
-            return true;
+            return calculateFce(true, resultsReadyListener);
         }
         else
-            return false;
+            return null;
     }
 
-    public boolean evalForFieldProduction() {
+    public Thread evalForFieldProduction() {
         return evalForFieldProduction(null);
     }
 
-    public boolean recalculateWithFieldCorrections(ResultsReadyListener resultsReadyListener) {   //  TODO not complete
+    public Thread recalculateWithFieldCorrections(ResultsReadyListener resultsReadyListener) {   //  TODO not complete
         if (l2Furnace.adjustForFieldResults()) {
-            calculateFce(false, resultsReadyListener); // without reset the loss Factors
+            Thread evalThread = calculateFce(false, resultsReadyListener); // without reset the loss Factors
             if (bAllowL2Changes)
                 mIEvalForFieldProduction.setEnabled(false);
-            return true;
+            return evalThread;
         }
         else
-            return false;
+            return null;
     }
 
     boolean loadFieldResults(String filePath) {

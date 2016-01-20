@@ -2380,17 +2380,18 @@ public class DFHeating extends JApplet implements InputControl {
         tfAirTemp.setData(airTemp);
     }
 
-    public void calculateForPerformanceTable(Performance baseP) {
-        calculateForPerformanceTable(baseP, null);
+    public Thread calculateForPerformanceTable(Performance baseP) {
+        return calculateForPerformanceTable(baseP, null);
     }
 
-    public void calculateForPerformanceTable(Performance baseP, CalculationsDoneListener doneListener) {
+    public Thread calculateForPerformanceTable(Performance baseP, CalculationsDoneListener doneListener) {
         enableResultsMenu(false);
         enableCalculStat();
         Thread evalThread = new Thread(evaluator = new FceEvaluator(this, slate, furnace, calculStep, baseP, doneListener));
 //        evaluator.setShowProgress(false);
         enablePauseCalcul();
         evalThread.start();
+        return evalThread;
     }
 
     public boolean evaluate(ThreadController master, double forOutput, double stripWidth) {   // TODO not used
@@ -2414,7 +2415,7 @@ public class DFHeating extends JApplet implements InputControl {
      *
      * @param resultsReadyListener
      */
-    public void calculateFce(ResultsReadyListener resultsReadyListener, boolean bShowResults, boolean bResetLossFactor, boolean bCheckData) {
+    public Thread calculateFce(ResultsReadyListener resultsReadyListener, boolean bShowResults, boolean bResetLossFactor, boolean bCheckData) {
         if (bShowResults) {
             initPrintGroups();
             enableResultsMenu(false);
@@ -2425,6 +2426,7 @@ public class DFHeating extends JApplet implements InputControl {
                 takeValuesFromUI();
         }
         boolean proceed = false;
+        Thread evalThread = null;
         if (bCheckData) {
             if (checkData()) {
                 if (furnace.showZoneDataMsgIfRequired(pbCalculate)) {
@@ -2449,7 +2451,7 @@ public class DFHeating extends JApplet implements InputControl {
                 enableCalculStat();
                 evaluator = new FceEvaluator(this, slate, furnace, calculStep);
                 evaluator.setShowProgress(bShowResults);
-                Thread evalThread = new Thread(evaluator);
+                evalThread = new Thread(evaluator);
 //                enablePauseCalcul();   // TODO to be removed since nothing happens?
                 addResultsListener(resultsReadyListener);
 //                runOn = true;
@@ -2457,6 +2459,7 @@ public class DFHeating extends JApplet implements InputControl {
             } else
                 showError("Earlier Calculation is still ON!");
         }
+        return evalThread;
     }
 
     public boolean setProductionData(Charge charge, double output) {
@@ -2468,8 +2471,8 @@ public class DFHeating extends JApplet implements InputControl {
         return true;
     }
 
-    public void calculateFce(boolean bResetLossFactor, ResultsReadyListener resultsReadyListener) {
-        calculateFce(resultsReadyListener, true, bResetLossFactor, true);
+    public Thread calculateFce(boolean bResetLossFactor, ResultsReadyListener resultsReadyListener) {
+        return calculateFce(resultsReadyListener, true, bResetLossFactor, true);
     }
 
 //    protected void calculateFceOLD(boolean bResetLossFactor, ResultsReadyListener resultsReadyListener) {    //TODO ro be removed
@@ -2511,8 +2514,8 @@ public class DFHeating extends JApplet implements InputControl {
 //        }
 //    }
 
-    public void calculateFce() {
-        calculateFce(true, null);
+    public Thread calculateFce() {
+        return calculateFce(true, null);
     }
 
     void enableCalculStat() {

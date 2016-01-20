@@ -419,10 +419,6 @@ public class DFHFurnace {
     }
 
     public boolean doTheCalculation() {
-//        return doTheCalculation(false);
-//    }
-//
-//    public boolean doTheCalculation(boolean fromWallTemperature) {
         if (bBaseOnOnlyWallRadiation)
             return doTheCalculationWithOnlyWallRadiation();
         else {
@@ -591,9 +587,9 @@ public class DFHFurnace {
         return chStatus;
     }
 
-    public boolean evaluate(ThreadController master) {
-        return evaluate(master, true);
-    }
+//    public boolean evaluate(ThreadController master) {
+//        return evaluate(master, true);
+//    }
 
     synchronized public boolean evaluate(ThreadController master, boolean bShowResults) {
         enablePeformMenu(false);
@@ -677,6 +673,8 @@ public class DFHFurnace {
     }
 
     public boolean evaluate(ThreadController master, double forOutput, double stripWidth) {
+        boolean retVal = false;
+        enablePeformMenu(false);
         this.master = master;
         tempProductionData = new ProductionData(production);
         Charge rC = tempProductionData.charge;
@@ -691,12 +689,14 @@ public class DFHFurnace {
 //            resultsReady = true;
 //  //            savePerformanceIfDue();
 //            enablePeformMenu();
-            return true;
+            retVal = true;
         } else {
             if (canRun())
                 controller.abortingCalculation();
-            return false;
         }
+        if (bDisplayResults)
+            enablePeformMenu(true);
+        return retVal;
     }
 
     Observations getObservations() {

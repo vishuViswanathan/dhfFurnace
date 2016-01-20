@@ -38,7 +38,7 @@ import java.util.Vector;
  * Time: 10:59 AM
  * To change this template use File | Settings | File Templates.
  */
-public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2Interface {
+public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     public TMuaClient source;
     public FurnaceSettings furnaceSettings;
     LinkedHashMap<FceSection, L2Zone> topL2Zones;
@@ -705,6 +705,43 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2
         return retVal;
     }
 
+    void handleFieldPerformance() {
+        FieldPerformanceHandler thePerfHandler= new FieldPerformanceHandler(oneFieldResults);
+        Thread t = new Thread(thePerfHandler);
+        t.start();
+    }
+
+    class FieldPerformanceHandler implements Runnable {
+        FieldResults theFieldData;
+
+        FieldPerformanceHandler(FieldResults theFieldData) {
+            this.theFieldData = theFieldData;
+        }
+
+        public void run() {
+            if (setFieldProductionData() ) {
+                setCurveSmoothening(false);
+                Thread t1 = l2DFHeating.calculateFce(true, null);
+                if (t1 != null) {
+                    try {
+                        t1.join();
+                        if (adjustForFieldResults()) {
+                            Thread t2 = l2DFHeating.calculateFce(false, null); // without reset the loss Factors
+                            if (t2 != null) {
+                                t2.join();
+                                fieldDataIsBeingHandled = true;
+                                addFieldBasedPeformanceToPerfBase();
+                            }
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            resetFieldDataBeingHandled();
+        }
+    }
+
     void handleFieldData()  {
         if (l2DFHeating.bAllowUpdateWithFieldData) {
             if (newStripIsBeingHandled) {
@@ -712,7 +749,6 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2
             } else {
                 if (level2Enabled) {
                     if (fieldDataIsBeingHandled || l2DFHeating.isItBusyInCalculation()) {
-                        logInfo("fieldDataIsBeingHandled = " + fieldDataIsBeingHandled);
                         showErrorInLevel1("Last field data is still being handled. Retry later");
                     }
                     else {
@@ -724,8 +760,9 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2
                             showErrorInLevel1(stat.msg);
                         } else {
                             showInfoInLevel1("Evaluating from Model");
-                            commonDFHZ.setValue(L2ParamGroup.Parameter.FieldData, Tag.TagName.Noted, true);
-                            calculatedForFieldResults = l2DFHeating.evalForFieldProduction(this);
+                            handleFieldPerformance();
+//                            commonDFHZ.setValue(L2ParamGroup.Parameter.FieldData, Tag.TagName.Noted, true);
+//                            calculatedForFieldResults = (l2DFHeating.evalForFieldProduction(this) != null);  //TODO must be modified
                         }
                     }
                 } else
@@ -739,12 +776,13 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2
     boolean fieldDataIsBeingHandled = false;
     boolean newStripIsBeingHandled = false;
 
+/*
     public void noteResultsReady() {
 //        controller.showMessage("results ready Noted by L2DFHFurnace");
         if (calculatedForFieldResults) {
 //            logInfo("calculated for Field process ..............");
             calculatedForFieldResults = false;
-            reCalculateWithFieldCorrections =  l2DFHeating.recalculateWithFieldCorrections(this);
+            reCalculateWithFieldCorrections =  (l2DFHeating.recalculateWithFieldCorrections(this) != null);
         } else if (reCalculateWithFieldCorrections) {
 //            logInfo("recalculated with Field Corrections .......... ");
             reCalculateWithFieldCorrections = false;
@@ -758,13 +796,14 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2
 //                doneWithFieldData.noteCalculationsDone();
         }
     }
+*/
 
 
-    protected boolean addResultsToPerfBase() {
+    boolean addFieldBasedPeformanceToPerfBase() {
         Performance perform = getPerformance();
         boolean goAhead = true;
         boolean replace = false;
-        if (perform != null && performBase != null) {
+                if (perform != null && performBase != null) {
             if (performBase.similarPerformance(perform) != null) {
                 replace = true;
                 boolean response = getYesNoResponseFromLevel1(
@@ -775,12 +814,20 @@ public class L2DFHFurnace extends DFHFurnace implements ResultsReadyListener, L2
         }
         if (goAhead) {
             l2DFHeating.enablePerfMenu(false);
-            doneWithFieldData.notePerformance(perform, replace);
-            controller.calculateForPerformanceTable(perform, doneWithFieldData);
+            Thread t = controller.calculateForPerformanceTable(perform);
+            try {
+                t.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            if (replace)
+                performBase.replaceExistingPerformance(perform);
+            else
+                performBase.noteBasePerformance(perform);
+            return true;
         }
         else
-            resetFieldDataBeingHandled();
-        return goAhead;
+            return false;
     }
 
     DoneWithFieldData doneWithFieldData = new DoneWithFieldData();
