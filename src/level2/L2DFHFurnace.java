@@ -776,29 +776,6 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     boolean fieldDataIsBeingHandled = false;
     boolean newStripIsBeingHandled = false;
 
-/*
-    public void noteResultsReady() {
-//        controller.showMessage("results ready Noted by L2DFHFurnace");
-        if (calculatedForFieldResults) {
-//            logInfo("calculated for Field process ..............");
-            calculatedForFieldResults = false;
-            reCalculateWithFieldCorrections =  (l2DFHeating.recalculateWithFieldCorrections(this) != null);
-        } else if (reCalculateWithFieldCorrections) {
-//            logInfo("recalculated with Field Corrections .......... ");
-            reCalculateWithFieldCorrections = false;
-//            boolean response = getYesNoResponseFromLevel1(
-//                    String.format("%s, %tc",
-//                            "Do you want to save as reference ", Calendar.getInstance()), 50);
-//            boolean saveIt =  (response) && (l2YesNoQuery.getValue(Tag.TagName.Response).booleanValue);
-//            if (saveIt) {
-                addToPerfBase();
-//            } else
-//                doneWithFieldData.noteCalculationsDone();
-        }
-    }
-*/
-
-
     boolean addFieldBasedPeformanceToPerfBase() {
         Performance perform = getPerformance();
         boolean goAhead = true;
@@ -828,25 +805,6 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         }
         else
             return false;
-    }
-
-    DoneWithFieldData doneWithFieldData = new DoneWithFieldData();
-
-    class DoneWithFieldData implements CalculationsDoneListener {
-        Performance performance;
-        boolean replace = false;
-        void notePerformance(Performance performance, boolean replace) {
-            this.performance = performance;
-            this.replace = replace;
-        }
-
-        public void noteCalculationsDone() {
-            if (replace)
-                performBase.replaceExistingPerformance(performance);
-            else
-                performBase.noteBasePerformance(performance);
-            resetFieldDataBeingHandled();
-        }
     }
 
     void resetFieldDataBeingHandled() {
