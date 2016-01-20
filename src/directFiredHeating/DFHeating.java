@@ -374,53 +374,6 @@ public class DFHeating extends JApplet implements InputControl {
         mainF.setTitle(title);
     }
 
-//    protected void createUIsOLD() {
-//        debug("itsON = " + itsON);
-//        if (!itsON) {
-//            JPanel outerP = new JPanel(new GridBagLayout());
-//            GridBagConstraints gbc = new GridBagConstraints();
-//            panelLT = new FramedPanel();
-//            panelLT.setPreferredSize(new Dimension(1000, 640));
-//            panelRT = new FramedPanel();
-//            panelRT.setPreferredSize(new Dimension(300, 640));
-//            panelLB = new FramedPanel();
-//            panelLB.setPreferredSize(new Dimension(1000, 80));
-//            panelRB = new FramedPanel();
-//            panelRB.setPreferredSize(new Dimension(300, 80));
-//            gbc.gridx = 0;
-//            gbc.gridy = 0;
-//            outerP.add(panelLT, gbc);
-//            gbc.gridx = 1;
-//            outerP.add(panelRT, gbc);
-//            gbc.gridx = 0;
-//            gbc.gridy = 1;
-//            outerP.add(panelLB, gbc);
-//            gbc.gridx = 1;
-//            outerP.add(panelRB, gbc);
-//            mainAppPanel = new FramedPanel(new BorderLayout());
-//            Dimension ltSize = panelLT.getPreferredSize();
-//            mainAppPanel.setPreferredSize(new Dimension(ltSize.width - 2, ltSize.height - 2));
-////            mainAppPanel.setPreferredSize(new Dimension(ltSize));
-//            mainF.addWindowListener(new WinListener());
-//            debug("added WindowListeners");
-//            setMenuOptions();
-//            debug("set Menu Options");
-//            inpPage = inputPage();
-//            debug("got InputPage");
-//            opPage = OperationPage();
-//            debug("got OperationPage");
-//            slate.setViewportView(inpPage);
-//            mainAppPanel.add(slate, BorderLayout.CENTER);
-//            panelLT.add(mainAppPanel);
-////            mainF.setLocation(20, 10);
-//            mainF.add(outerP);
-//            debug("applet packed");
-//            switchPage(InputType.INPUTPAGE);
-//            debug("switched to INPUTPAGE");
-//            cbFceFor.setSelectedItem(proc);
-//        }
-//    }
-
     protected void createUIs() {
          debug("itsON = " + itsON);
          if (!itsON) {
@@ -620,21 +573,6 @@ public class DFHeating extends JApplet implements InputControl {
         furnace.changeLossItemVal(lossNum, lossName, factor, basis, tempAct);
 
         return retVal;
-    }
-
-    public void displayItOLD() {
-        if (!itsON /* && furnace != null */) {
-            itsON = true;
-//            setDefaultSelections();
-//            switchPage(InputType.INPUTPAGE);
-            mainF.setFocusable(true);
-            mainF.requestFocus();
-            mainF.toFront(); //setAlwaysOnTop(true);
-            mainF.pack();
-//            mainF.setLocation(20, 10);
-            mainF.setVisible(true);
-            mainF.setResizable(false);
-        }
     }
 
     public void displayIt() {
@@ -992,66 +930,6 @@ public class DFHeating extends JApplet implements InputControl {
         menuBarMainApp = createMenuBar();
         mainAppPanel.add(menuBarMainApp, BorderLayout.NORTH);
     }
-
-//    void setMenuOptionsOLD() {
-////        JMenuBar mb = new JMenuBar();
-//        prepareMenuItems();
-//
-//        fileMenu = new JMenu("File");
-//        if (!onProductionLine) {
-//            fileMenu.add(mIGetFceProfile);
-//            fileMenu.add(mILoadRecuSpecs);
-//
-//            fileMenu.addSeparator();
-//            fileMenu.add(mISaveFceProfile);
-//            fileMenu.add(saveToXL);
-//
-//            fileMenu.addSeparator();
-//            fileMenu.add(saveForTFM);
-//
-//            if (enableSpecsSave || onTest) {
-//                fileMenu.addSeparator();
-////                fileMenu.add(saveForFE);
-//                fileMenu.add(saveFuelSpecs);
-//                fileMenu.add(saveSteelSpecs);
-//            }
-//        }
-//        fileMenu.addSeparator();
-//        fileMenu.add(mIExit);
-//        menuBarMainApp.add(fileMenu);
-//
-//        inputMenu = new JMenu("Define Furnace");
-//        inputMenu.add(mIInputData);
-//        inputMenu.add(mIOpData);
-//
-//        if (!onProductionLine) {
-//            inputMenu.addSeparator();
-//            inputMenu.add(mICreateFuelMix);
-//            inputMenu.add(mIRegenBurnerStudy);
-//
-//            inputMenu.addSeparator();
-//            inputMenu.add(mITuningParams);
-//
-//            inputMenu.addSeparator();
-//            inputMenu.add(beamParamTFM);
-//            inputMenu.add(lossParamTFM);
-//        }
-//        menuBarMainApp.add(inputMenu);
-//
-//        statMenu = new JMenu("Calculation Status");
-//        statMenu.add(progressP);
-//        statMenu.setEnabled(false);
-//        menuBarMainApp.add(statMenu);
-//
-//        menuBarMainApp.add(getResultsMenu());
-//        menuBarMainApp.add(getPrintMenu());
-//        menuBarMainApp.add(getCompareMenu());
-//
-//        menuBarMainApp.add(getPerformMenu());
-//        menuBarMainApp.add(pbEdit);
-////        mainF.setJMenuBar(mb);
-//        mainAppPanel.add(menuBarMainApp, BorderLayout.NORTH);
-//    }
 
     public boolean isOnProductionLine() {
         return onProductionLine;
@@ -2380,18 +2258,19 @@ public class DFHeating extends JApplet implements InputControl {
         tfAirTemp.setData(airTemp);
     }
 
-    public Thread calculateForPerformanceTable(Performance baseP) {
+    public FceEvaluator calculateForPerformanceTable(Performance baseP) {
         return calculateForPerformanceTable(baseP, null);
     }
 
-    public Thread calculateForPerformanceTable(Performance baseP, CalculationsDoneListener doneListener) {
+    public FceEvaluator calculateForPerformanceTable(Performance baseP, CalculationsDoneListener doneListener) {
         enableResultsMenu(false);
         enableCalculStat();
         Thread evalThread = new Thread(evaluator = new FceEvaluator(this, slate, furnace, calculStep, baseP, doneListener));
 //        evaluator.setShowProgress(false);
         enablePauseCalcul();
         evalThread.start();
-        return evalThread;
+        evaluator.noteYourThread(evalThread);
+        return evaluator;
     }
 
     public boolean evaluate(ThreadController master, double forOutput, double stripWidth) {   // TODO not used
@@ -2415,7 +2294,7 @@ public class DFHeating extends JApplet implements InputControl {
      *
      * @param resultsReadyListener
      */
-    public Thread calculateFce(ResultsReadyListener resultsReadyListener, boolean bShowResults, boolean bResetLossFactor, boolean bCheckData) {
+    public FceEvaluator calculateFce(ResultsReadyListener resultsReadyListener, boolean bShowResults, boolean bResetLossFactor, boolean bCheckData) {
         if (bShowResults) {
             initPrintGroups();
             enableResultsMenu(false);
@@ -2452,6 +2331,7 @@ public class DFHeating extends JApplet implements InputControl {
                 evaluator = new FceEvaluator(this, slate, furnace, calculStep);
                 evaluator.setShowProgress(bShowResults);
                 evalThread = new Thread(evaluator);
+                evaluator.noteYourThread(evalThread);
 //                enablePauseCalcul();   // TODO to be removed since nothing happens?
                 addResultsListener(resultsReadyListener);
 //                runOn = true;
@@ -2459,7 +2339,7 @@ public class DFHeating extends JApplet implements InputControl {
             } else
                 showError("Earlier Calculation is still ON!");
         }
-        return evalThread;
+        return evaluator;
     }
 
     public boolean setProductionData(Charge charge, double output) {
@@ -2471,50 +2351,11 @@ public class DFHeating extends JApplet implements InputControl {
         return true;
     }
 
-    public Thread calculateFce(boolean bResetLossFactor, ResultsReadyListener resultsReadyListener) {
+    public FceEvaluator calculateFce(boolean bResetLossFactor, ResultsReadyListener resultsReadyListener) {
         return calculateFce(resultsReadyListener, true, bResetLossFactor, true);
     }
 
-//    protected void calculateFceOLD(boolean bResetLossFactor, ResultsReadyListener resultsReadyListener) {    //TODO ro be removed
-//        initPrintGroups();
-//        enableResultsMenu(false);
-//        if (bResetLossFactor) {
-//            furnace.resetLossFactor();
-//            takeValuesFromUI();
-//        }
-//        while (checkData()) {
-//            if (furnace.showZoneDataMsgIfRequired(pbCalculate)) {
-//                if (!commFuel.bMixedFuel && fuelTemp > 0 && !tuningParams.bOnProductionLine
-//                        && !commFuel.isSensHeatSpecified(this, fuelTemp)) {
-//                    commFuel.getSpHtData(this, tfFuelTemp);
-//                }
-//                furnace.setCommonFuel(new FuelFiring(commFuel, false, excessAir, airTemp, fuelTemp));  // as normal burner
-////                theCharge = new Charge(selChMaterial, chLength, chWidth, chThickness);
-//                theCharge = new Charge(selChMaterial, chLength, chWidth, chThickness, chDiameter, (Charge.ChType)cbChType.getSelectedItem());
-//                production = new ProductionData();
-//                production.setCharge(theCharge, chPitch);
-//                production.setProduction(tph * 1000, nChargeRows, entryTemp, exitTemp, deltaTemp, bottShadow);
-//                production.setExitZoneTempData(exitZoneFceTemp, minExitZoneFceTemp);
-//                furnace.setProduction(production);
-//                if (evaluator != null)
-//                    if (evaluator.stopped)
-//                        evaluator = null;
-//                if (evaluator == null) {
-//                    enableCalculStat();
-//
-//                    Thread evalThread = new Thread(evaluator = new FceEvaluator(this, slate, furnace, calculStep));
-//                    enablePauseCalcul();   // TODO to be removed since nothing happens?
-//                    addResultsListener(resultsReadyListener);
-////                    runOn = true;
-//                    evalThread.start();
-//                } else
-//                    showError("Earlier Calculation is still ON!");
-//            }
-//            break;
-//        }
-//    }
-
-    public Thread calculateFce() {
+    public FceEvaluator calculateFce() {
         return calculateFce(true, null);
     }
 
@@ -3813,45 +3654,6 @@ public class DFHeating extends JApplet implements InputControl {
         parent().toFront();
     }
 
-    void saveComparisonToXLOLD() {  // TODO remove
-        FileOutputStream out = null;
-        FileDialog fileDlg =
-                new FileDialog(mainF, "Saving Results Table to Excel",
-                        FileDialog.SAVE);
-        fileDlg.setFile("Test Results Table.xls");
-        fileDlg.setVisible(true);
-        String bareFile = fileDlg.getFile();
-        if (bareFile != null) {
-            int len = bareFile.length();
-            if ((len < 4) || !(bareFile.substring(len - 4).equalsIgnoreCase(".xls"))) {
-                showMessage("Adding '.xls' to file name");
-                bareFile = bareFile + ".xls";
-            }
-            String fileName = fileDlg.getDirectory() + bareFile;
-            try {
-                out = new FileOutputStream(fileName);
-            } catch (FileNotFoundException e) {
-                showError("Some problem in file.\n" + e.getMessage());
-                return;
-            }
-//  create a new workbook
-            Workbook wb = new HSSFWorkbook();
-            int nSheet = 0;
-//  create a new sheet
-            ExcelStyles styles = new ExcelStyles(wb);
-            Sheet sh = prepareReportWB(wb, styles);
-            furnace.xlComparisonReport(sh, styles);
-            try {
-                wb.write(out);
-                out.close();
-            } catch (IOException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                showError("Some problem with file.\n" + e.getMessage());
-            }
-        }
-        parent().toFront();
-    }
-
     void clearComparisonTable() {
         furnace.clearComparisonTable();
         showComparison.setEnabled(false);
@@ -4059,96 +3861,6 @@ public class DFHeating extends JApplet implements InputControl {
                     e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                     showError("Some problem with file.\n" + e.getMessage());
                 }
-            }
-        }
-        parent().toFront();
-    }
-
-    void excelResultsFileOLD() {     //TODO remove
-//  create a new file
-        FileOutputStream out = null;
-        FileDialog fileDlg =
-                new FileDialog(mainF, "Saving Results to Excel",
-                        FileDialog.SAVE);
-        fileDlg.setFile("Test workbook from Java.xls");
-        fileDlg.setVisible(true);
-        String bareFile = fileDlg.getFile();
-        if (bareFile != null) {
-            int len = bareFile.length();
-            if ((len < 4) || !(bareFile.substring(len - 4).equalsIgnoreCase(".xls"))) {
-                showMessage("Adding '.xls' to file name");
-                bareFile = bareFile + ".xls";
-            }
-            String fileName = fileDlg.getDirectory() + bareFile;
-            try {
-                out = new FileOutputStream(fileName);
-            } catch (FileNotFoundException e) {
-                showError("Some problem in file.\n" + e.getMessage());
-                return;
-            }
-//  create a new workbook
-            Workbook wb = new HSSFWorkbook();
-            int nSheet = 0;
-//  create a new sheet
-            ExcelStyles styles = new ExcelStyles(wb);
-            wb.createSheet("Basic Data");
-            xlFceBasicData(wb.getSheetAt(nSheet), styles);
-            nSheet++;
-            wb.createSheet("Heat Summary");
-            furnace.xlHeatSummary(wb.getSheetAt(nSheet), styles);
-            nSheet++;
-            wb.createSheet(furnace.topBotName(false) + "Sec Summary");
-            furnace.xlSecSummary(wb.getSheetAt(nSheet), styles, false);
-            if (furnace.bTopBot) {
-                nSheet++;
-                wb.createSheet("Bot Sec Summary");
-                furnace.xlSecSummary(wb.getSheetAt(nSheet), styles, true);
-            }
-            nSheet++;
-            wb.createSheet("Loss Details");
-            furnace.xlLossDetails(wb.getSheetAt(nSheet), styles);
-
-            nSheet++;
-            if (bAirHeatedByRecu || bFuelHeatedByRecu) {
-                wb.createSheet("Recu Balance");
-                furnace.xlRecuSummary(wb.getSheetAt(nSheet), styles);
-                nSheet++;
-            }
-            wb.createSheet("Furnace Fuel Summary");
-            furnace.xlFuelSummary(wb.getSheetAt(nSheet), styles);
-            nSheet++;
-            wb.createSheet(furnace.topBotName(false) + "Sec Fuel Summary");
-            furnace.xlSecFuelSummary(wb.getSheetAt(nSheet), styles, false);
-            if (bTopBot) {
-                nSheet++;
-                wb.createSheet("Bottom Sec Fuel Summary");
-                furnace.xlSecFuelSummary(wb.getSheetAt(nSheet), styles, true);
-            }
-            nSheet++;
-            wb.createSheet("Fuels Details");
-            furnace.xlUsedFuels(wb.getSheetAt(nSheet), styles);
-            nSheet++;
-            wb.createSheet(furnace.topBotName(false) + "Temp Profile");
-            furnace.xlTempProfile(wb.getSheetAt(nSheet), styles, false);
-            if (furnace.bTopBot) {
-                nSheet++;
-                wb.createSheet("Bot Temp Profile");
-                furnace.xlTempProfile(wb.getSheetAt(nSheet), styles, true);
-            }
-            nSheet++;
-            wb.createSheet("Furnace Profile");
-            wb.setSheetHidden(nSheet, true);
-            Sheet sh = wb.getSheetAt(nSheet);
-            xlFceProfile(sh, styles);  // performance is saved here
-
-            nSheet++;
-            try {
-                wb.write(out);
-                out.close();
-                furnace.performaceIsSaved();
-            } catch (IOException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                showError("Some problem with file.\n" + e.getMessage());
             }
         }
         parent().toFront();
@@ -4845,60 +4557,6 @@ public class DFHeating extends JApplet implements InputControl {
         if (DFHeating.parseCmdLineArgs(args)) {
             DFHeating trHeat = new DFHeating(true);
         }
-//        boolean onProductionLine = true;
-//
-//        CommandLineArgs cmdArg;
-//        for (int a = 0; a < args.length; a++) {
-//            cmdArg = CommandLineArgs.getEnum(args[a]);
-//            if (cmdArg != null)
-//                switch(cmdArg) {
-//                    case ONTEST:
-//                        onTest = true;
-//                        break;
-//                    case ALLOWSPECSSAVE:
-//                        enableSpecsSave = true;
-//                        break;
-//                    case NOTLEVEL2:
-//                        onProductionLine = false;
-//                        break;
-//                }
-//        }
-//        final DFHeating trHeat = new DFHeating(true, onProductionLine);
-
-
-//        trHeat.setVisible(true);
-
-/*
-
-        try {
-            TMuaClient opc = new TMuaClient("opc.tcp://127.0.0.1:49320");
-            opc.connect();
-            Level2Zone zone1Temperature = new Level2Zone(opc, "Furnace", "DFHzone1.temperature");
-            readInput(true);
-            System.out.println("PV " + zone1Temperature.getPV());
-            System.out.println("SP " + zone1Temperature.getSP());
-            System.out.println("auto " + zone1Temperature.getAuto());
-            boolean resp = zone1Temperature.setSP(37.3);
-            System.out.println("Changing SP to 37.30, resp = " + resp);
-            System.out.println("SP " + zone1Temperature.getSP());
-            System.out.println("stripMode " + zone1Temperature.getStripMode());
-            zone1Temperature.setStripMode(true);
-            System.out.println("Changing strip mode to true");
-            System.out.println("stripMode  imm after change " + zone1Temperature.getStripMode());
-            System.out.println("Changing strip mode to false");
-            zone1Temperature.setStripMode(false);
-            System.out.println("stripMode  imm after change " + zone1Temperature.getStripMode());
-            readInput(true);
-            System.out.println("SP " + zone1Temperature.getSP());
-            System.out.println("stripMode " + zone1Temperature.getStripMode());
-
-            opc.disconnect();
-
-//            TMuaClient.testFromOutside();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-*/
     }
 
 }

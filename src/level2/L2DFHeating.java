@@ -4,6 +4,7 @@ import TMopcUa.TMuaClient;
 import basic.*;
 import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
+import directFiredHeating.FceEvaluator;
 import directFiredHeating.ResultsReadyListener;
 import display.QueryDialog;
 import mvUtils.display.ErrorStatAndMsg;
@@ -716,7 +717,7 @@ public class L2DFHeating extends DFHeating {
         tfFuelTemp.setData(fuelTemp);
     }
 
-    public Thread evalForFieldProduction(ResultsReadyListener resultsReadyListener) {   // @TODO incomplete
+    public FceEvaluator evalForFieldProduction(ResultsReadyListener resultsReadyListener) {   // @TODO incomplete
         if (bAllowL2Changes)
             mIEvalWithFieldCorrection.setEnabled(true);
         if (l2Furnace.setFieldProductionData() ) {
@@ -729,16 +730,16 @@ public class L2DFHeating extends DFHeating {
             return null;
     }
 
-    public Thread evalForFieldProduction() {
+    public FceEvaluator evalForFieldProduction() {
         return evalForFieldProduction(null);
     }
 
-    public Thread recalculateWithFieldCorrections(ResultsReadyListener resultsReadyListener) {   //  TODO not complete
+    public FceEvaluator recalculateWithFieldCorrections(ResultsReadyListener resultsReadyListener) {   //  TODO not complete
         if (l2Furnace.adjustForFieldResults()) {
-            Thread evalThread = calculateFce(false, resultsReadyListener); // without reset the loss Factors
+            FceEvaluator fceEvaluator = calculateFce(false, resultsReadyListener); // without reset the loss Factors
             if (bAllowL2Changes)
                 mIEvalForFieldProduction.setEnabled(false);
-            return evalThread;
+            return fceEvaluator;
         }
         else
             return null;

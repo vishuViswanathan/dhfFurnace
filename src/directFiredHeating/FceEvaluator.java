@@ -60,6 +60,7 @@ public class FceEvaluator implements Runnable, ThreadController{
     DFHTuningParams tuningParams;
     boolean bShowProgress = false;
     Performance baseP;
+    boolean aborted = false;
 
     /**
      *
@@ -112,8 +113,9 @@ public class FceEvaluator implements Runnable, ThreadController{
     boolean init() {
         localControl = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                String cmd =  e.getActionCommand();
-                if (cmd.equals("Abort"))
+                Object src = e.getSource();
+//                String cmd =  e.getActionCommand();
+                if (src == pbAbort)
                     abortCalculation();
             }
         };
@@ -136,7 +138,7 @@ public class FceEvaluator implements Runnable, ThreadController{
         return furnace.getReadyToCalcul(calculStep);
     }
 
-    JButton pbAbort = new JButton("Abort");
+    JButton pbAbort = new JButton("Abort Calculation");
 
     void pauseCalculation() {
         paused = true;
@@ -153,8 +155,17 @@ public class FceEvaluator implements Runnable, ThreadController{
         abortCalculation();
     }
 
+    public boolean healthyExit() {
+        return !isAborted();
+    }
+
+    public boolean isAborted() {
+        return aborted;
+    }
+
     void abortCalculation() {
         run= false;
+        aborted = true;
         control.abortingCalculation();
     }
 
@@ -169,10 +180,6 @@ public class FceEvaluator implements Runnable, ThreadController{
 
     public boolean isPauseOn() {
         return paused;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public boolean isAborted() {
-        return !run;
     }
 
     JLabel showCount;
@@ -255,8 +262,19 @@ public class FceEvaluator implements Runnable, ThreadController{
 
     public boolean done = false;
 
+    Thread myThread;
+
+    public void noteYourThread(Thread myThread) {
+        this.myThread = myThread;
+    }
+
+    public void awaitThreadToExit() throws InterruptedException {
+        myThread.join();
+    }
+
     public void run() {
         if (!control.isItBusyInCalculation()) {
+//            myThread = Thread.currentThread();
             control.setBusyInCalculation(true);
             if (init()) {
                 if (bShowProgress)

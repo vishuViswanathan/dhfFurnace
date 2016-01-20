@@ -454,9 +454,9 @@ public class OneStripDFHProcess {
         maxUnitOutput = ntMaxUnitOutput.getData() * 1000;
         minUnitOutput = ntMinUnitOutput.getData() * 1000;
         maxThickness = ntMaxThickness.getData() / 1000;
-        minThickness = ntMaxThickness.getData() / 1000;
+        minThickness = ntMinThickness.getData() / 1000;
         maxSpeed = ntMaxSpeed.getData() * 60;
         maxWidth = ntMaxWidth.getData() / 1000;
-        minWidth = ntMaxWidth.getData() / 1000;
+        minWidth = ntMinWidth.getData() / 1000;
     }
 }

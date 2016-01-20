@@ -569,15 +569,12 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         else {
             this.calculStep = controller.calculStep;
             setProduction(oneFieldResults.production);
-//            getReadyToCalcul(controller.calculStep, true);
-//            if ((vTopUnitFces != null) || prepareSlots()) {
             if (prepareSlots()) {
                 prepareSlotsWithTempO();
                 double tempAllowance = 2;
                 outputAssumed = production.production;    // chargeAtExit(false).output;
                 boolean done = false;
                 double nowExitTemp, diff;
-//                boolean firstTime = true;
                 int trials = 0;
                 while (!done) {
                     trials++;
@@ -585,12 +582,6 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                     processInFurnace(chStatus);
                     if (chStatus.isValid()) {
                         nowExitTemp = chStatus.tempWM;
-//                        if (firstTime) {
-//                            info("First pass in getOutputWithFurnaceStatus for " +
-//                                    production.chargeAndSize() + " at " + outputAssumed + "kg/h, exit Temp = " + nowExitTemp);
-//                            String chTemp = "";
-//                            firstTime = false;
-//                        }
                         diff = exitTempRequired - nowExitTemp;
                         if (Math.abs(diff) < tempAllowance)
                             done = true;
@@ -623,7 +614,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     }
 
     void handleNewStrip() {
-        if (fieldDataIsBeingHandled || l2DFHeating.isItBusyInCalculation()) {
+        if (fieldDataIsBeingHandled) {
             showErrorInLevel1("Level2 is busy handling field Performance");
         }
         else {
@@ -721,16 +712,20 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         public void run() {
             if (setFieldProductionData() ) {
                 setCurveSmoothening(false);
-                Thread t1 = l2DFHeating.calculateFce(true, null);
-                if (t1 != null) {
+                FceEvaluator eval1 = l2DFHeating.calculateFce(true, null);
+                if (eval1 != null) {
                     try {
-                        t1.join();
-                        if (adjustForFieldResults()) {
-                            Thread t2 = l2DFHeating.calculateFce(false, null); // without reset the loss Factors
-                            if (t2 != null) {
-                                t2.join();
-                                fieldDataIsBeingHandled = true;
-                                addFieldBasedPeformanceToPerfBase();
+                        eval1.awaitThreadToExit();
+                        if (eval1.healthyExit()) {
+                            if (adjustForFieldResults()) {
+                                FceEvaluator eval2 = l2DFHeating.calculateFce(false, null); // without reset the loss Factors
+                                if (eval2 != null) {
+                                    eval2.awaitThreadToExit();
+                                    if (eval2.healthyExit()) {
+//                                        fieldDataIsBeingHandled = true;
+                                        addFieldBasedPeformanceToPerfBase();
+                                    }
+                                }
                             }
                         }
                     } catch (InterruptedException e) {
@@ -748,7 +743,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                 showErrorInLevel1("Level2 is busy handling new Strip data");
             } else {
                 if (level2Enabled) {
-                    if (fieldDataIsBeingHandled || l2DFHeating.isItBusyInCalculation()) {
+                    if (fieldDataIsBeingHandled) {
                         showErrorInLevel1("Last field data is still being handled. Retry later");
                     }
                     else {
@@ -778,6 +773,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
 
     boolean addFieldBasedPeformanceToPerfBase() {
         Performance perform = getPerformance();
+        boolean retVal = false;
         boolean goAhead = true;
         boolean replace = false;
                 if (perform != null && performBase != null) {
@@ -791,20 +787,23 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         }
         if (goAhead) {
             l2DFHeating.enablePerfMenu(false);
-            Thread t = controller.calculateForPerformanceTable(perform);
-            try {
-                t.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            FceEvaluator eval = controller.calculateForPerformanceTable(perform);
+            if (eval != null) {
+                try {
+                    eval.awaitThreadToExit();
+                    if (eval.healthyExit()) {
+                        if (replace)
+                            performBase.replaceExistingPerformance(perform);
+                        else
+                            performBase.noteBasePerformance(perform);
+                        retVal = true;
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
-            if (replace)
-                performBase.replaceExistingPerformance(perform);
-            else
-                performBase.noteBasePerformance(perform);
-            return true;
         }
-        else
-            return false;
+        return retVal;
     }
 
     void resetFieldDataBeingHandled() {
