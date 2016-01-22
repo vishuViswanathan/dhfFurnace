@@ -100,6 +100,54 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         return furnaceSettings.showEditData(bEdit);
     }
 
+    /**
+     * Checcks in the the module access level is valid or not
+     * Baically checks if anoher module exisits with this level
+     * @return
+     */
+    public StatusWithMessage checkAndNoteAccessLevel() {
+        StatusWithMessage retVal = new StatusWithMessage();
+        switch (l2DFHeating.accessLevel) {
+            case EXPERT:
+                if (tagExpertReady.getValue().booleanValue)
+                    retVal.setErrorMessage("Level2 with Expert Access is already ON");
+                else  if (tagUpdaterReady.getValue().booleanValue)
+                    retVal.setErrorMessage("Exit from Level2 Updater and try again as Expert");
+                else
+                    tagExpertReady.setValue(true);
+                break;
+            case UPDATER:
+                if (tagUpdaterReady.getValue().booleanValue)
+                    retVal.setErrorMessage("Level2 with Updater Access is already ON");
+                else  if (tagExpertReady.getValue().booleanValue)
+                    retVal.setErrorMessage("Exit from Level2 Expert and try again as Updater");
+                else
+                    tagUpdaterReady.setValue(true);
+                break;
+            default:
+                if (tagRuntimeReady.getValue().booleanValue)
+                    retVal.setErrorMessage("Level2-Runtime is already ON");
+                else
+                    tagRuntimeReady.setValue(true);
+                break;
+        }
+        return retVal;
+    }
+
+    public void exitFromAccess() {
+        switch (l2DFHeating.accessLevel) {
+            case EXPERT:
+                tagExpertReady.setValue(false);
+                break;
+            case UPDATER:
+                tagUpdaterReady.setValue(false);
+                break;
+            default:
+                tagRuntimeReady.setValue(false);
+                break;
+        }
+    }
+
     boolean createInternalZone() {
         boolean retVal = false;
 //        internal = source.createTMSubscription("Base data",new SubAliveListener(), new BasicListener());
@@ -109,9 +157,9 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
 //            e.printStackTrace();
 //        }
         internalZone = new L2Zone(this, "Internal", null);
-        tagRuntimeReady = new Tag(L2ParamGroup.Parameter.Runtime, Tag.TagName.Enabled, true, false);
-        tagUpdaterReady = new Tag(L2ParamGroup.Parameter.Updater, Tag.TagName.Enabled, true, false);
-        tagExpertReady = new Tag(L2ParamGroup.Parameter.Expert, Tag.TagName.Enabled, true, false);
+        tagRuntimeReady = new Tag(L2ParamGroup.Parameter.Runtime, Tag.TagName.Ready, true, false);
+        tagUpdaterReady = new Tag(L2ParamGroup.Parameter.Updater, Tag.TagName.Ready, true, false);
+        tagExpertReady = new Tag(L2ParamGroup.Parameter.Expert, Tag.TagName.Ready, true, false);
         try {
             internalZone.addOneParameter(L2ParamGroup.Parameter.Runtime, tagRuntimeReady);
             internalZone.addOneParameter(L2ParamGroup.Parameter.Updater, tagUpdaterReady);
@@ -402,6 +450,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     }
 
     public boolean prepareForDisconnection() {
+        exitFromAccess();
         for (FceSection sec : topL2Zones.keySet())
             topL2Zones.get(sec).closeSubscriptions();
         try {
@@ -593,7 +642,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         tuningParams.setSelectedProc(controller.proc);
         ErrorStatAndMsg response = takeFieldResultsFromLevel1();
         if (response.inError) {
-            logInfo("Facing some problem in reading furnace field data");
+            l2DFHeating.l2Info("Facing some problem in reading furnace field data");
         }
         else {
             this.calculStep = controller.calculStep;
@@ -623,9 +672,9 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                         break;
                     }
                 }
-                logInfo("Trials in getOutputWithFurnaceStatus = " + trials);
+                l2DFHeating.l2Info("Trials in getOutputWithFurnaceStatus = " + trials);
             } else
-                logInfo("Facing problem in creating calculation steps");
+                l2DFHeating.l2Info("Facing problem in creating calculation steps");
         }
         return outputAssumed;
     }
@@ -656,7 +705,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                 double stripThick = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Thick).floatValue, 3) / 1000;
                 String process = stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Process).stringValue;
                 String msg = "New Strip " + stripWidth + " x " + stripThick + " for process " + process;
-                logInfo(msg);
+                l2DFHeating.l2Info(msg);
                 if (level2Enabled) {
                     stripZone.setValue(L2ParamGroup.Parameter.Next, Tag.TagName.Noted, true);
                     OneStripDFHProcess oneProcess = l2DFHeating.getStripDFHProcess(process);
@@ -668,7 +717,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                                 Charge ch = new Charge(controller.getSelChMaterial(refP.chMaterial), stripWidth, 1, stripThick);
                                 ChargeStatus chStatus = new ChargeStatus(ch, 0, refP.exitTemp());
                                 double output = getOutputWithFurnaceTemperatureStatus(chStatus, refP.exitTemp());
-                                logInfo("capacity Based On  temperature= " + (output / 1000) + "t/h");
+                                l2DFHeating.l2Info("capacity Based On temperature= " + (output / 1000) + "t/h");
                                 DoubleWithStatus speedData = oneProcess.getRecommendedSpeed(output, stripWidth, stripThick);
                                 StatusWithMessage.DataStat speedStatus = speedData.getDataStatus();
                                 if (speedStatus != StatusWithMessage.DataStat.WithErrorMsg) {
@@ -681,7 +730,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                                                     furnaceSettings.fuelCharSteps, l2DFHeating);
                                             if (zFP.prepareFuelTable(stripWidth, stripThick)) {
                                                 double speedBasedOnFuel = getSpeedWithFurnaceFuelStatus(zFP);
-                                                logInfo("capacityBasedOnFuel = " + speedBasedOnFuel + "m/min");
+                                                l2DFHeating.l2Info("Speed Based On Fuel = " + speedBasedOnFuel + "m/min");
                                                 if (sendFuelCharacteristics(zFP)) {
                                                     if (speedStatus == StatusWithMessage.DataStat.WithInfoMsg)
                                                         showInfoInLevel1(speedData.getInfoMessage());
@@ -767,6 +816,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     }
 
     void handleFieldData()  {
+        fieldDataParams.setAsNoted(true);
         if (l2DFHeating.bAllowUpdateWithFieldData) {
             if (newStripIsBeingHandled) {
                 showErrorInLevel1("Level2 is busy handling new Strip data");
@@ -836,7 +886,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     }
 
     void resetFieldDataBeingHandled() {
-        logInfo("fieldDataIsBeingHandled is made OFF");
+        l2DFHeating.l2Info("fieldDataIsBeingHandled is made OFF");
         fieldDataIsBeingHandled = false;
         l2DFHeating.enablePerfMenu(true);
     }
@@ -922,7 +972,8 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     class StripListener extends L2SubscriptionListener {
         @Override
         public void onDataChange(Subscription subscription, MonitoredDataItem monitoredDataItem, DataValue dataValue) {
-            if (l2DFHeating.isL2SystemReady()) {
+            L2DFHeating.AccessLevel accessLevel = l2DFHeating.accessLevel;
+            if (l2DFHeating.isL2SystemReady() && (accessLevel == L2DFHeating.AccessLevel.RUNTIME)) {
                 Tag theTag = monitoredTags.get(monitoredDataItem);
                 if (l2StripSizeNext.isNewData(theTag))   // the data will be already read if new data
                     handleNewStrip();
@@ -933,7 +984,9 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     class FieldDataListener extends L2SubscriptionListener {
          @Override
          public void onDataChange(Subscription subscription, MonitoredDataItem monitoredDataItem, DataValue dataValue) {
-             if (l2DFHeating.isL2SystemReady()) {
+             L2DFHeating.AccessLevel accessLevel = l2DFHeating.accessLevel;
+             if (l2DFHeating.isL2SystemReady() &&
+                     ((accessLevel == L2DFHeating.AccessLevel.UPDATER) || (accessLevel == L2DFHeating.AccessLevel.EXPERT))) {
                  Tag theTag = monitoredTags.get(monitoredDataItem);
                  if (fieldDataParams.isNewData(theTag))   // the data will be already read if new data
                      handleFieldData();

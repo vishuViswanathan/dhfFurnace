@@ -9,6 +9,7 @@ import directFiredHeating.ResultsReadyListener;
 import display.QueryDialog;
 import mvUtils.display.ErrorStatAndMsg;
 import mvUtils.display.FramedPanel;
+import mvUtils.display.StatusWithMessage;
 import mvUtils.file.FileChooserWithOptions;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
@@ -77,6 +78,9 @@ public class L2DFHeating extends DFHeating {
     static boolean bl2ShowDebugMessages = false;
 
     String fceDataLocation = "level2FceData/";
+
+    enum AccessLevel {RUNTIME, UPDATER, EXPERT};
+    public AccessLevel accessLevel = AccessLevel.RUNTIME;
     TMuaClient uaClient;
     static String uaServerURI;
     L2DFHFurnace l2Furnace;
@@ -121,6 +125,7 @@ public class L2DFHeating extends DFHeating {
 
     public boolean setItUp() {
         modifyJTextEdit();
+        setAccessLevel();
         fuelList = new Vector<Fuel>();
         vChMaterial = new Vector<ChMaterial>();
         setUIDefaults();
@@ -137,46 +142,48 @@ public class L2DFHeating extends DFHeating {
         l2Furnace = new L2DFHFurnace(this, false, false, lNameListener);
         if (l2Furnace.basicsSet) {
             furnace = l2Furnace;
+            StatusWithMessage status = l2Furnace.checkAndNoteAccessLevel();
+            if (status.getDataStatus() == StatusWithMessage.DataStat.OK) {
 //            furnace.setWidth(width);
 //            debug("Created Level2furnace");
-            furnace.setTuningParams(tuningParams);
-            createUIs();
-            getFuelAndCharge();
-            setDefaultSelections();
-            if (!testMachineID()) {
-                showError("Software key mismatch, Aborting ...");
-                close();
-            }
-            showMainAppPanel();  // TODO TEMPERRORY -- TO be changed
-            switchPage(DFHDisplayPageType.INPUTPAGE);
-//            displayIt();
-            if (getL2FceFromFile()) {
-                furnace.setWidth(width);
-                enableDataEdit();
-                createMenuBars();
-                l2MenuSet = true;
-                setFcefor(true);
-                getPerformanceList();
-                dfhProcessList = new StripDFHProcessList(this);
-                if (getStripDFHProcessList()) {
-                    if (getFurnaceSettings()) {
-                        if (createL2Zones()) {
-                            ErrorStatAndMsg connStat = l2Furnace.checkConnection();
-                            if (connStat.inError)
-                                showError(connStat.msg);
-                            else {
-                                l2Furnace.initForLevel2Operation();
-                                l2SystemReady = true;
-                            }
-                        }
-                    } else
-                        showError("Problem in loading Furnace Settings");
+                furnace.setTuningParams(tuningParams);
+                createUIs();
+                getFuelAndCharge();
+                setDefaultSelections();
+                if (!testMachineID()) {
+                    showError("Software key mismatch, Aborting ...");
+                    close();
                 }
-                else
-                    showError("Problem loading test StripDFHProcess list data");
-            }
-            else
-                showError("Unable to load Furnace Profile");
+                showMainAppPanel();  // TODO TEMPERRORY -- TO be changed
+                switchPage(DFHDisplayPageType.INPUTPAGE);
+//            displayIt();
+                if (getL2FceFromFile()) {
+                    furnace.setWidth(width);
+                    enableDataEdit();
+                    createMenuBars();
+                    l2MenuSet = true;
+                    setFcefor(true);
+                    getPerformanceList();
+                    dfhProcessList = new StripDFHProcessList(this);
+                    if (getStripDFHProcessList()) {
+                        if (getFurnaceSettings()) {
+                            if (createL2Zones()) {
+                                ErrorStatAndMsg connStat = l2Furnace.checkConnection();
+                                if (connStat.inError)
+                                    showError(connStat.msg);
+                                else {
+                                    l2Furnace.initForLevel2Operation();
+                                    l2SystemReady = true;
+                                }
+                            }
+                        } else
+                            showError("Problem in loading Furnace Settings");
+                    } else
+                        showError("Problem loading test StripDFHProcess list data");
+                } else
+                    showError("Unable to load Furnace Profile");
+            } else
+                showError(status.getErrorMessage());
         }
         else
             showError("Unable to start Level2 ERROR:001");
@@ -1010,6 +1017,15 @@ public class L2DFHeating extends DFHeating {
             bAllowUpdateWithFieldData = true;
             bAllowL2Changes = true;
         }
+    }
+
+    void setAccessLevel() {
+        if (bAllowL2Changes)
+            accessLevel = AccessLevel.EXPERT;
+        else if (bAllowUpdateWithFieldData)
+            accessLevel = AccessLevel.UPDATER;
+        else
+            accessLevel = AccessLevel.RUNTIME;
     }
 
     boolean getL2FceFromFile() {
