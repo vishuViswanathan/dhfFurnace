@@ -4233,7 +4233,8 @@ public class DFHFurnace {
         return bRetVal;
     }
 
-    public void takePerformanceFromXML(String xmlStr) {
+    public boolean takePerformanceFromXML(String xmlStr) {
+        boolean retVal = false;
         ValAndPos vp;
         vp = XMLmv.getTag(xmlStr, "PerformanceData", 0);
         if (vp.val.length() > 100) { //may be some data
@@ -4241,6 +4242,7 @@ public class DFHFurnace {
             if (performBase.takeDataFromXML(vp.val)) {
                 chTempProfAvailable = performBase.chTempProfAvailable;
                 controller.perfBaseAvailable(chTempProfAvailable);
+                retVal = true;
 //                perfBaseReady = (performBase.canInterpolate);
 //                if (perfBaseReady)  {
 //                    controller.performBaseReady();
@@ -4255,6 +4257,7 @@ public class DFHFurnace {
                 performBase = null;
             }
         }
+        return retVal;
     }
 
     public void takeAirRecuFromXML(String xmlStr) {

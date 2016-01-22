@@ -19,7 +19,7 @@ public class MachineCheck {
     public String getMachineID() {
         try {
             InetAddress ip = InetAddress.getLocalHost();
-            debug("Current IP address : " + ip.getHostAddress());
+//            debug("Current IP address : " + ip.getHostAddress());
 
             NetworkInterface network = NetworkInterface.getByInetAddress(ip);
 

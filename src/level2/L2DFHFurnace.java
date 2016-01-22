@@ -54,6 +54,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     Vector<ReadyNotedParam> readyNotedParamList = new Vector<ReadyNotedParam>();
     GetLevelResponse yesNoResponse;
     GetLevelResponse dataResponse;
+    L2Zone internalZone;
     L2Zone basicZone;
     L2Zone stripZone;  // all strip data size, speed temperature etc.
     L2Zone recuperatorZ;
@@ -61,6 +62,9 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     public String equipment;
     public boolean level2Enabled = false;
     Tag tagLevel2Enabled;
+    Tag tagRuntimeReady;
+    Tag tagUpdaterReady;
+    Tag tagExpertReady;
     TMSubscription basicSub;
     TMSubscription messageSub;
     TMSubscription stripSub;
@@ -84,15 +88,40 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         monitoredTags = new Hashtable<MonitoredDataItem, Tag>();
         topL2Zones = new LinkedHashMap<FceSection, L2Zone>();
         messagesON = createL2Messages();
-        if (createBasicZone())
-            if (createStripParam())
-                if (createRecuParam())
-                    if (createCommonDFHZ())
-                        basicsSet = true;
+        if (createInternalZone())
+            if (createBasicZone())
+                if (createStripParam())
+                    if (createRecuParam())
+                        if (createCommonDFHZ())
+                            basicsSet = true;
     }
 
     public boolean showEditFceSettings(boolean bEdit) {
         return furnaceSettings.showEditData(bEdit);
+    }
+
+    boolean createInternalZone() {
+        boolean retVal = false;
+//        internal = source.createTMSubscription("Base data",new SubAliveListener(), new BasicListener());
+//        try {
+//            basicSub.setMaxKeepAliveCount((long)5);
+//        } catch (ServiceException e) {
+//            e.printStackTrace();
+//        }
+        internalZone = new L2Zone(this, "Internal", null);
+        tagRuntimeReady = new Tag(L2ParamGroup.Parameter.Runtime, Tag.TagName.Enabled, true, false);
+        tagUpdaterReady = new Tag(L2ParamGroup.Parameter.Updater, Tag.TagName.Enabled, true, false);
+        tagExpertReady = new Tag(L2ParamGroup.Parameter.Expert, Tag.TagName.Enabled, true, false);
+        try {
+            internalZone.addOneParameter(L2ParamGroup.Parameter.Runtime, tagRuntimeReady);
+            internalZone.addOneParameter(L2ParamGroup.Parameter.Updater, tagUpdaterReady);
+            internalZone.addOneParameter(L2ParamGroup.Parameter.Expert, tagExpertReady);
+            l2DFHeating.l2Info("Internal zone created");
+            retVal = true;
+        } catch (TagCreationException e) {
+            showError("Some problem in accessing Level2.Internal :" + e.getMessage());
+        }
+        return retVal;
     }
 
     boolean createBasicZone() {

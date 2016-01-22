@@ -335,7 +335,7 @@ public class DFHeating extends JApplet implements InputControl {
 //                jspConnection = new JSPConnection();
             createUIs();
             setTestData();
-            switchPage(InputType.INPUTPAGE);
+            switchPage(DFHDisplayPageType.INPUTPAGE);
             displayIt();
         } else {
             try {
@@ -375,7 +375,7 @@ public class DFHeating extends JApplet implements InputControl {
     }
 
     protected void createUIs() {
-         debug("itsON = " + itsON);
+//         debug("itsON = " + itsON);
          if (!itsON) {
              mainAppPanel = new FramedPanel(new BorderLayout());
              mainAppPanel.setPreferredSize(new Dimension(1000, 650));
@@ -385,7 +385,7 @@ public class DFHeating extends JApplet implements InputControl {
              opPage = OperationPage();
              slate.setViewportView(inpPage);
              mainAppPanel.add(slate, BorderLayout.CENTER);
-             switchPage(InputType.INPUTPAGE);
+             switchPage(DFHDisplayPageType.INPUTPAGE);
              cbFceFor.setSelectedItem(proc);
          }
     }
@@ -613,7 +613,15 @@ public class DFHeating extends JApplet implements InputControl {
         return (DFHTuningParams.ForProcess)cbFceFor.getSelectedItem();
     }
 
-    protected void switchPage(InputType page) {
+    DFHDisplayPageType lastDisplayPage = null;
+
+    protected void updateDisplay(DFHDisplayPageType page) {
+        if (lastDisplayPage == page)
+            switchPage(page);
+    }
+
+    protected void switchPage(DFHDisplayPageType page) {
+        boolean done = true;
         switch (page) {
             case INPUTPAGE:
                 addFceCommAndDataPanel(inpPage);
@@ -645,11 +653,22 @@ public class DFHeating extends JApplet implements InputControl {
                 JPanel p = regenBurnerStudy.regenPanel();
                 slate.setViewportView(p);
                 break;
+            case PERFOMANCELIST:
+                slate.setViewportView(furnace.getPerfBaseListPanel());
+                break;
+            case COMPAREPANEL:
+                slate.setViewportView(furnace.getComparePanel());
+                break;
+            default:
+                done = false;
+                break;
         }
+        lastDisplayPage = (done) ? page : null;
     }
 
     void switchPage(Component c) {
         slate.setViewportView(c);
+        lastDisplayPage = null;
     }
 
     JPanel inputPage() {
@@ -665,7 +684,7 @@ public class DFHeating extends JApplet implements InputControl {
         gbcMf.gridheight = 1;
         gbcMf.gridy++;
         mainFrame.add(lossTablePanel(), gbcMf);
-        debug("lossTablePanel added");
+//        debug("lossTablePanel added");
         gbcMf.gridx = 0;
         gbcMf.gridy++;
 
@@ -674,16 +693,16 @@ public class DFHeating extends JApplet implements InputControl {
         gbcDP.gridx = 0;
         gbcDP.gridy = 0;
         detPan.add(getRowHeader(), gbcDP);
-        debug("rowHeader added");
+//        debug("rowHeader added");
         gbcDP.gridx++;
         detPan.add(secDetailsPanel(), gbcDP);
-        debug("secDetailsPanel added");
+//        debug("secDetailsPanel added");
 
         mainFrame.add(detPan, gbcMf);
         gbcMf.gridx = 0;
         gbcMf.gridy++;
         adjustForLossNameChange();
-        debug("adjustForLossNameChange done");
+//        debug("adjustForLossNameChange done");
         return mainFrame;
     }
 
@@ -938,7 +957,7 @@ public class DFHeating extends JApplet implements InputControl {
     public void enableDataEdit() {
         Component vNow = slate.getViewport().getView();
         if (vNow != inpPage && vNow != opPage)
-            switchPage(InputType.INPUTPAGE);
+            switchPage(DFHDisplayPageType.INPUTPAGE);
 
         enableDataEntry(true);
         fileMenu.setEnabled(true);
@@ -1266,7 +1285,7 @@ public class DFHeating extends JApplet implements InputControl {
         gbcLoss.gridx = 0;
         LossTypeList lossList = furnace.lossTypeList;
         Iterator<Integer> iter = lossList.keysIter();
-        debug("lossTypeList length " + lossList.size());
+//        debug("lossTypeList length " + lossList.size());
         Integer k;
         while (iter.hasNext()) {
             k = iter.next();
@@ -1701,11 +1720,11 @@ public class DFHeating extends JApplet implements InputControl {
 
     void adjustForLossNameChange() {
         furnace.takeLossParams();
-        debug("takeLossParams done");
+//        debug("takeLossParams done");
         furnace.addToLossList();
-        debug("addToLossList done");
+//        debug("addToLossList done");
         rowHead.updateUI();
-        debug("adjustForLossNameChange-updateUI done");
+//        debug("adjustForLossNameChange-updateUI done");
     }
 
     public boolean canNotify() {
@@ -2403,7 +2422,7 @@ public class DFHeating extends JApplet implements InputControl {
         fileMenu.setEnabled(true);
 //        switchPage(InputType.INPUTPAGE);
         showError("ABORTING CALCULATION!");
-        switchPage(InputType.INPUTPAGE);
+        switchPage(DFHDisplayPageType.INPUTPAGE);
         parent().toFront();
     }
 
@@ -2510,17 +2529,17 @@ public class DFHeating extends JApplet implements InputControl {
         if (vp.val.equals(DFHversion)) {
             vp = XMLmv.getTag(xmlStr, "DFHeating", 0);
             String acTData = vp.val;
-            debug("acTData.length() = " + acTData.length());
+//            debug("acTData.length() = " + acTData.length());
             if (acTData.length() > 1300) {
                 aBlock:
                 {
                     vp = XMLmv.getTag(acTData, "reference", 0);
                     reference = vp.val;
-                    debug("reference = " + vp.val);
+//                    debug("reference = " + vp.val);
                     vp = XMLmv.getTag(acTData, "fceTitle", 0);
                     fceTtitle = vp.val;
                     vp = XMLmv.getTag(acTData, "customer", 0);
-                    debug("customer = " + vp.val);
+//                    debug("customer = " + vp.val);
 
                     customer = vp.val;
 
@@ -2534,18 +2553,18 @@ public class DFHeating extends JApplet implements InputControl {
                     }
                     fceFor1stSwitch = true; // to disable fceFor switch warning
                     vp = XMLmv.getTag(acTData, "cbFceFor", 0);
-                    debug("before ForProcess.getEnum, cbFceFor = " + vp.val);
+//                    debug("before ForProcess.getEnum, cbFceFor = " + vp.val);
                     DFHTuningParams.ForProcess forProc = DFHTuningParams.ForProcess.getEnum(vp.val);
 //                    debug("forProc = " + forProc + ", mainF =" + mainF + ", cbFceFor = " + cbFceFor);
                     if (forProc != null)
                         cbFceFor.setSelectedItem(forProc);
-                    debug("Before cbHeatingType");
+//                    debug("Before cbHeatingType");
                     vp = XMLmv.getTag(acTData, "cbHeatingType", 0);
-                    debug("Before cbHeatingType.setSelectedItem");
+//                    debug("Before cbHeatingType.setSelectedItem");
                     setHeatingMode(vp.val);
 //                    cbHeatingType.setSelectedItem(vp.val);
-                    debug("Before cbFuel");
-                    debug("Before chargeData");
+//                    debug("Before cbFuel");
+//                    debug("Before chargeData");
                     vp = XMLmv.getTag(acTData, "chargeData", 0);
                     grpStat = chDataFromXML(vp.val);
                     if (!grpStat.allOK) {
@@ -2554,7 +2573,7 @@ public class DFHeating extends JApplet implements InputControl {
                     }
                     setFcefor(false);
                     setChargeSizeChoice();
-                    debug("Before recuData");
+//                    debug("Before recuData");
                     vp = XMLmv.getTag(acTData, "recuData", 0);
                     grpStat = recuDataFromXML(vp.val, bFromTFM);
                     if (!grpStat.allOK) {
@@ -2577,7 +2596,7 @@ public class DFHeating extends JApplet implements InputControl {
                         allOK = false;
                     }
 */
-                    debug("Before Tuning");
+//                    debug("Before Tuning");
                     if (bFromTFM) {
                         debug("Not reading TUNING data from TFM");
                     } else {
@@ -2591,7 +2610,7 @@ public class DFHeating extends JApplet implements InputControl {
                     debug("Before setValuesToUI()");
                     setValuesToUI();
 */
-                    debug("Before furnace");
+//                    debug("Before furnace");
                     vp = XMLmv.getTag(acTData, "furnace", 0);
                     if (bFromTFM) {
                         grpStat = furnace.takeTFMData(vp.val);
@@ -2605,21 +2624,21 @@ public class DFHeating extends JApplet implements InputControl {
                             errMsg += "   in Furnace Data\n";
                         }
                     }
-                    debug("Before Production Data");
+//                    debug("Before Production Data");
                     vp = XMLmv.getTag(acTData, "productionData", 0);
                     grpStat = productionFromXML(vp.val, bFromTFM);
                     if (!grpStat.allOK) {
                         errMsg += "In Getting Production Data: \n" + grpStat.errMsg;
                         allOK = false;
                     }
-                    debug("before calculData");
+//                    debug("before calculData");
                     vp = XMLmv.getTag(acTData, "calculData", 0);
                     grpStat = calculDataFromXML(vp.val, bFromTFM);
                     if (!grpStat.allOK) {
                         errMsg += "In Getting Calculation Data: \n" + grpStat.errMsg;
                         allOK = false;
                     }
-                    debug("Before setValuesToUI()");
+//                    debug("Before setValuesToUI()");
                     setValuesToUI();
                 } // aBlock
             } else {
@@ -3150,7 +3169,7 @@ public class DFHeating extends JApplet implements InputControl {
             showError("facing some problem in reading data : " + e.getMessage());
             e.printStackTrace();
         }
-        switchPage(InputType.INPUTPAGE);
+        switchPage(DFHDisplayPageType.INPUTPAGE);
         return bRetVal;
     }
 
@@ -3194,7 +3213,7 @@ public class DFHeating extends JApplet implements InputControl {
                 }
             }
         }
-        switchPage(InputType.INPUTPAGE);
+        switchPage(DFHDisplayPageType.INPUTPAGE);
         return bRetVal;
     }
 
@@ -3301,7 +3320,7 @@ public class DFHeating extends JApplet implements InputControl {
             showError("facing some problem in reading Recuperator data : " + e.getMessage());
             e.printStackTrace();
         }
-        switchPage(InputType.INPUTPAGE);
+        switchPage(DFHDisplayPageType.INPUTPAGE);
         return bRetVal;
     }
 
@@ -3520,7 +3539,7 @@ public class DFHeating extends JApplet implements InputControl {
 
     void invalidateResults() {
         setTimeValues(0, 0, 0);
-        debug("in invalidateResults");
+//        debug("in invalidateResults");
         enableResultsMenu(false);
     }
 
@@ -3660,7 +3679,7 @@ public class DFHeating extends JApplet implements InputControl {
         saveComparisontoXL.setEnabled(false);
         appendComparisontoXL.setEnabled(false);
         clearComparison.setEnabled(false);
-        switchPage(InputType.INPUTPAGE);
+        switchPage(DFHDisplayPageType.INPUTPAGE);
     }
 
     void saveForComparison() {
@@ -4166,8 +4185,9 @@ public class DFHeating extends JApplet implements InputControl {
     }
 
 
-    protected enum InputType {
-        INPUTPAGE, OPPAGE, FUELMIX, REGENSTUDY, TUNINGPAGE, PROGRESSPAGE, BEAMSPAGE, LOSSPARAMSTFM;
+    protected enum DFHDisplayPageType {
+        INPUTPAGE, OPPAGE, FUELMIX, REGENSTUDY, TUNINGPAGE, PROGRESSPAGE, BEAMSPAGE, LOSSPARAMSTFM,
+        PERFOMANCELIST, COMPAREPANEL;
     }
 
     class PanelAndName {
@@ -4285,7 +4305,7 @@ public class DFHeating extends JApplet implements InputControl {
                         boolean response = getFceFromFile();
                         parent().toFront();
                         if (response) {
-                            switchPage(InputType.INPUTPAGE);
+                            switchPage(DFHDisplayPageType.INPUTPAGE);
                             enableDataEntry(true);
                         }
                     }
@@ -4306,36 +4326,36 @@ public class DFHeating extends JApplet implements InputControl {
                 }
 
                 if (command.equals("Input Data")) {
-                    switchPage(InputType.INPUTPAGE);
+                    switchPage(DFHDisplayPageType.INPUTPAGE);
                     break menuBlk;
                 }
                 if (command.equals("Operation Data")) {
-                    switchPage(InputType.OPPAGE);
+                    switchPage(DFHDisplayPageType.OPPAGE);
                     break menuBlk;
                 }
                 if (command.equals("Show Progress")) {
-                    switchPage(InputType.PROGRESSPAGE);
+                    switchPage(DFHDisplayPageType.PROGRESSPAGE);
                     break menuBlk;
                 }
                 if (command.equals("Tuning Parameters")) {
-                    switchPage(InputType.TUNINGPAGE);
+                    switchPage(DFHDisplayPageType.TUNINGPAGE);
                     break menuBlk;
                 }
                 if (command.equals("Walking Beam Params from TFM")) {
-                    switchPage(InputType.BEAMSPAGE);
+                    switchPage(DFHDisplayPageType.BEAMSPAGE);
                     break menuBlk;
                 }
 
                 if (command.equals("Loss Params from TFM")) {
-                    switchPage(InputType.LOSSPARAMSTFM);
+                    switchPage(DFHDisplayPageType.LOSSPARAMSTFM);
                     break menuBlk;
                 }
                 if (command.equals("Create Fuel Mix")) {
-                    switchPage(InputType.FUELMIX);
+                    switchPage(DFHDisplayPageType.FUELMIX);
                     break menuBlk;
                 }
                 if (command.equals("Regen Burner Study"))
-                    switchPage(InputType.REGENSTUDY);
+                    switchPage(DFHDisplayPageType.REGENSTUDY);
                 break menuBlk;
             }
         } // actionPerformed
@@ -4346,8 +4366,10 @@ public class DFHeating extends JApplet implements InputControl {
             Object src = e.getSource();
             if (src == saveComparison)
                 saveForComparison();
-            if (src == showComparison)
-                switchPage(furnace.getComparePanel());
+            if (src == showComparison) {
+                switchPage(DFHDisplayPageType.COMPAREPANEL);
+//                switchPage(furnace.getComparePanel());
+            }
             if (src == saveComparisontoXL)
                 saveComparisonToXL();
             if (src == appendComparisontoXL)
@@ -4367,7 +4389,8 @@ public class DFHeating extends JApplet implements InputControl {
                 addToPerformBase();
             }
             if (src == showPerfBase) {
-                switchPage(furnace.getPerfBaseListPanel());
+                switchPage(DFHDisplayPageType.PERFOMANCELIST);
+//                switchPage(furnace.getPerfBaseListPanel());
             }
             if (src == clearPerfBase) {
                 clearPerformBase();
@@ -4423,7 +4446,7 @@ public class DFHeating extends JApplet implements InputControl {
             Object src = e.getSource();
             if (src instanceof JTextComponent) {
                 JTextComponent jText = (JTextComponent) src;
-                debug("In length Change Listener, jText.isEditable() = " + jText.isEditable());
+//                debug("In length Change Listener, jText.isEditable() = " + jText.isEditable());
                 if (jText.isEditable())
                     adjustForLengthChange();
             }

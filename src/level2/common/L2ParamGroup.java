@@ -15,6 +15,9 @@ import java.util.Hashtable;
  */
 public class L2ParamGroup {
     static public enum Parameter {
+        Runtime("Runtime"),
+        Updater("Updater"),
+        Expert("Expert"),
         Temperature("Temperature"),
         FuelFlow("FuelFlow"),
         AirFlow("AirFlow"),
@@ -110,6 +113,22 @@ public class L2ParamGroup {
         if (!pV.valid)
             pV.errorMessage = groupName + "." + element + "." + tagName + ":" + pV.errorMessage;
         return pV;
+    }
+
+    public boolean addOneParameter(Parameter element, Tag tag) throws TagCreationException {
+        boolean retVal = false;
+        String basePath = "";
+        try {
+            L2ZoneParam param = new L2ZoneParam(l2Interface.source(), l2Interface.equipment(),
+                    (basePath = groupName + "." + element),
+                    tag, subscription);
+            paramList.put(element, param);
+            retVal = true;
+        } catch (TagCreationException e) {
+            e.setElement(basePath, "");
+            throw (e);
+        }
+        return retVal;
     }
 
     public boolean addOneParameter(Parameter element, Tag[] tags) throws TagCreationException {
