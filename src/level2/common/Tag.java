@@ -18,6 +18,7 @@ public class Tag {
         Auto("auto"),
         Remote("remote"),
         Enabled("enabled"),
+        Running("Running"),
         Noted("noted"),
         Ready("ready"),
         Mode("Mode"),   // eg Strip mode for DFH control
@@ -163,6 +164,7 @@ public class Tag {
             case Auto:
             case Remote:
             case Enabled:
+            case Running:
             case Noted:
             case Ready:
             case Mode:

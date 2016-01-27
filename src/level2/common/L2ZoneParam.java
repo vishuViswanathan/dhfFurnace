@@ -67,11 +67,11 @@ public class L2ZoneParam extends OneDataGroup {
         }
     }
 
-    Tag getProcessTag(Tag.TagName tagName) {
+    protected Tag getProcessTag(Tag.TagName tagName) {
         return processTagList.get(tagName);
     }
 
-    Tag getLevel2Tag(Tag.TagName tagName) {
+    protected Tag getLevel2Tag(Tag.TagName tagName) {
         return level2TagList.get(tagName);
     }
 

@@ -30,6 +30,7 @@ import java.util.Calendar;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.Vector;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by IntelliJ IDEA.
@@ -49,6 +50,8 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     ReadyNotedParam l2StripSizeNext;
     ReadyNotedParam fieldDataParams;
     ReadyNotedParam fuelCharParams;
+    ReadyNotedBothL2 performanceStat;
+    ReadyNotedBothL2 processDataStat;
     ReadyNotedParam l2YesNoQuery;
     ReadyNotedParam l2DataQuery;
     Vector<ReadyNotedParam> readyNotedParamList = new Vector<ReadyNotedParam>();
@@ -70,6 +73,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     TMSubscription stripSub;
     TMSubscription fieldDataSub;
     TMSubscription fuelCharSub;
+    TMSubscription updaterChangeSub;
     boolean messagesON = false;
     Hashtable<MonitoredDataItem, Tag> monitoredTags;
     boolean monitoredTagsReady = false;
@@ -78,7 +82,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     boolean calculatedForFieldResults = false;
     boolean reCalculateWithFieldCorrections = false;
     public boolean basicsSet = false;
-
+    boolean itIsRuntime = false;
     public L2DFHFurnace(L2DFHeating l2DFHEating, boolean bTopBot, boolean bAddTopSoak, ActionListener listener) {
         super(l2DFHEating, bTopBot, bAddTopSoak, listener);
         this.l2DFHeating = l2DFHEating;
@@ -88,6 +92,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         monitoredTags = new Hashtable<MonitoredDataItem, Tag>();
         topL2Zones = new LinkedHashMap<FceSection, L2Zone>();
         messagesON = createL2Messages();
+        itIsRuntime = (l2DFHeating.accessLevel == L2DFHeating.AccessLevel.RUNTIME);
         if (createInternalZone())
             if (createBasicZone())
                 if (createStripParam())
@@ -148,18 +153,43 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         }
     }
 
+    Tag performanceChanged, performanceNoted;
+    Tag processDataChanged, processDataNoted;
+
     boolean createInternalZone() {
         boolean retVal = false;
-//        internal = source.createTMSubscription("Base data",new SubAliveListener(), new BasicListener());
-//        try {
-//            basicSub.setMaxKeepAliveCount((long)5);
-//        } catch (ServiceException e) {
-//            e.printStackTrace();
-//        }
         internalZone = new L2Zone(this, "Internal", null);
-        tagRuntimeReady = new Tag(L2ParamGroup.Parameter.Runtime, Tag.TagName.Ready, true, false);
-        tagUpdaterReady = new Tag(L2ParamGroup.Parameter.Updater, Tag.TagName.Ready, true, false);
-        tagExpertReady = new Tag(L2ParamGroup.Parameter.Expert, Tag.TagName.Ready, true, false);
+        updaterChangeSub = source.createTMSubscription("Base data",new SubAliveListener(), new UpdaterChangeListener());
+        Tag[] performanceTags = {
+                performanceChanged = new Tag(L2ParamGroup.Parameter.Performance, Tag.TagName.Ready, true, itIsRuntime),
+                performanceNoted = new Tag(L2ParamGroup.Parameter.Performance, Tag.TagName.Noted, true, !itIsRuntime)};
+        try {
+            performanceStat = new ReadyNotedBothL2(source, equipment, "Internal.Performance", performanceTags, updaterChangeSub);
+            performanceStat.setReadWriteStat(!itIsRuntime);
+        } catch (TagCreationException e) {
+            e.printStackTrace();
+        }
+        readyNotedParamList.add(performanceStat);
+        internalZone.addOneParameter(L2ParamGroup.Parameter.Performance, performanceStat);
+        noteMonitoredTags(performanceTags);
+
+        Tag[] processDataTags = {
+                processDataChanged = new Tag(L2ParamGroup.Parameter.ProcessData, Tag.TagName.Ready, true, itIsRuntime),
+                processDataNoted = new Tag(L2ParamGroup.Parameter.ProcessData, Tag.TagName.Noted, true, !itIsRuntime)};
+        try {
+            processDataStat = new ReadyNotedBothL2(source, equipment, "Internal.ProcessData", processDataTags, updaterChangeSub);
+            processDataStat.setReadWriteStat(!itIsRuntime);
+        } catch (TagCreationException e) {
+            e.printStackTrace();
+        }
+        readyNotedParamList.add(processDataStat);
+        internalZone.addOneParameter(L2ParamGroup.Parameter.ProcessData, processDataStat);
+        noteMonitoredTags(processDataTags);
+
+        tagRuntimeReady = new Tag(L2ParamGroup.Parameter.Runtime, Tag.TagName.Running, true, false);
+        tagUpdaterReady = new Tag(L2ParamGroup.Parameter.Updater, Tag.TagName.Running, true, false);
+        tagExpertReady = new Tag(L2ParamGroup.Parameter.Expert, Tag.TagName.Running, true, false);
+
         try {
             internalZone.addOneParameter(L2ParamGroup.Parameter.Runtime, tagRuntimeReady);
             internalZone.addOneParameter(L2ParamGroup.Parameter.Updater, tagUpdaterReady);
@@ -692,11 +722,11 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     }
 
     void handleNewStrip() {
-        if (fieldDataIsBeingHandled) {
+        if (fieldDataIsBeingHandled.get()) {
             showErrorInLevel1("Level2 is busy handling field Performance");
         }
         else {
-            newStripIsBeingHandled = true;
+            newStripIsBeingHandled.set(true);
             if (level2Enabled) {
 //            ProcessValue pwW = stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Width);
 //            if (!pwW.valid)
@@ -755,7 +785,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                     l2DFHeating.showMessage("Level2 has been disabled before the data could be sent back!");
             } else
                 l2DFHeating.showMessage("Level2 is not enabled from Level1");
-            newStripIsBeingHandled = false;
+            newStripIsBeingHandled.set(false);
         }
     }
 
@@ -780,57 +810,26 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         t.start();
     }
 
-    class FieldPerformanceHandler implements Runnable {
-        FieldResults theFieldData;
-
-        FieldPerformanceHandler(FieldResults theFieldData) {
-            this.theFieldData = theFieldData;
-        }
-
-        public void run() {
-            if (setFieldProductionData() ) {
-                setCurveSmoothening(false);
-                FceEvaluator eval1 = l2DFHeating.calculateFce(true, null);
-                if (eval1 != null) {
-                    try {
-                        eval1.awaitThreadToExit();
-                        if (eval1.healthyExit()) {
-                            if (adjustForFieldResults()) {
-                                FceEvaluator eval2 = l2DFHeating.calculateFce(false, null); // without reset the loss Factors
-                                if (eval2 != null) {
-                                    eval2.awaitThreadToExit();
-                                    if (eval2.healthyExit()) {
-//                                        fieldDataIsBeingHandled = true;
-                                        addFieldBasedPeformanceToPerfBase();
-                                    }
-                                }
-                            }
-                        }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-            resetFieldDataBeingHandled();
-        }
+    public void informPerformanceDataModified() {
+        performanceStat.markReady(true);
     }
 
     void handleFieldData()  {
         fieldDataParams.setAsNoted(true);
         if (l2DFHeating.bAllowUpdateWithFieldData) {
-            if (newStripIsBeingHandled) {
+            if (newStripIsBeingHandled.get()) {
                 showErrorInLevel1("Level2 is busy handling new Strip data");
             } else {
                 if (level2Enabled) {
-                    if (fieldDataIsBeingHandled) {
+                    if (fieldDataIsBeingHandled.get()) {
                         showErrorInLevel1("Last field data is still being handled. Retry later");
                     }
                     else {
                         l2DFHeating.enablePerfMenu(false);
-                        fieldDataIsBeingHandled = true;
+                        fieldDataIsBeingHandled.set(true);
                         ErrorStatAndMsg stat = l2DFHeating.takeResultsFromLevel1();
                         if (stat.inError) {
-                            fieldDataIsBeingHandled = false;
+                            fieldDataIsBeingHandled.set(false);
                             showErrorInLevel1(stat.msg);
                         } else {
                             showInfoInLevel1("Evaluating from Model");
@@ -847,10 +846,10 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
             showErrorInLevel1("Not enabled for handling field data");
     }
 
-    boolean fieldDataIsBeingHandled = false;
-    boolean newStripIsBeingHandled = false;
+    AtomicBoolean fieldDataIsBeingHandled = new AtomicBoolean(false);
+    AtomicBoolean newStripIsBeingHandled = new AtomicBoolean(false);
 
-    boolean addFieldBasedPeformanceToPerfBase() {
+    boolean addFieldBasedPerformanceToPerfBase() {
         Performance perform = getPerformance();
         boolean retVal = false;
         boolean goAhead = true;
@@ -887,8 +886,14 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
 
     void resetFieldDataBeingHandled() {
         l2DFHeating.l2Info("fieldDataIsBeingHandled is made OFF");
-        fieldDataIsBeingHandled = false;
+        fieldDataIsBeingHandled.set(false);
         l2DFHeating.enablePerfMenu(true);
+    }
+
+    void handleModifiedPerformanceData() {
+        PerformanceModificationHandler thePerfModHandler= new PerformanceModificationHandler();
+        Thread t = new Thread(thePerfModHandler);
+        t.start();
     }
 
     public boolean showErrorInLevel1(String msg) {
@@ -919,7 +924,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     }
 
     public void logInfo(String msg) {
-        controller.info(msg);
+        controller.info("l2DFHFurnace:" + msg);
     }
 
     public void l2Debug(String msg) {
@@ -928,6 +933,66 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
 
     public void logError(String msg) {
         showError(msg);
+    }
+
+    class FieldPerformanceHandler implements Runnable {
+        FieldResults theFieldData;
+        FieldPerformanceHandler(FieldResults theFieldData) {
+            this.theFieldData = theFieldData;
+        }
+        public void run() {
+            if (setFieldProductionData() ) {
+                setCurveSmoothening(false);
+                FceEvaluator eval1 = l2DFHeating.calculateFce(true, null);
+                if (eval1 != null) {
+                    try {
+                        eval1.awaitThreadToExit();
+                        if (eval1.healthyExit()) {
+                            if (adjustForFieldResults()) {
+                                FceEvaluator eval2 = l2DFHeating.calculateFce(false, null); // without reset the loss Factors
+                                if (eval2 != null) {
+                                    eval2.awaitThreadToExit();
+                                    if (eval2.healthyExit()) {
+//                                        fieldDataIsBeingHandled.set(true);
+                                        addFieldBasedPerformanceToPerfBase();
+                                        l2DFHeating.showMessage("Save updated Performance to file from Performance Menu");
+//                                        if (l2DFHeating.updatePerformanceDataFile())
+//                                            logInfo("Performance File is updated");
+//                                        else
+//                                            logInfo("Facing some problem in updating Performance file");
+                                    }
+                                }
+                            }
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            resetFieldDataBeingHandled();
+        }
+    }
+
+    class PerformanceModificationHandler implements Runnable {
+        public void run() {
+            int count = 5;
+            boolean gotIt = false;
+            while(--count > 0) {
+                if (!newStripIsBeingHandled.get() && !fieldDataIsBeingHandled.get()) {
+                    fieldDataIsBeingHandled.set(true);
+                    gotIt = l2DFHeating.handleModifiedPerformanceData();
+                    fieldDataIsBeingHandled.set(false);
+                    break;
+                }
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (!gotIt)
+                logInfo("Unable to read Modified Performance Data");
+        }
     }
 
     class SubAliveListener implements SubscriptionAliveListener {     // TODO This is common dummy class used everywhere to be made proper
@@ -1002,6 +1067,29 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                  fuelCharParams.isNewData(theTag);
              }
          }
+    }
+
+    class UpdaterChangeListener extends L2SubscriptionListener {
+        @Override
+        public void onDataChange(Subscription subscription, MonitoredDataItem monitoredDataItem, DataValue dataValue) {
+            L2DFHeating.AccessLevel accessLevel = l2DFHeating.accessLevel;
+            if (l2DFHeating.isL2SystemReady()) {
+                Tag theTag = monitoredTags.get(monitoredDataItem);
+                if (processDataStat.isNewData(theTag)) {
+                    if (itIsRuntime && (theTag == processDataChanged) && theTag.getValue().booleanValue) {
+                        processDataStat.setAsNoted(true);
+                        logInfo("Process data Changed");
+                    }
+                }
+                if (performanceStat.isNewData(theTag)) {
+                    if (itIsRuntime && (theTag == performanceChanged) && theTag.getValue().booleanValue) {
+                        logInfo("Performance data Changed");
+                        performanceStat.setAsNoted(true);
+                        handleModifiedPerformanceData();
+                    }
+                }
+            }
+        }
     }
 
     class BasicListener extends L2SubscriptionListener {

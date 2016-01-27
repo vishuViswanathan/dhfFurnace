@@ -22,6 +22,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.Vector;
@@ -78,6 +80,8 @@ public class L2DFHeating extends DFHeating {
     static boolean bl2ShowDebugMessages = false;
 
     String fceDataLocation = "level2FceData/";
+    String lockPath = fceDataLocation + "Sychro.lock";
+    File lockFile;
 
     enum AccessLevel {RUNTIME, UPDATER, EXPERT};
     public AccessLevel accessLevel = AccessLevel.RUNTIME;
@@ -187,8 +191,10 @@ public class L2DFHeating extends DFHeating {
         }
         else
             showError("Unable to start Level2 ERROR:001");
-        if (l2SystemReady)
+        if (l2SystemReady) {
+            lockFile = new File(lockPath);
             displayIt();
+        }
         return l2SystemReady;
 //        if (!showDebugMessages) {
 //            tuningParams.showSectionProgress(false);
@@ -474,7 +480,7 @@ public class L2DFHeating extends DFHeating {
 
     String performanceExtension = "perfData";
 
-    boolean savePerformanceDataToFile() {
+    public boolean savePerformanceDataToFile() {
         boolean retVal = false;
         if (isProfileCodeOK()) {
             FileChooserWithOptions fileDlg = new FileChooserWithOptions("Save Performance Data",
@@ -494,7 +500,7 @@ public class L2DFHeating extends DFHeating {
                 deleteParticularFiles("" + fceDataLocation, profileCode, performanceExtension);
                 try {
                     BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(file));
-                    oStream.write(("# Performace Data saved on " + dateFormat.format(new Date()) + " \n\n").getBytes());
+                    oStream.write(("# Performance Data saved on " + dateFormat.format(new Date()) + " \n\n").getBytes());
                     oStream.write((profileCodeInXML() + furnace.performanceInXML()).getBytes());
                     oStream.close();
                     retVal = true;
@@ -511,6 +517,65 @@ public class L2DFHeating extends DFHeating {
         }
         return retVal;
     }
+
+    public boolean updatePerformanceDataFile() {
+        boolean saved = false;
+        FileLock lock;
+        int count = 5;
+        boolean gotTheLock = false;
+        while (--count > 0) {
+            lock = getTheLock();
+            if (lock == null) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                continue;
+            }
+            gotTheLock = true;
+            saved = savePerformanceDataToFile();
+            releaseLock(lock);
+
+            break;
+        }
+        if (saved)
+            l2Furnace.informPerformanceDataModified();
+        else if (!gotTheLock)
+            showError("Facing some problem in getting Lock");
+        else
+            showError("Performance Data NOT saved");
+        return saved ;
+    }
+
+    public boolean handleModifiedPerformanceData() {
+        boolean gotIt = false;
+        FileLock lock;
+        int count = 5;
+        boolean gotTheLock = false;
+        while (--count > 0) {
+            lock = getTheLock();
+            if (lock == null) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                continue;
+            }
+            gotTheLock = true;
+            gotIt = getPerformanceList();
+            releaseLock(lock);
+            break;
+        }
+        if (gotIt)
+            updateDisplay(DFHDisplayPageType.PERFOMANCELIST);
+        else if (!gotTheLock)
+            showError("Facing some problem in getting Lock to take Modified Performance Data");
+        return gotIt ;
+    }
+
+
 
     boolean loadPerformanceData() {
         boolean retVal = false;
@@ -1302,6 +1367,25 @@ public class L2DFHeating extends DFHeating {
         return key;
     }
 
+    public FileLock getTheLock() {
+        FileLock lock = null;
+        try {
+            FileChannel channel = new RandomAccessFile(lockFile, "rw").getChannel();
+            lock = channel.tryLock();
+        } catch (IOException e) {
+            lock = null;
+        }
+        return lock;
+    }
+
+    public void releaseLock(FileLock lock) {
+        try {
+            lock.release();
+        } catch (IOException e) {
+            showError("Some Error in releasing file Lock");
+        }
+    }
+
     void informLevel2Ready() {
         l2Furnace.informLevel2Ready();
     }
@@ -1332,12 +1416,20 @@ public class L2DFHeating extends DFHeating {
     }
 
     public void close() {
-        if (decide("Quitting Level2", "Do you really want to Exit this Level2 Application?", false)) {
-            l2Furnace.prepareForDisconnection();
-            if (uaClient != null)
-                uaClient.disconnect();
-            super.close();
-        }
+        if (decide("Quitting Level2", "Do you really want to Exit this Level2 Application?", false))
+            exitFromLevel2();
+//        {l2Furnace.prepareForDisconnection();
+//            if (uaClient != null)
+//                uaClient.disconnect();
+//            super.close();
+//        }
+    }
+
+    public void exitFromLevel2() {
+        l2Furnace.prepareForDisconnection();
+        if (uaClient != null)
+            uaClient.disconnect();
+        super.close();
     }
 
     class L2MenuListener implements ActionListener {
@@ -1372,7 +1464,8 @@ public class L2DFHeating extends DFHeating {
              else if (caller == mIEvalWithFieldCorrection)
                  recalculateWithFieldCorrections(null);
              else if (caller == mISavePerformanceData)
-                 savePerformanceDataToFile();
+                 updatePerformanceDataFile();
+//                 savePerformanceDataToFile();
              else if (caller == mIReadPerformanceData) {
                  loadPerformanceData();
                  updateDisplay(DFHDisplayPageType.PERFOMANCELIST);
@@ -1393,7 +1486,8 @@ public class L2DFHeating extends DFHeating {
                 }
                 else {
                     level2Heating.showError("Level2 could not be started. Aborting ...");
-                    System.exit(1);
+                    level2Heating.exitFromLevel2();
+//                    System.exit(1);
                 }
             }
             else

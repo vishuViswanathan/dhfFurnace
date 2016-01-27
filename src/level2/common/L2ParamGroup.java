@@ -18,6 +18,8 @@ public class L2ParamGroup {
         Runtime("Runtime"),
         Updater("Updater"),
         Expert("Expert"),
+        Performance("Performance"),
+        ProcessData("ProcessData"),
         Temperature("Temperature"),
         FuelFlow("FuelFlow"),
         AirFlow("AirFlow"),
