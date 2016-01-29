@@ -105,6 +105,8 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         return furnaceSettings.showEditData(bEdit);
     }
 
+    boolean canResetAccess = true; // resetting the application status in 'Level2.Internal'
+
     /**
      * Checcks in the the module access level is valid or not
      * Baically checks if anoher module exisits with this level
@@ -136,20 +138,23 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                     tagRuntimeReady.setValue(true);
                 break;
         }
+        canResetAccess = (retVal.getDataStatus() == StatusWithMessage.DataStat.OK);
         return retVal;
     }
 
     public void exitFromAccess() {
-        switch (l2DFHeating.accessLevel) {
-            case EXPERT:
-                tagExpertReady.setValue(false);
-                break;
-            case UPDATER:
-                tagUpdaterReady.setValue(false);
-                break;
-            default:
-                tagRuntimeReady.setValue(false);
-                break;
+        if (canResetAccess) {
+            switch (l2DFHeating.accessLevel) {
+                case EXPERT:
+                    tagExpertReady.setValue(false);
+                    break;
+                case UPDATER:
+                    tagUpdaterReady.setValue(false);
+                    break;
+                default:
+                    tagRuntimeReady.setValue(false);
+                    break;
+            }
         }
     }
 
@@ -722,70 +727,74 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     }
 
     void handleNewStrip() {
-        if (fieldDataIsBeingHandled.get()) {
-            showErrorInLevel1("Level2 is busy handling field Performance");
+        if (processBeingUpdated.get()) {
+            logInfo("process Data is being modified, cannot handle new Strip now!");
         }
         else {
-            newStripIsBeingHandled.set(true);
-            if (level2Enabled) {
+            if (fieldDataIsBeingHandled.get()) {
+                showErrorInLevel1("Level2 is busy handling field Performance");
+            } else {
+                newStripIsBeingHandled.set(true);
+                if (level2Enabled) {
 //            ProcessValue pwW = stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Width);
 //            if (!pwW.valid)
 //                l2DFHeating.showError("Problem reading strip width: " + pwW.errorMessage) ;
-                double stripWidth = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Width).floatValue, 3) / 1000;
-                double stripThick = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Thick).floatValue, 3) / 1000;
-                String process = stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Process).stringValue;
-                String msg = "New Strip " + stripWidth + " x " + stripThick + " for process " + process;
-                l2DFHeating.l2Info(msg);
-                if (level2Enabled) {
-                    stripZone.setValue(L2ParamGroup.Parameter.Next, Tag.TagName.Noted, true);
-                    OneStripDFHProcess oneProcess = l2DFHeating.getStripDFHProcess(process);
-                    if (oneProcess != null) {
-                        BooleanWithStatus sizeCheck = oneProcess.checkStripSize(stripWidth, stripThick);
-                        if (!(sizeCheck.getDataStatus() == StatusWithMessage.DataStat.WithErrorMsg)) {
-                            Performance refP = getBasePerformance(process, stripThick);
-                            if (refP != null) {
-                                Charge ch = new Charge(controller.getSelChMaterial(refP.chMaterial), stripWidth, 1, stripThick);
-                                ChargeStatus chStatus = new ChargeStatus(ch, 0, refP.exitTemp());
-                                double output = getOutputWithFurnaceTemperatureStatus(chStatus, refP.exitTemp());
-                                l2DFHeating.l2Info("capacity Based On temperature= " + (output / 1000) + "t/h");
-                                DoubleWithStatus speedData = oneProcess.getRecommendedSpeed(output, stripWidth, stripThick);
-                                StatusWithMessage.DataStat speedStatus = speedData.getDataStatus();
-                                if (speedStatus != StatusWithMessage.DataStat.WithErrorMsg) {
-                                    ProcessValue responseSpeed = setRecommendedStripSpeed(speedData.getValue() / 60);
-                                    if (responseSpeed.valid) {
-                                        ProcessValue responseTempSp = setRecommendedStripTemperature(oneProcess.tempDFHExit);
-                                        if (responseTempSp.valid) {
-                                            stripZone.setValue(L2ParamGroup.Parameter.Next, Tag.TagName.Ready, true);
-                                            L2ZonalFuelProfile zFP = new L2ZonalFuelProfile(refP.getPerformanceTable(),
-                                                    furnaceSettings.fuelCharSteps, l2DFHeating);
-                                            if (zFP.prepareFuelTable(stripWidth, stripThick)) {
-                                                double speedBasedOnFuel = getSpeedWithFurnaceFuelStatus(zFP);
-                                                l2DFHeating.l2Info("Speed Based On Fuel = " + speedBasedOnFuel + "m/min");
-                                                if (sendFuelCharacteristics(zFP)) {
-                                                    if (speedStatus == StatusWithMessage.DataStat.WithInfoMsg)
-                                                        showInfoInLevel1(speedData.getInfoMessage());
-                                                    commonDFHZ.setValue(L2ParamGroup.Parameter.L2Data, Tag.TagName.Ready, true);
+                    double stripWidth = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Width).floatValue, 3) / 1000;
+                    double stripThick = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Thick).floatValue, 3) / 1000;
+                    String process = stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Process).stringValue;
+                    String msg = "New Strip " + stripWidth + " x " + stripThick + " for process " + process;
+                    l2DFHeating.l2Info(msg);
+                    if (level2Enabled) {
+                        stripZone.setValue(L2ParamGroup.Parameter.Next, Tag.TagName.Noted, true);
+                        OneStripDFHProcess oneProcess = l2DFHeating.getStripDFHProcess(process);
+                        if (oneProcess != null) {
+                            BooleanWithStatus sizeCheck = oneProcess.checkStripSize(stripWidth, stripThick);
+                            if (!(sizeCheck.getDataStatus() == StatusWithMessage.DataStat.WithErrorMsg)) {
+                                Performance refP = getBasePerformance(process, stripThick);
+                                if (refP != null) {
+                                    Charge ch = new Charge(controller.getSelChMaterial(refP.chMaterial), stripWidth, 1, stripThick);
+                                    ChargeStatus chStatus = new ChargeStatus(ch, 0, refP.exitTemp());
+                                    double output = getOutputWithFurnaceTemperatureStatus(chStatus, refP.exitTemp());
+                                    l2DFHeating.l2Info("capacity Based On temperature= " + (output / 1000) + "t/h");
+                                    DoubleWithStatus speedData = oneProcess.getRecommendedSpeed(output, stripWidth, stripThick);
+                                    StatusWithMessage.DataStat speedStatus = speedData.getDataStatus();
+                                    if (speedStatus != StatusWithMessage.DataStat.WithErrorMsg) {
+                                        ProcessValue responseSpeed = setRecommendedStripSpeed(speedData.getValue() / 60);
+                                        if (responseSpeed.valid) {
+                                            ProcessValue responseTempSp = setRecommendedStripTemperature(oneProcess.tempDFHExit);
+                                            if (responseTempSp.valid) {
+                                                stripZone.setValue(L2ParamGroup.Parameter.Next, Tag.TagName.Ready, true);
+                                                L2ZonalFuelProfile zFP = new L2ZonalFuelProfile(refP.getPerformanceTable(),
+                                                        furnaceSettings.fuelCharSteps, l2DFHeating);
+                                                if (zFP.prepareFuelTable(stripWidth, stripThick)) {
+                                                    double speedBasedOnFuel = getSpeedWithFurnaceFuelStatus(zFP);
+                                                    l2DFHeating.l2Info("Speed Based On Fuel = " + speedBasedOnFuel + "m/min");
+                                                    if (sendFuelCharacteristics(zFP)) {
+                                                        if (speedStatus == StatusWithMessage.DataStat.WithInfoMsg)
+                                                            showInfoInLevel1(speedData.getInfoMessage());
+                                                        commonDFHZ.setValue(L2ParamGroup.Parameter.L2Data, Tag.TagName.Ready, true);
+                                                    } else
+                                                        showErrorInLevel1("Unable to send Fuel Characteristics");
                                                 } else
-                                                    showErrorInLevel1("Unable to send Fuel Characteristics");
+                                                    showErrorInLevel1("Unable to prepare Fuel Characteristics");
                                             } else
-                                                showErrorInLevel1("Unable to prepare Fuel Characteristics");
+                                                showErrorInLevel1("Unable to set Strip Exit Temperature");
                                         } else
-                                            showErrorInLevel1("Unable to set Strip Exit Temperature");
+                                            showErrorInLevel1("Unable to Set recommended speed: " + responseSpeed.errorMessage);
                                     } else
-                                        showErrorInLevel1("Unable to Set recommended speed: " + responseSpeed.errorMessage);
+                                        showErrorInLevel1("Unable to get recommended speed: " + speedData.getErrorMessage());
                                 } else
-                                    showErrorInLevel1("Unable to get recommended speed: " + speedData.getErrorMessage());
+                                    showErrorInLevel1("Unable to get reference performance data");
                             } else
-                                showErrorInLevel1("Unable to get reference performance data");
+                                showErrorInLevel1("Strip size is not in range : " + sizeCheck.getErrorMessage());
                         } else
-                            showErrorInLevel1("Strip size is not in range : " + sizeCheck.getErrorMessage());
+                            showErrorInLevel1("Process " + process + " is not in record");
                     } else
-                        showErrorInLevel1("Process " + process + " is not in record");
+                        l2DFHeating.showMessage("Level2 has been disabled before the data could be sent back!");
                 } else
-                    l2DFHeating.showMessage("Level2 has been disabled before the data could be sent back!");
-            } else
-                l2DFHeating.showMessage("Level2 is not enabled from Level1");
-            newStripIsBeingHandled.set(false);
+                    l2DFHeating.showMessage("Level2 is not enabled from Level1");
+                newStripIsBeingHandled.set(false);
+            }
         }
     }
 
@@ -811,7 +820,13 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     }
 
     public void informPerformanceDataModified() {
-        performanceStat.markReady(true);
+        if (tagRuntimeReady.getValue().booleanValue)
+            performanceStat.markReady(true);
+    }
+
+    public void informProcessDataModified() {
+        if (tagRuntimeReady.getValue().booleanValue)
+            processDataStat.markReady(true);
     }
 
     void handleFieldData()  {
@@ -848,6 +863,15 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
 
     AtomicBoolean fieldDataIsBeingHandled = new AtomicBoolean(false);
     AtomicBoolean newStripIsBeingHandled = new AtomicBoolean(false);
+    AtomicBoolean processBeingUpdated = new AtomicBoolean(false);
+
+    public boolean isProcessDataBeingUsed() {
+        return (fieldDataIsBeingHandled.get()  ||  newStripIsBeingHandled.get());
+    }
+
+    public void setProcessBeingUpdated(boolean updateON) {
+        processBeingUpdated.set(updateON);
+    }
 
     boolean addFieldBasedPerformanceToPerfBase() {
         Performance perform = getPerformance();
@@ -978,7 +1002,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
             int count = 5;
             boolean gotIt = false;
             while(--count > 0) {
-                if (!newStripIsBeingHandled.get() && !fieldDataIsBeingHandled.get()) {
+                if (!isProcessDataBeingUsed()) { // newStripIsBeingHandled.get() && !fieldDataIsBeingHandled.get()) {
                     fieldDataIsBeingHandled.set(true);
                     gotIt = l2DFHeating.handleModifiedPerformanceData();
                     fieldDataIsBeingHandled.set(false);
@@ -1077,8 +1101,9 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                 Tag theTag = monitoredTags.get(monitoredDataItem);
                 if (processDataStat.isNewData(theTag)) {
                     if (itIsRuntime && (theTag == processDataChanged) && theTag.getValue().booleanValue) {
-                        processDataStat.setAsNoted(true);
                         logInfo("Process data Changed");
+                        processDataStat.setAsNoted(true);
+                        l2DFHeating.handleModifiedProcessData();
                     }
                 }
                 if (performanceStat.isNewData(theTag)) {

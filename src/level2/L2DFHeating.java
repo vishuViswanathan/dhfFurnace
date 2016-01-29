@@ -43,6 +43,7 @@ public class L2DFHeating extends DFHeating {
         DFHPROCESS("-dfhProcess"),
         FROMFIELD("-fromField"),
         L2DEBUG("-l2ShowDebugMessages"),
+        SHOWALLMENU("-showAllMenu"),
         UNKNOWN("-UnKnown");
         private final String argName;
 
@@ -78,6 +79,7 @@ public class L2DFHeating extends DFHeating {
     static boolean bAllowUpdateWithFieldData = false;
     static boolean bAllowL2Changes = false;
     static boolean bl2ShowDebugMessages = false;
+    static boolean bShowAllmenu = false;
 
     String fceDataLocation = "level2FceData/";
     String lockPath = fceDataLocation + "Sychro.lock";
@@ -211,7 +213,7 @@ public class L2DFHeating extends DFHeating {
         menuBarLevel2Edit = new JMenuBar();
         menuBarLevel2Edit.add(fileMenu);
         L2MenuListener li = new L2MenuListener();
-        if (bAllowUpdateWithFieldData) {
+        if (bAllowUpdateWithFieldData || bShowAllmenu) {
             mISavePerformanceData = new JMenuItem("Save Performance Data");
             mISavePerformanceData.addActionListener(li);
             mIReadPerformanceData = new JMenuItem("Load Performance Data");
@@ -221,7 +223,7 @@ public class L2DFHeating extends DFHeating {
             perfMenu.add(mIReadPerformanceData);
             menuBarLevel2Edit.add(perfMenu);
         }
-        if (bAllowL2Changes) {
+        if (bAllowL2Changes || bShowAllmenu) {
             if (bAllowManualCalculation)  {
                 menuBarLevel2Edit.add(inputMenu);
                 menuBarLevel2Edit.add(resultsMenu);
@@ -265,13 +267,13 @@ public class L2DFHeating extends DFHeating {
             mISaveAsFieldResult.addActionListener(li);
             mIEvalForFieldProduction.addActionListener(li);
             mIEvalWithFieldCorrection.addActionListener(li);
-            if (bAllowEditFurnaceSettings) {
+            if (bAllowEditFurnaceSettings || bShowAllmenu) {
                 mL2Configuration.add(mICreateFceSettings);
                 mL2Configuration.add(mIReadFceSettings);
                 mL2Configuration.add(mISaveFceSettings);
                 mL2Configuration.addSeparator();
             }
-            if (bAllowEditDFHProcess) {
+            if (bAllowEditDFHProcess || bShowAllmenu) {
                 mL2Configuration.add(mIViewDFHStripProcess);
                 mL2Configuration.add(mIEditDFHStripProcess);
                 mL2Configuration.add(mIReadDFHStripProcess);
@@ -439,6 +441,36 @@ public class L2DFHeating extends DFHeating {
 
     String stripProcExtension = "stripProc";
     File fceDataLocationDirectory = new File(fceDataLocation);
+
+    public boolean updateProcessDataFile() {
+        boolean saved = false;
+        FileLock lock;
+        int count = 5;
+        boolean gotTheLock = false;
+        while (--count > 0) {
+            lock = getTheLock();
+            if (lock == null) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                continue;
+            }
+            gotTheLock = true;
+            saved = saveDFHProcessList();
+            releaseLock(lock);
+
+            break;
+        }
+        if (saved)
+            l2Furnace.informProcessDataModified();
+        else if (!gotTheLock)
+            showError("Facing some problem in getting Lock");
+        else
+            showError("Process Data NOT saved");
+        return saved ;
+    }
 
     boolean saveDFHProcessList() {
         boolean retVal = false;
@@ -1041,6 +1073,9 @@ public class L2DFHeating extends DFHeating {
                     case L2DEBUG:
                         bl2ShowDebugMessages = true;
                         break;
+                    case SHOWALLMENU:
+                        bShowAllmenu = true;
+                        break;
 //                     case ALLOWCHANGES:
 //                         allowL2Changes = true;
 //                         break;
@@ -1386,6 +1421,36 @@ public class L2DFHeating extends DFHeating {
         }
     }
 
+    public void handleModifiedProcessData() {
+        ProcessModificationHandler theProcessModHandler= new ProcessModificationHandler();
+        Thread t = new Thread(theProcessModHandler);
+        t.start();
+    }
+
+    class ProcessModificationHandler implements Runnable {
+        public void run() {
+            int count = 5;
+            boolean gotIt = false;
+            while(--count > 0) {
+                if (!l2Furnace.isProcessDataBeingUsed()) { //  newStripIsBeingHandled.get() && !fieldDataIsBeingHandled.get()) {
+                    l2Furnace.setProcessBeingUpdated(true);
+                    gotIt = getStripDFHProcessList();
+                    break;
+                }
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (!gotIt)
+                info("Unable to read modified Process Data");
+            l2Furnace.setProcessBeingUpdated(false);
+        }
+    }
+
+
+
     void informLevel2Ready() {
         l2Furnace.informLevel2Ready();
     }
@@ -1438,7 +1503,8 @@ public class L2DFHeating extends DFHeating {
              if (caller == mIReadDFHStripProcess)
                  loadStripDFHProcessList();
              else if (caller == mISaveDFHStripProcess)
-                 saveDFHProcessList();
+                 updateProcessDataFile();
+//                 saveDFHProcessList();
              else if (caller == mIViewDFHStripProcess)
                  viewStripDFHProcess();
              else if (caller == mIEditDFHStripProcess)

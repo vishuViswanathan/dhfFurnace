@@ -164,6 +164,7 @@ public class OneStripDFHProcess {
         StatusWithMessage.DataStat status = response.getDataStatus();
         if (status != StatusWithMessage.DataStat.WithErrorMsg) {
             double speed = response.getValue() / (width * thickness * density);
+//            l2DFHeating.l2Info("output = " + response.getValue());
             if (speed > maxSpeed) {
                 speed = maxSpeed;
                 response.setValue(speed, "Restricted by Maximum Process Speed");
@@ -171,6 +172,8 @@ public class OneStripDFHProcess {
             else {
                 if (status == StatusWithMessage.DataStat.WithInfoMsg)
                     response.setValue(speed, response.getInfoMessage());   // if it had any infoMessage, it ic forwarded
+                else
+                    response.setValue(speed);
             }
         }
         return response;
