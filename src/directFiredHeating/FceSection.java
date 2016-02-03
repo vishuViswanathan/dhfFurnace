@@ -55,7 +55,7 @@ public class FceSection {
         cHGeneral = new Vector<XLcellData>();
         grpPan = new FramedPanel(new GridBagLayout());
         gbcL.gridy = 0;
-//        sL = sizedLabel("Burner Type", colHeadSize);
+//        sL = sizedLabel("Burner Type", sized);
 //        cHFuel.add(sL);
 //        grpPan.add(sL, gbcL);
 //        gbcL.gridy++;

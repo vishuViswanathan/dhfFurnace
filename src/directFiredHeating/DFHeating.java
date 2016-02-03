@@ -181,7 +181,7 @@ public class DFHeating extends JApplet implements InputControl {
     public boolean asApplication = false;
     public static boolean asJNLP = false;
     boolean bDataEntryON = true;
-    JScrollPane slate = new JScrollPane();
+    protected JScrollPane slate = new JScrollPane();
     JPanel opPage;
     JPanel inpPage;
     boolean bAllowSecFuel = false;

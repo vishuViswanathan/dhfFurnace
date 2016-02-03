@@ -4,6 +4,11 @@ import TMopcUa.*;
 import com.prosysopc.ua.client.MonitoredDataItem;
 import level2.common.L2ParamGroup;
 
+import javax.swing.*;
+import java.awt.*;
+import java.text.DecimalFormat;
+import java.util.LinkedHashMap;
+
 /**
  * Created by IntelliJ IDEA.
  * User: M Viswanathan
@@ -91,6 +96,9 @@ public class Tag {
         }
     }
 
+    int datW = 10;
+    BooleanDisplay booleanStat;
+
     public TagName tagName;
     public boolean bSubscribe = false;
     public L2ParamGroup.Parameter element;
@@ -99,14 +107,76 @@ public class Tag {
     public ProcessData.Access access;
     protected ProcessData processData;
     ProcessValue value = new ProcessValue();
+    Component displayComponent;
+    DecimalFormat format;
 
     public Tag(L2ParamGroup.Parameter element, TagName tagName, boolean rw, boolean bSubscribe) {
+        this(element, tagName, rw, bSubscribe, "#,##.00");
+    }
+
+    public Tag(L2ParamGroup.Parameter element, TagName tagName, boolean rw, boolean bSubscribe, String fmtStr) {
         this.element = element;
         this.tagName = tagName;
         this.dataType = getDataType(tagName);
         access = (rw) ? ProcessData.Access.RW : ProcessData.Access.READONLY;
         dataSource = (rw) ? ProcessData.Source.LEVEL2 : ProcessData.Source.PROCESS;
         this.bSubscribe = bSubscribe;
+        noteFormat(fmtStr);
+        createDisplayComponent();
+    }
+
+    void noteFormat(String fmtStr) {
+        switch(tagName) {
+            case Auto:
+                booleanStat = new BooleanDisplay("Auto", "Manual");
+                break;
+            case Remote:
+                booleanStat = new BooleanDisplay("Remote", "Local");
+                break;
+            case Enabled:
+                booleanStat = new BooleanDisplay("Enabled", "Disabled");
+                break;
+            case Running:
+                booleanStat = new BooleanDisplay("Running", "Stopped");
+                break;
+            case Noted:
+                booleanStat = new BooleanDisplay("Noted", "");
+                break;
+            case Ready:
+                booleanStat = new BooleanDisplay("Ready", "");
+                break;
+            case Mode:
+                booleanStat = new BooleanDisplay("ON", "OFF");
+                break;
+            case Response:
+                booleanStat = new BooleanDisplay("Received", "OFF");
+                break;
+            default:
+                format = new DecimalFormat(fmtStr);
+                break;
+        }
+    }
+
+    void createDisplayComponent() {
+        switch(tagName) {
+            case Auto:
+            case Remote:
+            case Enabled:
+            case Running:
+            case Noted:
+            case Ready:
+            case Mode:
+            case Response:
+                displayComponent = new JTextField(datW);
+                break;
+            case Msg:
+                displayComponent = new JTextArea(4, datW);
+                break;
+            default:
+                displayComponent = new JTextField(datW);
+                break;
+        }
+
     }
 
     public void setProcessData(ProcessData processData) {
@@ -192,5 +262,48 @@ public class Tag {
             retVal = pValue.valid;
         }
         return retVal;
+    }
+
+    public Component displayComponent() {
+        return displayComponent;
+    }
+
+    public void updateUI() {
+        switch(tagName) {
+            case Auto:
+            case Remote:
+            case Enabled:
+            case Running:
+            case Noted:
+            case Ready:
+            case Mode:
+            case Response:
+                ((JTextField)displayComponent).setText(booleanStat.statusString());
+                break;
+            case Process:
+            case Msg:
+                ((JTextArea)displayComponent).setText(getValue().stringValue);
+                break;
+            default:
+                ((JTextField)displayComponent).setText(format.format(getValue().floatValue));
+                break;
+        }
+    }
+
+    class BooleanDisplay {
+        String trueName;
+        String falseName;
+
+        BooleanDisplay(String trueName, String falseName) {
+            this.trueName = trueName;
+            this.falseName = falseName;
+        }
+
+        String statusString() {
+            if (getValue().booleanValue)
+                return trueName;
+            else
+                return falseName;
+        }
     }
 }

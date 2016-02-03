@@ -16,8 +16,9 @@ import java.awt.*;
 public class SizedLabel extends JLabel implements XLcellData {
     boolean bBold = false;
 
-    public SizedLabel(String name, Dimension d, boolean bBold, boolean shaded) {
+    public SizedLabel(String name, Dimension d, int alignment, boolean bBold, boolean shaded) {
         super(name);
+        setHorizontalAlignment(alignment);
         this.bBold = bBold;
         if (bBold)
             setFont(getFont().deriveFont(Font.BOLD));
@@ -26,6 +27,18 @@ public class SizedLabel extends JLabel implements XLcellData {
             setBackground(Color.PINK);
             setOpaque(true);
         }
+    }
+    public SizedLabel(String name, Dimension d, boolean bBold, boolean shaded) {
+        this(name, d, JLabel.LEADING, bBold, shaded);
+//        super(name);
+//        this.bBold = bBold;
+//        if (bBold)
+//            setFont(getFont().deriveFont(Font.BOLD));
+//        setPreferredSize(d);
+//        if (shaded) {
+//            setBackground(Color.PINK);
+//            setOpaque(true);
+//        }
     }
 
     public SizedLabel(String name, Dimension d, boolean bBold) {

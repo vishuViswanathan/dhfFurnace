@@ -13,8 +13,10 @@ import com.prosysopc.ua.client.Subscription;
 import com.prosysopc.ua.client.SubscriptionAliveListener;
 import directFiredHeating.*;
 import level2.common.*;
+import level2.display.L2DisplayZone;
 import level2.fieldResults.FieldResults;
 import mvUtils.display.ErrorStatAndMsg;
+import mvUtils.display.FramedPanel;
 import mvUtils.display.InputControl;
 import mvUtils.display.StatusWithMessage;
 import mvUtils.math.BooleanWithStatus;
@@ -25,6 +27,8 @@ import mvUtils.math.DoubleMV;
 import org.opcfoundation.ua.builtintypes.DataValue;
 import performance.stripFce.Performance;
 
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionListener;
 import java.util.Calendar;
 import java.util.Hashtable;
@@ -62,6 +66,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     L2Zone stripZone;  // all strip data size, speed temperature etc.
     L2Zone recuperatorZ;
     L2Zone commonDFHZ;
+    Vector<L2DisplayZone> furnaceDisplayZones;
     public String equipment;
     public boolean level2Enabled = false;
     Tag tagLevel2Enabled;
@@ -99,6 +104,13 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                     if (createRecuParam())
                         if (createCommonDFHZ())
                             basicsSet = true;
+    }
+
+    public void startDisplay() {
+        l2DisplayON = true;
+        L2DisplayUpdater displayUpdater = new L2DisplayUpdater();
+        Thread displayThread = new Thread(displayUpdater);
+        displayThread.start();
     }
 
     public boolean showEditFceSettings(boolean bEdit) {
@@ -427,6 +439,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     boolean createL2Zones() {
         boolean retVal = true;
         topL2Zones.clear();
+        furnaceDisplayZones = new Vector<L2DisplayZone>();
         int zNum = 1;
         String zoneName = "";
         try {
@@ -435,16 +448,47 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                     zoneName = "DFHZone" + ("" + zNum).trim();
                     L2Zone oneZone = new L2Zone(this, zoneName, sec, true);
                     topL2Zones.put(sec, oneZone);
+                    furnaceDisplayZones.add(new L2DisplayZone(oneZone));
                     zNum++;
                 } else
                     break;
             }
+//            updateUIDisplay();
         } catch (TagCreationException e) {
             e.setEquipment(equipment, "Creating L2 Zones");
             showError("Error in " + zoneName + " - " + e.getMessage());
             retVal = false;
         }
         return retVal;
+    }
+
+    void updateUIDisplay() {
+        switch(l2DFHeating.l2DisplayNow) {
+            case PROCESS:
+                updateProcessDisplay();
+                break;
+        }
+    }
+
+    void updateProcessDisplay()  {
+        for (L2DisplayZone z: furnaceDisplayZones)
+            z.updateDisplay();
+    }
+
+    public JPanel getFurnaceProcessPanel() {
+        JPanel outerP = new JPanel();
+        FramedPanel innerP = new FramedPanel(new BorderLayout());
+        FramedPanel jp = new FramedPanel();
+        jp.add(L2DisplayZone.getRowHeader());
+        for (L2DisplayZone z:furnaceDisplayZones) {
+            jp.add(z.getDisplay());
+        }
+        JPanel titleP = new JPanel();
+        titleP.add(new JLabel("process Status"));
+        innerP.add(titleP, BorderLayout.NORTH);
+        innerP.add(jp, BorderLayout.CENTER);
+        outerP.add(innerP);
+        return outerP;
     }
 
     ErrorStatAndMsg checkConnection() {
@@ -483,6 +527,8 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     public FurnaceSettings getFurnaceSettings() {
         return furnaceSettings;
     }
+
+    boolean l2DisplayON = false;
 
     public boolean prepareForDisconnection() {
         exitFromAccess();
@@ -957,6 +1003,19 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
 
     public void logError(String msg) {
         showError(msg);
+    }
+
+    class L2DisplayUpdater implements Runnable {
+        public void run() {
+            while (l2DisplayON) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                updateUIDisplay();
+            }
+        }
     }
 
     class FieldPerformanceHandler implements Runnable {

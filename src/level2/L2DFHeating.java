@@ -2,11 +2,13 @@ package level2;
 
 import TMopcUa.TMuaClient;
 import basic.*;
+import com.sun.org.apache.bcel.internal.generic.L2D;
 import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
 import directFiredHeating.FceEvaluator;
 import directFiredHeating.ResultsReadyListener;
 import display.QueryDialog;
+import level2.display.L2Display;
 import mvUtils.display.ErrorStatAndMsg;
 import mvUtils.display.FramedPanel;
 import mvUtils.display.StatusWithMessage;
@@ -81,6 +83,8 @@ public class L2DFHeating extends DFHeating {
     static boolean bl2ShowDebugMessages = false;
     static boolean bShowAllmenu = false;
 
+    enum L2DisplayPageType {NONE, PROCESS, LEVEL2};
+    public L2DisplayPageType l2DisplayNow;
     String fceDataLocation = "level2FceData/";
     String lockPath = fceDataLocation + "Sychro.lock";
     File lockFile;
@@ -92,7 +96,6 @@ public class L2DFHeating extends DFHeating {
     L2DFHFurnace l2Furnace;
     public String equipment;
     StripDFHProcessList dfhProcessList;
-//    Hashtable<String, OneStripDFHProcess> stripProcessLookup;
     JMenu mL2Configuration;
     JMenuItem mIEditDFHStripProcess;
     JMenuItem mIViewDFHStripProcess;
@@ -119,8 +122,6 @@ public class L2DFHeating extends DFHeating {
         onProductionLine = true;
         asApplication = true;
         this.equipment = equipment;
-//        stripProcessLookup = new Hashtable<String, OneStripDFHProcess>();
-//        init();
     }
 
     public boolean l2SystemReady = false;
@@ -150,7 +151,6 @@ public class L2DFHeating extends DFHeating {
             furnace = l2Furnace;
             StatusWithMessage status = l2Furnace.checkAndNoteAccessLevel();
             if (status.getDataStatus() == StatusWithMessage.DataStat.OK) {
-//            furnace.setWidth(width);
 //            debug("Created Level2furnace");
                 furnace.setTuningParams(tuningParams);
                 createUIs();
@@ -160,9 +160,8 @@ public class L2DFHeating extends DFHeating {
                     showError("Software key mismatch, Aborting ...");
                     close();
                 }
-                showMainAppPanel();  // TODO TEMPERRORY -- TO be changed
+//                showMainAppPanel();  // TODO TEMPERORY -- TO be changed
                 switchPage(DFHDisplayPageType.INPUTPAGE);
-//            displayIt();
                 if (getL2FceFromFile()) {
                     furnace.setWidth(width);
                     enableDataEdit();
@@ -196,23 +195,47 @@ public class L2DFHeating extends DFHeating {
         if (l2SystemReady) {
             lockFile = new File(lockPath);
             displayIt();
+            l2Furnace.startDisplay();
         }
         return l2SystemReady;
-//        if (!showDebugMessages) {
-//            tuningParams.showSectionProgress(false);
-//            tuningParams.showSlotProgress(false);
-//        }
+    }
+
+    public void displayIt() {
+        super.displayIt();
+        if (l2Furnace.itIsRuntime)
+            switchPage(L2DisplayPageType.PROCESS);
+    }
+
+    public void switchPage(L2DisplayPageType l2Display) {
+        switch(l2Display) {
+            case PROCESS:
+                slate.setViewportView(l2Furnace.getFurnaceProcessPanel());
+                l2DisplayNow = l2Display;
+                break;
+            default:
+                l2DisplayNow = L2DisplayPageType.NONE;
+        }
     }
 
     JMenuBar menuBarLevel2RT;
     JMenuBar menuBarLevel2Edit;
     JMenuItem mISavePerformanceData;
     JMenuItem mIReadPerformanceData;
+    JMenuItem mIshowProcess;
+    JMenuItem mIshowL2Data;
 
     void createMenuBars() {
+        L2MenuListener li = new L2MenuListener();
         menuBarLevel2Edit = new JMenuBar();
         menuBarLevel2Edit.add(fileMenu);
-        L2MenuListener li = new L2MenuListener();
+        JMenu jm = new JMenu("Live Displays");
+        mIshowProcess = new JMenuItem("Process Data");
+        mIshowProcess.addActionListener(li);
+        jm.add(mIshowProcess);
+        mIshowL2Data = new JMenuItem("Level2 Data");
+        mIshowL2Data.addActionListener(li);
+        jm.add(mIshowL2Data);
+        menuBarLevel2Edit.add(jm);
         if (bAllowUpdateWithFieldData || bShowAllmenu) {
             mISavePerformanceData = new JMenuItem("Save Performance Data");
             mISavePerformanceData.addActionListener(li);
@@ -316,52 +339,52 @@ public class L2DFHeating extends DFHeating {
     int SCREEENWIDTH = 1366;
     int SCREENHEIGHT = 768;
 
-    protected void createUIs() {
-        super.createUIs();
-        theOuterPanel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        panelLT = new FramedPanel();
-        Dimension mainAppPanelSize = mainAppPanel.getPreferredSize();
-        int wl = mainAppPanelSize.width + 2;
-        int ht = mainAppPanelSize.height + 2;
-        int wr = SCREEENWIDTH - wl - 2;
-        int hb = SCREENHEIGHT - ht - 2;
-        panelLT.setPreferredSize(new Dimension(wl, ht));
-        panelRT = new FramedPanel();
-        panelRT.setPreferredSize(new Dimension(wr, ht));
-        panelLB = new FramedPanel();
-        panelLB.setPreferredSize(new Dimension(wl, hb));
-        panelRB = new FramedPanel();
-        panelRB.setPreferredSize(new Dimension(wr, hb));
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        theOuterPanel.add(panelLT, gbc);
-        gbc.gridx = 1;
-        theOuterPanel.add(panelRT, gbc);
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        theOuterPanel.add(panelLB, gbc);
-        gbc.gridx = 1;
-        theOuterPanel.add(panelRB, gbc);
-    }
+//    protected void createUIs() {
+//        super.createUIs();
+//        theOuterPanel = new JPanel(new GridBagLayout());
+//        GridBagConstraints gbc = new GridBagConstraints();
+//        panelLT = new FramedPanel();
+//        Dimension mainAppPanelSize = mainAppPanel.getPreferredSize();
+//        int wl = mainAppPanelSize.width + 2;
+//        int ht = mainAppPanelSize.height + 2;
+//        int wr = SCREEENWIDTH - wl - 2;
+//        int hb = SCREENHEIGHT - ht - 2;
+//        panelLT.setPreferredSize(new Dimension(wl, ht));
+//        panelRT = new FramedPanel();
+//        panelRT.setPreferredSize(new Dimension(wr, ht));
+//        panelLB = new FramedPanel();
+//        panelLB.setPreferredSize(new Dimension(wl, hb));
+//        panelRB = new FramedPanel();
+//        panelRB.setPreferredSize(new Dimension(wr, hb));
+//        gbc.gridx = 0;
+//        gbc.gridy = 0;
+//        theOuterPanel.add(panelLT, gbc);
+//        gbc.gridx = 1;
+//        theOuterPanel.add(panelRT, gbc);
+//        gbc.gridx = 0;
+//        gbc.gridy = 1;
+//        theOuterPanel.add(panelLB, gbc);
+//        gbc.gridx = 1;
+//        theOuterPanel.add(panelRB, gbc);
+//    }
 
-    void showMainAppPanel() {
-        panelLT.removeAll();
-        panelLT.add(mainAppPanel);
-    }
+//    void showMainAppPanel() {
+//        panelLT.removeAll();
+//        panelLT.add(mainAppPanel);
+//    }
 
-    public void displayIt() {
-        if (!itsON) {
-            itsON = true;
-            mainF.add(theOuterPanel);
-            mainF.setFocusable(true);
-            mainF.requestFocus();
-            mainF.toFront(); //setAlwaysOnTop(true);
-            mainF.pack();
-            mainF.setVisible(true);
-            mainF.setResizable(false);
-        }
-    }
+//    public void displayIt() {
+//        if (!itsON) {
+//            itsON = true;
+//            mainF.add(theOuterPanel);
+//            mainF.setFocusable(true);
+//            mainF.requestFocus();
+//            mainF.toFront(); //setAlwaysOnTop(true);
+//            mainF.pack();
+//            mainF.setVisible(true);
+//            mainF.setResizable(false);
+//        }
+//    }
 
     public DFHTuningParams getTuningParams() {
         return tuningParams;
@@ -409,33 +432,10 @@ public class L2DFHeating extends DFHeating {
     }
 
     String stripDFHProcessListInXML() {
-//        StringBuffer xmlStr = new StringBuffer(XMLmv.putTag("exitTempAllowance", l2Furnace.getExitTempAllowance()));
-//        xmlStr.append(dfhProcessList.dataInXMl());
-//        xmlStr.append(XMLmv.putTag("pNum", stripProcessLookup.size()));
-//        int pNum = 0;
-//        for (OneStripDFHProcess oneProc: stripProcessLookup.values())
-//            xmlStr.append(XMLmv.putTag("StripP" + ("" + ++pNum).trim(), oneProc.dataInXML().toString()) + "\n");
-//        return xmlStr.toString();
         return dfhProcessList.dataInXMl().toString();
     }
 
     boolean takeStripProcessListFromXML(String xmlStr) {
-////        stripProcessLookup.clear();
-//        boolean retVal = false;
-//        ValAndPos vp;
-//        try {
-//            vp = XMLmv.getTag(xmlStr, "exitTempAllowance", 0);
-//            if (vp.val.length() > 0)
-//                l2Furnace.setExitTempAllowance(Double.valueOf(vp.val));
-//            else
-//                l2Furnace.setExitTempAllowance(5);
-//            retVal = true;
-//        } catch (NumberFormatException e1) {
-//            showError("Error in Number of StripDFHProc");
-//        }
-//        if (retVal)
-//            retVal = dfhProcessList.takeStripProcessListFromXML(xmlStr);
-//        return retVal;
         return dfhProcessList.takeStripProcessListFromXML(xmlStr);
     }
 
@@ -1133,14 +1133,8 @@ public class L2DFHeating extends DFHeating {
         boolean bRetVal = false;
         furnace.resetSections();
         String filePath = fceDataLocation + "theFurnace.dfhDat";
-//                 setResultsReady(false);
-//                 setItFromTFM(false);
         furnace.resetLossAssignment();
         hidePerformMenu();
-        //                furnace.clearPerfBase();
-//        debug("Data file name :" + filePath);
-//        fuelSpecsFromFile(fceDataLocation + "FuelSpecifications.dfhSpecs");
-//        chMaterialSpecsFromFile(fceDataLocation + "ChMaterialSpecifications.dfhSpecs");
         bRetVal = getFceFromFceDatFile(filePath);
         switchPage(DFHDisplayPageType.INPUTPAGE);
         return bRetVal;
@@ -1166,10 +1160,6 @@ public class L2DFHeating extends DFHeating {
         fuelSpecsFromFile(fceDataLocation + "FuelSpecifications.dfhSpecs");
         chMaterialSpecsFromFile(fceDataLocation + "ChMaterialSpecifications.dfhSpecs");
     }
-
-//    protected ChMaterial getSelChMaterial(String matName) {
-//        return super.getSelChMaterial(matName);
-//    }
 
     String profileCode = "";
     String profileCodeTag = "profileCode";
@@ -1500,7 +1490,11 @@ public class L2DFHeating extends DFHeating {
     class L2MenuListener implements ActionListener {
          public void actionPerformed(ActionEvent e) {
              Object caller = e.getSource();
-             if (caller == mIReadDFHStripProcess)
+             if (caller == mIshowProcess)
+                 switchPage(L2DisplayPageType.PROCESS);
+             else if (caller == mIshowL2Data)
+                 switchPage(L2DisplayPageType.LEVEL2);
+             else if (caller == mIReadDFHStripProcess)
                  loadStripDFHProcessList();
              else if (caller == mISaveDFHStripProcess)
                  updateProcessDataFile();

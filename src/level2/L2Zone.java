@@ -39,22 +39,29 @@ public class L2Zone extends L2ParamGroup {
             setSubscription(l2Furnace.source.createSubscription(new SubAliveListener(), new ZoneSubscriptionListener()));
         }
         String basePath = "";
-        Tag[] temperatureTags = {new Tag(Parameter.Temperature, Tag.TagName.SP, false, false),
-                new Tag(Parameter.Temperature, Tag.TagName.PV, false, true),
+        String temperatureFmt = "#,##0";
+        String fuelFlowFmt = "#,##0.00";
+        String ratioFmt = "#,##0.00";
+        String airFlowFmt = "#,##0";
+
+        Tag[] temperatureTags = {new Tag(Parameter.Temperature, Tag.TagName.SP, false, false, temperatureFmt),
+                new Tag(Parameter.Temperature, Tag.TagName.PV, false, true, temperatureFmt),
                 new Tag(Parameter.Temperature, Tag.TagName.Auto, false, false),
-                new Tag(Parameter.Temperature, Tag.TagName.SP, true, false)};
-        Tag[] fuelFlowTags = {new Tag(Parameter.FuelFlow, Tag.TagName.SP, false, false),
-                new Tag(Parameter.FuelFlow, Tag.TagName.PV, false, true),
+                new Tag(Parameter.Temperature, Tag.TagName.SP, true, false, temperatureFmt)};
+        Tag[] fuelFlowTags = {new Tag(Parameter.FuelFlow, Tag.TagName.SP, false, false, fuelFlowFmt),
+                new Tag(Parameter.FuelFlow, Tag.TagName.PV, false, true, fuelFlowFmt),
                 new Tag(Parameter.FuelFlow, Tag.TagName.Auto, false, false),
                 new Tag(Parameter.FuelFlow, Tag.TagName.Remote, false, false),
-                new Tag(Parameter.FuelFlow, Tag.TagName.Span, false, false),
-                new Tag(Parameter.FuelFlow, Tag.TagName.SP, false, false),
-                new Tag(Parameter.FuelFlow, Tag.TagName.SP, true, false)};
-        Tag[] airFlowTags = {new Tag(Parameter.AirFlow, Tag.TagName.SP, false, false),
-                new Tag(Parameter.AirFlow, Tag.TagName.PV, false, true),
+                new Tag(Parameter.FuelFlow, Tag.TagName.Span, false, false, fuelFlowFmt),
+                new Tag(Parameter.FuelFlow, Tag.TagName.SP, false, false, fuelFlowFmt),
+                new Tag(Parameter.FuelFlow, Tag.TagName.SP, true, false, fuelFlowFmt)};
+        Tag airFuelRatioTags = new Tag(Parameter.AFRatio, Tag.TagName.SP, false, false, ratioFmt);
+
+        Tag[] airFlowTags = {new Tag(Parameter.AirFlow, Tag.TagName.SP, false, false, airFlowFmt),
+                new Tag(Parameter.AirFlow, Tag.TagName.PV, false, true, airFlowFmt),
                 new Tag(Parameter.AirFlow, Tag.TagName.Auto, false, false),
                 new Tag(Parameter.AirFlow, Tag.TagName.Remote, false, false),
-                new Tag(Parameter.AirFlow, Tag.TagName.Temperature, false, true)};
+                new Tag(Parameter.AirFlow, Tag.TagName.Temperature, false, true, temperatureFmt)};
         fuelCharSteps = l2Furnace.furnaceSettings.fuelCharSteps;
         Tag[] fuelCharTags = new Tag[fuelCharSteps * 2];
         int pos = 0;
@@ -64,20 +71,10 @@ public class L2Zone extends L2ParamGroup {
             fuelCharTags[pos++] = new Tag(Parameter.FuelCharacteristic,
                     Tag.TagName.getEnum("Y" + ("" + s).trim()), true, false);
         }
-//        Tag[] fuelCharTags = {new Tag(Parameter.FuelCharacteristic, Tag.TagName.X1, true, false),
-//                new Tag(Parameter.FuelCharacteristic, Tag.TagName.X2, true, false),
-//                new Tag(Parameter.FuelCharacteristic, Tag.TagName.X3, true, false),
-//                new Tag(Parameter.FuelCharacteristic, Tag.TagName.X4, true, false),
-//                new Tag(Parameter.FuelCharacteristic, Tag.TagName.X5, true, false),
-//                new Tag(Parameter.FuelCharacteristic, Tag.TagName.Y1, true, false),
-//                new Tag(Parameter.FuelCharacteristic, Tag.TagName.Y2, true, false),
-//                new Tag(Parameter.FuelCharacteristic, Tag.TagName.Y3, true, false),
-//                new Tag(Parameter.FuelCharacteristic, Tag.TagName.Y4, true, false),
-//                new Tag(Parameter.FuelCharacteristic, Tag.TagName.Y5, true, false)
-//        };
         monitoredTags = new Hashtable<MonitoredDataItem, Tag>();
         addOneParameter(Parameter.Temperature, temperatureTags);
         addOneParameter(Parameter.FuelFlow, fuelFlowTags);
+        addOneParameter(Parameter.AFRatio, airFuelRatioTags);
         addOneParameter(Parameter.AirFlow, airFlowTags);
         addOneParameter(Parameter.FuelCharacteristic, fuelCharTags);
         noteMonitoredTags(temperatureTags);
