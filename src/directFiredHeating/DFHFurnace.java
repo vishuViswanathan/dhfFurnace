@@ -738,7 +738,7 @@ public class DFHFurnace {
         return ((performBase != null) && performBase.isItToBeSaved());
     }
 
-    public void performaceIsSaved() {
+    public void performanceIsSaved() {
         if (performBase != null && performBase.isValid())
             performBase.itIsSaved();
     }
@@ -4806,13 +4806,13 @@ public class DFHFurnace {
     }
 
     protected void showError(String msg) {
-        (new TimedMessage("In Furnace Data", msg, TimedMessage.ERROR, controller.parent())).show();
+        (new TimedMessage("In DFHFurnace", msg, TimedMessage.ERROR, controller.parent())).show();
 //        JOptionPane.showMessageDialog(controller.parent(), msg, "ERROR", JOptionPane.ERROR_MESSAGE);
 //        controller.parent().toFront();
     }
 
     protected void showError(String msg, int forTime) {
-        (new TimedMessage("In Furnace Data", msg, TimedMessage.ERROR, controller.parent(), forTime)).show();
+        (new TimedMessage("In DFHFurnace", msg, TimedMessage.ERROR, controller.parent(), forTime)).show();
 //        JOptionPane pane = new JOptionPane(msg, JOptionPane.ERROR_MESSAGE);
 //        JDialog dialog = pane.createDialog(controller.parent(), "ERROR");
 //        java.util.Timer timer = new java.util.Timer();
@@ -4821,7 +4821,7 @@ public class DFHFurnace {
     }
 
     void showMessage(String msg) {
-        (new TimedMessage("In Furnace data", msg, TimedMessage.INFO, controller.parent(), 3000)).show();
+        (new TimedMessage("In DFHFurnace", msg, TimedMessage.INFO, controller.parent(), 3000)).show();
     }
 
     double gasTempZ2Top, gasTempZ2Bot;

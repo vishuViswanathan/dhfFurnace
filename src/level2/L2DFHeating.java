@@ -2,13 +2,8 @@ package level2;
 
 import TMopcUa.TMuaClient;
 import basic.*;
-import com.sun.org.apache.bcel.internal.generic.L2D;
-import directFiredHeating.DFHTuningParams;
-import directFiredHeating.DFHeating;
-import directFiredHeating.FceEvaluator;
-import directFiredHeating.ResultsReadyListener;
+import directFiredHeating.*;
 import display.QueryDialog;
-import level2.display.L2Display;
 import mvUtils.display.ErrorStatAndMsg;
 import mvUtils.display.FramedPanel;
 import mvUtils.display.StatusWithMessage;
@@ -19,6 +14,8 @@ import org.apache.log4j.Logger;
 import protection.MachineCheck;
 
 import javax.swing.*;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
 import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -27,7 +24,9 @@ import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.text.DecimalFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Vector;
 
 /**
@@ -84,13 +83,13 @@ public class L2DFHeating extends DFHeating {
     static boolean bShowAllmenu = false;
 
     enum L2DisplayPageType {NONE, PROCESS, LEVEL2};
-    public L2DisplayPageType l2DisplayNow;
+    public L2DisplayPageType l2DisplayNow = L2DisplayPageType.NONE;
     String fceDataLocation = "level2FceData/";
     String lockPath = fceDataLocation + "Sychro.lock";
     File lockFile;
 
-    enum AccessLevel {RUNTIME, UPDATER, EXPERT};
-    public AccessLevel accessLevel = AccessLevel.RUNTIME;
+    enum AccessLevel {NONE, RUNTIME, UPDATER, EXPERT};
+    static public AccessLevel accessLevel = AccessLevel.NONE;
     TMuaClient uaClient;
     static String uaServerURI;
     L2DFHFurnace l2Furnace;
@@ -139,7 +138,7 @@ public class L2DFHeating extends DFHeating {
         mainF = new JFrame();
         mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         if (!asJNLP && (log == null)) {
-            log = Logger.getLogger(DFHeating.class);
+            log = Logger.getLogger("level2.L2DFHeating"); //DFHeating.class);
             // Load Log4j configurations from external file
         }
         mainF.setTitle("DFH Furnace Level2 " + releaseDate + testTitle);
@@ -158,7 +157,7 @@ public class L2DFHeating extends DFHeating {
                 setDefaultSelections();
                 if (!testMachineID()) {
                     showError("Software key mismatch, Aborting ...");
-                    close();
+                    checkAndClose(false);
                 }
 //                showMainAppPanel();  // TODO TEMPERORY -- TO be changed
                 switchPage(DFHDisplayPageType.INPUTPAGE);
@@ -202,8 +201,13 @@ public class L2DFHeating extends DFHeating {
 
     public void displayIt() {
         super.displayIt();
-        if (l2Furnace.itIsRuntime)
+//        if (l2Furnace.itIsRuntime)
             switchPage(L2DisplayPageType.PROCESS);
+    }
+
+    protected void switchPage(DFHDisplayPageType page) {
+        l2DisplayNow = L2DisplayPageType.NONE;
+        super.switchPage(page);
     }
 
     public void switchPage(L2DisplayPageType l2Display) {
@@ -217,26 +221,29 @@ public class L2DFHeating extends DFHeating {
         }
     }
 
-    JMenuBar menuBarLevel2RT;
-    JMenuBar menuBarLevel2Edit;
+    JMenuBar menuBarLevel2;
     JMenuItem mISavePerformanceData;
     JMenuItem mIReadPerformanceData;
-    JMenuItem mIshowProcess;
-    JMenuItem mIshowL2Data;
+    JMenuItem mIShowProcess;
+    JMenuItem mIShowL2Data;
+    JMenu mShowCalculation;
 
     void createMenuBars() {
         L2MenuListener li = new L2MenuListener();
-        menuBarLevel2Edit = new JMenuBar();
-        menuBarLevel2Edit.add(fileMenu);
+        menuBarLevel2 = new JMenuBar();
+        menuBarLevel2.add(fileMenu);
         JMenu jm = new JMenu("Live Displays");
-        mIshowProcess = new JMenuItem("Process Data");
-        mIshowProcess.addActionListener(li);
-        jm.add(mIshowProcess);
-        mIshowL2Data = new JMenuItem("Level2 Data");
-        mIshowL2Data.addActionListener(li);
-        jm.add(mIshowL2Data);
-        menuBarLevel2Edit.add(jm);
+        mIShowProcess = new JMenuItem("Process Data");
+        mIShowProcess.addActionListener(li);
+        jm.add(mIShowProcess);
+        mIShowL2Data = new JMenuItem("Level2 Data");
+        mIShowL2Data.addActionListener(li);
+        jm.add(mIShowL2Data);
+        menuBarLevel2.add(jm);
         if (bAllowUpdateWithFieldData || bShowAllmenu) {
+            mShowCalculation = new JMenu("Show Calculation");
+            menuBarLevel2.add(mShowCalculation);
+            mShowCalculation.addMenuListener(li);
             mISavePerformanceData = new JMenuItem("Save Performance Data");
             mISavePerformanceData.addActionListener(li);
             mIReadPerformanceData = new JMenuItem("Load Performance Data");
@@ -244,12 +251,12 @@ public class L2DFHeating extends DFHeating {
             perfMenu.addSeparator();
             perfMenu.add(mISavePerformanceData);
             perfMenu.add(mIReadPerformanceData);
-            menuBarLevel2Edit.add(perfMenu);
+            menuBarLevel2.add(perfMenu);
         }
         if (bAllowL2Changes || bShowAllmenu) {
             if (bAllowManualCalculation)  {
-                menuBarLevel2Edit.add(inputMenu);
-                menuBarLevel2Edit.add(resultsMenu);
+                menuBarLevel2.add(inputMenu);
+                menuBarLevel2.add(resultsMenu);
             }
             mL2Configuration = new JMenu("L2 Config");
             mICreateFceSettings = new JMenuItem("View/Edit Furnace Settings");
@@ -315,13 +322,13 @@ public class L2DFHeating extends DFHeating {
                 mL2Configuration.add(mISaveAsFieldResult);
             }
             mL2Configuration.setEnabled(true);
-            menuBarLevel2Edit.add(mL2Configuration);
+            menuBarLevel2.add(mL2Configuration);
             if (bAllowManualCalculation) {
-                menuBarLevel2Edit.add(pbEdit);
+                menuBarLevel2.add(pbEdit);
             }
             mainAppPanel.remove(menuBarMainApp);
         }
-        mainAppPanel.add(menuBarLevel2Edit, BorderLayout.NORTH);
+        mainAppPanel.add(menuBarLevel2, BorderLayout.NORTH);
         menuBarMainApp.updateUI();
     }
 
@@ -571,8 +578,10 @@ public class L2DFHeating extends DFHeating {
 
             break;
         }
-        if (saved)
+        if (saved) {
             l2Furnace.informPerformanceDataModified();
+            furnace.performanceIsSaved();
+        }
         else if (!gotTheLock)
             showError("Facing some problem in getting Lock");
         else
@@ -1025,8 +1034,11 @@ public class L2DFHeating extends DFHeating {
     boolean setupUaClient() {
         boolean retVal = false;
         try {
+            l2debug("Before creating uaClient");
             uaClient = new TMuaClient(uaServerURI);
+            l2debug("Before uaClient.connect");
             uaClient.connect();
+            l2debug("uaClient is Connected");
             retVal = uaClient.isConnected();
         } catch (Exception e) {
             showError("Exception :" + e.getMessage());
@@ -1231,7 +1243,7 @@ public class L2DFHeating extends DFHeating {
                     oStream.write(inputDataXML(withPerformance).getBytes());
                     oStream.close();
                     if (withPerformance)
-                        furnace.performaceIsSaved();
+                        furnace.performanceIsSaved();
                 } catch (FileNotFoundException e) {
                     showError("File " + fileName + " NOT found!");
                 } catch (IOException e) {
@@ -1325,17 +1337,35 @@ public class L2DFHeating extends DFHeating {
                 newKey = true;
             }
             if (key.length() > 5) {
-//                showMessage("key = " + key);
-//                showMessage("Machine OK = " + mc.checkKey(key));
-                keyOK = mc.checkKey(key);
-                if (!newKey && !keyOK) {
-                    boolean response = decide("Software key", "There is some problem in the saved key\n"
-                            + " Do you want to delete the earlier key data and enter the key manually?");
-                    if (response) {
-                        key = "";
-                        continue;
-                    }
+//                keyOK = mc.checkKey(key);
+//                if (!newKey && !keyOK) {
+//                    boolean response = decide("Software key", "There is some problem in the saved key\n"
+//                            + " Do you want to delete the earlier key data and enter the key manually?");
+//                    if (response) {
+//                        key = "";
+//                        continue;
+//                    }
+//                }
+                StatusWithMessage keyStatus =  mc.checkKey(key);
+                boolean tryAgain = false;
+                switch(keyStatus.getDataStatus()) {
+                    case WithErrorMsg:
+                        showError(keyStatus.getErrorMessage());
+                        break;
+                    case WithInfoMsg:
+                        boolean response = decide("Software key", "There is some problem in the saved key\n"
+                                + " Do you want to delete the earlier key data and enter the key manually?");
+                        if (response) {
+                            key = "";
+                            tryAgain = true;
+                        }
+                        break;
+                    default:
+                        keyOK = true;
+                        break;
                 }
+                if (tryAgain)
+                    continue;
                 if (keyOK && newKey)
                     saveKeyToFile(key);
             }
@@ -1439,6 +1469,10 @@ public class L2DFHeating extends DFHeating {
         }
     }
 
+    public void setBusyInCalculation (boolean busy) {
+        mShowCalculation.setEnabled(busy);
+        super.setBusyInCalculation(busy);
+    }
 
 
     void informLevel2Ready() {
@@ -1461,17 +1495,26 @@ public class L2DFHeating extends DFHeating {
     }
     
     public static void l2debug(String msg) {
-        if (bl2ShowDebugMessages)
-            debug("L2DFHeating:" + msg);
+        if (bl2ShowDebugMessages) {
+            if (log == null)
+                System.out.println("" + (new Date()) + ": DEBUG: " + msg);
+            else
+                log.debug(accessLevel.toString() + ":" + msg);
+        }
     }
 
     public static void l2Info(String msg) {
         if (log != null)
-            log.info("l2DFHeating:" + msg);
+            log.info(accessLevel.toString() + ":" + msg);
     }
 
-    public void close() {
-        if (decide("Quitting Level2", "Do you really want to Exit this Level2 Application?", false))
+    public static void l2Error(String msg) {
+        if (log != null)
+            log.error(accessLevel.toString() + ":" + msg);
+    }
+
+    public void checkAndClose(boolean check) {
+        if (!check || decide("Quitting Level2", "Do you really want to Exit this Level2 Application?", false))
             exitFromLevel2();
 //        {l2Furnace.prepareForDisconnection();
 //            if (uaClient != null)
@@ -1481,18 +1524,20 @@ public class L2DFHeating extends DFHeating {
     }
 
     public void exitFromLevel2() {
-        l2Furnace.prepareForDisconnection();
-        if (uaClient != null)
-            uaClient.disconnect();
-        super.close();
+        if (canClose()) {
+            l2Furnace.prepareForDisconnection();
+            if (uaClient != null)
+                uaClient.disconnect();
+            close();
+        }
     }
 
-    class L2MenuListener implements ActionListener {
-         public void actionPerformed(ActionEvent e) {
+    class L2MenuListener implements ActionListener, MenuListener {
+        public void actionPerformed(ActionEvent e) {
              Object caller = e.getSource();
-             if (caller == mIshowProcess)
+             if (caller == mIShowProcess)
                  switchPage(L2DisplayPageType.PROCESS);
-             else if (caller == mIshowL2Data)
+             else if (caller == mIShowL2Data)
                  switchPage(L2DisplayPageType.LEVEL2);
              else if (caller == mIReadDFHStripProcess)
                  loadStripDFHProcessList();
@@ -1530,8 +1575,31 @@ public class L2DFHeating extends DFHeating {
                  loadPerformanceData();
                  updateDisplay(DFHDisplayPageType.PERFOMANCELIST);
              }
-         }
+//             else if (caller == mShowCalculation) {
+//                 info("showing progress page");
+//                 switchPage(DFHDisplayPageType.PROGRESSPAGE);
+//             }
+        }
+
+
+        public void menuSelected(MenuEvent e) {
+            Object caller = e.getSource();
+            if (caller == mShowCalculation && isItBusyInCalculation()) {
+//                info("showing progress page");
+                switchPage(DFHDisplayPageType.PROGRESSPAGE);
+            }
+        }
+
+        public void menuDeselected(MenuEvent e) {
+
+        }
+
+        public void menuCanceled(MenuEvent e) {
+
+        }
     }
+
+
 
     public static void main(String[] args) {
         //        PropertyConfigurator.configureAndWatch(DFHeating.class

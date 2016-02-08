@@ -2,6 +2,7 @@ package protection;
 
 import directFiredHeating.DFHFurnace;
 import directFiredHeating.DFHeating;
+import mvUtils.display.StatusWithMessage;
 
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -65,7 +66,19 @@ public class MachineCheck {
     }
 
 
-    public boolean checkKey(String key) {
+    public StatusWithMessage checkKey(String key) {
+        StatusWithMessage retVal = new StatusWithMessage();
+        String machineID = getMachineID();
+        if (machineID.length() > 5) {
+            if (!key.equals(getKey(machineID)))
+                retVal.setInfoMessage("Key Mismatch");
+        }
+        else
+            retVal.setErrorMessage("It appears that the Network is not connected");
+        return retVal;
+    }
+
+    public boolean checkKeyOLD(String key) {
         return key.equals(getKey(getMachineID()));
     }
 

@@ -1172,50 +1172,27 @@ public class DFHeating extends JApplet implements InputControl {
         mainF.dispose();
     }
 
-    public void close() {
+    public boolean canClose() {
         boolean goAhead = true;
         if (furnace.isPerformanceToBeSaved())
             goAhead = decide("Unsaved Performance Data", "Some Performance data have been collected\n" +
-                                                "Do you want to ABANDON them and exit?");
-        if (goAhead) {
-            if (asApplication) {
-                System.exit(0);
-            }
-            else {
-                if (win != null)
-                    win.eval("gettingOut()");
-            }
-        }
+                    "Do you want to ABANDON them and exit?");
+        return goAhead;
     }
 
-
-/*
-    @Override
-    public void destroy() {
-        boolean goAhead = true;
-        if (furnace.isPerformanceToBeSaved())
-            goAhead = decide("Unsaved Performance Data", "Some Performance data have been collected\n" +
-                                                "Do you want to ABANDON them and exit?");
-        if (goAhead) {
-            itsON = false;
-            debug("In Destroy");
-            mainF.dispose();
-            super.destroy();
+    public void close() {
+        if (asApplication) {
+            System.exit(0);
+        }
+        else {
             if (win != null)
                 win.eval("gettingOut()");
         }
     }
 
-    void close() {
-        destroy();
-//        itsON = false;
-//        debug("CLOSING ...");
-//        mainF.dispose();
-//        itsON = false;
-//        if (!onTest)
-//            win.eval("gettingOut()");
-    } // close
-*/
+    public void checkAndClose(boolean check) {
+        if (!check || canClose()) close();
+    }
 
     void showResultsPanel(String command) {
         DFHResult.Type type = DFHResult.Type.getEnum(command);
@@ -3114,7 +3091,7 @@ public class DFHeating extends JApplet implements InputControl {
                         oStream.write(inputDataXML(withPerformance).getBytes());
                         oStream.close();
                         if (withPerformance)
-                            furnace.performaceIsSaved();
+                            furnace.performanceIsSaved();
                     } catch (FileNotFoundException e) {
                         showError("File " + fileName + " NOT found!");
                     } catch (IOException e) {
@@ -3875,7 +3852,7 @@ public class DFHeating extends JApplet implements InputControl {
                 try {
                     wb.write(out);
                     out.close();
-                    furnace.performaceIsSaved();
+                    furnace.performanceIsSaved();
                 } catch (IOException e) {
                     e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                     showError("Some problem with file.\n" + e.getMessage());
@@ -4237,7 +4214,7 @@ public class DFHeating extends JApplet implements InputControl {
 
         public void windowClosing(WindowEvent e) {
             debug("mainF CLOSING");
-            close();
+            checkAndClose(true);
 //            destroy();
 //            if (asApplication)
 //                System.exit(0);
@@ -4266,7 +4243,7 @@ public class DFHeating extends JApplet implements InputControl {
             menuBlk:
             {
                 if (command.equals("Exit")) {
-                    close();
+                    checkAndClose(true);
                     break menuBlk;
                 }
                 if (command.equals("Save Results and Furnace Data to Excel")) {
@@ -4278,13 +4255,6 @@ public class DFHeating extends JApplet implements InputControl {
                     tProfileForTFM();
                     break menuBlk;
                 }
-
-
-//                if (command.equals("Save Furnace Ambients for FE Analysis")) {
-//                    saveAmbForFE();
-//                    break menuBlk;
-//                }
-
                 if (command.equals("Save Furnace Profile")) {
                     Component lastShown = slate.getViewport().getView();
                     saveFceToFile(true);

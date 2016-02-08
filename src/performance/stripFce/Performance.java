@@ -715,7 +715,7 @@ public class Performance {
     }
 
 
-    DateFormat formatter = new SimpleDateFormat("HH:MM, dd-MMM-yyyy");
+    DateFormat formatter = new SimpleDateFormat("HH:mm, dd-MMM-yyyy");
 
     JPanel commonPerfDataP() {
         MultiPairColPanel pan = new MultiPairColPanel("");
