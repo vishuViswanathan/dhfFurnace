@@ -15,7 +15,7 @@ import performance.stripFce.ZonalFuelProfile;
 public class L2ZonalFuelProfile extends ZonalFuelProfile {
     L2DFHeating l2DFHeating;
     // modified fuel tables with lower and upper end extensions to zonal fuel ranges
-    Double[][] l2TopZoneFuels;
+    Double[][] l2TopZoneFuels;  // [capacityStep][zone]
     Double[][] l2TopZoneFuelHeat; // total heat comprising combustion + fuel sensible + air sensible
     Double[][] l2BotZoneFuels;
     Double[][] l2BotZoneFuelHeat; // total heat comprising combustion + fuel sensible + air sensible
@@ -54,6 +54,7 @@ public class L2ZonalFuelProfile extends ZonalFuelProfile {
         l2TopZoneFuels[0][TotFuelCol] = totFuelRange.min;
         for (int z = 0; z < zoneFuelRange.length; z++)
             l2TopZoneFuels[0][FirstZoneCol + z] = zoneFuelRange[z].min;
+        // extrapolate down speed and production
         double fuelFactorAtMin = (l2TopZoneFuels[0][TotFuelCol] - l2TopZoneFuels[1][TotFuelCol]) /
                 (l2TopZoneFuels[1][TotFuelCol] - l2TopZoneFuels[2][TotFuelCol]);
         l2TopZoneFuels[0][USpeedCol] =  l2TopZoneFuels[1][USpeedCol]   +
@@ -65,20 +66,35 @@ public class L2ZonalFuelProfile extends ZonalFuelProfile {
         for (int z = 0; z < zoneFuelRange.length; z++) {
             l2TopZoneFuels[extendedSteps - 1][FirstZoneCol + z] = zoneFuelRange[z].max;
         }
+        // extrapolate up speed and production
         double fuelFactorAtMax = (l2TopZoneFuels[extendedSteps - 1][TotFuelCol] - l2TopZoneFuels[extendedSteps - 2][TotFuelCol]) /
                 (l2TopZoneFuels[extendedSteps - 2][TotFuelCol] - l2TopZoneFuels[extendedSteps - 3][TotFuelCol]);
         l2TopZoneFuels[extendedSteps- 1][USpeedCol] =  l2TopZoneFuels[extendedSteps - 2][USpeedCol]   +
                 fuelFactorAtMax * (l2TopZoneFuels[extendedSteps - 2][USpeedCol]- l2TopZoneFuels[extendedSteps - 3][USpeedCol]);
         l2TopZoneFuels[extendedSteps- 1][UOutputCol] =  l2TopZoneFuels[extendedSteps - 2][UOutputCol]   +
                 fuelFactorAtMax * (l2TopZoneFuels[extendedSteps - 2][UOutputCol]- l2TopZoneFuels[extendedSteps - 3][UOutputCol]);
-
-        // trim to max min
         Double[] oneRow;
-        for (int r = 0; r < l2TopZoneFuels.length; r++) {
-            oneRow = l2TopZoneFuels[r];
-            for (int z = 0; z < zoneFuelRange.length; z++) {
-                double nowVal = oneRow[FirstZoneCol + z];
-                oneRow[FirstZoneCol + z] = zoneFuelRange[z].limitedValue(nowVal);
+        for (int capacityStep = 0; capacityStep < l2TopZoneFuels.length; capacityStep++) {
+            oneRow = l2TopZoneFuels[capacityStep];
+            double totFuel = 0;
+            for (int zone = 0; zone < zoneFuelRange.length; zone++) {
+                // prepare a sloped(5%) max/min limits   The adjustment is to ensure +ve slope for the full range
+                DoubleRange adjustedRange = new DoubleRange(zoneFuelRange[zone]);
+                double adjustmentSizeStep = (adjustedRange.max - adjustedRange.min) * 0.05 / l2TopZoneFuels.length;
+                adjustedRange.min += adjustmentSizeStep * capacityStep;
+                adjustedRange.max -= adjustmentSizeStep * (l2TopZoneFuels.length - 1 - capacityStep);
+                double nowVal = oneRow[FirstZoneCol + zone];
+                oneRow[FirstZoneCol + zone] = adjustedRange.limitedValue(nowVal);
+                totFuel += oneRow[FirstZoneCol + zone];
+            }
+            // adjust the total fuel and proportionally the speed and capacity
+            double originalTotal = l2TopZoneFuels[capacityStep][TotFuelCol];
+            if (totFuel < originalTotal)  {
+                l2DFHeating.info("Fuel has been adjusted to limits for capacityStep " + capacityStep );
+                double ratio = totFuel/ originalTotal;
+                l2TopZoneFuels[capacityStep][USpeedCol] *= ratio;
+                l2TopZoneFuels[capacityStep][UOutputCol] *= ratio;
+                l2TopZoneFuels[capacityStep][TotFuelCol] = totFuel;
             }
         }
     }
@@ -146,6 +162,7 @@ public class L2ZonalFuelProfile extends ZonalFuelProfile {
             arr.setValues(table, USpeedCol, TotFuelCol);
         return arr;
     }
+
 
     /*
      based on total FuelHeat

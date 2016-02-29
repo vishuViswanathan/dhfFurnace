@@ -225,7 +225,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
             internalZone.addOneParameter(L2ParamGroup.Parameter.Runtime, tagRuntimeReady);
             internalZone.addOneParameter(L2ParamGroup.Parameter.Updater, tagUpdaterReady);
             internalZone.addOneParameter(L2ParamGroup.Parameter.Expert, tagExpertReady);
-            logInfo("Internal zone created");
+            logTrace("Internal zone created");
             retVal = true;
         } catch (TagCreationException e) {
             showError("Some problem in accessing Level2.Internal :" + e.getMessage());
@@ -443,6 +443,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     public void initForLevel2Operation() {
         for (ReadyNotedParam p: readyNotedParamList)
             p.initStatus();
+        level2Enabled = informLevel2Ready();
     }
 
     void noteMonitoredTags(Tag[] tags) {
@@ -769,7 +770,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                         break;
                     }
                 }
-                logInfo("Trials in getOutputWithFurnaceStatus = " + trials);
+                logTrace("Trials in getOutputWithFurnaceStatus = " + trials);
             } else
                 logInfo("Facing problem in creating calculation steps");
         }
@@ -805,7 +806,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                     double stripThick = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Thick).floatValue, 3) / 1000;
                     String process = stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Process).stringValue;
                     String msg = "New Strip " + stripWidth + " x " + stripThick + " for process " + process;
-                    logInfo(msg);
+                    logTrace(msg);
                     if (level2Enabled) {
                         stripZone.setValue(L2ParamGroup.Parameter.Next, Tag.TagName.Noted, true);
                         OneStripDFHProcess oneProcess = l2DFHeating.getStripDFHProcess(process);
@@ -817,7 +818,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                                     Charge ch = new Charge(controller.getSelChMaterial(refP.chMaterial), stripWidth, 1, stripThick);
                                     ChargeStatus chStatus = new ChargeStatus(ch, 0, refP.exitTemp());
                                     double output = getOutputWithFurnaceTemperatureStatus(chStatus, refP.exitTemp());
-                                    logInfo("capacity Based On temperature= " + (output / 1000) + "t/h");
+                                    logTrace("capacity Based On temperature= " + (output / 1000) + "t/h");
                                     DoubleWithStatus speedData = oneProcess.getRecommendedSpeed(output, stripWidth, stripThick);
                                     StatusWithMessage.DataStat speedStatus = speedData.getDataStatus();
                                     if (speedStatus != StatusWithMessage.DataStat.WithErrorMsg) {
@@ -830,7 +831,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                                                         furnaceSettings.fuelCharSteps, l2DFHeating);
                                                 if (zFP.prepareFuelTable(stripWidth, stripThick)) {
                                                     double speedBasedOnFuel = getSpeedWithFurnaceFuelStatus(zFP);
-                                                    logInfo("Speed Based On Fuel = " + speedBasedOnFuel + "m/min");
+                                                    logTrace("Speed Based On Fuel = " + speedBasedOnFuel + "m/min");
                                                     if (sendFuelCharacteristics(zFP)) {
                                                         if (speedStatus == StatusWithMessage.DataStat.WithInfoMsg)
                                                             showInfoInLevel1(speedData.getInfoMessage());
@@ -940,12 +941,15 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         boolean retVal = false;
         boolean goAhead = true;
         boolean replace = false;
-                if (perform != null && performBase != null) {
+        if (perform != null && performBase != null) {
+            logTrace("performance looks ok");
             if (performBase.similarPerformance(perform) != null) {
+                logTrace("Similar performance already available");
                 replace = true;
                 boolean response = getYesNoResponseFromLevel1(
                         String.format("%s, %tc",
                                 "Do you want to over-write Performance Data?", Calendar.getInstance()), 50);
+                logTrace("response from L1 is " + response);
                 goAhead =  (response) && (l2YesNoQuery.getValue(Tag.TagName.Response).booleanValue);
             }
         }
@@ -953,9 +957,12 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
             l2DFHeating.enablePerfMenu(false);
             FceEvaluator eval = controller.calculateForPerformanceTable(perform);
             if (eval != null) {
+                logTrace("eval for Performance table is ok");
                 try {
                     eval.awaitThreadToExit();
+                    logTrace("eval for Performance table is completed");
                     if (eval.healthyExit()) {
+                        logTrace("eval for Performance table had healthy exit");
                         if (replace)
                             performBase.replaceExistingPerformance(perform);
                         else
@@ -966,6 +973,8 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                     e.printStackTrace();
                 }
             }
+            else
+                logInfo("eval for Performance table is null");
         }
         return retVal;
     }
@@ -1017,6 +1026,10 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         l2DFHeating.l2debug("l2DFHFurnace: " + msg);
     }
 
+    public void logTrace(String msg) {
+        l2DFHeating.l2Trace("l2DFHFurnace: " + msg);
+    }
+
     public void logError(String msg) {
         showError("L2DFHFurnace: " + msg);
     }
@@ -1053,12 +1066,14 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                                 FceEvaluator eval2 = l2DFHeating.calculateFce(false, null); // without reset the loss Factors
                                 if (eval2 != null) {
                                     eval2.awaitThreadToExit();
+                                    logTrace("eval2 completed");
                                     if (eval2.healthyExit()) {
+                                        logTrace("eval2 had healthy exit");
 //                                        fieldDataIsBeingHandled.set(true);
                                         if (addFieldBasedPerformanceToPerfBase())
                                             l2DFHeating.showMessage("Save updated Performance to file from Performance Menu");
 //                                        if (l2DFHeating.updatePerformanceDataFile())
-//                                            logInfo("Performance File is updated");
+//                                            logTrace("Performance File is updated");
 //                                        else
 //                                            logInfo("Facing some problem in updating Performance file");
                                     }
@@ -1178,14 +1193,14 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                 Tag theTag = monitoredTags.get(monitoredDataItem);
                 if (processDataStat.isNewData(theTag)) {
                     if (itIsRuntime && (theTag == processDataChanged) && theTag.getValue().booleanValue) {
-                        logInfo("Process data Changed");
+                        logTrace("Process data Changed");
                         processDataStat.setAsNoted(true);
                         l2DFHeating.handleModifiedProcessData();
                     }
                 }
                 if (performanceStat.isNewData(theTag)) {
                     if (itIsRuntime && (theTag == performanceChanged) && theTag.getValue().booleanValue) {
-                        logInfo("Performance data Changed");
+                        logTrace("Performance data Changed");
                         performanceStat.setAsNoted(true);
                         handleModifiedPerformanceData();
                     }
@@ -1195,20 +1210,21 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     }
 
     class BasicListener extends L2SubscriptionListener {
-           @Override
-           public void onDataChange(Subscription subscription, MonitoredDataItem monitoredDataItem, DataValue dataValue) {
-               if (l2DFHeating.isL2SystemReady()) {
-                   Tag theTag = monitoredTags.get(monitoredDataItem);
-                   level2Enabled = theTag.getValue().booleanValue;
-                   informLevel2Ready();
-                   if (!level2Enabled)
-                       l2DFHeating.showMessage("Level2 has been disabled!");
-
-               }
-           }
+        @Override
+        public void onDataChange(Subscription subscription, MonitoredDataItem monitoredDataItem, DataValue dataValue) {
+            if (l2DFHeating.isL2SystemReady()) {
+                Tag theTag = monitoredTags.get(monitoredDataItem);
+                level2Enabled = theTag.getValue().booleanValue;
+                informLevel2Ready();
+                if (level2Enabled)
+                    logInfo("Level2 has been Enabled!");
+                else
+                    l2DFHeating.showMessage("Level2 has been disabled!");
+            }
+        }
     }
 
-    public void informLevel2Ready() {
-        basicZone.setValue(L2ParamGroup.Parameter.L2Stat, Tag.TagName.Ready, tagLevel2Enabled.getValue().booleanValue);
+    public boolean informLevel2Ready() {
+        return (basicZone.setValue(L2ParamGroup.Parameter.L2Stat, Tag.TagName.Ready, tagLevel2Enabled.getValue().booleanValue)).booleanValue;
     }
 }

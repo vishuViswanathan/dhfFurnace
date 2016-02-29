@@ -1503,6 +1503,15 @@ public class L2DFHeating extends DFHeating {
         }
     }
 
+    public static void l2Trace(String msg) {
+        if (bl2ShowDebugMessages) {
+            if (log == null)
+                System.out.println("" + (new Date()) + ": TRACE: " + msg);
+            else
+                log.trace(accessLevel.toString() + ":" + msg);
+        }
+    }
+
     public static void l2Info(String msg) {
         if (log != null)
             log.info(accessLevel.toString() + ":" + msg);
