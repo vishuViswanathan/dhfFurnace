@@ -2,10 +2,9 @@ package basic;
 
 import display.*;
 import jsp.JSPConnection;
-import mvUtils.display.InputControl;
-import mvUtils.display.MultiPairColPanel;
+import mvUtils.display.*;
+import mvUtils.display.TimedMessage;
 import mvUtils.mvXML.XMLmv;
-import mvUtils.display.FramedPanel;
 import mvUtils.math.XYArray;
 
 import javax.swing.*;
@@ -529,7 +528,7 @@ public class Fuel extends Fluid{
         dlg.setLocationRelativeTo(caller);
         dlg.setVisible(true);
 */
-        OneParamDialog dlg = new OneParamDialog(controller, "Specific Heat Data not Available for " + name,
+        OneParameterDialog dlg = new OneParameterDialog(controller, "Specific Heat Data not Available for " + name,
                 "Take Sensible Heat", "IGNORE Sensible Heat");
         dlg.setValue("Enter constant Specific Heat (kcal/" + units + ".degC)", 0.01, "##0.00", 0, 10);
         dlg.setLocationRelativeTo(caller);

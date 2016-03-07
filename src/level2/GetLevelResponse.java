@@ -1,5 +1,7 @@
 package level2;
 
+import com.sun.org.apache.bcel.internal.generic.L2I;
+import level2.common.L2Interface;
 import level2.common.Tag;
 
 /**
@@ -11,8 +13,10 @@ import level2.common.Tag;
  */
 public class GetLevelResponse {
     ReadyNotedParam readyNotedParam;
+    L2Interface l2Interface;
 
-    public GetLevelResponse(ReadyNotedParam param) {
+    public GetLevelResponse(ReadyNotedParam param, L2Interface l2Interface) {
+        this.l2Interface = l2Interface;
         this.readyNotedParam = param;
     }
 
@@ -35,6 +39,8 @@ public class GetLevelResponse {
             } while (++nowTime < waitSeconds);
             readyNotedParam.markReady(false);
         }
+        else
+            l2Interface.logInfo("GetLevel1Response: Last message is not yet noted by Level1");
         return retVal;
     }
 }

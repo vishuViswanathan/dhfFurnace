@@ -15,8 +15,8 @@ import level2.common.TagCreationException;
  * I can be ready from Level1 and Noted from Level2 or the other way around
  */
 public class ReadyNotedParam extends L2ZoneParam {
-    boolean isReadyNotedRead = false;   // ready inLevel1 and noted form Level2
-    boolean isReadyNotedWrite = false;  // ready in level2 and noted in Level1
+    protected boolean isReadyNotedRead = false;   // ready inLevel1 and noted form Level2
+    protected boolean isReadyNotedWrite = false;  // ready in level2 and noted in Level1
 
     public ReadyNotedParam(TMuaClient source, String equipment, String processElement, Tag[] tags,
                            Subscription subscription) throws TagCreationException {
@@ -49,12 +49,12 @@ public class ReadyNotedParam extends L2ZoneParam {
     /**
      * Read all values
      */
-    void getAllValues() {
+    protected void getAllValues() {
         for (Tag tag:processTagList.values())
             tag.getValue();
     }
 
-    private void checkReadyNoted() {
+    protected void checkReadyNoted() {
         isReadyNotedRead = processTagList.containsKey(Tag.TagName.Ready) && level2TagList.containsKey(Tag.TagName.Noted);
         isReadyNotedWrite = level2TagList.containsKey(Tag.TagName.Ready) && processTagList.containsKey(Tag.TagName.Noted);
     }

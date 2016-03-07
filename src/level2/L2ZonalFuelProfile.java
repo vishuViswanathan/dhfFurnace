@@ -90,7 +90,7 @@ public class L2ZonalFuelProfile extends ZonalFuelProfile {
             // adjust the total fuel and proportionally the speed and capacity
             double originalTotal = l2TopZoneFuels[capacityStep][TotFuelCol];
             if (totFuel < originalTotal)  {
-                l2DFHeating.info("Fuel has been adjusted to limits for capacityStep " + capacityStep );
+                logInfo("Fuel has been adjusted to limits for capacityStep " + capacityStep );
                 double ratio = totFuel/ originalTotal;
                 l2TopZoneFuels[capacityStep][USpeedCol] *= ratio;
                 l2TopZoneFuels[capacityStep][UOutputCol] *= ratio;
@@ -185,5 +185,23 @@ public class L2ZonalFuelProfile extends ZonalFuelProfile {
         else
             return l2SpeedTotalFHTop.getXat(totalFH);
     }
+
+    public void logInfo(String msg) {
+        l2DFHeating.l2Info("L2ZonalFuelProfile: " + msg);
+    }
+
+    public void logDebug(String msg) {
+        l2DFHeating.l2debug("L2ZonalFuelProfile: " + msg);
+    }
+
+    public void logTrace(String msg) {
+        l2DFHeating.l2Trace("L2ZonalFuelProfile: " + msg);
+    }
+
+    public void logError(String msg) {
+        l2DFHeating.showError("l2DFHeating: " + msg);
+    }
+
+
 
 }

@@ -15,10 +15,7 @@ import directFiredHeating.*;
 import level2.common.*;
 import level2.display.L2DisplayZone;
 import level2.fieldResults.FieldResults;
-import mvUtils.display.ErrorStatAndMsg;
-import mvUtils.display.FramedPanel;
-import mvUtils.display.InputControl;
-import mvUtils.display.StatusWithMessage;
+import mvUtils.display.*;
 import mvUtils.math.BooleanWithStatus;
 import mvUtils.math.DoubleWithStatus;
 import mvUtils.mvXML.ValAndPos;
@@ -73,9 +70,13 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     Tag tagRuntimeReady;
     Tag tagUpdaterReady;
     Tag tagExpertReady;
+    Tag tagNextStripDataReady;
+    Tag tagNowStripDataReady;
+    Tag tagFieldDataReady;
     TMSubscription basicSub;
     TMSubscription messageSub;
     TMSubscription stripSub;
+    TMSubscription nowStripSub;
     TMSubscription fieldDataSub;
     TMSubscription fuelCharSub;
     TMSubscription updaterChangeSub;
@@ -265,7 +266,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
             try {
                 Tag[] stripDataNowTags = {
                         new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Process, false, false),
-                        new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Ready, false, true),
+                        (tagNowStripDataReady = new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Ready, false, true)),
                         new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Thick, false, false),
                         new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Width, false, false),
                         new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Noted, false, true),
@@ -284,7 +285,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
 
                 Tag[] stripDataNextTags = {
                         new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.Process, false, false),
-                        new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.Ready, false, true),
+                        (tagNextStripDataReady = new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.Ready, false, true)),
                         new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.Thick, false, false),
                         new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.Width, false, false),
                         new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.Noted, false, true),
@@ -348,7 +349,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
             noteMonitoredTags(commonDFHTags2);
             Tag[] commonDFHTags3 = {
                     new Tag(L2ParamGroup.Parameter.FieldData, Tag.TagName.Noted, true, false),  // noted by Level2
-                    new Tag(L2ParamGroup.Parameter.FieldData, Tag.TagName.Ready, false, true)};  // is monitored
+                    (tagFieldDataReady = new Tag(L2ParamGroup.Parameter.FieldData, Tag.TagName.Ready, false, true))};  // is monitored
             fieldDataParams = new ReadyNotedParam(source, equipment, "DFHCommon.FieldData", commonDFHTags3, fieldDataSub);
             readyNotedParamList.add(fieldDataParams);
             commonDFHZ.addOneParameter(L2ParamGroup.Parameter.FieldData, fieldDataParams);
@@ -423,10 +424,10 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
             readyNotedParamList.add(l2ErrorMessages);
             l2YesNoQuery = new ReadyNotedParam(source, equipment, "Messages.YesNoQuery", yesNoQueryTags, messageSub);
             readyNotedParamList.add(l2YesNoQuery);
-            yesNoResponse = new GetLevelResponse(l2YesNoQuery);
+            yesNoResponse = new GetLevelResponse(l2YesNoQuery, this);
             l2DataQuery = new ReadyNotedParam(source, equipment, "Messages.DataQuery", dataQueryTags, messageSub);
             readyNotedParamList.add(l2DataQuery);
-            dataResponse = new GetLevelResponse(l2DataQuery);
+            dataResponse = new GetLevelResponse(l2DataQuery, this);
             noteMonitoredTags(errMessageTags);
             noteMonitoredTags(infoMessageTags);
             noteMonitoredTags(yesNoQueryTags);
@@ -799,9 +800,6 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
             } else {
                 newStripIsBeingHandled.set(true);
                 if (level2Enabled) {
-//            ProcessValue pwW = stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Width);
-//            if (!pwW.valid)
-//                l2DFHeating.showError("Problem reading strip width: " + pwW.errorMessage) ;
                     double stripWidth = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Width).floatValue, 3) / 1000;
                     double stripThick = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Thick).floatValue, 3) / 1000;
                     String process = stripZone.getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Process).stringValue;
@@ -901,8 +899,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                 if (level2Enabled) {
                     if (fieldDataIsBeingHandled.get()) {
                         showErrorInLevel1("Last field data is still being handled. Retry later");
-                    }
-                    else {
+                    } else {
                         l2DFHeating.enablePerfMenu(false);
                         fieldDataIsBeingHandled.set(true);
                         ErrorStatAndMsg stat = l2DFHeating.takeResultsFromLevel1();
@@ -910,17 +907,13 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                             fieldDataIsBeingHandled.set(false);
                             showErrorInLevel1(stat.msg);
                         } else {
-                            showInfoInLevel1("Evaluating from Model");
                             handleFieldPerformance();
-//                            commonDFHZ.setValue(L2ParamGroup.Parameter.FieldData, Tag.TagName.Noted, true);
-//                            calculatedForFieldResults = (l2DFHeating.evalForFieldProduction(this) != null);  //TODO must be modified
                         }
                     }
                 } else
                     l2DFHeating.showMessage("Level2 is not enabled from Level1");
             }
-        }
-        else
+        } else
             showErrorInLevel1("Not enabled for handling field data");
     }
 
@@ -946,11 +939,12 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
             if (performBase.similarPerformance(perform) != null) {
                 logTrace("Similar performance already available");
                 replace = true;
-                boolean response = getYesNoResponseFromLevel1(
-                        String.format("%s, %tc",
-                                "Do you want to over-write Performance Data?", Calendar.getInstance()), 50);
-                logTrace("response from L1 is " + response);
-                goAhead =  (response) && (l2YesNoQuery.getValue(Tag.TagName.Response).booleanValue);
+                goAhead = l2DFHeating.decide("Similar performance already available", "Do you want to over-write Performance Data?");
+//                boolean response = getYesNoResponseFromLevel1(
+//                        String.format("%s, %tc",
+//                                "Do you want to over-write Performance Data?", Calendar.getInstance()), 20);
+//                logTrace("L2 " + ((response) ? "Responded " : "did not Respond ") + "to overwrite-Performance data query");
+//                goAhead =  (response) && (l2YesNoQuery.getValue(Tag.TagName.Response).booleanValue);
             }
         }
         if (goAhead) {
@@ -980,7 +974,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     }
 
     void resetFieldDataBeingHandled() {
-        logInfo("fieldDataIsBeingHandled is made OFF");
+        logTrace("fieldDataIsBeingHandled is made OFF");
         fieldDataIsBeingHandled.set(false);
         l2DFHeating.enablePerfMenu(true);
     }
@@ -1034,6 +1028,10 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         showError("L2DFHFurnace: " + msg);
     }
 
+    void showMessage(String title, String msg) {
+        (new TimedMessage(title, msg, TimedMessage.INFO, controller.parent(), 3000)).show();
+    }
+
     long displayUpdateInterval = 1000; // sec
 
     class L2DisplayUpdater implements Runnable {
@@ -1055,36 +1053,38 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
             this.theFieldData = theFieldData;
         }
         public void run() {
-            if (setFieldProductionData() ) {
-                setCurveSmoothening(false);
-                FceEvaluator eval1 = l2DFHeating.calculateFce(true, null);
-                if (eval1 != null) {
-                    try {
-                        eval1.awaitThreadToExit();
-                        if (eval1.healthyExit()) {
-                            if (adjustForFieldResults()) {
-                                FceEvaluator eval2 = l2DFHeating.calculateFce(false, null); // without reset the loss Factors
-                                if (eval2 != null) {
-                                    eval2.awaitThreadToExit();
-                                    logTrace("eval2 completed");
-                                    if (eval2.healthyExit()) {
-                                        logTrace("eval2 had healthy exit");
-//                                        fieldDataIsBeingHandled.set(true);
-                                        if (addFieldBasedPerformanceToPerfBase())
-                                            l2DFHeating.showMessage("Save updated Performance to file from Performance Menu");
-//                                        if (l2DFHeating.updatePerformanceDataFile())
-//                                            logTrace("Performance File is updated");
-//                                        else
-//                                            logInfo("Facing some problem in updating Performance file");
+            boolean response = getYesNoResponseFromLevel1("Confirm that Strip Size Data is updated", 20);
+            logTrace("L2 " + ((response) ? "Responded " : "did not Respond ") + "to Confirm-Strip-Data query");
+            if ((response) && (l2YesNoQuery.getValue(Tag.TagName.Response).booleanValue)) {
+                if (setFieldProductionData()) {
+                    setCurveSmoothening(false);
+                    l2DFHeating.showMessage("Field Performance", "Evaluating from Model");
+                    FceEvaluator eval1 = l2DFHeating.calculateFce(true, null);
+                    if (eval1 != null) {
+                        try {
+                            eval1.awaitThreadToExit();
+                            if (eval1.healthyExit()) {
+                                if (adjustForFieldResults()) {
+                                    FceEvaluator eval2 = l2DFHeating.calculateFce(false, null); // without reset the loss Factors
+                                    if (eval2 != null) {
+                                        eval2.awaitThreadToExit();
+                                        logTrace("eval2 completed");
+                                        if (eval2.healthyExit()) {
+                                            logTrace("eval2 had healthy exit");
+                                            if (addFieldBasedPerformanceToPerfBase())
+                                                l2DFHeating.showMessage("Field Performance", "Save updated Performance to file from Performance Menu");
+                                        }
                                     }
                                 }
                             }
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
                         }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
                     }
                 }
             }
+            else
+                showErrorInLevel1("Running Strip size data is not confirmed. Performance data is NOT recorded");
             resetFieldDataBeingHandled();
         }
     }
@@ -1157,22 +1157,24 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
             if (l2DFHeating.isL2SystemReady() && (accessLevel == L2DFHeating.AccessLevel.RUNTIME)) {
                 Tag theTag = monitoredTags.get(monitoredDataItem);
                 if (l2StripSizeNext.isNewData(theTag))   // the data will be already read if new data
-                    handleNewStrip();
+                    if (theTag == tagNextStripDataReady)
+                        handleNewStrip();
             }
         }
     }
 
     class FieldDataListener extends L2SubscriptionListener {
-         @Override
-         public void onDataChange(Subscription subscription, MonitoredDataItem monitoredDataItem, DataValue dataValue) {
-             L2DFHeating.AccessLevel accessLevel = l2DFHeating.accessLevel;
-             if (l2DFHeating.isL2SystemReady() &&
-                     ((accessLevel == L2DFHeating.AccessLevel.UPDATER) || (accessLevel == L2DFHeating.AccessLevel.EXPERT))) {
-                 Tag theTag = monitoredTags.get(monitoredDataItem);
-                 if (fieldDataParams.isNewData(theTag))   // the data will be already read if new data
-                     handleFieldData();
-             }
-         }
+        @Override
+        public void onDataChange(Subscription subscription, MonitoredDataItem monitoredDataItem, DataValue dataValue) {
+            L2DFHeating.AccessLevel accessLevel = l2DFHeating.accessLevel;
+            if (l2DFHeating.isL2SystemReady() &&
+                    ((accessLevel == L2DFHeating.AccessLevel.UPDATER) || (accessLevel == L2DFHeating.AccessLevel.EXPERT))) {
+                Tag theTag = monitoredTags.get(monitoredDataItem);
+                if (fieldDataParams.isNewData(theTag))   // the data will be already read if new data
+                    if (theTag == tagFieldDataReady)
+                        handleFieldData();
+            }
+        }
     }
 
     class FuelCharListener extends L2SubscriptionListener {

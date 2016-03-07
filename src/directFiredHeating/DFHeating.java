@@ -146,7 +146,7 @@ public class DFHeating extends JApplet implements InputControl {
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
 //    public Level2Furnace furnaceLevel2;
-    protected String releaseDate = "JNLP 20151213 10:38";
+    protected String releaseDate = "JNLP 20160304 13:44";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -359,7 +359,7 @@ public class DFHeating extends JApplet implements InputControl {
         }
         fuelMixP = Fuel.mixedFuelPanel(this, jspConnection, fuelList);
         regenBurnerStudy = new RegenBurner(fuelList, jspConnection, this);
-        info("DFHeating initiated");
+        logInfo("DFHeating initiated");
         enableDataEdit();
     }
 
@@ -2981,55 +2981,91 @@ public class DFHeating extends JApplet implements InputControl {
     }
 
     //region Message functions
+    public void showError(String msg) {
+        showError(msg, parent());
+    }
+
+    public void showError(String msg, Window w){
+        logError(msg);
+        SimpleDialog.showError(w, "", msg);
+        if (w != null)
+            w.toFront();
+    }
+
+    public void showMessage(String msg) {
+        showMessage("", msg);
+//        logInfo(msg);
+//        SimpleDialog.showMessage(parent(), "", msg);
+//        Window w = parent();
+//        if (w != null)
+//            w.toFront();
+    }
+
+    public void showMessage(String title, String msg) {
+        logInfo(msg);
+        SimpleDialog.showMessage(parent(), title, msg);
+        Window w = parent();
+        if (w != null)
+            w.toFront();
+    }
+
     public boolean decide(String title, String msg) {
-        return decide(title, msg,  true);
-//        int resp = JOptionPane.showConfirmDialog(parent(), msg, title, JOptionPane.YES_NO_OPTION);
-//        if (resp == JOptionPane.YES_OPTION)
-//            return true;
-//        else
-//            return false;
+        return decide(title, msg, true);
     }
 
     public boolean decide(String title, String msg, boolean defaultOption) {
-        String[] options = {UIManager.getString("OptionPane.yesButtonText"),
-                UIManager.getString("OptionPane.noButtonText")};
-        String defaultOptionString = (defaultOption) ? options[0] : options[1];
-        int resp = JOptionPane.showOptionDialog(parent(), msg, title, JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE, null, options, defaultOptionString);
+        int resp = SimpleDialog.decide(parent(), title, msg, defaultOption);
         if (resp == JOptionPane.YES_OPTION)
             return true;
         else
             return false;
     }
 
-    public void showError(String msg) {
-        showError(msg, null);
-//        error(msg);
-//        JOptionPane.showMessageDialog(parent(), msg, "ERROR", JOptionPane.ERROR_MESSAGE);
-//        parent().toFront();
+    public boolean decide(String title, String msg, int forTime) {
+        return SimpleDialog.decide(this, title, msg, forTime);
     }
 
-    public void showError(String msg, Window callerWindow) {
-        error(msg);
-        if (callerWindow == null) callerWindow = parent();
-        JOptionPane.showMessageDialog(callerWindow, msg, "ERROR", JOptionPane.ERROR_MESSAGE);
-        callerWindow.toFront();
-    }
+//    public boolean decide(String title, String msg) {
+//        return decide(title, msg,  true);
+//    }
 
-    public void showMessage(String msg) {
-        info(msg);
-        JOptionPane.showMessageDialog(parent(), msg, "FOR INFORMATION", JOptionPane.INFORMATION_MESSAGE);
-        Frame p = parent();
-        if (p != null)
-            p.toFront();
-    }
+//    public boolean decide(String title, String msg, boolean defaultOption) {
+//        String[] options = {UIManager.getString("OptionPane.yesButtonText"),
+//                UIManager.getString("OptionPane.noButtonText")};
+//        String defaultOptionString = (defaultOption) ? options[0] : options[1];
+//        int resp = JOptionPane.showOptionDialog(parent(), msg, title, JOptionPane.YES_NO_OPTION,
+//                JOptionPane.QUESTION_MESSAGE, null, options, defaultOptionString);
+//        if (resp == JOptionPane.YES_OPTION)
+//            return true;
+//        else
+//            return false;
+//    }
 
-    public static void error(String msg) {
+//    public void showError(String msg) {
+//        showError(msg, null);
+//    }
+
+//    public void showError(String msg, Window callerWindow) {
+//        logError(msg);
+//        if (callerWindow == null) callerWindow = parent();
+//        JOptionPane.showMessageDialog(callerWindow, msg, "ERROR", JOptionPane.ERROR_MESSAGE);
+//        callerWindow.toFront();
+//    }
+
+//    public void showMessage(String msg) {
+//        logInfo(msg);
+//        JOptionPane.showMessageDialog(parent(), msg, "FOR INFORMATION", JOptionPane.INFORMATION_MESSAGE);
+//        Frame p = parent();
+//        if (p != null)
+//            p.toFront();
+//    }
+
+    public static void logError(String msg) {
         if (log != null)
             log.error("DFHeating:" + msg);
     }
 
-    public static void info(String msg) {
+    public static void logInfo(String msg) {
         if (log != null)
             log.info("DFHeating:" + msg);
     }

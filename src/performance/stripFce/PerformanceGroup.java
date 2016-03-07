@@ -6,7 +6,7 @@ import basic.ProductionData;
 import directFiredHeating.DFHFurnace;
 import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
-import display.TimedMessage;
+import mvUtils.display.TimedMessage;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 

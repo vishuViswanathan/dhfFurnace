@@ -125,7 +125,7 @@ public class Tag {
         createDisplayComponent();
     }
 
-    void noteFormat(String fmtStr) {
+    protected void noteFormat(String fmtStr) {
         switch(tagName) {
             case Auto:
                 booleanStat = new BooleanDisplay("Auto", "Manual");
@@ -157,7 +157,7 @@ public class Tag {
         }
     }
 
-    void createDisplayComponent() {
+    protected void createDisplayComponent() {
         switch(tagName) {
             case Auto:
             case Remote:

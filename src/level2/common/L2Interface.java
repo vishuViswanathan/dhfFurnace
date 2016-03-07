@@ -16,4 +16,6 @@ public interface L2Interface {
     public String equipment();
     public void logInfo(String msg);
     public void logError(String msg);
+    public void logTrace(String msg);
+    public void logDebug(String nsg);
 }

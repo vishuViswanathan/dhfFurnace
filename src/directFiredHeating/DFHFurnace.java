@@ -5,6 +5,7 @@ import FceElements.heatExchanger.Recuperator;
 import appReporting.Reporter;
 import basic.*;
 import display.*;
+import mvUtils.display.TimedMessage;
 import mvUtils.display.TrendsPanel;
 import mvUtils.display.VScrollSync;
 import mvUtils.display.XLcellData;
@@ -1368,9 +1369,9 @@ public class DFHFurnace {
             suggTemp = 10 * SPECIAL.roundToNDecimals(suggTemp / 10, -1) - 5;
             if (userActionAllowed()) {
                 String title = topBotName(bBot) + "Zone #" + (iSec + 1);
-                OneParamDialog tempDlg = new OneParamDialog(controller, title, 3000);
+                OneParameterDialog tempDlg = new OneParameterDialog(controller, title, 3000);
                 tempDlg.setValue("Zone Gas Temperature (C)", suggTemp, "#,##0", 100, 1700);
-                tempDlg.setLocation(300, 200);
+                tempDlg.setLocationRelativeTo(controller.parent());
                 tempDlg.setVisible(true);
                 if (tempDlg.isOk())
                     sec.setPresetGasTemp(tempDlg.getVal());
@@ -4786,23 +4787,25 @@ public class DFHFurnace {
     }
 
     boolean decide(String title, String msg) {
-        int resp = JOptionPane.showConfirmDialog(controller.parent(), msg, title, JOptionPane.YES_NO_OPTION);
-        if (resp == JOptionPane.YES_OPTION)
-            return true;
-        else
-            return false;
+        return controller.decide(title, msg);
+//        int resp = JOptionPane.showConfirmDialog(controller.parent(), msg, title, JOptionPane.YES_NO_OPTION);
+//        if (resp == JOptionPane.YES_OPTION)
+//            return true;
+//        else
+//            return false;
     }
 
     boolean decide(String title, String msg, int forTime) {
-        OneParamDialog dlg = new OneParamDialog(controller, title, "YES", "NO", forTime);
-        dlg.setValue(msg);
-        dlg.setLocation(300, 200);
-        dlg.setVisible(true);
-        double resp = dlg.getVal();
-        if (resp == JOptionPane.YES_OPTION)
-            return true;
-        else
-            return false;
+        return controller.decide(title, msg, forTime);
+//        OneParameterDialog dlg = new OneParameterDialog(controller, title, "YES", "NO", forTime);
+//        dlg.setValue(msg);
+//        dlg.setLocation(300, 200);
+//        dlg.setVisible(true);
+//        double resp = dlg.getVal();
+//        if (resp == JOptionPane.YES_OPTION)
+//            return true;
+//        else
+//            return false;
     }
 
     protected void showError(String msg) {

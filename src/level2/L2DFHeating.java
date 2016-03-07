@@ -24,9 +24,7 @@ import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.text.DecimalFormat;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.Vector;
 
 /**
@@ -141,7 +139,7 @@ public class L2DFHeating extends DFHeating {
             log = Logger.getLogger("level2.L2DFHeating"); //DFHeating.class);
             // Load Log4j configurations from external file
         }
-        mainF.setTitle("DFH Furnace Level2 " + releaseDate + testTitle);
+        mainF.setTitle("DFH Furnace Level2-" + accessLevel + "-" + releaseDate + testTitle);
 
         tuningParams = new DFHTuningParams(this, onProductionLine, 1, 5, 30, 1.12, 1, false, false);
 //        debug("Creating new Level2furnace");
@@ -1464,7 +1462,7 @@ public class L2DFHeating extends DFHeating {
                 }
             }
             if (!gotIt)
-                info("Unable to read modified Process Data");
+                logInfo("Unable to read modified Process Data");
             l2Furnace.setProcessBeingUpdated(false);
         }
     }
@@ -1523,7 +1521,7 @@ public class L2DFHeating extends DFHeating {
     }
 
     public void checkAndClose(boolean check) {
-        if (!check || decide("Quitting Level2", "Do you really want to Exit this Level2 Application?", false))
+        if (!check || decide("Quitting Level2", "Do you really want to Exit this Level2-" + accessLevel + "?", false))
             exitFromLevel2();
 //        {l2Furnace.prepareForDisconnection();
 //            if (uaClient != null)

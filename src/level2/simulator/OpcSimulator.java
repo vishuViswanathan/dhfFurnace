@@ -1,11 +1,19 @@
 package level2.simulator;
 
+import TMopcUa.TMSubscription;
 import TMopcUa.TMuaClient;
 import com.prosysopc.ua.ServiceException;
-import level2.common.L2Interface;
+import com.prosysopc.ua.client.MonitoredDataItem;
+import com.prosysopc.ua.client.Subscription;
+import com.prosysopc.ua.client.SubscriptionAliveListener;
+import level2.GetLevelResponse;
+import level2.ReadyNotedParam;
+import level2.common.*;
 import mvUtils.display.FramedPanel;
 import mvUtils.display.InputControl;
 import mvUtils.display.MultiPairColPanel;
+import mvUtils.display.SimpleDialog;
+import org.opcfoundation.ua.builtintypes.DataValue;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -23,6 +31,8 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.Calendar;
+import java.util.Hashtable;
 import java.util.Vector;
 
 /**
@@ -82,7 +92,6 @@ public class OpcSimulator implements InputControl, L2Interface {
 
     Vector<OneSimulatorSection> processZones;
     Vector<OneSimulatorSection> level2Zones;
-
     boolean uiReady = false;
 
     public OpcSimulator(String urlID) {
@@ -93,10 +102,12 @@ public class OpcSimulator implements InputControl, L2Interface {
         mainF.setSize(new Dimension(800, 600));
         mainF.setVisible(true);
         mainF.toFront();
+        monitoredTags = new Hashtable<MonitoredDataItem, Tag>();
         if (setupUaClient(urlID))
             if (loadSimulator()) {
                 showThem();
                 uiReady = true;
+                createL2Messages();
             }
     }
 
@@ -133,9 +144,11 @@ public class OpcSimulator implements InputControl, L2Interface {
         gbc.gridy = 0;
         JPanel oneP;
         for (OneSimulatorSection sec: processZones) {
-            oneP = sec.getDisplayPanel(width);
-            jp.add(oneP, gbc);
-            gbc.gridy++;
+//            if (!sec.name.equalsIgnoreCase("Messages")) {
+                oneP = sec.getDisplayPanel(width);
+                jp.add(oneP, gbc);
+                gbc.gridy++;
+//            }
         }
         for (OneSimulatorSection sec: processZones)
             sec.updateUI();
@@ -157,9 +170,11 @@ public class OpcSimulator implements InputControl, L2Interface {
         gbc.gridy = 0;
         JPanel oneP;
         for (OneSimulatorSection sec: level2Zones) {
-            oneP = sec.getDisplayPanel(width);
-            jp.add(oneP, gbc);
-            gbc.gridy++;
+//            if (!sec.name.equalsIgnoreCase("Messages")) {
+                oneP = sec.getDisplayPanel(width);
+                jp.add(oneP, gbc);
+                gbc.gridy++;
+//            }
         }
         for (OneSimulatorSection sec: level2Zones)
             sec.updateUI();
@@ -404,25 +419,81 @@ public class OpcSimulator implements InputControl, L2Interface {
          return tag;
     }
 
+    SimulationReadyNoted l2InfoMessages;
+    SimulationReadyNoted l2ErrorMessages;
+    SimulationReadyNoted l2YesNoQuery;
+    SimulationReadyNoted l2DataQuery;
+    Vector<ReadyNotedParam> readyNotedParamList = new Vector<ReadyNotedParam>();
+    TMSubscription messageSub;
+    GetLevelResponse yesNoResponse;
+    GetLevelResponse dataResponse;
+    Hashtable<MonitoredDataItem, Tag> monitoredTags;
+    boolean monitoredTagsReady = false;
 
-//    boolean takeDataFromXMl(String xmlStr) {
-//        boolean retVal = false;
-//        ValAndPos vp;
-//        vp = XMLmv.getTag(xmlStr, "Simulation", 0);
-//        vp = XMLmv.getTag(xmlStr, "nEquipment", 0);
-//        int nEquipment = Integer.valueOf(vp.val);
-//        int e = 1; // TODO only for one equipment now
-//        ValAndPos oneEquipmentVp = XMLmv.getTag(xmlStr, "Equipment" + ("" + e).trim(), vp.endPos);
-//        oneEquipmentVp = XMLmv.getTag(oneEquipmentVp.val, "equipName", 0);
-//        equipment = oneEquipmentVp.val;
-//        ValAndPos processVp = XMLmv.getTag(xmlStr, "Process", 0);
-//        oneEquipmentVp.endPos = processVp.endPos;  // note down for next search for "level2"
-//        if (takeProcessFromXML(processVp.val)) {
-//            ValAndPos level2Vp = XMLmv.getTag(xmlStr, "Level2", 0);
-//            retVal = takeLevel2FromXML(level2Vp.val);
-//        }
-//        return retVal;
-//    }
+    void noteMonitoredTags(Tag[] tags) {
+        for (Tag tag : tags)
+            if (tag.isMonitored())
+                monitoredTags.put(tag.getMonitoredDataItem(), tag);
+    }
+
+    boolean createL2Messages() {
+        boolean retVal = false;
+        logDebug("creating L2 Massages");
+        messageSub = source.createTMSubscription("Messages", new SubAliveListener(), new MessageListener());
+        Tag[] errMessageTags = {new Tag(L2ParamGroup.Parameter.ErrMsg, Tag.TagName.Msg, false, false),
+                new Tag(L2ParamGroup.Parameter.ErrMsg, Tag.TagName.Ready, false, !true),
+                new Tag(L2ParamGroup.Parameter.ErrMsg, Tag.TagName.Msg, true, false),
+                new Tag(L2ParamGroup.Parameter.ErrMsg, Tag.TagName.Ready, true, !false),
+                new Tag(L2ParamGroup.Parameter.ErrMsg, Tag.TagName.Noted, true, !false),  // sending 'Noted' to Process
+                new Tag(L2ParamGroup.Parameter.ErrMsg, Tag.TagName.Noted, false, !true)  // reading 'Noted' from Process
+        };
+        Tag[] infoMessageTags = {new Tag(L2ParamGroup.Parameter.InfoMsg, Tag.TagName.Msg, false, false),
+                new Tag(L2ParamGroup.Parameter.InfoMsg, Tag.TagName.Ready, false, !true),
+                new Tag(L2ParamGroup.Parameter.InfoMsg, Tag.TagName.Msg, true, false),
+                new Tag(L2ParamGroup.Parameter.InfoMsg, Tag.TagName.Ready, true, !false),
+                new Tag(L2ParamGroup.Parameter.InfoMsg, Tag.TagName.Noted, true, !false),  // sending 'Noted' to Process
+                new Tag(L2ParamGroup.Parameter.InfoMsg, Tag.TagName.Noted, false, !true)   // reading 'Noted' from Process
+        };
+        Tag[] yesNoQueryTags = {new Tag(L2ParamGroup.Parameter.YesNoQuery, Tag.TagName.Msg, false, false),
+                new Tag(L2ParamGroup.Parameter.YesNoQuery, Tag.TagName.Ready, false, !true),
+                new Tag(L2ParamGroup.Parameter.YesNoQuery, Tag.TagName.Msg, true, false),
+                new Tag(L2ParamGroup.Parameter.YesNoQuery, Tag.TagName.Ready, true, !false),
+                new Tag(L2ParamGroup.Parameter.YesNoQuery, Tag.TagName.Noted, true, !false),  // sending 'Noted' to Process
+                new Tag(L2ParamGroup.Parameter.YesNoQuery, Tag.TagName.Noted, false, !true),  // reading 'Noted' from Process
+                new Tag(L2ParamGroup.Parameter.YesNoQuery, Tag.TagName.Response, true, false),
+                new Tag(L2ParamGroup.Parameter.YesNoQuery, Tag.TagName.Response, false, !true)
+        };
+        Tag[] dataQueryTags = {new Tag(L2ParamGroup.Parameter.DataQuery, Tag.TagName.Msg, false, false),
+                new Tag(L2ParamGroup.Parameter.DataQuery, Tag.TagName.Ready, false, !true),
+                new Tag(L2ParamGroup.Parameter.DataQuery, Tag.TagName.Msg, true, false),
+                new Tag(L2ParamGroup.Parameter.DataQuery, Tag.TagName.Ready, true, !false),
+                new Tag(L2ParamGroup.Parameter.DataQuery, Tag.TagName.Noted, true, !false),  // sending 'Noted' to Process
+                new Tag(L2ParamGroup.Parameter.DataQuery, Tag.TagName.Noted, false, !true),  // reading 'Noted' from Process
+                new Tag(L2ParamGroup.Parameter.DataQuery, Tag.TagName.Data, true, false),
+                new Tag(L2ParamGroup.Parameter.DataQuery, Tag.TagName.Data, false, !true)
+        };
+        try {
+            l2InfoMessages = new SimulationReadyNoted(source, equipment, "Messages.InfoMsg", infoMessageTags, messageSub);
+            readyNotedParamList.add(l2InfoMessages);
+            l2ErrorMessages = new SimulationReadyNoted(source, equipment, "Messages.ErrorMsg", errMessageTags, messageSub);
+            readyNotedParamList.add(l2ErrorMessages);
+            l2YesNoQuery = new SimulationReadyNoted(source, equipment, "Messages.YesNoQuery", yesNoQueryTags, messageSub);
+            readyNotedParamList.add(l2YesNoQuery);
+            yesNoResponse = new GetLevelResponse(l2YesNoQuery, this);
+            l2DataQuery = new SimulationReadyNoted(source, equipment, "Messages.DataQuery", dataQueryTags, messageSub);
+            readyNotedParamList.add(l2DataQuery);
+            dataResponse = new GetLevelResponse(l2DataQuery, this);
+            noteMonitoredTags(errMessageTags);
+            noteMonitoredTags(infoMessageTags);
+            noteMonitoredTags(yesNoQueryTags);
+            noteMonitoredTags(dataQueryTags);
+            monitoredTagsReady = true;
+            retVal = true;
+        } catch (TagCreationException e) {
+            showError("Message connection to Level1 :" + e.getMessage());
+        }
+        return retVal;
+    }
 
     Vector<OneSimulatorSection> collectSections(String path, boolean rw) {
         Vector<OneSimulatorSection> retVal = new Vector<OneSimulatorSection>();
@@ -436,107 +507,6 @@ public class OpcSimulator implements InputControl, L2Interface {
         return retVal;
     }
 
-//    boolean takeProcessFromXMLKEP(String xmlStr) {
-//        boolean retVal = true;
-//        ValAndPos vp;
-//        vp = XMLmv.getTag(xmlStr, "servermain:TagGroupList", 0);
-//        String allGroups = vp.val;
-//        vp.endPos = 0;
-//        int s = 0;
-//        if (allGroups.length() > 10) {
-//            do {
-//                vp = XMLmv.getTag(allGroups, "servermain:TagGroup", vp.endPos);
-//                if (vp.val.length() < 10)
-//                    break;
-//                try {
-//                   processZones.add(s++, new OneSection(this, vp.val, true, true));
-//                } catch (TagCreationException e) {
-//                   showError("Problem in setting process part of simulation: XML[" + vp.val + "] -> " + e.getMessage());
-//                   retVal = false;
-//                   break;
-//                }
-//            } while (true);
-//        }
-//        return retVal;
-//    }
-
-//    boolean takeProcessFromXML(String xmlStr) {
-//         boolean retVal = true;
-//         ValAndPos vp;
-//         vp = XMLmv.getTag(xmlStr, "nSections", 0);
-//         int nSections = Integer.valueOf(vp.val);
-//         processZones = new Vector<OneSection>(nSections);
-//         for (int s = 0; s < nSections; s++) {
-//             vp = XMLmv.getTag(xmlStr, "Section" + ("" + (s + 1)).trim(), vp.endPos);
-//             try {
-//                 processZones.add(s, new OneSection(this, vp.val, true));
-//             } catch (TagCreationException e) {
-//                 showError("Problem in setting process part of simulation: XML[" + vp.val + "] -> " + e.getMessage());
-//                 retVal = false;
-//                 break;
-//             }
-//         }
-//         return retVal;
-//     }
-
-//    boolean takeLevel2FromXMLKEP(String xmlStr) {
-//         boolean retVal = true;
-//         ValAndPos vp;
-//         vp = XMLmv.getTag(xmlStr, "servermain:TagGroupList", 0);
-//         String allGroups = vp.val;
-//         vp.endPos = 0;
-//         int s = 0;
-//         if (allGroups.length() > 10) {
-//             do {
-//                 vp = XMLmv.getTag(allGroups, "servermain:TagGroup", vp.endPos);
-//                 if (vp.val.length() < 10)
-//                     break;
-//                 try {
-//                     level2Zones.add(s++, new OneSection(this, vp.val, false, true));
-//                 } catch (TagCreationException e) {
-//                    showError("Problem in setting process part of simulation: XML[" + vp.val + "] -> " + e.getMessage());
-//                    retVal = false;
-//                    break;
-//                 }
-//             } while (true);
-//         }
-//         return retVal;
-//     }
-
-//    boolean takeLevel2FromXML(String xmlStr) {
-//        boolean retVal = true;
-//        ValAndPos vp;
-//        vp = XMLmv.getTag(xmlStr, "nSections", 0);
-//        int nSections = Integer.valueOf(vp.val);
-//        level2Zones = new Vector<OneSection>(nSections);
-//        for (int s = 0; s < nSections; s++) {
-//            vp = XMLmv.getTag(xmlStr, "Section" + ("" + (s + 1)).trim(), vp.endPos);
-//            try {
-//                level2Zones.add(s, new OneSection(this, vp.val, false));
-//            } catch (TagCreationException e) {
-//                showError("Problem in setting level2 part of simulation: XML\n [Error: " + e.getMessage() + "\n" + vp.val);
-//                retVal = false;
-//                break;
-//            }
-//        }
-//        return retVal;
-//    }
-
-
-    public void showError(String msg) {
-        JOptionPane.showMessageDialog(null, msg, "ERROR", JOptionPane.ERROR_MESSAGE);
-        Window w = parent();
-        if (w != null)
-            w.toFront();
-    }
-
-    public void showMessage(String msg) {
-        JOptionPane.showMessageDialog(parent(), msg, "FOR INFORMATION", JOptionPane.INFORMATION_MESSAGE);
-        Window w = parent();
-        if (w != null)
-            w.toFront();
-    }
-
     public boolean canNotify() {
         return false;
     }
@@ -546,7 +516,7 @@ public class OpcSimulator implements InputControl, L2Interface {
     }
 
     public Window parent() {
-        return null;
+        return mainF;
     }
 
     public TMuaClient source() {
@@ -562,11 +532,45 @@ public class OpcSimulator implements InputControl, L2Interface {
     }
 
     public void logInfo(String msg) {
-        showMessage(msg);
+        System.out.println("OpcSimulator:" + msg);
     }
 
     public void logError(String msg) {
-        showError(msg);
+
+    }
+
+    public void logTrace(String msg) {
+
+    }
+
+    public void logDebug(String nsg) {
+
+    }
+
+    public void showError(String msg) {
+        SimpleDialog.showError(parent(), "", msg);
+        Window w = parent();
+        if (w != null)
+            w.toFront();
+    }
+
+    public void showMessage(String msg) {
+        SimpleDialog.showMessage(parent(), "", msg);
+        Window w = parent();
+        if (w != null)
+            w.toFront();
+    }
+
+    public boolean decide(String title, String msg) {
+        return decide(title, msg, true);
+    }
+
+    public boolean decide(String title, String msg, boolean defaultOption) {
+        int resp = SimpleDialog.decide(parent(), title, msg, defaultOption);
+        if (resp == JOptionPane.YES_OPTION)
+            return true;
+        else
+            return false;
     }
 
     void close() {
@@ -614,6 +618,55 @@ public class OpcSimulator implements InputControl, L2Interface {
                  });
     }
 
+    class SubAliveListener implements SubscriptionAliveListener {     // TODO This is common dummy class used everywhere to be made proper
+        public void onAlive(Subscription s) {
+        }
+        public void onTimeout(Subscription s) {
+        }
+    }
+
+
+    class MessageListener extends L2SubscriptionListener {
+        @Override
+        public void onDataChange(Subscription subscription, MonitoredDataItem monitoredDataItem, DataValue dataValue) {
+            if (monitoredTagsReady) {
+                String fromElement = monitoredDataItem.toString();
+//                logInfo("Messages" + ":fromElement-" + fromElement + ", VALUE: " + dataValue.getValue().toStringWithType());
+                Tag theTag = monitoredTags.get(monitoredDataItem);
+//                logInfo("Messages" + ":fromElement-" + theTag.element);
+                if (theTag.element == L2ParamGroup.Parameter.InfoMsg) {
+                    if (l2InfoMessages.isNewData(theTag)) {  // the data will be already read if new data
+                        String msg = l2InfoMessages.getValue(Tag.TagName.Msg).stringValue;
+                        showMessage(msg);
+                        l2InfoMessages.setAsNoted(true);
+                    }
+                    else
+                        logInfo("InfoMsg is not newData");
+                }
+                if (theTag.element == L2ParamGroup.Parameter.ErrMsg) {
+                    if (l2ErrorMessages.isNewData(theTag)) {  // the data will be already read if new data
+                        String msg = l2ErrorMessages.getValue(Tag.TagName.Msg).stringValue;
+                        showError(msg);
+                        l2ErrorMessages.setAsNoted(true);
+                    }
+                    else
+                        logInfo("ErrMsg is not newData");
+                }
+                if (theTag.element == L2ParamGroup.Parameter.YesNoQuery) {
+                    if (l2YesNoQuery.isNewData(theTag)) {  // the data will be already read if new data
+                        String msg = l2YesNoQuery.getValue(Tag.TagName.Msg).stringValue;
+                        if (decide("", msg))
+                            l2YesNoQuery.setValue(Tag.TagName.Response, true);
+                        else
+                            l2YesNoQuery.setValue(Tag.TagName.Response, false);
+                        l2YesNoQuery.setAsNoted(true);
+                    }
+                    else
+                        logInfo("YesNoQuery is not newData");
+                }
+            }
+        }
+    }
 
     class WinListener implements WindowListener {
         public void windowOpened(WindowEvent e) {
@@ -641,7 +694,7 @@ public class OpcSimulator implements InputControl, L2Interface {
 
          public void windowDeactivated(WindowEvent e) {
          }
-     }
+    }
 
     public static void main(String[] args) {
         if (args.length > 0) {
