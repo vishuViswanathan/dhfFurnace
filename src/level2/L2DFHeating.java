@@ -257,9 +257,9 @@ public class L2DFHeating extends DFHeating {
                 menuBarLevel2.add(resultsMenu);
             }
             mL2Configuration = new JMenu("L2 Config");
-            mICreateFceSettings = new JMenuItem("View/Edit Furnace Settings");
-            mIReadFceSettings = new JMenuItem("Read Furnace Settings from file");
-            mISaveFceSettings = new JMenuItem("Save Furnace Settings to file");
+            mICreateFceSettings = new JMenuItem("View/Edit Zonal Fuel Range");
+            mIReadFceSettings = new JMenuItem("Read Zonal Fuel Range from file");
+            mISaveFceSettings = new JMenuItem("Save Zonal Fuel Range to file");
 
             mIEditDFHStripProcess = new JMenuItem("Add/Edit StripDFHProcess List");
             mIViewDFHStripProcess = new JMenuItem("View StripDFHProcess List");
@@ -754,9 +754,9 @@ public class L2DFHeating extends DFHeating {
     boolean saveFurnaceSettings() {
         boolean retVal = false;
         if (isProfileCodeOK()) {
-            String title = "Save Furnace Settings";
-            FileChooserWithOptions fileDlg = new FileChooserWithOptions(title, "Furnace Settings (*." + fceSettExtension + ")", fceSettExtension);
-            fileDlg.setSelectedFile(new File(profileCode + " Furnace Settings." + fceSettExtension));
+            String title = "Save Zonal Fuel Range";
+            FileChooserWithOptions fileDlg = new FileChooserWithOptions(title, "Zonal Fuel Range (*." + fceSettExtension + ")", fceSettExtension);
+            fileDlg.setSelectedFile(new File(profileCode + " Zonal Fuel Range." + fceSettExtension));
             fileDlg.setCurrentDirectory(fceDataLocationDirectory);
             fileDlg.setStartWithString(profileCode);
             if (currentView != null)
@@ -771,7 +771,7 @@ public class L2DFHeating extends DFHeating {
                 deleteParticularFiles("" + fceDataLocation, profileCode, fceSettExtension);
                 try {
                     BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(file));
-                    oStream.write(("# Furnace Settings saved on " + dateFormat.format(new Date()) + " \n\n").getBytes());
+                    oStream.write(("# Zonal Fuel Range saved on " + dateFormat.format(new Date()) + " \n\n").getBytes());
                     oStream.write((profileCodeInXML() + l2Furnace.fceSettingsInXML()).getBytes());
                     oStream.close();
                     retVal = true;
@@ -784,7 +784,7 @@ public class L2DFHeating extends DFHeating {
             currentView = fileDlg.getFileSystemView();
         }
         else {
-            showError("Save Profile before saving Furnace Settings");
+            showError("Save Profile before saving Zonal Fuel Range");
         }
         return retVal;
     }
@@ -839,19 +839,19 @@ public class L2DFHeating extends DFHeating {
                     String xmlStr = new String(data);
                     if (checkProfileCodeInXML(xmlStr)) {
                         if (l2Furnace.takeFceSettingsFromXML(xmlStr)) {
-                            l2Info("Furnace Settings loaded");
+                            l2Info("Zonal Fuel Range loaded");
 //                            if (showDebugMessages)
-//                                showMessage("Furnace Settings loaded");
+//                                showMessage("Zonal Fuel Range loaded");
                             retVal = true;
                         }
                     } else
-                        showError("Mismatch in Furnace Settings Data");
+                        showError("Mismatch in Zonal Fuel Range Data");
                 }
                 iStream.close();
             } else
                 showError("File size " + len + " for " + file);
         } catch (Exception e) {
-            showError("Some Problem in getting Furnace Settings File!");
+            showError("Some Problem in getting Zonal Fuel Range File!");
         }
         return retVal;
     }
@@ -859,7 +859,7 @@ public class L2DFHeating extends DFHeating {
     boolean loadFurnaceSettings(String filePath) {
         boolean retVal = false;
         if (!filePath.equals("nullnull")) {
-//            debug("File for Furnace Settings :" + filePath);
+//            debug("File for Zonal Fuel Range :" + filePath);
             try {
                 File file = new File(filePath);
                 retVal = loadFurnaceSettings(file);
@@ -1272,7 +1272,7 @@ public class L2DFHeating extends DFHeating {
             l2Info("loaded file " + file);
         }
         else
-            showError("Unable to locate Furnace Settings File");
+            showError("Unable to locate Zonal Fuel Range File");
         return retVal;
     }
 
