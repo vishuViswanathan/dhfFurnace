@@ -291,7 +291,7 @@ public class OneStripDFHProcess {
     NumberTextField ntMinWidth;
 
     public ErrorStatAndMsg fieldDataOkForProcess(String processName, ProductionData production) {
-        ErrorStatAndMsg retVal = new ErrorStatAndMsg(true, "ERROR: ");
+        ErrorStatAndMsg retVal = new ErrorStatAndMsg(true, "For Process " + processName + ", ");
         DFHTuningParams tuning = l2DFHeating.getTuningParams();
         DecimalFormat mmFmt = new DecimalFormat("#,###");
         DecimalFormat outputFmt = new DecimalFormat("#,###.000");
@@ -310,10 +310,13 @@ public class OneStripDFHProcess {
                             double maxExitTempAllowed = tempDFHExit + tuning.exitTempTolerance;
                             double minExitTempAllowed = tempDFHExit - tuning.exitTempTolerance;
                             double nowExitTemp = production.exitTemp;
-                            if (nowExitTemp <= maxExitTempAllowed) {
+//                            if (nowExitTemp <= maxExitTempAllowed) {
+                            if (nowExitTemp < maxExitTempAllowed) {
                                 if (nowExitTemp >= minExitTempAllowed) {
-                                    if (production.exitZoneFceTemp > minExitZoneTemp)
+                                    production.exitTemp = tempDFHExit;
+                                    if (production.exitZoneFceTemp > minExitZoneTemp) {
                                         retVal.inError = false;
+                                    }
                                     else
                                         retVal.msg += "Exit Zone Temperature Low (minimum allowed is " + tempFmt.format(minExitZoneTemp) + " C)";
                                 }
@@ -321,7 +324,7 @@ public class OneStripDFHProcess {
                                     retVal.msg += "Exit Temperature Low (minimum allowed is " + tempFmt.format(minExitTempAllowed) + " C)";
                             }
                             else
-                                retVal.msg += "Exit Temperature High (maximum allowed is " + tempFmt.format(maxExitTempAllowed) + " C)";
+                                retVal.msg += "Exit Temperature is High - must be less than " + tempFmt.format(maxExitTempAllowed) + " C)";
                         }
                         else
                             retVal.msg += "Output too high (maximum allowed for this width is " + outputFmt.format(maxUnitOutputAllowed * chWidth / 1000) + " t/h)";
