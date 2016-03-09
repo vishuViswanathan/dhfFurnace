@@ -11,6 +11,7 @@ import mvUtils.display.InputControl;
  * To change this template use File | Settings | File Templates.
  */
 public interface L2Interface {
+    String headerBreak = ": ";
     public TMuaClient source();
     public InputControl controller();
     public String equipment();
