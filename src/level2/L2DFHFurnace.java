@@ -905,7 +905,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                         ErrorStatAndMsg stat = l2DFHeating.takeResultsFromLevel1();
                         if (stat.inError) {
                             fieldDataIsBeingHandled.set(false);
-                            showErrorInLevel1(stat.msg);
+                            showErrorInLevel1("Taking Field Performance", stat.msg);
                         } else {
                             handleFieldPerformance();
                         }
@@ -986,18 +986,33 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     }
 
     public boolean showErrorInLevel1(String msg) {
+        return showErrorInLevel1("", msg);
+    }
+
+    public boolean showErrorInLevel1(String header, String msg) {
+        String assembledMsg = ((header.length() > 0) ? (header + headerBreak) : "") + msg;
         logInfo(msg);
-        l2ErrorMessages.setValue(Tag.TagName.Msg, msg);
+        l2ErrorMessages.setValue(Tag.TagName.Msg, assembledMsg);
         return l2ErrorMessages.markReady(true);
     }
 
     public boolean showInfoInLevel1(String msg) {
-        l2InfoMessages.setValue(Tag.TagName.Msg, msg);
+        return showInfoInLevel1("", msg);
+    }
+
+    public boolean showInfoInLevel1(String header, String msg) {
+        String assembledMsg = ((header.length() > 0) ? (header + headerBreak) : "") + msg;
+        l2InfoMessages.setValue(Tag.TagName.Msg, assembledMsg);
         return l2InfoMessages.markReady(true);
     }
 
     public boolean getYesNoResponseFromLevel1(String msg, int waitSeconds) {
-        return yesNoResponse.getResponse(msg, waitSeconds);
+        return getYesNoResponseFromLevel1("", msg, waitSeconds);
+    }
+
+    public boolean getYesNoResponseFromLevel1(String header, String msg, int waitSeconds) {
+        String assembledMsg = ((header.length() > 0) ? (header + headerBreak) : "") + msg;
+        return yesNoResponse.getResponse(assembledMsg, waitSeconds);
     }
 
     public TMuaClient source() {
