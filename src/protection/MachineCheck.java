@@ -53,9 +53,10 @@ public class MachineCheck {
 
     public String getKey(String idStr) {
         int len = idStr.length();
+//        System.out.println("MachineCheck.getKey len = " + len + ", idStr = " + idStr);
         StringBuilder keyBase = new StringBuilder();
         int[] modId = new int[len] ;
-        for (int p = 0; p < len; p+= 2) {
+        for (int p = 0; p < (len - 1); p+= 2) {
             keyBase.append(String.format("%04d", ((int)1000 - Integer.parseInt(idStr.substring(p, p + 2), 16))));
         }
         // reverse it

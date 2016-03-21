@@ -5,12 +5,9 @@ import directFiredHeating.CalculationsDoneListener;
 import directFiredHeating.DFHFurnace;
 import directFiredHeating.DFHeating;
 import display.*;
-import mvUtils.display.MultiPairColPanel;
-import mvUtils.display.NumberLabel;
-import mvUtils.display.NumberTextField;
+import mvUtils.display.*;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
-import mvUtils.display.FramedPanel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -35,6 +32,7 @@ import java.util.Vector;
 public class Performance {
     public enum Params {
         DATE("Date of Calculation"),
+        PROCESSNAME("Process name"),
         CHMATERIAL("Charge Material"),
         STRIPWIDTH("Strip Width"),
         STRIPTHICK("Strip Thickness"),
@@ -72,6 +70,7 @@ public class Performance {
     public static final int FUEL = 16;
     public static final int UNITOUTPUT = 32;
     public static final int EXITTEMP = 64;
+    public String processName;
     public double output;
     public double unitOutput; // output per stripWidth
     public Vector<OneZone> topZones, botZones;
@@ -89,7 +88,6 @@ public class Performance {
     PerformanceTable perfTable;
     boolean interpolated = false;
 
-
     public Performance() {
 
     }
@@ -102,37 +100,47 @@ public class Performance {
     public Performance(ProductionData production, Fuel fuel, double airTemp, Vector<OneZone> topZones,
                         Vector<OneZone> botZones, GregorianCalendar dateOfResult,
                         DFHFurnace furnace) {
-         output = production.production;
-         Charge charge = production.charge;
-         chMaterial = charge.chMaterial.name;
-         chLength = charge.getLength();
-         chWidth = charge.getWidth();
-         chThick = charge.getHeight();
-         chWt = charge.getUnitWt();
-         chPitch = production.chPitch;
-         speed = production.speed;
-         piecesPerH = production.piecesPerh;
-         fuelName = fuel.name;
-         this.airTemp = airTemp;
-         getUnitOutput();
-         this.topZones = topZones;
-         this.botZones = botZones;
-         for (OneZone z: topZones)
-             z.setPerformanceOf(this);
-         if (botZones != null)  {
-             for (OneZone z: botZones)
-                 z.setPerformanceOf(this);
-         }
-         this.dateOfResult = dateOfResult;
-         this.furnace = furnace;
-         this.controller = furnace.controller;
-     }
+        output = production.production;
+        Charge charge = production.charge;
+        chMaterial = charge.chMaterial.name;
+        chLength = charge.getLength();
+        chWidth = charge.getWidth();
+        chThick = charge.getHeight();
+        chWt = charge.getUnitWt();
+        chPitch = production.chPitch;
+        speed = production.speed;
+        piecesPerH = production.piecesPerh;
+        fuelName = fuel.name;
+        this.airTemp = airTemp;
+        getUnitOutput();
+        this.topZones = topZones;
+        this.botZones = botZones;
+        for (OneZone z: topZones)
+            z.setPerformanceOf(this);
+        if (botZones != null)  {
+            for (OneZone z: botZones)
+                z.setPerformanceOf(this);
+        }
+        this.dateOfResult = dateOfResult;
+        this.furnace = furnace;
+        this.controller = furnace.controller;
+        this.processName = production.processName;
+    }
 
     public Performance(ProductionData production, Fuel fuel, double airTemp, Vector<OneZone> topZones, GregorianCalendar dateOfResult,
                        DFHFurnace furnace) {
         this(production, fuel, airTemp, topZones, null, dateOfResult, furnace);
     }
 
+//    void getProcessName() {
+//        OneParameterDialog dlg = new OneParameterDialog(controller, "Process Name", true);
+//        dlg.setValue("enter Process Name" , processName, 15);
+//        dlg.setLocationRelativeTo(controller.parent());
+//        dlg.setVisible(true);
+//        if (dlg.isOk())
+//            processName = dlg.getTextVal();
+//    }
+//
     public void addToZones(boolean bBot, OneZone zone) {
         if (bBot) {
             if (botZones == null)
@@ -249,6 +257,9 @@ public class Performance {
     String getStringParam(Params param) {
         String retVal = "N/A";
         switch(param) {
+            case PROCESSNAME:
+                retVal = processName;
+                break;
             case FUEL:
                 retVal = fuelName;
                 break;
@@ -267,12 +278,24 @@ public class Performance {
     }
 
     boolean isProductionComparable(Performance performance, double exitTAllowance) {
-        boolean bComparable = (chLength == performance.chLength) &&
-                chMaterial.equals(performance.chMaterial) &&
-                    fuelName.equals(performance.fuelName) &&
-                        (Math.abs((output - performance.output) / output) < 0.01) &&
-                            (Math.abs(exitTemp() - performance.exitTemp()) < exitTAllowance);
+        boolean bComparable = isProcessNameComparable(performance.processName) &&
+                (chLength == performance.chLength) &&
+                    chMaterial.equals(performance.chMaterial) &&
+                        fuelName.equals(performance.fuelName) &&
+                            (Math.abs((output - performance.output) / output) < 0.01) &&
+                                isExitTempComparable(performance.exitTemp(), exitTAllowance);
+//                            (Math.abs(exitTemp() - performance.exitTemp()) < exitTAllowance);
         return bComparable;
+    }
+
+
+    boolean isExitTempComparable(double nowTemp,  double allowance)  {
+        double refTemp = exitTemp();
+        return ((nowTemp >= (refTemp - allowance)) && (nowTemp < (refTemp + allowance)));
+    }
+
+    boolean isProcessNameComparable(String nowProcessName) {
+        return nowProcessName.equalsIgnoreCase(processName);
     }
 
     /**
@@ -283,39 +306,44 @@ public class Performance {
      * @return
      */
 
-    boolean isProductionComparable(ChMaterial nowChMaterial, double nowExitTemp, double allowance) {
-        boolean bComparable = chMaterial.equals(nowChMaterial.name);
-        bComparable &= (Math.abs(exitTemp() - nowExitTemp) < allowance);
-        return bComparable;
-    }
-
-    boolean isProductionComparable(String nowChMaterial, double nowExitTemp, double allowance) {
-        boolean bComparable = chMaterial.equals(nowChMaterial);
-        bComparable &= (Math.abs(exitTemp() - nowExitTemp) < allowance);
+//    boolean isProductionComparable(ChMaterial nowChMaterial, double nowExitTemp, double allowance) {
+//        boolean bComparable = chMaterial.equals(nowChMaterial.name);
+//        bComparable &= (Math.abs(exitTemp() - nowExitTemp) < allowance);
+//        return bComparable;
+//    }
+//
+    boolean isProductionComparable(String nowProcessName, String nowChMaterial, double nowExitTemp, double allowance) {
+        boolean bComparable = isProcessNameComparable(nowProcessName);
+        bComparable &= chMaterial.equals(nowChMaterial);
+        bComparable &= isExitTempComparable(nowExitTemp, allowance);
+        //(Math.abs(exitTemp() - nowExitTemp) < allowance);
         return bComparable;
     }
 
     // @TODO - to be REMOVED
-    boolean isProductionComparable(ChMaterial nowChMaterial, double nowExitTemp) {
-        return isProductionComparable(nowChMaterial,nowExitTemp, 1.0);
-    }
+//    boolean isProductionComparable(ChMaterial nowChMaterial, double nowExitTemp) {
+//        return isProductionComparable(nowChMaterial,nowExitTemp, 1.0);
+//    }
 
 
     boolean isProductionComparable(ProductionData withProduction, Fuel withFuel, int compTypeFlags, double exitTAllowance) {
-        Charge nowCharge = withProduction.charge;
-        boolean bComparable = true;
-        if ((compTypeFlags & STRIPWIDTH) == STRIPWIDTH)
-            bComparable &= (chLength == nowCharge.getLength());
-        if ((compTypeFlags & STRIPTHICK) == STRIPTHICK)
-            bComparable &= (chThick == nowCharge.getHeight());
-        if ((compTypeFlags & MATERIAL) == MATERIAL)
-            bComparable &= chMaterial.equals(nowCharge.chMaterial.name);
-        if ((compTypeFlags & FUEL) == FUEL)
-            bComparable &= fuelName.equals(withFuel.name);
-        if ((compTypeFlags & UNITOUTPUT) == UNITOUTPUT)   // allow 1% difference
-            bComparable &= (Math.abs((unitOutput - (withProduction.production / nowCharge.length)) / unitOutput) < 0.01);
-        if ((compTypeFlags & EXITTEMP) == EXITTEMP)   // allow 1 deg difference
-            bComparable &= (Math.abs(exitTemp() - withProduction.exitTemp) < exitTAllowance);
+        boolean bComparable = isProcessNameComparable(withProduction.processName);
+        if (bComparable) {
+            Charge nowCharge = withProduction.charge;
+            if ((compTypeFlags & STRIPWIDTH) == STRIPWIDTH)
+                bComparable &= (chLength == nowCharge.getLength());
+            if ((compTypeFlags & STRIPTHICK) == STRIPTHICK)
+                bComparable &= (chThick == nowCharge.getHeight());
+            if ((compTypeFlags & MATERIAL) == MATERIAL)
+                bComparable &= chMaterial.equals(nowCharge.chMaterial.name);
+            if ((compTypeFlags & FUEL) == FUEL)
+                bComparable &= fuelName.equals(withFuel.name);
+            if ((compTypeFlags & UNITOUTPUT) == UNITOUTPUT)   // allow 1% difference
+                bComparable &= (Math.abs((unitOutput - (withProduction.production / nowCharge.length)) / unitOutput) < 0.01);
+            if ((compTypeFlags & EXITTEMP) == EXITTEMP)   // allow 1 deg difference
+                bComparable &= isExitTempComparable(withProduction.exitTemp, exitTAllowance);
+//          bComparable &= (Math.abs(exitTemp() - withProduction.exitTemp) < exitTAllowance);
+        }
         return bComparable;
     }
 
@@ -435,7 +463,8 @@ public class Performance {
     }
 
     public StringBuilder dataInXML() {
-        StringBuilder xmlStr = new StringBuilder(XMLmv.putTag("ChMaterialP", chMaterial));
+        StringBuilder xmlStr = new StringBuilder(XMLmv.putTag("ProcessNameP", processName));
+        xmlStr.append(XMLmv.putTag("ChMaterialP", chMaterial));
         if (interpolated)  {
             xmlStr.append((XMLmv.putTagNew("Interpolated", 1)));
             xmlStr.append(XMLmv.putTagNew("dateOfResult", "Interpolated"));
@@ -484,6 +513,8 @@ public class Performance {
                     dateOfResult = new GregorianCalendar(2000, 0, 1);
                 }
             }
+            vp = XMLmv.getTag(xmlStr, "ProcessNameP", 0);
+            processName = vp.val;
             vp = XMLmv.getTag(xmlStr, "ChMaterialP", 0);
             chMaterial = vp.val;
             vp = XMLmv.getTag(xmlStr, "chWidthP", 0);
@@ -720,6 +751,7 @@ public class Performance {
     JPanel commonPerfDataP() {
         MultiPairColPanel pan = new MultiPairColPanel("");
         addItemPair(pan, Params.DATE);
+        addItemPair(pan, Params.PROCESSNAME);
         addItemPair(pan, Params.CHMATERIAL);
         addItemPair(pan, Params.STRIPWIDTH, 1000, "#,##0 mm");
         addItemPair(pan, Params.STRIPTHICK, 1000, "#,##0.00 mm");

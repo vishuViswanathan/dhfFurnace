@@ -85,21 +85,26 @@ public class FieldResults {
     public FieldResults(L2DFHFurnace l2Furnace, boolean fromLevel1) {  // TODO to be used
         this(l2Furnace);
         inError = true;
+        errMsg = "";
         if (takeZonalData()) {
             if (takeRecuData(l2Furnace.getRecuperatorZ())) {
-                if (takeStripData(l2Furnace.getStripZone())) {
+                ErrorStatAndMsg stripResponse = takeStripData(l2Furnace.getStripZone());
+                if (stripResponse.inError) {
+                    errMsg += stripResponse.msg;
+                }
+                else {
                     if (takeCommonDFHData(l2Furnace.getCommonDFHZ())) {
                         inError = false;
                     }
+                    else
+                        errMsg += ", Some problem in reading DFH common data";
                 }
-                else
-                    errMsg = "FieldResults:" + "Some error in Getting Strip Data";
             }
         }
     }
 
-    boolean takeStripData(L2Zone stripZone) {
-        boolean retVal = false;
+    ErrorStatAndMsg takeStripData(L2Zone stripZone) {
+        ErrorStatAndMsg retVal = new ErrorStatAndMsg();
         double stripExitT = stripZone.getValue(L2ParamGroup.Parameter.Temperature, Tag.TagName.PV).floatValue;
         double width = stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Width).floatValue / 1000; // m
         double thick = stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Thick).floatValue / 1000; // m
@@ -108,24 +113,27 @@ public class FieldResults {
         String forProcess = stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Process).stringValue;
         stripDFHProc = l2Furnace.l2DFHeating.getStripDFHProcess(forProcess);
         if (stripDFHProc != null) {
-            production = new ProductionData();
-            ChMaterial chMat = stripDFHProc.getChMaterial(forProcess, thick);
-            if (chMat != null) {
-                Charge ch = new Charge(stripDFHProc.getChMaterial(forProcess, thick), width, 1.0, thick, 0.1, Charge.ChType.SOLID_RECTANGLE);
-                production.charge = ch;
-                production.chPitch = 1.0;
-                production.production = output;
-                production.exitTemp = stripExitT;
-                production.exitZoneFceTemp = topZones[topZones.length - 1].frFceTemp;
-                production.minExitZoneTemp = stripDFHProc.getMinExitZoneTemp();
-                DFHTuningParams tune = l2Furnace.tuningParams;
-                tune.setPerfTurndownSettings(stripDFHProc.minOutputFactor(), stripDFHProc.minWidthFactor());
-                retVal = true;
-            } else
-                l2Furnace.l2DFHeating.showError("Could not ascertain Charge Material for " +
-                        forProcess + " with strip Thickness " + thick);
+            if (l2Furnace.isRefPerformanceAvailable(stripDFHProc, thick)) {
+                production = new ProductionData(stripDFHProc.processName);
+                ChMaterial chMat = stripDFHProc.getChMaterial(thick);
+                if (chMat != null) {
+                    Charge ch = new Charge(chMat, width, 1.0, thick, 0.1, Charge.ChType.SOLID_RECTANGLE);
+                    production.charge = ch;
+                    production.chPitch = 1.0;
+                    production.production = output;
+                    production.exitTemp = stripExitT;
+                    production.exitZoneFceTemp = topZones[topZones.length - 1].frFceTemp;
+                    production.minExitZoneTemp = stripDFHProc.getMinExitZoneTemp();
+                    DFHTuningParams tune = l2Furnace.tuningParams;
+                    tune.setPerfTurndownSettings(stripDFHProc.minOutputFactor(), stripDFHProc.minWidthFactor());
+                } else
+                    retVal.addErrorMsg("Could not ascertain Charge Material for " +
+                            forProcess + " with strip Thickness " + thick);
+            }
+            else
+                retVal.addErrorMsg("Reference performance is NOT available");
         } else
-            l2Furnace.l2DFHeating.showError("Could not ascertain Process data " + forProcess);
+            retVal.addErrorMsg("Could not ascertain Process data " + forProcess);
         return retVal;
     }
 

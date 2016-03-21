@@ -123,12 +123,12 @@ public class PerformanceGroup implements ActionListener{
     }
 
     public Performance similarPerformance(Performance performance) {
-        return getRefPerformance(performance.chMaterial, performance.exitTemp());
+        return getRefPerformance(performance.processName, performance.chMaterial, performance.exitTemp());
     }
 
     int getIndexOfSimilarPerformace(Performance performance) {
         ChMaterial chMaterial = controller.getSelChMaterial(performance.chMaterial);
-        Performance similarPerformance = getRefPerformance(chMaterial, performance.exitTemp());
+        Performance similarPerformance = getRefPerformance(performance.processName, chMaterial, performance.exitTemp());
         int index = -1;
         if (similarPerformance != null)
             index = refPerformance.indexOf(similarPerformance);
@@ -197,14 +197,25 @@ public class PerformanceGroup implements ActionListener{
         return refP;
     }
 
-    public Performance getRefPerformance(ChMaterial chMaterial, double exitTemp) {
-        return getRefPerformance(chMaterial.name, exitTemp);
+    public Performance getRefPerformance(String processName, ChMaterial chMaterial, double exitTemp) {
+        return getRefPerformance(processName, chMaterial.name, exitTemp);
     }
 
-    public Performance getRefPerformance(String chMaterial, double exitTemp) {
+    public boolean isRefPerformanceAvailable(String processName, String chMaterialName, double exitTemp) {
+        boolean retVal = false;
+        for (Performance p : refPerformance) {
+            if (p.isProductionComparable(processName, chMaterialName, exitTemp, tuningParams.exitTempTolerance)) {
+                retVal = true;
+                break;
+            }
+        }
+        return retVal;
+    }
+
+    public Performance getRefPerformance(String processName, String chMaterialName, double exitTemp) {
         Performance refP = null;
         for (Performance p : refPerformance) {
-            if (p.isProductionComparable(chMaterial, exitTemp, tuningParams.exitTempTolerance)) {
+            if (p.isProductionComparable(processName, chMaterialName, exitTemp, tuningParams.exitTempTolerance)) {
                 refP = p;
                 break;
             }
@@ -339,14 +350,24 @@ public class PerformanceGroup implements ActionListener{
         rightRenderer.setHorizontalAlignment( JLabel.RIGHT );
 
 //        colModel.getSelectionModel().addListSelectionListener(new ColumnListener());
-        colModel.getColumn(0).setPreferredWidth(30);
-        colModel.getColumn(1).setPreferredWidth(200);
-        colModel.getColumn(2).setPreferredWidth(80);
-        colModel.getColumn(3).setPreferredWidth(50);
-        colModel.getColumn(3).setCellRenderer(rightRenderer);
-        colModel.getColumn(4).setPreferredWidth(50);
+
+        colModel.getColumn(0).setPreferredWidth(20);
+        colModel.getColumn(1).setPreferredWidth(80);
+        colModel.getColumn(2).setPreferredWidth(150);
+        colModel.getColumn(3).setPreferredWidth(80);
+        colModel.getColumn(4).setPreferredWidth(30);
         colModel.getColumn(4).setCellRenderer(rightRenderer);
-        colModel.getColumn(5).setPreferredWidth(150);
+        colModel.getColumn(5).setPreferredWidth(30);
+        colModel.getColumn(5).setCellRenderer(rightRenderer);
+        colModel.getColumn(6).setPreferredWidth(150);
+//        colModel.getColumn(1).setPreferredWidth(200);
+//        colModel.getColumn(2).setPreferredWidth(80);
+//        colModel.getColumn(3).setPreferredWidth(50);
+//        colModel.getColumn(3).setCellRenderer(rightRenderer);
+//        colModel.getColumn(4).setPreferredWidth(50);
+//        colModel.getColumn(4).setCellRenderer(rightRenderer);
+//        colModel.getColumn(5).setPreferredWidth(150);
+
 //        colModel.getColumn(6).setPreferredWidth(50);
 //        table.setFillsViewportHeight(true);
 
@@ -417,7 +438,7 @@ public class PerformanceGroup implements ActionListener{
 
 
     class MyTableModel extends AbstractTableModel {
-        private String[] columnNames = {"SlNo",  "Charge Material", "Strip Size", "Exit Temp", "Output t/h", "Fuel", "Data Date"};
+        private String[] columnNames = {"SlNo",  "Process", "Charge Material", "Strip Size", "Exit Temp", "Output t/h", "Fuel", "Data Date"};
 //        private String[] columnNames = {"SlNo",  "Charge Material", "Strip Size", "Exit Temp", "Output t/h", "Fuel",
 //                                                                                "Delete"};
 
@@ -431,13 +452,21 @@ public class PerformanceGroup implements ActionListener{
             DecimalFormat tempFmt = new DecimalFormat("#,##0");
             for (int r = 0; r < _rows; r++) {
                 p = refPerformance.get(r);
-                data[r][0] = (r + 1);
-                data[r][1] = p.chMaterial;
-                data[r][2] = p.stripSize();
-                data[r][3] = tempFmt.format(p.exitTemp());
-                data[r][4] = outputFmt.format(p.output / 1000);
-                data[r][5] = p.fuelName;
-                data[r][6] = p.dateStr();
+                int c = 0;
+                data[r][c++] = (r + 1);
+                data[r][c++] = p.processName;
+                data[r][c++] = p.chMaterial;
+                data[r][c++] = p.stripSize();
+                data[r][c++] = tempFmt.format(p.exitTemp());
+                data[r][c++] = outputFmt.format(p.output / 1000);
+                data[r][c++] = p.fuelName;
+                data[r][c] = p.dateStr();
+//                data[r][1] = p.chMaterial;
+//                data[r][2] = p.stripSize();
+//                data[r][3] = tempFmt.format(p.exitTemp());
+//                data[r][4] = outputFmt.format(p.output / 1000);
+//                data[r][5] = p.fuelName;
+//                data[r][6] = p.dateStr();
             }
 
         }

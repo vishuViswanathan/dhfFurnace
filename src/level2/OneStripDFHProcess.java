@@ -105,9 +105,9 @@ public class OneStripDFHProcess {
 
     public BooleanWithStatus checkUnitOutput(double unitOutput, BooleanWithStatus stat) {
         if (unitOutput > maxUnitOutput)
-            stat.setErrorMessage("Unit Output is high <" + unitOutput + ">");
+            stat.setErrorMessage(String.format("Unit Output is high <%5.2f thp/m>", unitOutput / 1000));
         else if (unitOutput < minUnitOutput)
-            stat.setErrorMessage("Unit Output is low <" + unitOutput + ">");
+            stat.setErrorMessage(String.format("Unit Output is low <%5.2f thp/m>", unitOutput / 1000));
         return stat;
     }
 
@@ -121,7 +121,7 @@ public class OneStripDFHProcess {
                 if (unitOutput > maxUnitOutput)
                     outputWithStatus.setValue(maxUnitOutput * width, "Limited by Unit Output");
                 else if (unitOutput < minUnitOutput)
-                    outputWithStatus.setErrorMessage("Output is low <" + output + ">");
+                    outputWithStatus.setErrorMessage(String.format("Unit Output is low <%5.2f tph/m>", output));
                 else
                     outputWithStatus.setValue(output);
             }
@@ -134,9 +134,9 @@ public class OneStripDFHProcess {
     public BooleanWithStatus checkWidth(double width, BooleanWithStatus stat) {
         if (stat.getDataStatus() == StatusWithMessage.DataStat.OK) {
             if (width > maxWidth)
-                stat.setErrorMessage("Strip Width is high <" + width + ">");
+                stat.setErrorMessage(String.format("Strip Width is high <%4.0f mm>", width * 1000));
             else if (width < minWidth)
-                stat.setErrorMessage("Strip Width is low <" + width + ">");
+                stat.setErrorMessage(String.format("Strip Width is low <%4.0f mm>", width * 1000));
         }
         return stat;
     }
@@ -144,9 +144,9 @@ public class OneStripDFHProcess {
     public BooleanWithStatus checkThickness(double thick, BooleanWithStatus stat) {
         if (stat.getDataStatus() == StatusWithMessage.DataStat.OK) {
             if (thick > maxThickness)
-                stat.setErrorMessage("Strip Thickness is high <" + thick + ">");
+                stat.setErrorMessage(String.format("Strip Thickness is high <%4.3f mm>", thick * 1000));
             else if (thick < minThickness)
-                stat.setErrorMessage("Strip Thickness is low <" + thick + ">");
+                stat.setErrorMessage(String.format("Strip Thickness is low <%4.3f mm>", thick * 1000));
         }
         return stat;
     }
@@ -244,6 +244,16 @@ public class OneStripDFHProcess {
         return retVal;
     }
 
+    public ChMaterial getChMaterial(double stripThick) {
+        ChMaterial theMaterial;
+        if (stripThick <= thinUpperLimit)
+            theMaterial = chMaterialThin;
+        else
+            theMaterial = chMaterialThick;
+        return theMaterial;
+    }
+
+
     public ChMaterial getChMaterial(String proc, double stripThick) {
         ChMaterial theMaterial = null;
         if (proc.equalsIgnoreCase(processName)) {
@@ -291,7 +301,7 @@ public class OneStripDFHProcess {
     NumberTextField ntMinWidth;
 
     public ErrorStatAndMsg fieldDataOkForProcess(String processName, ProductionData production) {
-        ErrorStatAndMsg retVal = new ErrorStatAndMsg(true, "For Process " + processName + ", ");
+        ErrorStatAndMsg retVal = new ErrorStatAndMsg(true, "For Process " + processName + " fieldData, ");
         DFHTuningParams tuning = l2DFHeating.getTuningParams();
         DecimalFormat mmFmt = new DecimalFormat("#,###");
         DecimalFormat outputFmt = new DecimalFormat("#,###.000");
@@ -363,7 +373,7 @@ public class OneStripDFHProcess {
         ntMaxUnitOutput = new NumberTextField(inpC, maxUnitOutput / 1000, 6, false, 0.2, 1000.0,
                 "#,##0.00", "Maximum output for 1m wide strip (t/h)");
         ntMinUnitOutput = new NumberTextField(inpC, minUnitOutput / 1000, 6, false, 0.2, 1000.0,
-                "#,##0.00", "Maximum output for 1m wide strip (t/h)");
+                "#,##0.00", "Minimim output for 1m wide strip (t/h)");
         ntMaxSpeed = new NumberTextField(inpC, maxSpeed / 60, 6, false, 50, 1000.0,
                 "##0.00", "Maximum Process speed (m/min)");
         ntMaxSpeed.setToolTipText("<html>Ensure speed is sufficient for <p> " + ntMinUnitOutput.getName() + "</html>");

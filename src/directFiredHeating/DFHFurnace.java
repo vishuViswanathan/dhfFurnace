@@ -1356,7 +1356,7 @@ public class DFHFurnace {
     }
 
     protected boolean userActionAllowed() {
-        return (!controller.isOnProductionLine() || controller.showDebugMessages);
+        return controller.userActionAllowed; // (!controller.isOnProductionLine() || controller.showDebugMessages);
     }
 
     boolean getGasTempIfRequired(int iSec, boolean bBot, double nextSecGasT) {
@@ -3912,7 +3912,7 @@ public class DFHFurnace {
         return retVal;
     }
 
-    void update2ndFiredZone(boolean bBot) {
+    void update2ndFiredZone(boolean bBot) {  // TODO to be removed
         FceSection sec;
         int secondFired = 1;
         if (bBot) {

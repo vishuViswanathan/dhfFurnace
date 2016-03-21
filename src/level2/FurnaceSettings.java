@@ -23,12 +23,12 @@ import java.awt.event.WindowEvent;
  */
 public class FurnaceSettings   {
     L2DFHeating l2DFHeating;
-    double maxSpeed; // m/min
+//    double maxSpeed; // m/min
     DoubleRange[] zoneFuelRange;
     DoubleRange totFuelRange;
     String errMsg = "Error reading Furnace Settings :";
     public boolean inError = false;
-    double fuelTurnDown = 7;
+//    double fuelTurnDown = 7;
     int fuelCharSteps = 7;
     public boolean considerFieldZoneTempForLossCorrection = false;
 
@@ -41,14 +41,13 @@ public class FurnaceSettings   {
         takeDataFromXML(xmlStr);
     }
 
+    /*
     void setMaxSpeed(double maxSpeed) {
         this.maxSpeed = maxSpeed;
     }
 
     void setFuelRanges(double[] fuelRange) {
         zoneFuelRange = new DoubleRange[fuelRange.length];
-//        double totMax = 0;
-//        double totMin  = 0;
         double oneMax;
         double oneMin;
         for (int z = 0; z < fuelRange.length; z++) {
@@ -56,12 +55,10 @@ public class FurnaceSettings   {
             oneMin = oneMax / fuelTurnDown;
             DoubleRange oneRange = new DoubleRange(oneMin, oneMax);
             zoneFuelRange[z] = oneRange;
-//            totMax += oneMax;
-//            totMin += oneMin;
         }
         setTotalRange();
-//        totFuelRange = new DoubleRange(totMin, totMax);
     }
+*/
 
     void setTotalRange() {
         double totMax = 0;
@@ -79,11 +76,11 @@ public class FurnaceSettings   {
 
     public DoubleRange getTotalFuelRange()   { return totFuelRange; }
 
-    public boolean showEditData(boolean bEdit)  {
+    public boolean showEditData(boolean bEdit, Window parent)  {
         FceSettingsDlg dlg = new FceSettingsDlg(bEdit);
-        dlg.setLocation(100, 50);
+        dlg.setLocationRelativeTo(parent);
         dlg.setVisible(true);
-        return false;
+        return dlg.edited;
     }
 
     boolean takeDataFromXML(String xmlStr) {  // TODO to add MaxExitZoneTemp
@@ -92,8 +89,8 @@ public class FurnaceSettings   {
         errMsg = "Furnace Settings - Reading data:";
         aBlock: {
             try {
-                vp = XMLmv.getTag(xmlStr, "maxSpeed", 0);
-                maxSpeed = Double.valueOf(vp.val);
+//                vp = XMLmv.getTag(xmlStr, "maxSpeed", 0);
+//                maxSpeed = Double.valueOf(vp.val);
                 vp = XMLmv.getTag(xmlStr, "fuelCharSteps", 0);
                 fuelCharSteps = Integer.valueOf(vp.val);
                 vp = XMLmv.getTag(xmlStr, "considerFieldZoneTempForLossCorrection", 0);
@@ -113,14 +110,12 @@ public class FurnaceSettings   {
     }
 
     public StringBuffer dataInXML() {
-        StringBuffer xmlStr = new StringBuffer(XMLmv.putTag("maxSpeed", maxSpeed));
-        xmlStr.append(XMLmv.putTag("fuelCharSteps", "" + fuelCharSteps));
+//        StringBuffer xmlStr = new StringBuffer(XMLmv.putTag("maxSpeed", maxSpeed));
+        StringBuffer xmlStr = new StringBuffer(XMLmv.putTag("fuelCharSteps", "" + fuelCharSteps));
         xmlStr.append(XMLmv.putTag("considerFieldZoneTempForLossCorrection", considerFieldZoneTempForLossCorrection));
         xmlStr.append(XMLmv.putTag("fuelRanges", fuelRangesInXML()));
         return xmlStr;
     }
-
-
 
     StringBuilder fuelRangesInXML() {
         StringBuilder xmlStr = new StringBuilder(XMLmv.putTag("nFuelRange", "" + zoneFuelRange.length));
@@ -174,12 +169,13 @@ public class FurnaceSettings   {
         DataListEditorPanel editorPanel;
         boolean editable = false;
         EditResponse.Response response;
-        NumberTextField ntMaxSpeed;
+//        NumberTextField ntMaxSpeed;
         NumberTextField ntFuelSegments;
         JRadioButton rbConsiderFieldZoneTempForLossCorrection;
         NumberTextField[] ntRangeMax;
         NumberTextField[] ntTurnDown;
         int nZones;
+        boolean edited = false;
 
         FceSettingsDlg(boolean editable) {
              this.editable = editable;
@@ -198,7 +194,7 @@ public class FurnaceSettings   {
                  }
             });
             editorPanel = new DataListEditorPanel("Furnace Fuel Settings", this, true);
-            ntMaxSpeed = new NumberTextField(ipc, maxSpeed, 6, false, 10, 500, "#,###", "Maximum Process Speed (m/mt)");
+//            ntMaxSpeed = new NumberTextField(ipc, maxSpeed, 6, false, 10, 500, "#,###", "Maximum Process Speed (m/mt)");
             ntFuelSegments = new NumberTextField(ipc, fuelCharSteps, 6, false, 3, 10, "##", "Fuel Characteristics-steps)");
             rbConsiderFieldZoneTempForLossCorrection =
                     new JRadioButton("Take Field Zone Temp For Loss Check", considerFieldZoneTempForLossCorrection);
@@ -210,7 +206,7 @@ public class FurnaceSettings   {
                     }
                 }
             });
-            editorPanel.addItemPair(ntMaxSpeed);
+//            editorPanel.addItemPair(ntMaxSpeed);
             editorPanel.addItemPair(ntFuelSegments);
             editorPanel.addBlank();
             editorPanel.addItem(rbConsiderFieldZoneTempForLossCorrection);
@@ -241,7 +237,8 @@ public class FurnaceSettings   {
          }
 
         public ErrorStatAndMsg checkData() {
-            if (ntMaxSpeed.inError || ntFuelSegments.inError)
+//            if (ntMaxSpeed.inError || ntFuelSegments.inError)
+           if (ntFuelSegments.inError)
                 return new ErrorStatAndMsg(true, "Data out of Range");
             else {
                 ErrorStatAndMsg errorStat = new ErrorStatAndMsg(false, "Error:");
@@ -259,21 +256,23 @@ public class FurnaceSettings   {
         }
 
         public boolean saveData() {
-            maxSpeed = ntMaxSpeed.getData();
+//            maxSpeed = ntMaxSpeed.getData();
             fuelCharSteps = (int)ntFuelSegments.getData();
             considerFieldZoneTempForLossCorrection = rbConsiderFieldZoneTempForLossCorrection.isSelected();
             for (int z = 0; z < nZones; z++) {
                 zoneFuelRange[z].max = ntRangeMax[z].getData();
                 zoneFuelRange[z].min = zoneFuelRange[z].max / ntTurnDown[z].getData();
             }
+            edited = true;
             return false;
         }
 
         public void deleteData() {
+            edited = true;
         }
 
         public void resetData() {
-            ntMaxSpeed.setData(maxSpeed);
+//            ntMaxSpeed.setData(maxSpeed);
             ntFuelSegments.setData(fuelCharSteps);
             double max, td;
             for (int z = 0; z < nZones; z++) {

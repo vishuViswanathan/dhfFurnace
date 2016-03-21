@@ -30,6 +30,7 @@ public class InterpolatedParams extends Performance {
     }
 
     void copyDataFromBaseP(double thickness) {
+        this.processName = baseP.processName;
         interpolated = true;
         chMaterial = baseP.chMaterial;
         fuelName = baseP.fuelName;

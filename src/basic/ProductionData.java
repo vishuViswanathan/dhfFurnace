@@ -12,6 +12,7 @@ import mvUtils.mvXML.XMLmv;
  * To change this template use File | Settings | File Templates.
  */
 public class ProductionData {
+    public String processName;
     public Charge charge;
     public double bottShadow = 0;
     public double chPitch = 1.0;
@@ -30,12 +31,18 @@ public class ProductionData {
 
     public ProductionData() {
         inError = false;
+    }
+
+    public ProductionData(String processName) {
+        this();
+        this.processName = processName;
 
     }
 
     public ProductionData(ProductionData fromProductionData) {
         this();
         ProductionData fP = fromProductionData;
+        this.processName = fP.processName;
         charge = new Charge(fromProductionData.charge);
         chPitch = fromProductionData.chPitch;
         setProduction(fP.production, fP.nChargeRows, fP.entryTemp, fP.exitTemp, fP.deltaTemp, fP.bottShadow);
@@ -94,6 +101,8 @@ public class ProductionData {
         boolean bRetVal = true;
         ValAndPos vp;
         try {
+            vp = XMLmv.getTag(xmlStr, "processName", 0);
+            processName =  vp.val;
             vp = XMLmv.getTag(xmlStr, "charge", 0);
             charge = new Charge(dfHeating, vp.val);
             vp = XMLmv.getTag(xmlStr, "bottShadow", 0);
@@ -122,7 +131,8 @@ public class ProductionData {
     }
 
     public StringBuilder dataInXML() {
-        StringBuilder xmlStr = new StringBuilder(XMLmv.putTag("charge", charge.dataInXML()));
+        StringBuilder xmlStr = new StringBuilder(XMLmv.putTag("processName", processName));
+        xmlStr.append(XMLmv.putTag("charge", charge.dataInXML()));
         xmlStr.append(XMLmv.putTag("bottShadow", bottShadow));
         xmlStr.append(XMLmv.putTag("chPitch", chPitch));
         xmlStr.append(XMLmv.putTag("production", production));

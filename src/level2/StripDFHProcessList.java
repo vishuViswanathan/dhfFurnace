@@ -35,13 +35,14 @@ public class StripDFHProcessList {
         list.clear();
     }
 
-    public boolean addStripDFHProcess() {
+    public boolean addStripDFHProcess(Window parent) {
         boolean redo = true;
         OneStripDFHProcess lastSelectedP = null;
         EditResponse.Response lastResponse = EditResponse.Response.EXIT;
+        boolean edited = false;
         do {
             AddProcessDlg dlg = new AddProcessDlg(this, true);
-            dlg.setLocation(100, 50);
+            dlg.setLocationRelativeTo(parent);
             if (lastResponse == EditResponse.Response.RESET)
                 dlg.setSelectedP(lastSelectedP);
             dlg.setVisible(true);
@@ -49,14 +50,15 @@ public class StripDFHProcessList {
             if (lastResponse == EditResponse.Response.EXIT)
                 redo = false;
             lastSelectedP = dlg.getLastSelectedP();
+            edited |= dlg.edited;
         } while (redo);
-        return true;
+        return edited;
     }
 
-    public boolean viewStripDFHProcess() {
+    public boolean viewStripDFHProcess(Window parent) {
         if (list.size() > 0) {
             AddProcessDlg dlg = new AddProcessDlg(this, false);
-            dlg.setLocation(100, 50);
+            dlg.setLocationRelativeTo(parent);
             dlg.setVisible(true);
             return true;
         }
@@ -185,6 +187,7 @@ public class StripDFHProcessList {
         DataListEditorPanel editorPanel;
         boolean editable = false;
         EditResponse.Response response;
+        boolean edited = false;
 
         AddProcessDlg(StripDFHProcessList pListManager, boolean editable) {
             this.pListManager = pListManager;
@@ -227,8 +230,6 @@ public class StripDFHProcessList {
         EditResponse.Response getResponse() {
             return response;
         }
-
-
 
         void populateJcbExisting() {
             bListBeingChanged = true;
@@ -280,6 +281,7 @@ public class StripDFHProcessList {
                 jcbExisting.setSelectedItem(selectedP.processName);
                 response = EditResponse.Response.SAVE;
             }
+            edited = true;
             return itsNew;
         }
 
@@ -288,6 +290,7 @@ public class StripDFHProcessList {
             populateJcbExisting();
             jcbExisting.setSelectedItem(selectedP.processName);
             response = EditResponse.Response.DELETE;
+            edited = true;
             setVisible(false);
         }
 

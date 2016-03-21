@@ -134,6 +134,7 @@ public class DFHeating extends JApplet implements InputControl {
     public static Logger log;
     static boolean onTest = false;
     static public boolean showDebugMessages = false;
+    static public boolean userActionAllowed = true;
     static public JSPConnection jspConnection;
 
 
@@ -234,6 +235,8 @@ public class DFHeating extends JApplet implements InputControl {
     protected double entryTemp = 30, exitTemp = 1200, deltaTemp = 25;
     protected double exitZoneFceTemp = 1050; // for strip heating
     protected double minExitZoneFceTemp = 900; // for strip heating
+    String processName = "Reheating";
+    protected JTextField tfProcessName;
     protected NumberTextField tfBottShadow, tfChPitch, tfChRows, tfProduction;
     protected NumberTextField tfEntryTemp, tfExitTemp, tfDeltaTemp;
     protected NumberTextField tfExitZoneFceTemp;
@@ -1467,6 +1470,8 @@ public class DFHeating extends JApplet implements InputControl {
 
     JPanel chargeInFurnacePanel() {
         MultiPairColPanel jp = new MultiPairColPanel("Charge In Furnace");
+        tfProcessName = new XLTextField(processName, 10);
+        jp.addItemPair("Process Name", tfProcessName);
         tfBottShadow = new NumberTextField(this, bottShadow * 100, 5, false, 0, 100, "###", "Shadow on Bottom Surface (%)");
         jp.addItemPair(tfBottShadow.getLabel(), tfBottShadow);
         tfChPitch = new NumberTextField(this, chPitch * 1000, 5, false, 0, 10000, "#,###", "Charge Pitch (mm)");
@@ -1838,6 +1843,7 @@ public class DFHeating extends JApplet implements InputControl {
         selChMaterial = (ChMaterial) cbChMaterial.getSelectedItem();
 
         bottShadow = tfBottShadow.getData() / 100;
+        processName = tfProcessName.getText();
         if (cbFceFor.getSelectedItem() == DFHTuningParams.ForProcess.STRIP)
             chPitch = 1;
         else
@@ -1902,6 +1908,7 @@ public class DFHeating extends JApplet implements InputControl {
                 showMessage("Heating Mode changed to TOP AND BOTTOM");
             }
             cbChType.setEnabled(true);
+            tfProcessName.setEnabled(bDataEntryON);
             tfChPitch.setEnabled(bDataEntryON);
             tfChRows.setEnabled(bDataEntryON);
             tfChWidth.setEnabled(bDataEntryON);
@@ -1958,6 +1965,7 @@ public class DFHeating extends JApplet implements InputControl {
 
         tfBottShadow.setData(bottShadow * 100);
         tfProduction.setData(tph);
+        tfProcessName.setText(processName);
         tfChPitch.setData(chPitch * 1000);
         tfChRows.setData(nChargeRows);
         tfProduction.setData(tph);
@@ -2057,6 +2065,10 @@ public class DFHeating extends JApplet implements InputControl {
         if (tfBottShadow.isInError()) {
             ok = false;
             msg += "\n   " + tfBottShadow.getName();
+        }
+        if ((forProcess() == DFHTuningParams.ForProcess.STRIP)  && (tfProcessName.getText().trim().length() < 1)) {
+            ok = false;
+            msg += "\n   Process Name is required for STRIP furnace";
         }
         if (tfChPitch.isInError()) {
             ok = false;
@@ -2339,7 +2351,7 @@ public class DFHeating extends JApplet implements InputControl {
     }
 
     public boolean setProductionData(Charge charge, double output) {
-        production = new ProductionData();
+        production = new ProductionData(processName);
         production.setCharge(theCharge, chPitch);
         production.setProduction(output, nChargeRows, entryTemp, exitTemp, deltaTemp, bottShadow);
         production.setExitZoneTempData(exitZoneFceTemp, minExitZoneFceTemp);
@@ -2465,6 +2477,7 @@ public class DFHeating extends JApplet implements InputControl {
         String xmlStr = XMLmv.putTag("tph", tph) +
                 XMLmv.putTag("entryTemp", entryTemp) +
                 XMLmv.putTag("exitTemp", exitTemp) +
+                XMLmv.putTag("processName", processName) +
                 XMLmv.putTag("chPitch", chPitch) +
                 XMLmv.putTag("nChargeRows", nChargeRows) +
                 XMLmv.putTag("deltaTemp", deltaTemp) +
@@ -2718,6 +2731,8 @@ public class DFHeating extends JApplet implements InputControl {
         vp = XMLmv.getTag(xmlStr, "exitTemp", 0);
         if ((dblWithStat = new DoubleWithErrStat(vp.val, "exitTemp", grpStat)).allOK)
             exitTemp = dblWithStat.val;
+        vp = XMLmv.getTag(xmlStr, "processName", 0);
+        processName = vp.val;
         vp = XMLmv.getTag(xmlStr, "chPitch", 0);
         if ((dblWithStat = new DoubleWithErrStat(vp.val, "chPitch", grpStat)).allOK)
             chPitch = dblWithStat.val;
@@ -2906,6 +2921,7 @@ public class DFHeating extends JApplet implements InputControl {
             theResultsListener = null;
             theNowListener.noteResultsReady();
         }
+
     }
 
     void initPrintGroups() {

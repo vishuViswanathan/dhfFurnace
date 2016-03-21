@@ -144,6 +144,11 @@ public class L2DFHeating extends DFHeating {
         tuningParams = new DFHTuningParams(this, onProductionLine, 1, 5, 30, 1.12, 1, false, false);
 //        debug("Creating new Level2furnace");
         l2Furnace = new L2DFHFurnace(this, false, false, lNameListener);
+        if (!testMachineID()) {
+            showError("Software key mismatch, Aborting ...");
+            justQuit();
+//            checkAndClose(false);
+        }
         if (l2Furnace.basicsSet) {
             furnace = l2Furnace;
             StatusWithMessage status = l2Furnace.checkAndNoteAccessLevel();
@@ -153,11 +158,6 @@ public class L2DFHeating extends DFHeating {
                 createUIs();
                 getFuelAndCharge();
                 setDefaultSelections();
-                if (!testMachineID()) {
-                    showError("Software key mismatch, Aborting ...");
-                    checkAndClose(false);
-                }
-//                showMainAppPanel();  // TODO TEMPERORY -- TO be changed
                 switchPage(DFHDisplayPageType.INPUTPAGE);
                 if (getL2FceFromFile()) {
                     furnace.setWidth(width);
@@ -736,16 +736,23 @@ public class L2DFHeating extends DFHeating {
     }
 
     void editStripDFHProcess() {
-        if (dfhProcessList.addStripDFHProcess())
-            showMessage("Strip DFh Process List updated");
+        if (dfhProcessList.addStripDFHProcess(parent()))
+            showMessage("Strip DFh Process List updated\n" +
+                            "To make it effective in Level2 RUNTIME, the list must be saved to file\n" +
+                            "       " + mL2Configuration.getText() + "->" + mISaveDFHStripProcess.getText());
     }
 
     void viewStripDFHProcess() {
-        dfhProcessList.viewStripDFHProcess();
+        dfhProcessList.viewStripDFHProcess(parent());
     }
 
     void createFceSetting() {
-        l2Furnace.showEditFceSettings(true);
+        if (l2Furnace.showEditFceSettings(true)) {
+            showMessage("Furnace Fuel Data is modified\n" +
+                        "To be effective in Level2 RUNTIME:\n" +
+                        "    1) Save data to file with " + mL2Configuration.getText() + "->" + mISaveFceSettings.getText() + "\n" +
+                        "    2) Restart Level2 RUNTIME, if already running");
+        }
     }
 
     FileSystemView currentView;
@@ -880,7 +887,7 @@ public class L2DFHeating extends DFHeating {
             mIEvalWithFieldCorrection.setEnabled(false);
         }
 //        boolean retVal = false;
-        ErrorStatAndMsg stat = l2Furnace.takeFieldResultsFromLevel1();
+        ErrorStatAndMsg stat = l2Furnace.takeFieldResultsFromLevel1(true);
         if (stat.inError) {
             if (bAllowL2Changes)
                 mIEvalForFieldProduction.setEnabled(true);
@@ -926,6 +933,7 @@ public class L2DFHeating extends DFHeating {
     }
 
     void fillChargeInFurnaceUI(ProductionData pData) {
+        tfProcessName.setText(pData.processName);
         fillChargeDetailsUI(pData.charge);
         tfBottShadow.setData(pData.bottShadow * 100);
         tfChPitch.setData(pData.chPitch * 1000);
@@ -1130,8 +1138,10 @@ public class L2DFHeating extends DFHeating {
     }
 
     void setAccessLevel() {
-        if (bAllowL2Changes)
+        userActionAllowed = false;
+        if (bAllowL2Changes) {
             accessLevel = AccessLevel.EXPERT;
+        }
         else if (bAllowUpdateWithFieldData)
             accessLevel = AccessLevel.UPDATER;
         else
@@ -1180,6 +1190,11 @@ public class L2DFHeating extends DFHeating {
         return profileCode;
     }
 
+    public FceEvaluator calculateFce() {
+        userActionAllowed = (accessLevel == AccessLevel.EXPERT);
+        return super.calculateFce();
+    }
+
     boolean checkProfileCode(String withThis) {
         return (withThis != null) && (profileCode.equals(withThis));
     }
@@ -1203,6 +1218,7 @@ public class L2DFHeating extends DFHeating {
     }
 
     public String takeProfileDataFromXML(String xmlStr) {
+        clearAssociatedData();
         ValAndPos vp;
         vp = XMLmv.getTag(xmlStr, profileCodeTag);
         profileCode = vp.val;
@@ -1212,6 +1228,13 @@ public class L2DFHeating extends DFHeating {
         }
         else
             return "ERROR: Not a Level2 Furnace Profile";
+    }
+
+    void clearAssociatedData() {
+        if (l2Furnace != null)
+            l2Furnace.clearAssociatedData();
+        if (dfhProcessList != null)
+            dfhProcessList.clear();
     }
 
     protected void saveFceToFile(boolean withPerformance) {
@@ -1309,9 +1332,14 @@ public class L2DFHeating extends DFHeating {
     public void resultsReady(Observations observations) {
         super.resultsReady(observations);
         l2Furnace.setCurveSmoothening(true);
-        if (proc == DFHTuningParams.ForProcess.STRIP) {
-            mISaveAsFieldResult.setEnabled(true);
-        }
+//        if (proc == DFHTuningParams.ForProcess.STRIP) {
+//            mISaveAsFieldResult.setEnabled(true);
+//        }
+    }
+
+    public void resultsReady(Observations observations, DFHResult.Type switchDisplayTo) {
+        userActionAllowed = false;
+        super.resultsReady(observations, switchDisplayTo);
     }
 
     protected void enableResultsMenu(boolean enable) {
@@ -1484,7 +1512,7 @@ public class L2DFHeating extends DFHeating {
         JTextField keyF = new JTextField(machineID.length() + 1);
         dlg.addQuery("Installation ID", mcID);
         dlg.addQuery("Enter key for the above installation ID", keyF);
-        dlg.setLocation(100, 100);
+        dlg.setLocationRelativeTo(parent());
         dlg.setVisible(true);
         if (dlg.isUpdated())
             return keyF.getText();
@@ -1530,12 +1558,20 @@ public class L2DFHeating extends DFHeating {
 //        }
     }
 
+    void justQuit() {
+        l2Furnace.prepareForDisconnection();
+        if (uaClient != null)
+            uaClient.disconnect();
+        close();
+    }
+
     public void exitFromLevel2() {
         if (canClose()) {
-            l2Furnace.prepareForDisconnection();
-            if (uaClient != null)
-                uaClient.disconnect();
-            close();
+            justQuit();
+//            l2Furnace.prepareForDisconnection();
+//            if (uaClient != null)
+//                uaClient.disconnect();
+//            close();
         }
     }
 

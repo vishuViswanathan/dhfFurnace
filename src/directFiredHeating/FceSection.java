@@ -1675,7 +1675,7 @@ public class FceSection {
                 XMLmv.putTag("flueExhFract", "" + "" + burnerFlueExhFract) +
                 XMLmv.putTag("regenPHTemp", "" + "" + regenPHTemp) +
                 XMLmv.putTag("tcLocation", "" + "" + tcLocationFromZoneStart);
-        if (!bRecuType && bGasTempSpecified)
+        if (!bRecuType && bGasTempSpecified)  // TODO to be removed
             xmlStr += XMLmv.putTag("bGasTempSpecified", ((bGasTempSpecified)?"1":"0")) +
                     XMLmv.putTag("presetGasTemp", presetGasTemp);
         xmlStr += "\n";
