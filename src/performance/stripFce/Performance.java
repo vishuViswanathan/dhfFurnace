@@ -87,7 +87,9 @@ public class Performance {
     DFHFurnace furnace;
     PerformanceTable perfTable;
     boolean interpolated = false;
-
+    double maxWidth, minWidth, widthStep;
+    double maxUnitOutput, minUnitOutput, outputStep;
+    boolean bLimitsReady = false;
     public Performance() {
 
     }
@@ -132,6 +134,25 @@ public class Performance {
         this(production, fuel, airTemp, topZones, null, dateOfResult, furnace);
     }
 
+
+    public StatusWithMessage setLimits( double minWidth, double maxWidth, double widthStep,
+                              double minUnitOutput, double maxUnitOutput, double outputStep) {
+        StatusWithMessage retVal = new StatusWithMessage();
+        this.minWidth = minWidth;
+        this.maxWidth = maxWidth;
+        this.widthStep = widthStep;
+        this.minUnitOutput = minUnitOutput;
+        this.maxUnitOutput = maxUnitOutput;
+        this.outputStep = outputStep;
+        if (minWidth < maxWidth && minUnitOutput < maxUnitOutput) {
+            bLimitsReady = true;
+            retVal = setTableFactors();
+        }
+        else
+            retVal.setErrorMessage("Error in limits for preparing Performance Table");
+        return retVal;
+    }
+
 //    void getProcessName() {
 //        OneParameterDialog dlg = new OneParameterDialog(controller, "Process Name", true);
 //        dlg.setValue("enter Process Name" , processName, 15);
@@ -156,9 +177,9 @@ public class Performance {
     }
 
     double[] outputFactors;
-    double[] widthFactors;
+    double[] widthFactors; // in fact, it is width steps
 
-    public void setTableFactors(double minOutputFactor, double outputStep, double minWidthFactor, double widthStep) {
+    public boolean setTableFactors(double minOutputFactor, double outputStep, double minWidthFactor, double widthStep) {
 //        int nOutput = (int)((1.0 - minOutputFactor) / outputStep) + 1;
         Vector<Double> vOF = new Vector<Double>();
         double of = 1.0; //  + outputStep;
@@ -187,21 +208,80 @@ public class Performance {
         n = 0;
         for (double w:vWF)
             widthFactors[n++] = w * chLength;
+        return true;
    }
+
+    public StatusWithMessage setTableFactors() {
+        StatusWithMessage retVal = new StatusWithMessage();
+        if (bLimitsReady) {
+            double refWidth = chLength;
+            double refUnitOutput = output / chLength;
+            if (refWidth >= minWidth) {
+                if (refWidth <= maxWidth) {
+                    if (refUnitOutput >= minUnitOutput) {
+                        if (refUnitOutput <= maxUnitOutput) {
+                            Vector<Double> vOF = new Vector<Double>();
+                            double nowOutputFactor = maxUnitOutput / refUnitOutput;
+                            double minUnitOutputFactor = minUnitOutput / refUnitOutput;
+                            while (nowOutputFactor > minUnitOutputFactor) {
+                                vOF.add(nowOutputFactor);
+                                nowOutputFactor -= outputStep;
+                                if (Math.abs(nowOutputFactor - minUnitOutputFactor) < (outputStep / 4))
+                                    break;
+                            }
+                            vOF.add(minUnitOutputFactor);
+                            outputFactors = new double[vOF.size()];
+                            int n = 0;
+                            for (double o : vOF)
+                                outputFactors[n++] = o;
+
+                            Vector<Double> vWF = new Vector<Double>();
+                            double nowWidthFactor = maxWidth / refWidth;
+                            double minWidthFactor = minWidth / refWidth;
+                            while (nowWidthFactor > minWidthFactor) {
+                                vWF.add(nowWidthFactor);
+                                nowWidthFactor -= widthStep;
+                                if (Math.abs(nowWidthFactor - minWidthFactor) < (widthStep / 4))
+                                    break;
+                            }
+                            vWF.add(minWidthFactor);
+                            widthFactors = new double[vWF.size()];
+                            n = 0;
+                            for (double w : vWF)
+                                widthFactors[n++] = w * chLength;
+                        }
+                        else
+                            retVal.setErrorMessage(String.format("Production is more than limit of %5.3f t/h/meter width",
+                                     maxUnitOutput / 1000));
+                    }
+                    else
+                        retVal.setErrorMessage(String.format("Production is less than limit of %5.3f t/h/meter width",
+                            minUnitOutput / 1000));
+                } else
+                    retVal.setErrorMessage(String.format("Strip Width is more than limit of %8.3f mm",
+                        maxWidth * 1000));
+            } else
+                retVal.setErrorMessage(String.format("Strip Width is less than limit of %8.3f mm",
+                    minWidth * 1000));
+        }
+        else
+            retVal.setErrorMessage("SLimits are set for this Performance base");
+        return retVal;
+    }
 
     public PerformanceTable getPerformanceTable() {
         return perfTable;
     }
 
     public void createPerfTable(ThreadController master) {
-        controller.setTableFactors(this);
+//        controller.setTableFactors(this);
         perfTable = new PerformanceTable(this, outputFactors, widthFactors);
         double forOutput;
         double forWidth;
         Performance onePerf;
         for (double capF:outputFactors) {
             for (double widthF:widthFactors) {
-                if (widthF <= chLength || capF <= 1)  {
+//                if (widthF <= chLength || capF <= 1)  {
                     forWidth = widthF; // chLength * widthF;
                     forOutput = unitOutput * capF * forWidth;
                     if (furnace.evaluate(master, forOutput, forWidth)) {
@@ -211,7 +291,7 @@ public class Performance {
                         else
                             perfTable.addToTable(widthF, capF, onePerf);
                     }
-                }
+//                }
             }
         }
         controller.enableDataEdit();
@@ -696,7 +776,7 @@ public class Performance {
 
     void fillFuelProfile(ZonalFuelProfile fuelProfile) {
         fuelFlowProfilePanel.removeAll();
-        fuelFlowProfilePanel.add(getSpeedQueryPanel(fuelProfile), BorderLayout.NORTH);
+//        fuelFlowProfilePanel.add(getSpeedQueryPanel(fuelProfile), BorderLayout.NORTH);
         fuelFlowProfilePanel.add(fuelProfile.fuelFlowCharacteristic(false), BorderLayout.CENTER);
         fuelFlowProfilePanel.updateUI();
     }

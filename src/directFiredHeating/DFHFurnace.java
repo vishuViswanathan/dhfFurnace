@@ -453,6 +453,10 @@ public class DFHFurnace {
                             continue;
                         }
                     }
+                    else {
+                        allOk = false;
+                        break;
+                    }
 
                     if (allOk && bTopBot && canRun()) {
                         double rmsDiff = getGratioStat();
@@ -479,7 +483,7 @@ public class DFHFurnace {
                     }
                 }
 
-                if (inPerformanceBaseMode) {
+                if (allOk && inPerformanceBaseMode) {
                     savePerformanceIfDue();
                     inPerformanceBaseMode = false;
                     if (resetToRequiredProduction()) {
@@ -812,8 +816,11 @@ public class DFHFurnace {
                 controller.perfBaseAvailable(true);
 //            perfBaseReady = ((nPerf >= 2) && performBase.canInterpolate);
             if (perform != null)
-                if (decide("Performance Table", "Do you want to create Performance Table?"))
+                if (decide("Performance Table", "Do you want to create Performance Table?")) {
+//                    perform.setTableFactors(tuningParams.minOutputFactor, tuningParams.outputStep,
+//                            tuningParams.minWidthFactor, tuningParams.widthStep);
                     controller.calculateForPerformanceTable(perform);
+                }
         }
         return retVal;
     }
@@ -1367,6 +1374,7 @@ public class DFHFurnace {
             if (controller.forProcess() == DFHTuningParams.ForProcess.STRIP)
                 suggTemp = (suggTemp > (nextSecGasT - 20)) ? (nextSecGasT - 20) : suggTemp;
             suggTemp = 10 * SPECIAL.roundToNDecimals(suggTemp / 10, -1) - 5;
+//            debug("Checking if userActionAllowed");
             if (userActionAllowed()) {
                 String title = topBotName(bBot) + "Zone #" + (iSec + 1);
                 OneParameterDialog tempDlg = new OneParameterDialog(controller, title, 3000);
@@ -1891,9 +1899,12 @@ public class DFHFurnace {
         spHeatCons = heatFromComb / production.production;
         effChHeatVsFuel = (chHeatOUT - chHeatIN) / heatFromComb;
         effChHeatAndLossVsFuel = ((chHeatOUT - chHeatIN) + totLosses) / heatFromComb;
-        prepareRecuBalance();
-        heatSummary = heatSummaryPanel();
-        return true;
+        if (prepareRecuBalance()) {
+            heatSummary = heatSummaryPanel();
+            return true;
+        }
+        else
+            return false;
     }
 
     FlueCompoAndQty flueAfterRecu;
@@ -1914,11 +1925,13 @@ public class DFHFurnace {
 //        recuCounterFlow.setEnabled(true);
     }
 
-    void prepareRecuBalance() {
+    boolean prepareRecuBalance() {
+        boolean retVal = false;
         recuBalance = null;
         flueAfterRecu = null;
         if (!controller.bAirHeatedByRecu && !controller.bFuelHeatedByRecu)
-            return;
+            return retVal;
+        retVal = true;
         FlueCompoAndQty flue1 = new FlueCompoAndQty("Flue at Recu", flueToRecu);
         // cool it by deltFtemp between fce and recu
         flue1.coolIt(controller.deltaTflue);
@@ -1928,17 +1941,35 @@ public class DFHFurnace {
                 fuelRecu = createFuelRecu(flue1, bEntryDone);
                 bEntryDone = true;
                 airRecu = createAirRecu(fuelRecu.getFlueAftRecu(), bEntryDone);
-                flueAfterRecu = airRecu.getFlueAftRecu();
+                if (airRecu.bInError) {
+                    showError("Could not create Air Recu for Recu balance 01 (DFhFurnace)");
+                    retVal = false;
+                }
+                else {
+                    flueAfterRecu = airRecu.getFlueAftRecu();
+                }
             } else {
                 airRecu = createAirRecu(flue1, bEntryDone);
-                bEntryDone = true;
-                fuelRecu = createFuelRecu(airRecu.getFlueAftRecu(), bEntryDone);
-                flueAfterRecu = fuelRecu.getFlueAftRecu();
+                if (airRecu.bInError) {
+                    showError("Could not create Air Recu for Recu balance 02 (DFhFurnace)");
+                    retVal = false;
+                }
+                else {
+                    bEntryDone = true;
+                    fuelRecu = createFuelRecu(airRecu.getFlueAftRecu(), bEntryDone);
+                    flueAfterRecu = fuelRecu.getFlueAftRecu();
+                }
             }
         } else {
             if (controller.bAirHeatedByRecu) {
                 airRecu = createAirRecu(flue1, bEntryDone);
-                flueAfterRecu = airRecu.getFlueAftRecu();
+                if (airRecu.bInError) {
+                    showError("Could not create Air Recu for Recup balance 03 (DFhFurnace)");
+                    retVal = false;
+                }
+                else {
+                    flueAfterRecu = airRecu.getFlueAftRecu();
+                }
             }
             if (controller.bFuelHeatedByRecu && !commFuelFiring.fuel.isbMixedFuel()) {
                 fuelRecu = createFuelRecu(flue1, bEntryDone);
@@ -1948,7 +1979,9 @@ public class DFHFurnace {
 //        if (!(perfBaseReady && !bUnableToUsePerfData) && flueAfterRecu.flueTemp < 200)
 //            showError("Flue Temperature after Recuperator is Low <" +
 //                    SPECIAL.roundToNDecimals(flueAfterRecu.flueTemp, 0) + ">!", 3000);
-        recuBalance = recuBalanceP();
+        if (retVal)
+            recuBalance = recuBalanceP();
+        return retVal;
     }
 
     public boolean anyMixedFuel() {
@@ -3499,12 +3532,25 @@ public class DFHFurnace {
             evalActiveSecs(true);
     }
 
+    Vector<FceSection> topActiveSections;
+    Vector<FceSection> botActiveSections;
+
+    public Vector<FceSection> getActiveSections(boolean bBot){
+        return (bBot) ? botActiveSections : topActiveSections;
+    }
+
     public void evalActiveSecs(boolean bBot) {
         int nActive = 0;
         Vector<FceSection> vSec = getVsecs(bBot);
+        if (bBot)
+            botActiveSections = new Vector<FceSection>();
+        else
+            topActiveSections = new Vector<FceSection>();
+        Vector<FceSection> activeSecs = getActiveSections(bBot);
         for (FceSection sec : vSec) {
             if (sec.isActive()) {
                 sec.getNactive();
+                activeSecs.add(sec);
                 nActive++;
             } else
                 break;
@@ -3537,7 +3583,6 @@ public class DFHFurnace {
 
         }
     }
-
 
     Vector<Double> fillLarray() {
         lArray = new Vector<Double>();
@@ -4259,6 +4304,10 @@ public class DFHFurnace {
             }
         }
         return retVal;
+    }
+
+    public void enableDeleteInPerformanceData(boolean ena) {
+        performBase.enableDeleteAction(ena);
     }
 
     public void takeAirRecuFromXML(String xmlStr) {

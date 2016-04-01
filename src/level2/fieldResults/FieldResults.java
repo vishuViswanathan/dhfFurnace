@@ -8,6 +8,7 @@ import level2.*;
 import level2.common.L2ParamGroup;
 import level2.common.Tag;
 import mvUtils.display.*;
+import mvUtils.math.DoubleMV;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import performance.stripFce.OneZone;
@@ -82,22 +83,24 @@ public class FieldResults {
         }
     }
 
-    public FieldResults(L2DFHFurnace l2Furnace, boolean fromLevel1) {  // TODO to be used
+    public FieldResults(L2DFHFurnace l2Furnace, boolean withStripData) {
         this(l2Furnace);
-        inError = true;
+        inError = false;
         errMsg = "";
         if (takeZonalData()) {
             if (takeRecuData(l2Furnace.getRecuperatorZ())) {
-                ErrorStatAndMsg stripResponse = takeStripData(l2Furnace.getStripZone());
-                if (stripResponse.inError) {
-                    errMsg += stripResponse.msg;
-                }
-                else {
-                    if (takeCommonDFHData(l2Furnace.getCommonDFHZ())) {
-                        inError = false;
+                if (withStripData) {
+                    ErrorStatAndMsg stripResponse = takeStripData(l2Furnace.getStripZone());
+                    if (stripResponse.inError) {
+                        inError = true;
+                        errMsg += stripResponse.msg;
                     }
-                    else
-                        errMsg += ", Some problem in reading DFH common data";
+                }
+                if (!inError) {
+                    if (!takeCommonDFHData(l2Furnace.getCommonDFHZ())) {
+                        inError = true;
+                        errMsg += ", Some problem in reading DFH common data from field 01";
+                    }
                 }
             }
         }
@@ -106,8 +109,8 @@ public class FieldResults {
     ErrorStatAndMsg takeStripData(L2Zone stripZone) {
         ErrorStatAndMsg retVal = new ErrorStatAndMsg();
         double stripExitT = stripZone.getValue(L2ParamGroup.Parameter.Temperature, Tag.TagName.PV).floatValue;
-        double width = stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Width).floatValue / 1000; // m
-        double thick = stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Thick).floatValue / 1000; // m
+        double width = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Width).floatValue, 3) / 1000; // m
+        double thick = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Thick).floatValue, 3) / 1000; // m
         double speed = stripZone.getValue(L2ParamGroup.Parameter.Speed, Tag.TagName.PV).floatValue * 60; // m/h
         double output = 7.85 * width * speed * thick * 1000; // kg/h
         String forProcess = stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Process).stringValue;

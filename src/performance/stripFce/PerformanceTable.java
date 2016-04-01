@@ -269,8 +269,8 @@ public class PerformanceTable {
     boolean checkIfInRange(Performance p) {
         return ((p.chMaterial.equalsIgnoreCase(baseP.chMaterial)) &&
                 (p.fuelName.equalsIgnoreCase(baseP.fuelName)) &&
-                (p.chWidth <= baseP.chWidth) &&
-                (p.unitOutput <= baseP.unitOutput) &&
+//                (p.chWidth <= baseP.chWidth) &&
+//                (p.unitOutput <= baseP.unitOutput) &&
                 (Math.abs(p.exitTemp() - baseP.exitTemp()) <= 1)
         );
     }

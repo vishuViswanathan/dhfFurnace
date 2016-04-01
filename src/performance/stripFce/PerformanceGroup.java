@@ -325,6 +325,11 @@ public class PerformanceGroup implements ActionListener{
         return chTempProfAvailable; // was canInterpolate
     }
 
+    public void enableDeleteAction(boolean ena) {
+        if (deleteB != null)
+            deleteB.setEnabled(ena);
+    }
+
     JButton deleteB = new JButton("Delete the displayed Performance Data");
     JPanel buttonP = new JPanel();
     JTable listTable;

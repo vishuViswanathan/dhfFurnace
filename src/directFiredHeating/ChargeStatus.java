@@ -25,6 +25,15 @@ public class ChargeStatus {
         this(charge, output, temp, temp, temp);
     }
 
+    public ProductionData getProductionData() {
+        ProductionData pData = new ProductionData();
+        pData.charge = charge;
+        pData.production = output;
+        pData.chPitch = 1;
+        pData.exitTemp = tempWM;
+        return pData;
+    }
+
     public void setStatus(double output, double tempWO, double tempWM, double tempWCore) {
         this.output = output;
         setStatus(tempWO, tempWM, tempWCore);

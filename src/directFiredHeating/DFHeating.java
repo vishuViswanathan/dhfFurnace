@@ -57,7 +57,7 @@ public class DFHeating extends JApplet implements InputControl {
         ONTEST("-onTest"),
         ALLOWSPECSSAVE("-allowSpecsSave"),
         ALLOWSPECSREAD("-allowSpecsRead"),
-        NOTLEVEL2("-notLevel2"),
+//        NOTLEVEL2("-notLevel2"),
         JNLP("-asJNLP"),
         DEBUGMSG("-showDebugMessages");
         private final String argName;
@@ -975,56 +975,56 @@ public class DFHeating extends JApplet implements InputControl {
         enableShowComparison(false);
     }
 
-    JMenuItem createPerfBase;
-    JMenuItem addToPerfBase;
-    JMenuItem clearPerfBase;
-    JMenuItem showPerfBase;
+    protected JMenuItem mICreatePerfBase;
+    protected JMenuItem mIAddToPerfBase;
+    protected JMenuItem mIClearPerfBase;
+    protected JMenuItem mIShowPerfBase;
     protected JMenu perfMenu;
-    JMenuItem setPerfTablelimits;
+    protected JMenuItem mISetPerfTablelimits;
 
     JMenu getPerformMenu() {
         PerformListener li = new PerformListener();
-        createPerfBase = new JMenuItem("Create Performance Base");
-        createPerfBase.addActionListener(li);
-        addToPerfBase = new JMenuItem("Add to Performance Base");
-        addToPerfBase.setEnabled(false);
-        addToPerfBase.addActionListener(li);
-        showPerfBase = new JMenuItem("Show Performance Base List");
-        showPerfBase.setEnabled(false);
-        showPerfBase.addActionListener(li);
+        mICreatePerfBase = new JMenuItem("Create Performance Base");
+        mICreatePerfBase.addActionListener(li);
+        mIAddToPerfBase = new JMenuItem("Add to Performance Base");
+        mIAddToPerfBase.setEnabled(false);
+        mIAddToPerfBase.addActionListener(li);
+        mIShowPerfBase = new JMenuItem("Show Performance Base List");
+        mIShowPerfBase.setEnabled(false);
+        mIShowPerfBase.addActionListener(li);
 
-        clearPerfBase = new JMenuItem("Clear Performance Base");
+        mIClearPerfBase = new JMenuItem("Clear Performance Base");
         clearComparison.setEnabled(false);
-        clearPerfBase.addActionListener(li);
-        setPerfTablelimits = new JMenuItem("Set Limits for Performance Table");
-        setPerfTablelimits.addActionListener(li);
+        mIClearPerfBase.addActionListener(li);
+        mISetPerfTablelimits = new JMenuItem("Set Limits for Performance Table");
+        mISetPerfTablelimits.addActionListener(li);
         perfMenu = new JMenu("Performance");
-        perfMenu.add(createPerfBase);
-        perfMenu.add(addToPerfBase);
+        perfMenu.add(mICreatePerfBase);
+        perfMenu.add(mIAddToPerfBase);
         perfMenu.addSeparator();
-        perfMenu.add(setPerfTablelimits);
+        perfMenu.add(mISetPerfTablelimits);
         perfMenu.addSeparator();
-        perfMenu.add(showPerfBase);
+        perfMenu.add(mIShowPerfBase);
         perfMenu.addSeparator();
-        perfMenu.add(clearPerfBase);
+        perfMenu.add(mIClearPerfBase);
         perfMenu.setEnabled(false);
         perfMenu.setVisible(false);
         return perfMenu;
     }
 
     void enableCreatePerform(boolean ena)  {
-        clearPerfBase.setEnabled(!ena);
-        createPerfBase.setEnabled(bResultsReady && ena);
+        mIClearPerfBase.setEnabled(!ena);
+        mICreatePerfBase.setEnabled(bResultsReady && ena);
     }
 
     void enableAddToPerform(boolean ena) {
-        addToPerfBase.setEnabled(ena);
-        showPerfBase.setEnabled(ena);
+        mIAddToPerfBase.setEnabled(ena);
+        mIShowPerfBase.setEnabled(ena);
     }
 
     void perfBaseAvailable(boolean available) {
-        showPerfBase.setEnabled(available);
-        clearPerfBase.setEnabled(available);
+        mIShowPerfBase.setEnabled(available);
+        mIClearPerfBase.setEnabled(available);
     }
 
     void showPerfMenu(boolean show) {
@@ -1872,10 +1872,10 @@ public class DFHeating extends JApplet implements InputControl {
     protected void hidePerformMenu() {
         furnace.clearPerfBase();
         perfMenu.setVisible(false);
-        createPerfBase.setEnabled(false);
-        addToPerfBase.setEnabled(false);
-        clearPerfBase.setEnabled(false);
-        showPerfBase.setEnabled(false);
+        mICreatePerfBase.setEnabled(false);
+        mIAddToPerfBase.setEnabled(false);
+        mIClearPerfBase.setEnabled(false);
+        mIShowPerfBase.setEnabled(false);
      }
 
     protected void setFcefor(boolean showSuggestion) {
@@ -1942,8 +1942,8 @@ public class DFHeating extends JApplet implements InputControl {
         }
     }
 
-    public void setTableFactors(Performance performance) {
-        performance.setTableFactors(tuningParams.minOutputFactor, tuningParams.outputStep,
+    public boolean setTableFactors(Performance performance) {
+        return performance.setTableFactors(tuningParams.minOutputFactor, tuningParams.outputStep,
                             tuningParams.minWidthFactor, tuningParams.widthStep);
     }
 
@@ -2267,6 +2267,8 @@ public class DFHeating extends JApplet implements InputControl {
     }
 
     public FceEvaluator calculateForPerformanceTable(Performance baseP) {
+        baseP.setTableFactors(tuningParams.minOutputFactor, tuningParams.outputStep,
+                tuningParams.minWidthFactor, tuningParams.widthStep);
         return calculateForPerformanceTable(baseP, null);
     }
 
@@ -3162,8 +3164,9 @@ public class DFHeating extends JApplet implements InputControl {
         parent().toFront();
     }
 
-    boolean getFceFromFileJNLP() {
+    StatusWithMessage getFceFromFileJNLP() {
         disableCompare();
+        StatusWithMessage retVal = new StatusWithMessage();
         boolean bRetVal = false;
         furnace.resetSections();
         try {
@@ -3181,17 +3184,22 @@ public class DFHeating extends JApplet implements InputControl {
                     if (checkVersion(fceData)) {
                         String msg = takeProfileDataFromXML(fceData);
                         if ((msg.equals("OK"))) {
+                            retVal.setInfoMessage(fileName);
                             bRetVal = true;
                             parent().toFront();
                             if (!onProductionLine)
                                 showMessage("Fuel and Charge Material to be Selected/Checked before Calculation.");
-                        } else
-                            showError("in Furnace Data from XL file!\n" + msg);
-                    } else
-                        showError("This file does not contain proper DFHFurnace data!");
+                        } else {
+                            retVal.setErrorMessage("in Furnace Data from XL file!\n" + msg);
+                            showError(retVal.getErrorMessage());
+                        }
+                    } else {
+                        retVal.setErrorMessage("This file does not contain proper DFHFurnace data!");
+                        showError(retVal.getErrorMessage());
+                    }
                 }
                 else {
-                    bRetVal = getFceFromFceDatFile(fc);
+                    retVal = getFceFromFceDatFile(fc);
                 }
             }
         } catch (IOException e) {
@@ -3199,12 +3207,13 @@ public class DFHeating extends JApplet implements InputControl {
             e.printStackTrace();
         }
         switchPage(DFHDisplayPageType.INPUTPAGE);
-        return bRetVal;
+        return retVal;
     }
 
-    boolean getFceFromFile() {
+    protected StatusWithMessage getFceFromFile() {
         if (asJNLP)
             return getFceFromFileJNLP();
+        StatusWithMessage retVal = new StatusWithMessage();
         disableCompare();
         boolean bRetVal = false;
         furnace.resetSections();
@@ -3229,21 +3238,26 @@ public class DFHeating extends JApplet implements InputControl {
                     if (checkVersion(fceData)) {
                         String msg = takeProfileDataFromXML(fceData);
                         if ((msg.equals("OK"))) {
-                            bRetVal = true;
+                            retVal.setInfoMessage(filePath);
+//                            bRetVal = true;
                             parent().toFront();
                             if (!onProductionLine)
                                 showMessage("Fuel and Charge Material to be Selected/Checked before Calculation.");
-                        } else
-                            showError("in Furnace Data from XL file!\n" + msg);
-                    } else
-                        showError("This file does not contain proper DFHFurnace data!");
+                        } else {
+                            retVal.setErrorMessage("in Furnace Data from XL file!\n" + msg);
+                            showError(retVal.getErrorMessage());
+                        }
+                    } else {
+                        retVal.setErrorMessage("This file does not contain proper DFHFurnace data!");
+                        showError(retVal.getErrorMessage());
+                    }
                 } else {
-                    bRetVal = getFceFromFceDatFile(filePath);
+                    retVal = getFceFromFceDatFile(filePath);
                 }
             }
         }
         switchPage(DFHDisplayPageType.INPUTPAGE);
-        return bRetVal;
+        return retVal;
     }
 
     public boolean saveRecuToFile(String xmlStrRecu) {
@@ -3354,7 +3368,8 @@ public class DFHeating extends JApplet implements InputControl {
     }
 
 
-    protected boolean getFceFromFceDatFile(FileContents fc) {
+    protected StatusWithMessage getFceFromFceDatFile(FileContents fc) {
+        StatusWithMessage retVal = new StatusWithMessage();
         boolean bRetVal = false;
         try {
             long len = fc.getLength();
@@ -3365,25 +3380,33 @@ public class DFHeating extends JApplet implements InputControl {
                     if (fceData != null) {
                         String stat = takeProfileDataFromXML(fceData);
                         if (stat.equals("OK")) {
+                            retVal.setInfoMessage(fc.getName());
                             bRetVal = true;
                             parent().toFront();
                             if (!onProductionLine)
                                 showMessage("Fuel and Charge Material to be Selected/Checked before Calculation.");
-                        } else
+                        } else {
+                            retVal.setErrorMessage(stat);
                             showError(stat);
+                        }
                     }
-                } else
-                    showError("This not a proper DFHFurnace data file!");
-            } else
-                showError("File size " + len + " for " + fc.getName());
+                } else {
+                    retVal.setErrorMessage("This not a proper DFHFurnace data file!");
+                    showError(retVal.getErrorMessage());
+                }
+            } else {
+                retVal.setErrorMessage("File size " + len + " for " + fc.getName());
+                showError(retVal.getErrorMessage());
+            }
         } catch (Exception e) {
-            showError("Some Problem in getting file!");
+            retVal.setErrorMessage("Some Problem in getting file! : " + e.getMessage());
+            showError(retVal.getErrorMessage());
         }
-        return bRetVal;
+        return retVal;
     }
 
-    protected boolean getFceFromFceDatFile(String filePath) {
-        boolean bRetVal = false;
+    protected StatusWithMessage getFceFromFceDatFile(String filePath) {
+        StatusWithMessage retVal = new StatusWithMessage();
         try {
             BufferedInputStream iStream = new BufferedInputStream(new FileInputStream(filePath));
             //           FileInputStream iStream = new FileInputStream(fileName);
@@ -3397,21 +3420,29 @@ public class DFHeating extends JApplet implements InputControl {
                         iStream.read(data, 200, iLen - 200);
                         String stat = takeProfileDataFromXML(new String(data));
                         if (stat.equals("OK")) {
-                            bRetVal = true;
+                            retVal.setInfoMessage(filePath);
+//                            bRetVal = true;
                             parent().toFront();
                             if (!onProductionLine)
                                 showMessage("Fuel and Charge Material to be Selected/Checked before Calculation.");
-                        } else
+                        } else {
+                            retVal.setErrorMessage(stat);
                             showError(stat);
-                    } else
-                        showError("This not a proper DFHFurnace data file!");
+                        }
+                    } else {
+                        retVal.setErrorMessage("This not a proper DFHFurnace data file!");
+                        showError(retVal.getErrorMessage());
+                    }
                 }
-            } else
-                showError("File size " + len + " for " + filePath);
+            } else {
+                retVal.setErrorMessage("File size " + len + " for " + filePath);
+                showError(retVal.getErrorMessage());
+            }
         } catch (Exception e) {
-            showError("Some Problem in getting file!");
+            retVal.setErrorMessage("Some Problem in getting file " + filePath + ": " + e.getMessage());
+            showError(retVal.getErrorMessage());
         }
-        return bRetVal;
+        return retVal;
     }
 
 
@@ -3782,9 +3813,9 @@ public class DFHeating extends JApplet implements InputControl {
 
     void createPerformBase() {
         if (furnace.createPerfBase())  {
-            clearPerfBase.setEnabled(true);
-            createPerfBase.setEnabled(false);
-            showPerfBase.setEnabled(true);
+            mIClearPerfBase.setEnabled(true);
+            mICreatePerfBase.setEnabled(false);
+            mIShowPerfBase.setEnabled(true);
         }
     }
 
@@ -3793,9 +3824,9 @@ public class DFHeating extends JApplet implements InputControl {
     }
 
     void performBaseReady() {
-        createPerfBase.setEnabled(false);
-        addToPerfBase.setEnabled(false);
-        clearPerfBase.setEnabled(true);
+        mICreatePerfBase.setEnabled(false);
+        mIAddToPerfBase.setEnabled(false);
+        mIClearPerfBase.setEnabled(true);
         perfMenu.setEnabled(true);
         perfMenu.setVisible(true);
 //        saveFceAndPerf.setEnabled(true);
@@ -3805,8 +3836,8 @@ public class DFHeating extends JApplet implements InputControl {
         if (decide("Performance Base", "Do you want to DELETE ALL Performance Data?")) {
             furnace.clearPerfBase();
 //        createPerfBase.setEnabled(true);
-            addToPerfBase.setEnabled(false);
-            showPerfBase.setEnabled(false);
+            mIAddToPerfBase.setEnabled(false);
+            mIShowPerfBase.setEnabled(false);
         }
 //        saveFceAndPerf.setEnabled(false);
     }
@@ -4324,7 +4355,7 @@ public class DFHeating extends JApplet implements InputControl {
                     }
                     if (goAhead) {
                         pbEdit.doClick();
-                        boolean response = getFceFromFile();
+                        boolean response = (getFceFromFile().getDataStatus() != StatusWithMessage.DataStat.WithErrorMsg);
                         parent().toFront();
                         if (response) {
                             switchPage(DFHDisplayPageType.INPUTPAGE);
@@ -4404,21 +4435,21 @@ public class DFHeating extends JApplet implements InputControl {
     class PerformListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             Object src = e.getSource();
-            if (src == createPerfBase) {
+            if (src == mICreatePerfBase) {
                 createPerformBase();
             }
-            if (src == addToPerfBase) {
+            if (src == mIAddToPerfBase) {
                 addToPerformBase();
             }
-            if (src == showPerfBase) {
+            if (src == mIShowPerfBase) {
                 switchPage(DFHDisplayPageType.PERFOMANCELIST);
 //                switchPage(furnace.getPerfBaseListPanel());
             }
-            if (src == clearPerfBase) {
+            if (src == mIClearPerfBase) {
                 clearPerformBase();
             }
-            if (src == setPerfTablelimits) {
-                tuningParams.getPerfTableSettings(setPerfTablelimits);
+            if (src == mISetPerfTablelimits) {
+                tuningParams.getPerfTableSettings(mISetPerfTablelimits);
             }
         }
     }
@@ -4570,7 +4601,7 @@ public class DFHeating extends JApplet implements InputControl {
     static protected boolean parseCmdLineArgs(String[] args) {
         boolean retVal = true;
         CommandLineArgs cmdArg;
-        onProductionLine = true;
+//        onProductionLine = true;
         for (int a = 0; a < args.length; a++) {
             cmdArg = CommandLineArgs.getEnum(args[a]);
             if (cmdArg != null)
@@ -4581,9 +4612,9 @@ public class DFHeating extends JApplet implements InputControl {
                     case ALLOWSPECSSAVE:
                         enableSpecsSave = true;
                         break;
-                    case NOTLEVEL2:
-                        onProductionLine = false;
-                        break;
+//                    case NOTLEVEL2:
+//                        onProductionLine = false;
+//                        break;
                     case JNLP:
                         asJNLP = true;
                         jspConnection = new JSPConnection();

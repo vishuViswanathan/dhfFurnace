@@ -1,5 +1,6 @@
 package level2;
 
+import directFiredHeating.FceSection;
 import mvUtils.display.*;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
@@ -13,6 +14,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.Vector;
 
 /**
  * Created by IntelliJ IDEA.
@@ -34,6 +36,22 @@ public class FurnaceSettings   {
 
     public FurnaceSettings(L2DFHeating l2DFHeating) {
         this.l2DFHeating = l2DFHeating;
+    }
+
+    public FurnaceSettings(L2DFHeating l2DFHeating, Vector<FceSection> activeSections) {
+        this(l2DFHeating);
+        fuelCharSteps = 7;
+        considerFieldZoneTempForLossCorrection = false;
+        zoneFuelRange = new DoubleRange[activeSections.size()];
+        int i = 0;
+        for (FceSection sec: activeSections) {
+            DoubleRange oneRange;
+            if (sec.bRecuType)
+                oneRange = new DoubleRange(0, 0);
+            else
+                oneRange = new DoubleRange(100/7, 100);
+            zoneFuelRange[i++] = oneRange;
+        }
     }
 
     public FurnaceSettings(L2DFHeating l2DFHeating, String xmlStr) {

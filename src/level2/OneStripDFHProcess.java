@@ -179,6 +179,12 @@ public class OneStripDFHProcess {
         return response;
     }
 
+    public double getLimitSpeed(double stripThickness)  {
+        ChMaterial chMet = getChMaterial(stripThickness);
+        double limitSpeed = maxUnitOutput / chMet.density / stripThickness;
+        return Math.min(limitSpeed, maxSpeed);
+    }
+
     boolean takeDataFromXML(String xmlStr) {
         boolean retVal = false;
         ValAndPos vp;

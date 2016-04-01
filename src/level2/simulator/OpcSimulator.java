@@ -661,8 +661,8 @@ public class OpcSimulator implements InputControl, L2Interface {
                             l2YesNoQuery.setValue(Tag.TagName.Response, false);
                         l2YesNoQuery.setAsNoted(true);
                     }
-                    else
-                        logInfo("YesNoQuery is not newData");
+//                    else
+//                        logInfo("YesNoQuery is not newData");
                 }
             }
         }

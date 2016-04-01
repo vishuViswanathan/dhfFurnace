@@ -70,11 +70,13 @@ public class StripDFHProcessList {
 
     public OneStripDFHProcess getDFHProcess(String processName) {
         OneStripDFHProcess oneProcess = null;
-        for (OneStripDFHProcess proc: list)
+        for (OneStripDFHProcess proc: list) {
+            l2DFHeating.logInfo(String.format("Looking for %s and got %s", processName, proc.processName));
             if (proc.processName.equalsIgnoreCase(processName)) {
                 oneProcess = proc;
                 break;
             }
+        }
         return oneProcess;
     }
 

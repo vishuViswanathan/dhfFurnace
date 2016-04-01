@@ -284,14 +284,14 @@ public class Fuel extends Fluid{
             // check if abnormal (ie. sphet > 1.0)
             double hCont = sensHeat.getYat(temp);
             double spHt = hCont / temp;
-            if (spHt > 1) {
-                DecimalFormat fmt = new DecimalFormat("#,##0.000");
-                DecimalFormat tFmt = new DecimalFormat("#,##0");
-                bFound = decide(name, "Sensible Heat at " + tFmt.format(temp) + " is " +
-                        fmt.format(hCont) + " kcal/" + units +
-                        "\nAverage Specific Heat is " + fmt.format(spHt) + " kcal/" + units + "C" +
-                        "\nProceed with this data?");
-            }
+//            if (spHt > 1) {
+//                DecimalFormat fmt = new DecimalFormat("#,##0.000");
+//                DecimalFormat tFmt = new DecimalFormat("#,##0");
+//                bFound = decide(name, "Sensible Heat at " + tFmt.format(temp) + " is " +
+//                        fmt.format(hCont) + " kcal/" + units +
+//                        "\nAverage Specific Heat is " + fmt.format(spHt) + " kcal/" + units + "C" +
+//                        "\nProceed with this data?");
+//            }
         }
         return bFound;
      }
