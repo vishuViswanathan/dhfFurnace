@@ -68,10 +68,25 @@ public class L2ParamGroup {
     }
 
     public String groupName;
+    public String descriptiveName;
     Hashtable<Parameter, L2ZoneParam> paramList;
     public L2Interface l2Interface;   // was public public L2DFHFurnace l2Furnace;
     Subscription subscription = null;
 
+    /**
+     *
+     * @param l2Interface
+     * @param groupName   for link over OPC
+     * @param descriptiveName
+     * @param subscription
+     */
+    public L2ParamGroup(L2Interface l2Interface, String groupName, String descriptiveName, Subscription subscription) {
+        this.l2Interface = l2Interface;
+        this.groupName = groupName;
+        this.descriptiveName = (descriptiveName.length() < 1) ? groupName : descriptiveName;
+        this.subscription = subscription;
+        paramList = new Hashtable<Parameter, L2ZoneParam>();
+    }
     /**
      * For common sections with external subscription
      *
@@ -80,14 +95,20 @@ public class L2ParamGroup {
      * @param subscription
      */
     public L2ParamGroup(L2Interface l2Interface, String groupName, Subscription subscription) {
-        this.l2Interface = l2Interface;
-        this.groupName = groupName;
-        this.subscription = subscription;
-        paramList = new Hashtable<Parameter, L2ZoneParam>();
+        this (l2Interface, groupName, "", subscription);
+//        this.l2Interface = l2Interface;
+//        this.groupName = groupName;
+//        this.subscription = subscription;
+//        paramList = new Hashtable<Parameter, L2ZoneParam>();
     }
 
-    public L2ParamGroup(L2Interface l2Furnace, String groupName) {
-        this(l2Furnace, groupName, null);
+    public L2ParamGroup(L2Interface l2Interface, String groupName, String descriptiveName) {
+        this (l2Interface, groupName, descriptiveName, null);
+
+    }
+
+    public L2ParamGroup(L2Interface l2Interface, String groupName) {
+        this(l2Interface, groupName, "");
     }
 
     public void setSubscription(Subscription sub) {
@@ -113,7 +134,7 @@ public class L2ParamGroup {
     public ProcessValue getValue(Parameter element, Tag.TagName tagName) {
         ProcessValue pV = getL2Param(element).getValue(tagName);
         if (!pV.valid)
-            pV.errorMessage = groupName + "." + element + "." + tagName + ":" + pV.errorMessage;
+            pV.errorMessage = descriptiveName + "." + element + "." + tagName + ":" + pV.errorMessage;
         return pV;
     }
 
@@ -155,7 +176,7 @@ public class L2ParamGroup {
     }
 
     public ErrorStatAndMsg checkConnections() {
-        ErrorStatAndMsg retVal = new ErrorStatAndMsg(false, groupName + ".");
+        ErrorStatAndMsg retVal = new ErrorStatAndMsg(false, descriptiveName + ".");
         ErrorStatAndMsg oneParamStat;
         boolean additional = false;
         for (L2ZoneParam p: paramList.values()) {

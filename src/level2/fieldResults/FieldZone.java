@@ -4,7 +4,7 @@ import basic.*;
 import directFiredHeating.FceSection;
 import level2.L2DFHFurnace;
 import level2.common.L2ParamGroup;
-import level2.L2Zone;
+import level2.L2DFHZone;
 import level2.common.Tag;
 import mvUtils.display.*;
 import mvUtils.mvXML.ValAndPos;
@@ -67,13 +67,13 @@ public class FieldZone {
         testValidity();
     }
 
-    public FieldZone(L2DFHFurnace l2Furnace, boolean bBot, int zNum, L2Zone oneZone) {
+    public FieldZone(L2DFHFurnace l2Furnace, boolean bBot, int zNum, L2DFHZone oneZone) {
         this(l2Furnace, bBot, zNum);
         takeFromL2Zone(oneZone);
         testValidity();
     }
 
-    void takeFromL2Zone(L2Zone oneZone) {
+    void takeFromL2Zone(L2DFHZone oneZone) {
         double fceTemp = oneZone.getValue(L2ParamGroup.Parameter.Temperature, Tag.TagName.PV).floatValue;
         double fuelFlow = oneZone.getValue(L2ParamGroup.Parameter.FuelFlow, Tag.TagName.PV).floatValue;
         double airTemp = oneZone.getValue(L2ParamGroup.Parameter.AirFlow, Tag.TagName.Temperature).floatValue;

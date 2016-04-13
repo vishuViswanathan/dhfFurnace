@@ -182,16 +182,16 @@ public class PerformanceGroup implements ActionListener{
 
     public Performance getRefPerformance(ProductionData forProduction, Fuel withFuel) {
         Performance refP = null;
-        double requiredUP = forProduction.production / forProduction.charge.getLength();
+//        double requiredUP = forProduction.production / forProduction.charge.getLength();
         int compareOn = Performance.EXITTEMP + Performance.MATERIAL + Performance.FUEL;
         for (Performance p: refPerformance) {
             if (p.isProductionComparable(forProduction, withFuel, compareOn, tuningParams.exitTempTolerance)) {
                 // check unit production limits
-                if (requiredUP <= (p.unitOutput * tuningParams.overUP) &&
-                            requiredUP >= (p.unitOutput * tuningParams.underUP) )   {
+//                if (requiredUP <= (p.unitOutput * tuningParams.overUP) &&
+//                            requiredUP >= (p.unitOutput * tuningParams.underUP) )   {
                     refP = p;
-                    break;
-                }
+//                    break;
+//                }
             }
         }
         return refP;

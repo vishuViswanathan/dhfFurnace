@@ -1172,54 +1172,56 @@ public class DFHFurnace {
                     setStartTProf(theSlot.tempG, bBot);
                 theSlot.getWMean(tempWOEnd, production.deltaTemp);
             }
-            bStart = false;
+            if (allOk) {
+                bStart = false;
 
-            for (int iSec = iLastSec; iSec >= firstRevCalUpto; iSec--) {
-                showStatus(statusHead + (iSec + 1));
-                theSection = vSec.get(iSec);
-                if (iSec < iLastSec) {
-                    double nextSecGasT = vSec.get(iSec + 1).getFirstSlotGasTemp();
-                    allOk = getGasTempIfRequired(iSec, bBot, nextSecGasT);
-                    if (!allOk)
-                        break;
-                }
+                for (int iSec = iLastSec; iSec >= firstRevCalUpto; iSec--) {
+                    showStatus(statusHead + (iSec + 1));
+                    theSection = vSec.get(iSec);
+                    if (iSec < iLastSec) {
+                        double nextSecGasT = vSec.get(iSec + 1).getFirstSlotGasTemp();
+                        allOk = getGasTempIfRequired(iSec, bBot, nextSecGasT);
+                        if (!allOk)
+                            break;
+                    }
 
-                if (considerChTempProfile && !((iSec == iLastSec) && honorLastZoneMinFceTemp)) {
-                    if (iSec > iFirstFiredSection) {
-                        double firstOutTemp = chInTempProfile[iFirstFiredSection + 1];
-                        chInTempReqd = firstOutTemp + chTempProfileFactor * (chInTempProfile[iSec] - firstOutTemp);
+                    if (considerChTempProfile && !((iSec == iLastSec) && honorLastZoneMinFceTemp)) {
+                        if (iSec > iFirstFiredSection) {
+                            double firstOutTemp = chInTempProfile[iFirstFiredSection + 1];
+                            chInTempReqd = firstOutTemp + chTempProfileFactor * (chInTempProfile[iSec] - firstOutTemp);
 //                            chInTempReqd = chInTempProfile[0] + chTempProfileFactor * (chInTempProfile[iSec] - chInTempProfile[0]);
-                    } else
-                        chInTempReqd = chInTempProfile[iSec];
-                    response = theSection.oneSectionInRev(chInTempReqd);
-                } else {
-                    response = theSection.oneSectionInRev();
-                    if (tuningParams.bAdjustChTempProfile && (iSec == iLastSec) && honorLastZoneMinFceTemp)
+                        } else
+                            chInTempReqd = chInTempProfile[iSec];
+                        response = theSection.oneSectionInRev(chInTempReqd);
+                    } else {
+                        response = theSection.oneSectionInRev();
+                        if (tuningParams.bAdjustChTempProfile && (iSec == iLastSec) && honorLastZoneMinFceTemp)
 //                            chTempProfileFactor = chTempFactor(chInTempProfile, iSec, theSection);
-                        chTempProfileFactor = chTempFactor(chInTempProfile, iSec, theSection, iFirstFiredSection, iLastFiredSection);
-                }
-                if (!(response == FceEvaluator.EvalStat.OK)) {
-                    allOk = false;
-                    break;
-                }
-                toSection = vSec.get(iSec - 1);
-                toSection.copyFromNextSection(theSection);
-                if (tuningParams.bSectionalFlueExh)
-                    toSection.fluePassThrough = 0;
-                else {
-                    FlueCompoAndQty netFlue = flueFromDEnd(bBot, iSec - 1);
-                    toSection.passFlueCompAndQty.noteValues(netFlue);
-                    toSection.fluePassThrough = netFlue.flow;
-                }
-                if (considerChTempProfile && (iSec == iLastSec) && !honorLastZoneMinFceTemp) {
-                    honorLastZoneMinFceTemp = limitLastZoneFceTempIfReqd();
-                    if (honorLastZoneMinFceTemp)
-                        continue;
-                }
+                            chTempProfileFactor = chTempFactor(chInTempProfile, iSec, theSection, iFirstFiredSection, iLastFiredSection);
+                    }
+                    if (!(response == FceEvaluator.EvalStat.OK)) {
+                        allOk = false;
+                        break;
+                    }
+                    toSection = vSec.get(iSec - 1);
+                    toSection.copyFromNextSection(theSection);
+                    if (tuningParams.bSectionalFlueExh)
+                        toSection.fluePassThrough = 0;
+                    else {
+                        FlueCompoAndQty netFlue = flueFromDEnd(bBot, iSec - 1);
+                        toSection.passFlueCompAndQty.noteValues(netFlue);
+                        toSection.fluePassThrough = netFlue.flow;
+                    }
+                    if (considerChTempProfile && (iSec == iLastSec) && !honorLastZoneMinFceTemp) {
+                        honorLastZoneMinFceTemp = limitLastZoneFceTempIfReqd();
+                        if (honorLastZoneMinFceTemp)
+                            continue;
+                    }
 
-                if (!(response == FceEvaluator.EvalStat.OK)) {
-                    allOk = false;
-                    break;
+                    if (!(response == FceEvaluator.EvalStat.OK)) {
+                        allOk = false;
+                        break;
+                    }
                 }
             }
             if (allOk) {

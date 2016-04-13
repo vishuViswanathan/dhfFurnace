@@ -190,8 +190,8 @@ public class DFHTuningParams {
                 bAdjustChTempProfile = cBbAdjustChTempProfile.isSelected();
             }
         });
-        tfOverUP = new NumberTextField(controller, overUP, 6, false, 1.0, 2.0, "0.##", "Over-capacity factor");
-        tfUnderUP = new NumberTextField(controller, underUP, 6, false, 0.05, 0.9, "0.##", "Under-capacity factor");
+//        tfOverUP = new NumberTextField(controller, overUP, 6, false, 1.0, 2.0, "0.##", "Over-capacity factor");
+//        tfUnderUP = new NumberTextField(controller, underUP, 6, false, 0.05, 0.9, "0.##", "Under-capacity factor");
         cBbOnProductionLine = new JCheckBox();
         cBbOnProductionLine.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -281,8 +281,8 @@ public class DFHTuningParams {
         bSmoothenCurve = cBbSmoothenCurve.isSelected();
         bConsiderChTempProfile = cBbConsiderChTempProfile.isSelected();
         bAdjustChTempProfile= cBbAdjustChTempProfile.isSelected();
-        overUP = tfOverUP.getData();
-        underUP = tfUnderUP.getData();
+//        overUP = tfOverUP.getData();
+//        underUP = tfUnderUP.getData();
         bOnProductionLine = cBbOnProductionLine.isSelected();
         bNoEmissivityCorrFactor = cBNoEmissivityCorrFactor.isSelected();
         noGasRadiationToCharge = cBNoGasRadiationToCharge.isSelected();
@@ -316,8 +316,8 @@ public class DFHTuningParams {
         cBbSmoothenCurve.setSelected(bSmoothenCurve);
         cBbConsiderChTempProfile.setSelected(bConsiderChTempProfile);
         cBbAdjustChTempProfile.setSelected(bAdjustChTempProfile);
-        tfOverUP.setData(overUP);
-        tfUnderUP.setData(underUP);
+//        tfOverUP.setData(overUP);
+//        tfUnderUP.setData(underUP);
         cBbOnProductionLine.setSelected(bOnProductionLine);
         cBNoEmissivityCorrFactor.setSelected(bNoEmissivityCorrFactor);
         cBNoGasRadiationToCharge.setSelected(noGasRadiationToCharge);
@@ -367,8 +367,8 @@ public class DFHTuningParams {
         xmlStr += XMLmv.putTag("bAllowRegenAirTemp", (bAllowRegenAirTemp) ? 1: 0);
         // Performance base
         xmlStr += XMLmv.putTag("bConsiderChTempProfile", (bConsiderChTempProfile) ? 1: 0);
-        xmlStr += XMLmv.putTag("overUP", overUP);
-        xmlStr += XMLmv.putTag("underUP", underUP);
+//        xmlStr += XMLmv.putTag("overUP", overUP);
+//        xmlStr += XMLmv.putTag("underUP", underUP);
         xmlStr += XMLmv.putTag("bOnProductionLine", (bOnProductionLine) ? 1: 0);
 //        xmlStr += XMLmv.putTag("takeEmissivityCorrFactor", (takeEmissivityCorrFactor) ? 1: 0);
         return xmlStr;
@@ -430,14 +430,14 @@ public class DFHTuningParams {
             // performance base
             vp = XMLmv.getTag(xmlStr, "bConsiderChTempProfile", 0);
             bConsiderChTempProfile = (vp.val.equals("1"));
-            vp = XMLmv.getTag(xmlStr, "overUP", 0);
-            if (vp.val.length() > 0)
-                overUP = Double.valueOf(vp.val);
-            vp = XMLmv.getTag(xmlStr, "underUP", 0);
-            if (vp.val.length() > 0)
-                underUP = Double.valueOf(vp.val);
-            vp = XMLmv.getTag(xmlStr, "bOnProductionLine", 0);
-            bOnProductionLine = (vp.val.equals("1"));
+//            vp = XMLmv.getTag(xmlStr, "overUP", 0);
+//            if (vp.val.length() > 0)
+//                overUP = Double.valueOf(vp.val);
+//            vp = XMLmv.getTag(xmlStr, "underUP", 0);
+//            if (vp.val.length() > 0)
+//                underUP = Double.valueOf(vp.val);
+//            vp = XMLmv.getTag(xmlStr, "bOnProductionLine", 0);
+//            bOnProductionLine = (vp.val.equals("1"));
 //            vp = XMLmv.getTag(xmlStr, "takeEmissivityCorrFactor", 0);
 //            takeEmissivityCorrFactor = (vp.val.equals("1"));
         } catch (NumberFormatException e) {
@@ -521,11 +521,11 @@ public class DFHTuningParams {
     // for evaluation from reference performance
     public boolean bConsiderChTempProfile = true;
     JCheckBox cBbConsiderChTempProfile;
-    public double overUP = 1.05, underUP = 0.2; // allowed upper and lower factors with respect to
+//    public double overUP = 1.05, underUP = 0.2; // allowed upper and lower factors with respect to
     // output per unit Strip width (charge length)
     public boolean bAdjustChTempProfile = true;    // while respecting last zone minimum fce temp
     JCheckBox cBbAdjustChTempProfile;
-    NumberTextField tfOverUP, tfUnderUP;
+//    NumberTextField tfOverUP, tfUnderUP;
     public boolean bOnProductionLine = false;
     JCheckBox cBbOnProductionLine;
     // parameters for Field reference Data
@@ -595,8 +595,8 @@ public class DFHTuningParams {
         MultiPairColPanel jp = new MultiPairColPanel("Using Reference Performance",200, 60);
         jp.addItemPair("Consider Charge Temp Profile", cBbConsiderChTempProfile);
         jp.addItemPair("Adjust Charge Temp Profile", cBbAdjustChTempProfile);
-        jp.addItemPair(tfOverUP);
-        jp.addItemPair(tfUnderUP);
+//        jp.addItemPair(tfOverUP);
+//        jp.addItemPair(tfUnderUP);
         jp.addItemPair("On Production Line", cBbOnProductionLine);
         return jp;
     }
@@ -747,10 +747,10 @@ public class DFHTuningParams {
 //             double wMin = ntMinWidthFactor.getData();
 //             double wStep = ntWidthStep.getData();
 
-            if (oMin < underUP) {
-                msg += "\n   Check Minimum Output Factor must be higher than " + underUP;
-                inError = true;
-            }
+//            if (oMin < underUP) {
+//                msg += "\n   Check Minimum Output Factor must be higher than " + underUP;
+//                inError = true;
+//            }
             if (inError) {
                 controller.enableNotify(false);
                 JOptionPane.showMessageDialog(this, msg, "Performance Table Settings", JOptionPane.ERROR_MESSAGE);

@@ -106,7 +106,7 @@ public class FieldResults {
         }
     }
 
-    ErrorStatAndMsg takeStripData(L2Zone stripZone) {
+    ErrorStatAndMsg takeStripData(L2ParamGroup stripZone) {
         ErrorStatAndMsg retVal = new ErrorStatAndMsg();
         double stripExitT = stripZone.getValue(L2ParamGroup.Parameter.Temperature, Tag.TagName.PV).floatValue;
         double width = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Width).floatValue, 3) / 1000; // m
@@ -153,7 +153,7 @@ public class FieldResults {
         }
     }
 
-    boolean takeRecuData(L2Zone recu) {
+    boolean takeRecuData(L2ParamGroup recu) {
         commonAirTemp = recu.getValue(L2ParamGroup.Parameter.AirFlow, Tag.TagName.Temperature).floatValue;
         commonFuelTemp = 30; // TODO  commonFuelTemp set as 30
         double excessAir = 0.05; // TODO excess air for fuelFiring is taken as 5%
@@ -162,7 +162,7 @@ public class FieldResults {
         return true;
     }
 
-    boolean takeCommonDFHData(L2Zone dfhZ) {
+    boolean takeCommonDFHData(L2ParamGroup dfhZ) {
         flueTempOut = dfhZ.getValue(L2ParamGroup.Parameter.Flue, Tag.TagName.Temperature).floatValue;
         return true;
     }

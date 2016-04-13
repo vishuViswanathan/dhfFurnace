@@ -1,12 +1,11 @@
 package level2.display;
 
 import display.SizedLabel;
-import level2.L2Zone;
+import level2.L2DFHZone;
 import level2.common.L2ParamGroup;
 import level2.common.L2ZoneParam;
 import level2.common.Tag;
 import mvUtils.display.FramedPanel;
-import mvUtils.display.XLcellData;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,15 +17,15 @@ import java.util.Vector;
  * Time: 3:46 PM
  * To change this template use File | Settings | File Templates.
  */
-public class L2DisplayZone implements L2Display{
-    L2Zone l2Zone;
-    JPanel displayPanel;
+public class L2DFHDisplay implements L2Display{
+    L2DFHZone l2DFHZone;
+    JPanel processDisplayPanel;
     static Dimension colHeadSize = new JTextField(12).getPreferredSize();
     Dimension dataFieldSize = new JTextField(8).getPreferredSize();
-    public L2DisplayZone(L2Zone l2Zone) {
-        this.l2Zone = l2Zone;
+    public L2DFHDisplay(L2DFHZone l2DFHZone) {
+        this.l2DFHZone = l2DFHZone;
         tags = new Vector<Tag>();
-        createDisplayPanel();
+        createProcessDisplayPanel();
     }
 
     static FramedPanel rowHead;
@@ -110,8 +109,8 @@ public class L2DisplayZone implements L2Display{
         return rowHead;
     }
 
-    void createDisplayPanel() {
-        displayPanel = new FramedPanel(new GridBagLayout());
+    void createProcessDisplayPanel() {
+        processDisplayPanel = new FramedPanel(new GridBagLayout());
         L2ZoneParam param;
         Component c;
         Tag tag;
@@ -127,9 +126,9 @@ public class L2DisplayZone implements L2Display{
         gbcL.gridx = 0;
         grpPan = new FramedPanel(new GridBagLayout());
         gbcL.gridy = 0;
-        sL = new SizedLabel(l2Zone.groupName, dataFieldSize, true);
+        sL = new SizedLabel(l2DFHZone.descriptiveName, dataFieldSize, true);
         grpPan.add(sL, gbcL);
-        displayPanel.add(grpPan, gbcH);
+        processDisplayPanel.add(grpPan, gbcH);
         gbcH.gridy++;
 
         grpPan = new FramedPanel(new GridBagLayout());
@@ -137,7 +136,7 @@ public class L2DisplayZone implements L2Display{
         sL = new SizedLabel(" ", dataFieldSize);
         grpPan.add(sL, gbcL);
         gbcL.gridy++;
-        param = l2Zone.getL2Param(L2ParamGroup.Parameter.Temperature);
+        param = l2DFHZone.getL2Param(L2ParamGroup.Parameter.Temperature);
         tag = param.getProcessTag(Tag.TagName.Auto);
         tags.add(tag);
         c = tag.displayComponent();
@@ -153,14 +152,14 @@ public class L2DisplayZone implements L2Display{
         c = tag.displayComponent();
         grpPan.add(c, gbcL);
         gbcH.gridy++;
-        displayPanel.add(grpPan, gbcH);
+        processDisplayPanel.add(grpPan, gbcH);
 
         grpPan = new FramedPanel(new GridBagLayout());
         gbcL.gridy = 0;
         sL = new SizedLabel(" ", dataFieldSize, true);
         grpPan.add(sL, gbcL);
         gbcL.gridy++;
-        param = l2Zone.getL2Param(L2ParamGroup.Parameter.FuelFlow);
+        param = l2DFHZone.getL2Param(L2ParamGroup.Parameter.FuelFlow);
         tag = param.getProcessTag(Tag.TagName.Remote);
         tags.add(tag);
         c = tag.displayComponent();
@@ -182,20 +181,20 @@ public class L2DisplayZone implements L2Display{
         grpPan.add(c, gbcL);
         gbcH.gridy++;
         gbcH.gridy++;
-        displayPanel.add(grpPan, gbcH);
+        processDisplayPanel.add(grpPan, gbcH);
 
         grpPan = new FramedPanel(new GridBagLayout());
         gbcL.gridy = 0;
         sL = new SizedLabel(" ", dataFieldSize, true);
         grpPan.add(sL, gbcL);
         gbcL.gridy++;
-        param = l2Zone.getL2Param(L2ParamGroup.Parameter.AFRatio);
+        param = l2DFHZone.getL2Param(L2ParamGroup.Parameter.AFRatio);
         tag = param.getProcessTag(Tag.TagName.SP);
         tags.add(tag);
         c = tag.displayComponent();
         grpPan.add(c, gbcL);
         gbcL.gridy++;
-        param = l2Zone.getL2Param(L2ParamGroup.Parameter.AirFlow);
+        param = l2DFHZone.getL2Param(L2ParamGroup.Parameter.AirFlow);
         tag = param.getProcessTag(Tag.TagName.Remote);
         tags.add(tag);
         c = tag.displayComponent();
@@ -211,7 +210,7 @@ public class L2DisplayZone implements L2Display{
         c = tag.displayComponent();
         grpPan.add(c, gbcL);
         gbcH.gridy++;
-        displayPanel.add(grpPan, gbcH);
+        processDisplayPanel.add(grpPan, gbcH);
     }
 
     public void updateDisplay() {
@@ -225,7 +224,11 @@ public class L2DisplayZone implements L2Display{
         }
     }
 
-    public Container getDisplay() {
-        return displayPanel;
+    public Container getProcessDisplay() {
+        return processDisplayPanel;
+    }
+
+    public Container getLevel2Display() {
+        return null;
     }
 }

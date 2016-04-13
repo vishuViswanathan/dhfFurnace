@@ -142,21 +142,24 @@ public class L2DFHeating extends DFHeating {
 //            debug("Created Level2furnace");
                 furnace.setTuningParams(tuningParams);
                 tuningParams.bConsiderChTempProfile = true;
-                createUIs();
+                createUIs(false); // without the default menuBar
                 getFuelAndCharge();
                 setDefaultSelections();
+//                if (accessLevel == AccessLevel.CONFIGURATOR)
+//                    displayIt();
                 switchPage(DFHDisplayPageType.INPUTPAGE);
                 StatusWithMessage statL2FceFile = getL2FceFromFile();
                 if (statL2FceFile.getDataStatus() != StatusWithMessage.DataStat.WithErrorMsg) {
                     furnace.setWidth(width);
                     enableDataEdit();
-                    createMenuBars();
+                    addMenuBar(createL2MenuBar());
                     l2MenuSet = true;
 //                    setFcefor(true);
                     getPerformanceList();
                     dfhProcessList = new StripDFHProcessList(this);
                     if (getStripDFHProcessList()) {
                         if (getFurnaceSettings()) {
+                            bProfileEdited = false;
                             if (onProductionLine) {
                                 if (l2Furnace.makeAllConnections()) {   // createL2Zones()) {
                                     ErrorStatAndMsg connStat = l2Furnace.checkConnection();
@@ -184,10 +187,23 @@ public class L2DFHeating extends DFHeating {
         if (l2SystemReady) {
             lockFile = new File(lockPath);
             displayIt();
-            l2Furnace.startDisplay();
+            if (onProductionLine)
+                l2Furnace.startL2DisplayUpdater();
+            if (accessLevel == AccessLevel.RUNTIME || accessLevel == AccessLevel.UPDATER)
+                l2Furnace.enableDeleteInPerformanceData(false);
+            if (accessLevel == AccessLevel.CONFIGURATOR) {
+                showMessage("It is the responsibility of the user to ensure data integrity among:" +
+                        "\n      1) Profile including Fuel type " +
+                        "\n      2) Fuel settings under '" + mL2Configuration.getText() + "'" +
+                        "\n      3) DHFProcess List data under '" + mL2Configuration.getText() + "'" +
+                        "\n      4) Performance Data under '" + perfMenu.getText() + "'" +
+                        "\n\nIt is suggested that the profile with Fuel is finalised before updating" +
+                                "\nthe other data." +
+                        "\n\nBefore exiting, the the above data to be save to respective files." +
+                        "\nThe Profile is to be saved first, followed by the others, since, the profile-save" +
+                        "\nassigns a profile ID, which is used as link in other data files");
+            }
         }
-        if (accessLevel == AccessLevel.RUNTIME || accessLevel == AccessLevel.UPDATER)
-            l2Furnace.enableDeleteInPerformanceData(false);
         return l2SystemReady;
     }
 
@@ -205,7 +221,7 @@ public class L2DFHeating extends DFHeating {
         return retVal;
     }
 //---------------- Create InternalZone ----------------------------
-    L2Zone internalZone;
+    L2DFHZone internalZone;
     Tag tagRuntimeReady;
     Tag tagUpdaterReady;
     Tag tagExpertReady;
@@ -262,7 +278,7 @@ public class L2DFHeating extends DFHeating {
     JMenuItem mIShowL2Data;
     JMenu mShowCalculation;
 
-    void createMenuBars() {
+    JMenuBar createL2MenuBar() {
         // Default menus
         L2MenuListener li = new L2MenuListener();
         menuBarLevel2 = new JMenuBar();
@@ -272,6 +288,7 @@ public class L2DFHeating extends DFHeating {
                 (accessLevel == AccessLevel.EXPERT);
         boolean bAllowL2Changes = (accessLevel == AccessLevel.EXPERT) ||
                 (accessLevel == AccessLevel.CONFIGURATOR);
+        boolean bEnablePerfMenu = bAllowUpdateWithFieldData || (accessLevel == AccessLevel.CONFIGURATOR);
         if (bShowRuntimeData) {
             JMenu jm = new JMenu("Live Displays");
             mIShowProcess = new JMenuItem("Process Data");
@@ -285,7 +302,7 @@ public class L2DFHeating extends DFHeating {
         mISetPerfTablelimits.setVisible(false);
         mIClearPerfBase.setVisible(false);
 
-        if (bAllowUpdateWithFieldData) {
+        if (bEnablePerfMenu) {
             mShowCalculation = new JMenu("Show Calculation");
             menuBarLevel2.add(mShowCalculation);
             mShowCalculation.addMenuListener(li);
@@ -329,47 +346,14 @@ public class L2DFHeating extends DFHeating {
             mL2Configuration.setEnabled(true);
             menuBarLevel2.add(mL2Configuration);
             menuBarLevel2.add(pbEdit);
-  /*
-            mICreateFieldResultsData = new JMenuItem("Enter Field Results Data");
-            mICreateFieldResultsData.setEnabled(false);
-            mISaveFieldResultsToFile = new JMenuItem("Save Field Results to file");
-            mISaveFieldResultsToFile.setEnabled(false);
-            mILevel1FieldResults = new JMenuItem("Take Results From Level1");
-            mILevel1FieldResults.setEnabled(false);
-            mILoadFieldResult = new JMenuItem("Load Field Results from File");
-            mILoadFieldResult.setEnabled(false);
-            mISaveAsFieldResult = new JMenuItem("Save As Field Results");
-            mISaveAsFieldResult.setEnabled(false);
-            mIEvalForFieldProduction = new JMenuItem("Calculate for Field Production");
-            mIEvalForFieldProduction.setEnabled(false);
-            mIEvalWithFieldCorrection = new JMenuItem("Re-Calculate With Field Corrections");
-            mIEvalWithFieldCorrection.setEnabled(false);
-            mICreateFieldResultsData.addActionListener(li);
-            mISaveFieldResultsToFile.addActionListener(li);
-            mILevel1FieldResults.addActionListener(li);
-            mILoadFieldResult.addActionListener(li);
-            mISaveAsFieldResult.addActionListener(li);
-            mIEvalForFieldProduction.addActionListener(li);
-            mIEvalWithFieldCorrection.addActionListener(li);
-            if (bAllowManualCalculation) {
-                mL2Configuration.add(mICreateFieldResultsData);
-                mL2Configuration.add(mISaveFieldResultsToFile);
-                mL2Configuration.addSeparator();
-                mL2Configuration.add(mILevel1FieldResults);
-                mL2Configuration.add(mILoadFieldResult);
-                mL2Configuration.add(mIEvalForFieldProduction);
-                mL2Configuration.add(mIEvalWithFieldCorrection);
-                mL2Configuration.addSeparator();
-                mL2Configuration.add(mISaveAsFieldResult);
-            }
- */
         }
-        mainAppPanel.remove(menuBarMainApp);
-        mainAppPanel.add(menuBarLevel2, BorderLayout.NORTH);
-        menuBarMainApp.updateUI();
+//        mainAppPanel.remove(menuBarMainApp);
+//        mainAppPanel.add(menuBarLevel2, BorderLayout.NORTH);
+//        defaultMenuBar.updateUI();
+        return menuBarLevel2;
     }
 
-    void createMenuBarsOLD() {
+    void createMenuBarsOLD() {  // TODO to be removed
         L2MenuListener li = new L2MenuListener();
         menuBarLevel2 = new JMenuBar();
         menuBarLevel2.add(fileMenu);
@@ -470,10 +454,10 @@ public class L2DFHeating extends DFHeating {
             if (bAllowManualCalculation) {
                 menuBarLevel2.add(pbEdit);
             }
-            mainAppPanel.remove(menuBarMainApp);
+            mainAppPanel.remove(defaultMenuBar);
         }
         mainAppPanel.add(menuBarLevel2, BorderLayout.NORTH);
-        menuBarMainApp.updateUI();
+        defaultMenuBar.updateUI();
     }
 
     public void enablePerfMenu(boolean ena) {
@@ -1343,9 +1327,11 @@ public class L2DFHeating extends DFHeating {
     String profileCode = "";
     String profileCodeTag = "profileCode";
     DecimalFormat profileCodeFormat = new DecimalFormat("000000");
+    boolean bProfileEdited = false;
 
     String createProfileCode() {
         profileCode = profileCodeFormat.format(Math.random() * 999999.0);
+        bProfileEdited = true;
         return profileCode;
     }
 

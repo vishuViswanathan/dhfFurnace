@@ -45,6 +45,8 @@ public class FceEvaluator implements Runnable, ThreadController{
         }
     }
 
+    boolean jobDone = false;
+
     DFHFurnace furnace;
     JPanel jpFceSummary, jpSecWiseSummary, jpTabResults, jpTrends;
     ActionListener localControl;
@@ -156,7 +158,7 @@ public class FceEvaluator implements Runnable, ThreadController{
     }
 
     public boolean healthyExit() {
-        return !isAborted();
+        return !isAborted() && isJobDone();
     }
 
     public boolean isAborted() {
@@ -249,10 +251,14 @@ public class FceEvaluator implements Runnable, ThreadController{
      }
     void evaluate() {
         if (baseP != null)
-            baseP.createPerfTable(this);
+            jobDone = baseP.createPerfTable(this);
         else
-            furnace.evaluate(this, bShowProgress);
+            jobDone = furnace.evaluate(this, bShowProgress);
         stopped = true;
+    }
+
+    public boolean isJobDone() {
+        return jobDone;
     }
 
     void restart() {

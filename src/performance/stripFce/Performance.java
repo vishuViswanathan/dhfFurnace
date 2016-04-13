@@ -1,7 +1,6 @@
 package performance.stripFce;
 
 import basic.*;
-import directFiredHeating.CalculationsDoneListener;
 import directFiredHeating.DFHFurnace;
 import directFiredHeating.DFHeating;
 import display.*;
@@ -177,7 +176,7 @@ public class Performance {
     }
 
     double[] outputFactors;
-    double[] widthFactors; // in fact, it is width steps
+    double[] widthList; // in fact, it is width steps
 
     public boolean setTableFactors(double minOutputFactor, double outputStep, double minWidthFactor, double widthStep) {
 //        int nOutput = (int)((1.0 - minOutputFactor) / outputStep) + 1;
@@ -204,10 +203,10 @@ public class Performance {
                 break;
         }
         vWF.add(minWidthFactor);
-        widthFactors = new double[vWF.size()];
+        widthList = new double[vWF.size()];
         n = 0;
         for (double w:vWF)
-            widthFactors[n++] = w * chLength;
+            widthList[n++] = w * chLength;
         return true;
    }
 
@@ -245,10 +244,10 @@ public class Performance {
                                     break;
                             }
                             vWF.add(minWidthFactor);
-                            widthFactors = new double[vWF.size()];
+                            widthList = new double[vWF.size()];
                             n = 0;
                             for (double w : vWF)
-                                widthFactors[n++] = w * chLength;
+                                widthList[n++] = w * chLength;
                         }
                         else
                             retVal.setErrorMessage(String.format("Production is more than limit of %5.3f t/h/meter width",
@@ -273,28 +272,35 @@ public class Performance {
         return perfTable;
     }
 
-    public void createPerfTable(ThreadController master) {
+    public boolean createPerfTable(ThreadController master) {
 //        controller.setTableFactors(this);
-        perfTable = new PerformanceTable(this, outputFactors, widthFactors);
+        perfTable = new PerformanceTable(this, outputFactors, widthList);
         double forOutput;
         double forWidth;
         Performance onePerf;
+        boolean allOk = true;
         for (double capF:outputFactors) {
-            for (double widthF:widthFactors) {
+            for (double widthF : widthList) {
 //                if (widthF <= chLength || capF <= 1)  {
-                    forWidth = widthF; // chLength * widthF;
-                    forOutput = unitOutput * capF * forWidth;
-                    if (furnace.evaluate(master, forOutput, forWidth)) {
-                        onePerf = furnace.getPerformance();
-                        if (onePerf == null)
-                            showError("The data for " + forWidth + " not saved to the table");
-                        else
-                            perfTable.addToTable(widthF, capF, onePerf);
-                    }
+                forWidth = widthF; // chLength * widthF;
+                forOutput = unitOutput * capF * forWidth;
+                if (furnace.evaluate(master, forOutput, forWidth)) {
+                    onePerf = furnace.getPerformance();
+                    if (onePerf == null)
+                        showError("The data for " + forWidth + " not saved to the table");
+                    else
+                        perfTable.addToTable(widthF, capF, onePerf);
+                } else
+                    allOk = false;
+                if (!allOk)
+                    break;
 //                }
             }
+            if (!allOk)
+                break;
         }
         controller.enableDataEdit();
+        return allOk;
     }
 
     void getUnitOutput() {

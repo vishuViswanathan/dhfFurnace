@@ -91,9 +91,9 @@ public class DFHeating extends JApplet implements InputControl {
 
 
     static public enum HeatingMode {
-        TOPONLY("TOP FIRED"),
+        TOPBOTSTRIP("STRIP - TOP and BOTTOM"),
         TOPBOT("TOP AND BOTTOM FIRED"),
-        TOPBOTSTRIP("STRIP - TOP and BOTTOM");
+        TOPONLY("TOP FIRED");
         private final String modeName;
 
         HeatingMode(String modeName) {
@@ -378,12 +378,18 @@ public class DFHeating extends JApplet implements InputControl {
     }
 
     protected void createUIs() {
+        createUIs(true); // with deffault MenuBar
+    }
+
+    protected void createUIs(boolean withDefaultMenuBar) {
 //         debug("itsON = " + itsON);
          if (!itsON) {
              mainAppPanel = new FramedPanel(new BorderLayout());
              mainAppPanel.setPreferredSize(new Dimension(1000, 650));
              mainF.addWindowListener(new WinListener());
              setMenuOptions();
+             if (withDefaultMenuBar)
+                 addMenuBar(defaultMenuBar);
              inpPage = inputPage();
              opPage = OperationPage();
              slate.setViewportView(inpPage);
@@ -732,18 +738,18 @@ public class DFHeating extends JApplet implements InputControl {
                 case TOPBOTSTRIP:
                     bTopBot = false;
                     changeTopBot(false);
-                    String msg1 = "";
-                    String msg2 = "Enter Furnace Profile for Combined Top And Bottom.\nie. TOTAL Height from Floor to Roof";
+//                    String msg1 = "";
+//                    String msg2 = "Enter Furnace Profile for Combined Top And Bottom.\nie. TOTAL Height from Floor to Roof";
                     if (cbFceFor.getSelectedItem() != DFHTuningParams.ForProcess.STRIP) {
-                        msg1 = "Changing 'Furnace For' to Strip Heating\n\n";
-                        if (!onProductionLine)
-                            showMessage(msg1 + msg2);
+//                        msg1 = "Changing 'Furnace For' to Strip Heating\n\n";
+//                        if (!onProductionLine)
+//                            showMessage(msg1 + msg2);
                         cbFceFor.setSelectedItem(DFHTuningParams.ForProcess.STRIP);
                     }
-                    else {
-                        if (!onProductionLine)
-                            showMessage(msg2);
-                    }
+//                    else {
+//                        if (!onProductionLine)
+//                            showMessage(msg2);
+//                    }
                     break;
             }
             furnace.changeFiringMode(bTopBot, bAddTopSoak);
@@ -884,7 +890,7 @@ public class DFHeating extends JApplet implements InputControl {
         });
     }
 
-    protected JMenuBar menuBarMainApp;
+    protected JMenuBar defaultMenuBar;
 
     JMenuBar createMenuBar() {
         JMenuBar mb = new JMenuBar();
@@ -949,8 +955,12 @@ public class DFHeating extends JApplet implements InputControl {
     }
 
     void setMenuOptions() {
-        menuBarMainApp = createMenuBar();
-        mainAppPanel.add(menuBarMainApp, BorderLayout.NORTH);
+        defaultMenuBar = createMenuBar();
+//        mainAppPanel.add(menuBarMainApp, BorderLayout.NORTH);
+    }
+
+    protected void addMenuBar(JMenuBar menuBar) {
+        mainAppPanel.add(menuBar, BorderLayout.NORTH);
     }
 
     public boolean isOnProductionLine() {
@@ -1335,6 +1345,7 @@ public class DFHeating extends JApplet implements InputControl {
     FramedPanel fceCommDataPanel() {
         commonDataP = new MultiPairColPanel("");
         cbHeatingMode = new XLComboBox(HeatingMode.values());
+//        cbHeatingMode.setSelectedItem(HeatingMode.TOPBOTSTRIP);
         cbHeatingMode.addActionListener(new HeatingModeListener());
         cbHeatingMode.setPreferredSize(new Dimension(200, 20));
         cbHeatingMode.setSelectedItem(HeatingMode.TOPONLY);
@@ -3241,8 +3252,8 @@ public class DFHeating extends JApplet implements InputControl {
                             retVal.setInfoMessage(filePath);
 //                            bRetVal = true;
                             parent().toFront();
-                            if (!onProductionLine)
-                                showMessage("Fuel and Charge Material to be Selected/Checked before Calculation.");
+//                            if (!onProductionLine)
+//                                showMessage("Fuel and Charge Material to be Selected/Checked before Calculation.");
                         } else {
                             retVal.setErrorMessage("in Furnace Data from XL file!\n" + msg);
                             showError(retVal.getErrorMessage());
@@ -3423,8 +3434,8 @@ public class DFHeating extends JApplet implements InputControl {
                             retVal.setInfoMessage(filePath);
 //                            bRetVal = true;
                             parent().toFront();
-                            if (!onProductionLine)
-                                showMessage("Fuel and Charge Material to be Selected/Checked before Calculation.");
+//                            if (!onProductionLine)
+//                                showMessage("Fuel and Charge Material to be Selected/Checked before Calculation.");
                         } else {
                             retVal.setErrorMessage(stat);
                             showError(stat);

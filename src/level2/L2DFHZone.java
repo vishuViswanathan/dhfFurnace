@@ -19,7 +19,7 @@ import java.util.Hashtable;
  * Time: 1:28 PM
  * To change this template use File | Settings | File Templates.
  */
-public class L2Zone extends L2ParamGroup {
+public class L2DFHZone extends L2ParamGroup {
     FceSection theSection = null;
     Subscription subscription = null;
     boolean dataCollectionOn = false;
@@ -31,9 +31,9 @@ public class L2Zone extends L2ParamGroup {
     boolean monitoredTagsReady = false;
     int fuelCharSteps;
 
-    public L2Zone(L2DFHFurnace l2Furnace, String zoneName, FceSection theSection,
-                  boolean bSubscribe) throws TagCreationException {
-        super(l2Furnace, zoneName);
+    public L2DFHZone(L2DFHFurnace l2Furnace, String zoneName, String descriptiveName, FceSection theSection,
+                     boolean bSubscribe) throws TagCreationException {
+        super(l2Furnace, zoneName, descriptiveName);
         this.theSection = theSection;
         if (bSubscribe) {
             setSubscription(l2Furnace.source.createSubscription(new SubAliveListener(), new ZoneSubscriptionListener()));
@@ -83,16 +83,16 @@ public class L2Zone extends L2ParamGroup {
         monitoredTagsReady = true;
     }
 
-    /**
-     * For common sections with external subscription
-     * @param l2Furnace
-     * @param zoneName
-     * @param subscription
-     */
-    public L2Zone(L2DFHFurnace l2Furnace, String zoneName, Subscription subscription) {
-        super(l2Furnace, zoneName, subscription);
-    }
-
+//    /**
+//     * For common sections with external subscription
+//     * @param l2Furnace
+//     * @param zoneName
+//     * @param subscription
+//     */
+//    public L2DFHZone(L2DFHFurnace l2Furnace, String zoneName, Subscription subscription) {
+//        super(l2Furnace, zoneName, subscription);
+//    }
+//
     void noteMonitoredTags(Tag[] tags) {
         for (Tag tag : tags)
             if (tag.isMonitored())

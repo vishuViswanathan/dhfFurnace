@@ -10,5 +10,6 @@ import java.awt.*;
  */
 public interface L2Display {
     public void updateDisplay();
-    public Container getDisplay();
+    public Container getProcessDisplay();
+    public Container getLevel2Display();
 }
