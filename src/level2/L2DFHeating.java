@@ -204,6 +204,7 @@ public class L2DFHeating extends DFHeating {
                         "\nassigns a profile ID, which is used as link in other data files");
             }
         }
+        System.out.println("Java Version :" + System.getProperty("java.version"));
         return l2SystemReady;
     }
 
@@ -358,112 +359,112 @@ public class L2DFHeating extends DFHeating {
         return menuBarLevel2;
     }
 
-    void createMenuBarsOLD() {  // TODO to be removed
-        L2MenuListener li = new L2MenuListener();
-        menuBarLevel2 = new JMenuBar();
-        menuBarLevel2.add(fileMenu);
-        JMenu jm = new JMenu("Live Displays");
-        mIShowProcess = new JMenuItem("Process Data");
-        mIShowProcess.addActionListener(li);
-        jm.add(mIShowProcess);
-        mIShowL2Data = new JMenuItem("Level2 Data");
-        mIShowL2Data.addActionListener(li);
-        jm.add(mIShowL2Data);
-        mISetPerfTablelimits.setVisible(false);
-        mIClearPerfBase.setVisible(false);
-        if (!onProductionLine) jm.setEnabled(false);
-        menuBarLevel2.add(jm);
-        if (bAllowUpdateWithFieldData || bShowAllmenu) {
-            mShowCalculation = new JMenu("Show Calculation");
-            menuBarLevel2.add(mShowCalculation);
-            mShowCalculation.addMenuListener(li);
-            mISavePerformanceData = new JMenuItem("Save Performance Data");
-            mISavePerformanceData.addActionListener(li);
-            mIReadPerformanceData = new JMenuItem("Load Performance Data");
-            mIReadPerformanceData.addActionListener(li);
-            perfMenu.addSeparator();
-            perfMenu.add(mISavePerformanceData);
-            perfMenu.add(mIReadPerformanceData);
-            menuBarLevel2.add(perfMenu);
-        }
-        if (bAllowL2Changes || bShowAllmenu) {
-            if (bAllowManualCalculation)  {
-                menuBarLevel2.add(inputMenu);
-                menuBarLevel2.add(resultsMenu);
-            }
-            mL2Configuration = new JMenu("L2 Config");
-            mICreateFceSettings = new JMenuItem("View/Edit Zonal Fuel Range");
-            mIReadFceSettings = new JMenuItem("Read Zonal Fuel Range from file");
-            mISaveFceSettings = new JMenuItem("Save Zonal Fuel Range to file");
-
-            mIEditDFHStripProcess = new JMenuItem("Add/Edit StripDFHProcess List");
-            mIViewDFHStripProcess = new JMenuItem("View StripDFHProcess List");
-            mIReadDFHStripProcess = new JMenuItem("Read StripDFHProcess List from File");
-            mISaveDFHStripProcess = new JMenuItem("Save StripDFHProcess List to File");
-
-            mICreateFieldResultsData = new JMenuItem("Enter Field Results Data");
-            mICreateFieldResultsData.setEnabled(false);
-            mISaveFieldResultsToFile = new JMenuItem("Save Field Results to file");
-            mISaveFieldResultsToFile.setEnabled(false);
-            mILevel1FieldResults = new JMenuItem("Take Results From Level1");
-            mILevel1FieldResults.setEnabled(false);
-            mILoadFieldResult = new JMenuItem("Load Field Results from File");
-            mILoadFieldResult.setEnabled(false);
-            mISaveAsFieldResult = new JMenuItem("Save As Field Results");
-            mISaveAsFieldResult.setEnabled(false);
-            mIEvalForFieldProduction = new JMenuItem("Calculate for Field Production");
-            mIEvalForFieldProduction.setEnabled(false);
-            mIEvalWithFieldCorrection = new JMenuItem("Re-Calculate With Field Corrections");
-            mIEvalWithFieldCorrection.setEnabled(false);
-
-            mICreateFceSettings.addActionListener(li);
-            mIReadFceSettings.addActionListener(li);
-            mISaveFceSettings.addActionListener(li);
-            mIViewDFHStripProcess.addActionListener(li);
-            mIEditDFHStripProcess.addActionListener(li);
-            mISaveDFHStripProcess.addActionListener(li);
-            mIReadDFHStripProcess.addActionListener(li);
-            mICreateFieldResultsData.addActionListener(li);
-            mISaveFieldResultsToFile.addActionListener(li);
-            mILevel1FieldResults.addActionListener(li);
-            mILoadFieldResult.addActionListener(li);
-            mISaveAsFieldResult.addActionListener(li);
-            mIEvalForFieldProduction.addActionListener(li);
-            mIEvalWithFieldCorrection.addActionListener(li);
-            if (bAllowEditFurnaceSettings || bShowAllmenu) {
-                mL2Configuration.add(mICreateFceSettings);
-                mL2Configuration.add(mIReadFceSettings);
-                mL2Configuration.add(mISaveFceSettings);
-                mL2Configuration.addSeparator();
-            }
-            if (bAllowEditDFHProcess || bShowAllmenu) {
-                mL2Configuration.add(mIViewDFHStripProcess);
-                mL2Configuration.add(mIEditDFHStripProcess);
-                mL2Configuration.add(mIReadDFHStripProcess);
-                mL2Configuration.add(mISaveDFHStripProcess);
-                mL2Configuration.addSeparator();
-            }
-            if (bAllowManualCalculation) {
-                mL2Configuration.add(mICreateFieldResultsData);
-                mL2Configuration.add(mISaveFieldResultsToFile);
-                mL2Configuration.addSeparator();
-                mL2Configuration.add(mILevel1FieldResults);
-                mL2Configuration.add(mILoadFieldResult);
-                mL2Configuration.add(mIEvalForFieldProduction);
-                mL2Configuration.add(mIEvalWithFieldCorrection);
-                mL2Configuration.addSeparator();
-                mL2Configuration.add(mISaveAsFieldResult);
-            }
-            mL2Configuration.setEnabled(true);
-            menuBarLevel2.add(mL2Configuration);
-            if (bAllowManualCalculation) {
-                menuBarLevel2.add(pbEdit);
-            }
-            mainAppPanel.remove(defaultMenuBar);
-        }
-        mainAppPanel.add(menuBarLevel2, BorderLayout.NORTH);
-        defaultMenuBar.updateUI();
-    }
+//    void createMenuBarsOLD() {  // TODO to be removed
+//        L2MenuListener li = new L2MenuListener();
+//        menuBarLevel2 = new JMenuBar();
+//        menuBarLevel2.add(fileMenu);
+//        JMenu jm = new JMenu("Live Displays");
+//        mIShowProcess = new JMenuItem("Process Data");
+//        mIShowProcess.addActionListener(li);
+//        jm.add(mIShowProcess);
+//        mIShowL2Data = new JMenuItem("Level2 Data");
+//        mIShowL2Data.addActionListener(li);
+//        jm.add(mIShowL2Data);
+//        mISetPerfTablelimits.setVisible(false);
+//        mIClearPerfBase.setVisible(false);
+//        if (!onProductionLine) jm.setEnabled(false);
+//        menuBarLevel2.add(jm);
+//        if (bAllowUpdateWithFieldData || bShowAllmenu) {
+//            mShowCalculation = new JMenu("Show Calculation");
+//            menuBarLevel2.add(mShowCalculation);
+//            mShowCalculation.addMenuListener(li);
+//            mISavePerformanceData = new JMenuItem("Save Performance Data");
+//            mISavePerformanceData.addActionListener(li);
+//            mIReadPerformanceData = new JMenuItem("Load Performance Data");
+//            mIReadPerformanceData.addActionListener(li);
+//            perfMenu.addSeparator();
+//            perfMenu.add(mISavePerformanceData);
+//            perfMenu.add(mIReadPerformanceData);
+//            menuBarLevel2.add(perfMenu);
+//        }
+//        if (bAllowL2Changes || bShowAllmenu) {
+//            if (bAllowManualCalculation)  {
+//                menuBarLevel2.add(inputMenu);
+//                menuBarLevel2.add(resultsMenu);
+//            }
+//            mL2Configuration = new JMenu("L2 Config");
+//            mICreateFceSettings = new JMenuItem("View/Edit Zonal Fuel Range");
+//            mIReadFceSettings = new JMenuItem("Read Zonal Fuel Range from file");
+//            mISaveFceSettings = new JMenuItem("Save Zonal Fuel Range to file");
+//
+//            mIEditDFHStripProcess = new JMenuItem("Add/Edit StripDFHProcess List");
+//            mIViewDFHStripProcess = new JMenuItem("View StripDFHProcess List");
+//            mIReadDFHStripProcess = new JMenuItem("Read StripDFHProcess List from File");
+//            mISaveDFHStripProcess = new JMenuItem("Save StripDFHProcess List to File");
+//
+//            mICreateFieldResultsData = new JMenuItem("Enter Field Results Data");
+//            mICreateFieldResultsData.setEnabled(false);
+//            mISaveFieldResultsToFile = new JMenuItem("Save Field Results to file");
+//            mISaveFieldResultsToFile.setEnabled(false);
+//            mILevel1FieldResults = new JMenuItem("Take Results From Level1");
+//            mILevel1FieldResults.setEnabled(false);
+//            mILoadFieldResult = new JMenuItem("Load Field Results from File");
+//            mILoadFieldResult.setEnabled(false);
+//            mISaveAsFieldResult = new JMenuItem("Save As Field Results");
+//            mISaveAsFieldResult.setEnabled(false);
+//            mIEvalForFieldProduction = new JMenuItem("Calculate for Field Production");
+//            mIEvalForFieldProduction.setEnabled(false);
+//            mIEvalWithFieldCorrection = new JMenuItem("Re-Calculate With Field Corrections");
+//            mIEvalWithFieldCorrection.setEnabled(false);
+//
+//            mICreateFceSettings.addActionListener(li);
+//            mIReadFceSettings.addActionListener(li);
+//            mISaveFceSettings.addActionListener(li);
+//            mIViewDFHStripProcess.addActionListener(li);
+//            mIEditDFHStripProcess.addActionListener(li);
+//            mISaveDFHStripProcess.addActionListener(li);
+//            mIReadDFHStripProcess.addActionListener(li);
+//            mICreateFieldResultsData.addActionListener(li);
+//            mISaveFieldResultsToFile.addActionListener(li);
+//            mILevel1FieldResults.addActionListener(li);
+//            mILoadFieldResult.addActionListener(li);
+//            mISaveAsFieldResult.addActionListener(li);
+//            mIEvalForFieldProduction.addActionListener(li);
+//            mIEvalWithFieldCorrection.addActionListener(li);
+//            if (bAllowEditFurnaceSettings || bShowAllmenu) {
+//                mL2Configuration.add(mICreateFceSettings);
+//                mL2Configuration.add(mIReadFceSettings);
+//                mL2Configuration.add(mISaveFceSettings);
+//                mL2Configuration.addSeparator();
+//            }
+//            if (bAllowEditDFHProcess || bShowAllmenu) {
+//                mL2Configuration.add(mIViewDFHStripProcess);
+//                mL2Configuration.add(mIEditDFHStripProcess);
+//                mL2Configuration.add(mIReadDFHStripProcess);
+//                mL2Configuration.add(mISaveDFHStripProcess);
+//                mL2Configuration.addSeparator();
+//            }
+//            if (bAllowManualCalculation) {
+//                mL2Configuration.add(mICreateFieldResultsData);
+//                mL2Configuration.add(mISaveFieldResultsToFile);
+//                mL2Configuration.addSeparator();
+//                mL2Configuration.add(mILevel1FieldResults);
+//                mL2Configuration.add(mILoadFieldResult);
+//                mL2Configuration.add(mIEvalForFieldProduction);
+//                mL2Configuration.add(mIEvalWithFieldCorrection);
+//                mL2Configuration.addSeparator();
+//                mL2Configuration.add(mISaveAsFieldResult);
+//            }
+//            mL2Configuration.setEnabled(true);
+//            menuBarLevel2.add(mL2Configuration);
+//            if (bAllowManualCalculation) {
+//                menuBarLevel2.add(pbEdit);
+//            }
+//            mainAppPanel.remove(defaultMenuBar);
+//        }
+//        mainAppPanel.add(menuBarLevel2, BorderLayout.NORTH);
+//        defaultMenuBar.updateUI();
+//    }
 
     public void enablePerfMenu(boolean ena) {
         if (bAllowUpdateWithFieldData) {

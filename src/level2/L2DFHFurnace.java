@@ -636,8 +636,8 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     public boolean prepareForDisconnection() {
         stopDisplayUpdater();
         try {
-            updaterChangeSub.removeItems();
-            basicSub.removeItems();
+            if (updaterChangeSub != null)
+                updaterChangeSub.removeItems();
         } catch (ServiceException e) {
             e.printStackTrace();
         }
@@ -646,6 +646,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
             for (FceSection sec : topL2Zones.keySet())
                 topL2Zones.get(sec).closeSubscriptions();
             try {
+                basicSub.removeItems();
                 messageSub.removeItems();
                 fuelCharSub.removeItems();
                 fieldDataSub.removeItems();
