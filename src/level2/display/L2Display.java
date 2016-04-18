@@ -9,7 +9,8 @@ import java.awt.*;
  * To change this template use File | Settings | File Templates.
  */
 public interface L2Display {
-    public void updateDisplay();
+    public void updateProcessDisplay();
+    public void updateLevel2Display();
     public Container getProcessDisplay();
     public Container getLevel2Display();
 }

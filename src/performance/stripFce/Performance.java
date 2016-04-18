@@ -715,7 +715,7 @@ public class Performance {
             public void actionPerformed(ActionEvent e) {
                 double flow = ntTotFlow.getData();
                 if (flow > 0) {
-                    nlSpeed.setData(fuelP.recommendedSpeed(flow, false));
+                    nlSpeed.setData(fuelP.recommendedSpeed(flow, false).doubleValue);
                 }
             }
         });

@@ -6,6 +6,7 @@ import level2.common.L2ParamGroup;
 import level2.common.L2ZoneParam;
 import level2.common.Tag;
 import mvUtils.display.FramedPanel;
+import mvUtils.display.MultiPairColPanel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -20,17 +21,21 @@ import java.util.Vector;
 public class L2DFHDisplay implements L2Display{
     L2DFHZone l2DFHZone;
     JPanel processDisplayPanel;
+    JPanel level2DisplayPanel;
     static Dimension colHeadSize = new JTextField(12).getPreferredSize();
     Dimension dataFieldSize = new JTextField(8).getPreferredSize();
     public L2DFHDisplay(L2DFHZone l2DFHZone) {
         this.l2DFHZone = l2DFHZone;
-        tags = new Vector<Tag>();
+        processTags = new Vector<Tag>();
         createProcessDisplayPanel();
+        l2Tags = new Vector<Tag>();
+        createL2DisplayPanel();
     }
 
     static FramedPanel rowHead;
 
-    Vector<Tag> tags;
+    Vector<Tag> processTags;
+    Vector<Tag> l2Tags;
 
     public static FramedPanel getRowHeader() {
         if (rowHead == null) {
@@ -138,17 +143,17 @@ public class L2DFHDisplay implements L2Display{
         gbcL.gridy++;
         param = l2DFHZone.getL2Param(L2ParamGroup.Parameter.Temperature);
         tag = param.getProcessTag(Tag.TagName.Auto);
-        tags.add(tag);
+        processTags.add(tag);
         c = tag.displayComponent();
         grpPan.add(c, gbcL);
         gbcL.gridy++;
         tag = param.getProcessTag(Tag.TagName.SP);
-        tags.add(tag);
+        processTags.add(tag);
         c = tag.displayComponent();
         grpPan.add(c, gbcL);
         gbcL.gridy++;
         tag = param.getProcessTag(Tag.TagName.PV);
-        tags.add(tag);
+        processTags.add(tag);
         c = tag.displayComponent();
         grpPan.add(c, gbcL);
         gbcH.gridy++;
@@ -161,22 +166,22 @@ public class L2DFHDisplay implements L2Display{
         gbcL.gridy++;
         param = l2DFHZone.getL2Param(L2ParamGroup.Parameter.FuelFlow);
         tag = param.getProcessTag(Tag.TagName.Remote);
-        tags.add(tag);
+        processTags.add(tag);
         c = tag.displayComponent();
         grpPan.add(c, gbcL);
         gbcL.gridy++;
         tag = param.getProcessTag(Tag.TagName.Auto);
-        tags.add(tag);
+        processTags.add(tag);
         c = tag.displayComponent();
         grpPan.add(c, gbcL);
         gbcL.gridy++;
         tag = param.getProcessTag(Tag.TagName.SP);
-        tags.add(tag);
+        processTags.add(tag);
         c = tag.displayComponent();
         grpPan.add(c, gbcL);
         gbcL.gridy++;
         tag = param.getProcessTag(Tag.TagName.PV);
-        tags.add(tag);
+        processTags.add(tag);
         c = tag.displayComponent();
         grpPan.add(c, gbcL);
         gbcH.gridy++;
@@ -190,31 +195,80 @@ public class L2DFHDisplay implements L2Display{
         gbcL.gridy++;
         param = l2DFHZone.getL2Param(L2ParamGroup.Parameter.AFRatio);
         tag = param.getProcessTag(Tag.TagName.SP);
-        tags.add(tag);
+        processTags.add(tag);
         c = tag.displayComponent();
         grpPan.add(c, gbcL);
         gbcL.gridy++;
         param = l2DFHZone.getL2Param(L2ParamGroup.Parameter.AirFlow);
         tag = param.getProcessTag(Tag.TagName.Remote);
-        tags.add(tag);
+        processTags.add(tag);
         c = tag.displayComponent();
         grpPan.add(c, gbcL);
         gbcL.gridy++;
         tag = param.getProcessTag(Tag.TagName.Auto);
-        tags.add(tag);
+        processTags.add(tag);
         c = tag.displayComponent();
         grpPan.add(c, gbcL);
         gbcL.gridy++;
         tag = param.getProcessTag(Tag.TagName.PV);
-        tags.add(tag);
+        processTags.add(tag);
         c = tag.displayComponent();
         grpPan.add(c, gbcL);
         gbcH.gridy++;
         processDisplayPanel.add(grpPan, gbcH);
     }
 
-    public void updateDisplay() {
-        for (Tag tag:tags) {
+    JPanel createL2DisplayPanel() {
+        level2DisplayPanel = new FramedPanel(new GridBagLayout());
+        L2ZoneParam param;
+        Component c;
+        Tag tag;
+        GridBagConstraints gbcH = new GridBagConstraints();
+        SizedLabel sL;
+        Insets ins = new Insets(0, 0, 0, 0);
+        gbcH.gridx = 0;
+        gbcH.gridy = 0;
+        gbcH.insets = ins;
+        gbcH.weightx = 0.1;
+        FramedPanel grpPan;
+        GridBagConstraints gbcL = new GridBagConstraints();
+        gbcL.gridx = 0;
+        grpPan = new FramedPanel(new GridBagLayout());
+        gbcL.gridy = 0;
+        sL = new SizedLabel(l2DFHZone.descriptiveName, dataFieldSize, true);
+        grpPan.add(sL, gbcL);
+        level2DisplayPanel.add(grpPan, gbcH);
+        gbcH.gridy++;
+
+        MultiPairColPanel spPanel = new MultiPairColPanel("");
+        param = l2DFHZone.getL2Param(L2ParamGroup.Parameter.Temperature);
+        tag = param.getLevel2Tag(Tag.TagName.SP);
+        l2Tags.add(tag);
+        c = tag.displayComponent();
+        spPanel.addItemPair("Temperature SP" , tag.displayComponent());
+        param = l2DFHZone.getL2Param(L2ParamGroup.Parameter.FuelFlow);
+        tag = param.getLevel2Tag(Tag.TagName.SP);
+        l2Tags.add(tag);
+        c = tag.displayComponent();
+        spPanel.addItemPair("Fuel Flow SP", tag.displayComponent());
+        level2DisplayPanel.add(spPanel, gbcH);
+        gbcH.gridy++;
+
+        MultiPairColPanel fuelChrPanel = new MultiPairColPanel("Fuel Control Characteristic");
+        fuelChrPanel.addItemPair( "Total", "Zone", true, GridBagConstraints.CENTER);
+        for (int s = 0; s < l2DFHZone.tagsFuelChrTotal.length; s++) {
+            Tag tagL = l2DFHZone.tagsFuelChrTotal[s];
+            l2Tags.add(tagL);
+            Tag tagR = l2DFHZone.tagsFuelChrZone[s];
+            l2Tags.add(tagR);
+            fuelChrPanel.addItemPair(tagL.displayComponent(), tagR.displayComponent());
+        }
+        level2DisplayPanel.add(fuelChrPanel, gbcH);
+        return level2DisplayPanel;
+    }
+
+    public void updateProcessDisplay() {
+        for (Tag tag: processTags) {
             try {
                 tag.updateUI();
             } catch (Exception e) {
@@ -224,11 +278,23 @@ public class L2DFHDisplay implements L2Display{
         }
     }
 
+    public void updateLevel2Display() {
+        for (Tag tag: l2Tags) {
+            try {
+                tag.updateUI();
+            } catch (Exception e) {
+                System.out.println("Tag : " + tag + " had some display problem");
+//                e.printStackTrace();
+            }
+        }
+
+    }
+
     public Container getProcessDisplay() {
         return processDisplayPanel;
     }
 
     public Container getLevel2Display() {
-        return null;
+        return level2DisplayPanel;
     }
 }

@@ -96,7 +96,7 @@ public class Tag {
         }
     }
 
-    int datW = 10;
+    int datW = 6;
     BooleanDisplay booleanStat;
 
     public TagName tagName;
@@ -111,7 +111,7 @@ public class Tag {
     DecimalFormat format;
 
     public Tag(L2ParamGroup.Parameter element, TagName tagName, boolean rw, boolean bSubscribe) {
-        this(element, tagName, rw, bSubscribe, "#,##.00");
+        this(element, tagName, rw, bSubscribe, "#,###.00");
     }
 
     public Tag(L2ParamGroup.Parameter element, TagName tagName, boolean rw, boolean bSubscribe, String fmtStr) {
@@ -123,6 +123,11 @@ public class Tag {
         this.bSubscribe = bSubscribe;
         noteFormat(fmtStr);
         createDisplayComponent();
+    }
+
+    public Tag(L2ParamGroup.Parameter element, TagName tagName, boolean rw, boolean bSubscribe, String[] onOffString) {
+        this(element, tagName, rw, bSubscribe, "#,##.00");
+        noteFormat(onOffString);
     }
 
     protected void noteFormat(String fmtStr) {
@@ -153,6 +158,22 @@ public class Tag {
                 break;
             default:
                 format = new DecimalFormat(fmtStr);
+                datW = fmtStr.length();
+                break;
+        }
+    }
+
+    protected void noteFormat(String[] onOffStr) {
+        switch(tagName) {
+            case Auto:
+            case Remote:
+            case Enabled:
+            case Running:
+            case Noted:
+            case Ready:
+            case Mode:
+            case Response:
+                booleanStat = new BooleanDisplay(onOffStr[0], onOffStr[1]);
                 break;
         }
     }
@@ -174,9 +195,10 @@ public class Tag {
                 break;
             default:
                 displayComponent = new JTextField(datW);
+                if (format != null)
+                    ((JTextField)displayComponent).setHorizontalAlignment(JTextField.RIGHT);
                 break;
         }
-
     }
 
     public void setProcessData(ProcessData processData) {
@@ -281,6 +303,8 @@ public class Tag {
                 ((JTextField)displayComponent).setText(booleanStat.statusString());
                 break;
             case Process:
+                ((JTextField)displayComponent).setText(getValue().stringValue);
+                break;
             case Msg:
                 ((JTextArea)displayComponent).setText(getValue().stringValue);
                 break;
@@ -297,6 +321,7 @@ public class Tag {
         BooleanDisplay(String trueName, String falseName) {
             this.trueName = trueName;
             this.falseName = falseName;
+            datW = textLen();
         }
 
         String statusString() {
@@ -304,6 +329,10 @@ public class Tag {
                 return trueName;
             else
                 return falseName;
+        }
+
+        int textLen() {
+            return Math.max(trueName.length(), falseName.length());
         }
     }
 }

@@ -1,5 +1,6 @@
 package level2;
 
+import mvUtils.display.DataWithMsg;
 import mvUtils.math.DoubleRange;
 import mvUtils.math.XYArray;
 import performance.stripFce.PerformanceTable;
@@ -172,11 +173,11 @@ public class L2ZonalFuelProfile extends ZonalFuelProfile {
         return null;
     }
 
-    public double recommendedSpeed(double totFuel, boolean bBot) {
+    public DataWithMsg recommendedSpeed(double totFuel, boolean bBot) {
         if (bBot)
-            return l2SpeedTotalFuelBot.getXat(totFuel);
+            return l2SpeedTotalFuelBot.getXatYwithStatus(totFuel);
         else
-            return l2SpeedTotalFuelTop.getXat(totFuel);
+            return l2SpeedTotalFuelTop.getXatYwithStatus(totFuel);
     }
 
     public double recommendedSpeedOnFuelHeat(double totalFH, boolean bBot) {

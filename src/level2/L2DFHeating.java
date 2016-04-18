@@ -230,6 +230,7 @@ public class L2DFHeating extends DFHeating {
 
  // =========================InternalZone=================================
     public void displayIt() {
+        mainAppPanel.setPreferredSize(new Dimension(1200, 720));
         super.displayIt();
         if (onProductionLine)
             switchPage(L2DisplayPageType.PROCESS);
@@ -244,6 +245,10 @@ public class L2DFHeating extends DFHeating {
         switch(l2Display) {
             case PROCESS:
                 slate.setViewportView(l2Furnace.getFurnaceProcessPanel());
+                l2DisplayNow = l2Display;
+                break;
+            case LEVEL2:
+                slate.setViewportView(l2Furnace.getFurnaceLevel2Panel());
                 l2DisplayNow = l2Display;
                 break;
             default:

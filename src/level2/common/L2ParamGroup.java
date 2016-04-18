@@ -154,25 +154,24 @@ public class L2ParamGroup {
         return retVal;
     }
 
-    public boolean addOneParameter(Parameter element, Tag[] tags) throws TagCreationException {
-        boolean retVal = false;
+    public L2ZoneParam addOneParameter(Parameter element, Tag[] tags) throws TagCreationException {
+        L2ZoneParam param = null;
         String basePath = "";
         try {
-            L2ZoneParam param = new L2ZoneParam(l2Interface.source(), l2Interface.equipment(),
+            param = new L2ZoneParam(l2Interface.source(), l2Interface.equipment(),
                     (basePath = groupName + "." + element),
                     tags, subscription);
             paramList.put(element, param);
-            retVal = true;
         } catch (TagCreationException e) {
             e.setElement(basePath, "");
             throw (e);
         }
-        return retVal;
+        return param;
     }
 
-    public boolean addOneParameter(Parameter element, L2ZoneParam param) {
+    public L2ZoneParam addOneParameter(Parameter element, L2ZoneParam param) {
         paramList.put(element, param);
-        return true;
+        return param;
     }
 
     public ErrorStatAndMsg checkConnections() {

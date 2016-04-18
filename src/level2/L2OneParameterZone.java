@@ -58,13 +58,16 @@ public class L2OneParameterZone extends L2ParamGroup implements L2Display {
         withDisplay = true;
     }
 
-    public void updateDisplay() {
+    public void updateProcessDisplay() {
         if (withDisplay) {
             for (Tag t : processTags)
                 t.updateUI();
-            for (Tag t : level2Tags)
-                t.updateUI();
         }
+    }
+
+    public void updateLevel2Display() {
+        for (Tag t : level2Tags)
+            t.updateUI();
     }
 
     public Container getProcessDisplay() {

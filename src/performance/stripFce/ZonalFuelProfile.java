@@ -2,6 +2,7 @@ package performance.stripFce;
 
 import appReporting.Reporter;
 import directFiredHeating.DFHeating;
+import mvUtils.display.DataWithMsg;
 import mvUtils.display.ExcelStyles;
 import mvUtils.display.FramedPanel;
 import mvUtils.math.XYArray;
@@ -287,11 +288,11 @@ public class ZonalFuelProfile {
         return arr;
     }
 
-    public double recommendedSpeed(double totFuel, boolean bBot) {
+    public  DataWithMsg recommendedSpeed(double totFuel, boolean bBot) {
         if (bBot)
-            return speedTotalFuelBot.getXat(totFuel);
+            return speedTotalFuelBot.getXatYwithStatus(totFuel);
         else
-            return speedTotalFuelTop.getXat(totFuel);
+            return speedTotalFuelTop.getXatYwithStatus(totFuel);
     }
 
     public double recommendedSpeedOnFuelHeat(double totalFH, boolean bBot) {

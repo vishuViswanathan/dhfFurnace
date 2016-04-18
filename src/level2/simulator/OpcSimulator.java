@@ -640,8 +640,8 @@ public class OpcSimulator implements InputControl, L2Interface {
                         showMessage(msg);
                         l2InfoMessages.setAsNoted(true);
                     }
-                    else
-                        logInfo("InfoMsg is not newData");
+//                    else
+//                        logInfo("InfoMsg is not newData");
                 }
                 if (theTag.element == L2ParamGroup.Parameter.ErrMsg) {
                     if (l2ErrorMessages.isNewData(theTag)) {  // the data will be already read if new data
@@ -649,8 +649,8 @@ public class OpcSimulator implements InputControl, L2Interface {
                         showError(msg);
                         l2ErrorMessages.setAsNoted(true);
                     }
-                    else
-                        logInfo("ErrMsg is not newData");
+//                    else
+//                        logInfo("ErrMsg is not newData");
                 }
                 if (theTag.element == L2ParamGroup.Parameter.YesNoQuery) {
                     if (l2YesNoQuery.isNewData(theTag)) {  // the data will be already read if new data

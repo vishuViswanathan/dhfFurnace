@@ -30,6 +30,9 @@ public class L2DFHZone extends L2ParamGroup {
     Hashtable<MonitoredDataItem, Tag> monitoredTags;
     boolean monitoredTagsReady = false;
     int fuelCharSteps;
+    public Tag[] tagsFuelChrTotal;
+    public Tag[] tagsFuelChrZone;
+
 
     public L2DFHZone(L2DFHFurnace l2Furnace, String zoneName, String descriptiveName, FceSection theSection,
                      boolean bSubscribe) throws TagCreationException {
@@ -41,10 +44,8 @@ public class L2DFHZone extends L2ParamGroup {
         String basePath = "";
         String temperatureFmt = "#,##0";
         String fuelFlowFmt = "#,##0.00";
-        String ratioFmt = "#,##0.00";
-        String airFlowFmt = "#,##0";
-
-        Tag[] temperatureTags = {new Tag(Parameter.Temperature, Tag.TagName.SP, false, false, temperatureFmt),
+        String ratioFmt = "#0.00";
+        String airFlowFmt = "#,##0"; Tag[] temperatureTags = {new Tag(Parameter.Temperature, Tag.TagName.SP, false, false, temperatureFmt),
                 new Tag(Parameter.Temperature, Tag.TagName.PV, false, true, temperatureFmt),
                 new Tag(Parameter.Temperature, Tag.TagName.Auto, false, false),
                 new Tag(Parameter.Temperature, Tag.TagName.SP, true, false, temperatureFmt)};
@@ -63,20 +64,27 @@ public class L2DFHZone extends L2ParamGroup {
                 new Tag(Parameter.AirFlow, Tag.TagName.Remote, false, false),
                 new Tag(Parameter.AirFlow, Tag.TagName.Temperature, false, true, temperatureFmt)};
         fuelCharSteps = l2Furnace.furnaceSettings.fuelCharSteps;
-        Tag[] fuelCharTags = new Tag[fuelCharSteps * 2];
+        Tag[] allfuelChrTags = new Tag[fuelCharSteps * 2];
+        tagsFuelChrTotal = new Tag[fuelCharSteps];
+        tagsFuelChrZone = new Tag[fuelCharSteps];
         int pos = 0;
         for (int s = 1; s <= fuelCharSteps; s++) {
-            fuelCharTags[pos++] = new Tag(Parameter.FuelCharacteristic,
-                    Tag.TagName.getEnum("X" + ("" + s).trim()), true, false);
-            fuelCharTags[pos++] = new Tag(Parameter.FuelCharacteristic,
-                    Tag.TagName.getEnum("Y" + ("" + s).trim()), true, false);
+            Tag tx = new Tag(Parameter.FuelCharacteristic,
+                    Tag.TagName.getEnum("X" + ("" + s).trim()), true, false, fuelFlowFmt );
+            tagsFuelChrTotal[s - 1] = tx;
+            allfuelChrTags[pos++] = tx;
+            Tag ty = new Tag(Parameter.FuelCharacteristic,
+                    Tag.TagName.getEnum("Y" + ("" + s).trim()), true, false, fuelFlowFmt);
+            tagsFuelChrZone[s - 1] = ty;
+            allfuelChrTags[pos++] = ty;
         }
         monitoredTags = new Hashtable<MonitoredDataItem, Tag>();
         addOneParameter(Parameter.Temperature, temperatureTags);
         addOneParameter(Parameter.FuelFlow, fuelFlowTags);
         addOneParameter(Parameter.AFRatio, airFuelRatioTags);
         addOneParameter(Parameter.AirFlow, airFlowTags);
-        addOneParameter(Parameter.FuelCharacteristic, fuelCharTags);
+//        addOneParameter(Parameter.FuelCharacteristic, fuelCharTags);
+        addOneParameter(Parameter.FuelCharacteristic, allfuelChrTags);
         noteMonitoredTags(temperatureTags);
         noteMonitoredTags(fuelFlowTags);
         noteMonitoredTags(airFlowTags);
