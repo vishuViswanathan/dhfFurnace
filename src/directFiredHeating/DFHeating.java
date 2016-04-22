@@ -368,6 +368,9 @@ public class DFHeating extends JApplet implements InputControl {
 
     String testingWarning = "  (IN TESTING MODE)";
 
+    public String releaseDate() {
+        return releaseDate;
+    }
     public void itIsOnTest(boolean testing) {
         DFHeating.onTest = testing;
         String title = mainF.getTitle();

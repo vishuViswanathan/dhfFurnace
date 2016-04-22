@@ -86,7 +86,7 @@ public class L2DFHeating extends DFHeating {
     enum L2DisplayPageType {NONE, PROCESS, LEVEL2};
     public L2DisplayPageType l2DisplayNow = L2DisplayPageType.NONE;
     String fceDataLocation = "level2FceData/";
-    String lockPath = fceDataLocation + "Sychro.lock";
+    String lockPath = fceDataLocation + "Syncro.lock";
     File lockFile;
 
     enum AccessLevel {NONE, RUNTIME, UPDATER, EXPERT, CONFIGURATOR};
@@ -100,7 +100,7 @@ public class L2DFHeating extends DFHeating {
         super();
         bAllowProfileChange = false;
         userActionAllowed = false;
-        releaseDate = "20160228";
+        releaseDate = "20160420";
         onProductionLine = true;
         asApplication = true;
         this.equipment = equipment;
@@ -115,7 +115,6 @@ public class L2DFHeating extends DFHeating {
 
     public boolean setItUp() {
         modifyJTextEdit();
-//        if (onProductionLine) setAccessLevel();
         fuelList = new Vector<Fuel>();
         vChMaterial = new Vector<ChMaterial>();
         setUIDefaults();
@@ -133,7 +132,6 @@ public class L2DFHeating extends DFHeating {
         if (!testMachineID()) {
             showError("Software key mismatch, Aborting ...");
             justQuit();
-//            checkAndClose(false);
         }
         if (!onProductionLine || l2Furnace.basicConnectionToLevel1(uaClient)) {
             furnace = l2Furnace;
@@ -145,8 +143,6 @@ public class L2DFHeating extends DFHeating {
                 createUIs(false); // without the default menuBar
                 getFuelAndCharge();
                 setDefaultSelections();
-//                if (accessLevel == AccessLevel.CONFIGURATOR)
-//                    displayIt();
                 switchPage(DFHDisplayPageType.INPUTPAGE);
                 StatusWithMessage statL2FceFile = getL2FceFromFile();
                 if (statL2FceFile.getDataStatus() != StatusWithMessage.DataStat.WithErrorMsg) {
@@ -154,7 +150,6 @@ public class L2DFHeating extends DFHeating {
                     enableDataEdit();
                     addMenuBar(createL2MenuBar());
                     l2MenuSet = true;
-//                    setFcefor(true);
                     getPerformanceList();
                     dfhProcessList = new StripDFHProcessList(this);
                     if (getStripDFHProcessList()) {
@@ -1742,8 +1737,10 @@ public class L2DFHeating extends DFHeating {
     void justQuit() {
         if (onProductionLine) {
             l2Furnace.prepareForDisconnection();
-            if (uaClient != null)
+            if (uaClient != null) {
+                logInfo("Disconnecting uaClient");
                 uaClient.disconnect();
+            }
         }
         close();
     }

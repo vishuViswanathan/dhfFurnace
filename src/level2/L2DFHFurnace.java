@@ -931,49 +931,49 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         }
     }
 
-    void handleNewStripOLD() {
-        if (processBeingUpdated.get()) {
-            logInfo("process Data is being modified, cannot handle new Strip now!");
-        }
-        else {
-            if (fieldDataIsBeingHandled.get()) {
-                showErrorInLevel1("Level2 is busy handling field Performance");
-            } else {
-                enableSubscriptions(false);
-                newStripIsBeingHandled.set(true);
-                if (level2Enabled) {
-                    StatusWithMessage newStripStatusWithMsg = new StatusWithMessage();
-                    StripProcessAndSize newStrip = stripZone.setNewStripAction(newStripStatusWithMsg);
-                    StatusWithMessage.DataStat newStripStatus = newStripStatusWithMsg.getDataStatus();
-                    if (newStripStatus != StatusWithMessage.DataStat.WithErrorMsg) {
-                        logTrace("New " + newStrip);
-                        L2ZonalFuelProfile zFP = new L2ZonalFuelProfile(newStrip.refP.getPerformanceTable(),
-                                furnaceSettings.fuelCharSteps, l2DFHeating);
-                        if (zFP.prepareFuelTable(newStrip.width, newStrip.thickness)) {
-                            DataWithMsg speedBasedOnFuel = getSpeedWithFurnaceFuelStatus(zFP);
-                            DataWithMsg.DataStat speedOnFuelStat = speedBasedOnFuel.getStatus();
-                            if (speedOnFuelStat == DataWithMsg.DataStat.OK)
-                                logTrace("Speed Based On Fuel = " + speedBasedOnFuel + "m/min");
-                            else
-                                logInfo("Error in Speed based on Fuel :" + speedBasedOnFuel.errorMessage);
-                            if (sendFuelCharacteristics(zFP)) {
-                                if (newStripStatus == StatusWithMessage.DataStat.WithInfoMsg)
-                                    showInfoInLevel1(newStripStatusWithMsg.getInfoMessage());
-                                commonDFHZ.setValue(L2ParamGroup.Parameter.L2Data, Tag.TagName.Ready, true);
-                            } else
-                                showErrorInLevel1("Unable to send Fuel Characteristics");
-                        } else
-                            showErrorInLevel1("Unable to prepare Fuel Characteristics");
-                    }
-                    else
-                        showErrorInLevel1(newStripStatusWithMsg.getErrorMessage());
-                } else
-                    l2DFHeating.showMessage("Level2 is not enabled from Level1");
-                newStripIsBeingHandled.set(false);
-            }
-        }
-        enableSubscriptions(true);
-    }
+//    void handleNewStripOLD() {
+//        if (processBeingUpdated.get()) {
+//            logInfo("process Data is being modified, cannot handle new Strip now!");
+//        }
+//        else {
+//            if (fieldDataIsBeingHandled.get()) {
+//                showErrorInLevel1("Level2 is busy handling field Performance");
+//            } else {
+//                enableSubscriptions(false);
+//                newStripIsBeingHandled.set(true);
+//                if (level2Enabled) {
+//                    StatusWithMessage newStripStatusWithMsg = new StatusWithMessage();
+//                    StripProcessAndSize newStrip = stripZone.setNewStripAction(newStripStatusWithMsg);
+//                    StatusWithMessage.DataStat newStripStatus = newStripStatusWithMsg.getDataStatus();
+//                    if (newStripStatus != StatusWithMessage.DataStat.WithErrorMsg) {
+//                        logTrace("New " + newStrip);
+//                        L2ZonalFuelProfile zFP = new L2ZonalFuelProfile(newStrip.refP.getPerformanceTable(),
+//                                furnaceSettings.fuelCharSteps, l2DFHeating);
+//                        if (zFP.prepareFuelTable(newStrip.width, newStrip.thickness)) {
+//                            DataWithMsg speedBasedOnFuel = getSpeedWithFurnaceFuelStatus(zFP);
+//                            DataWithMsg.DataStat speedOnFuelStat = speedBasedOnFuel.getStatus();
+//                            if (speedOnFuelStat == DataWithMsg.DataStat.OK)
+//                                logTrace("Speed Based On Fuel = " + speedBasedOnFuel + "m/min");
+//                            else
+//                                logInfo("Error in Speed based on Fuel :" + speedBasedOnFuel.errorMessage);
+//                            if (sendFuelCharacteristics(zFP)) {
+//                                if (newStripStatus == StatusWithMessage.DataStat.WithInfoMsg)
+//                                    showInfoInLevel1(newStripStatusWithMsg.getInfoMessage());
+//                                commonDFHZ.setValue(L2ParamGroup.Parameter.L2Data, Tag.TagName.Ready, true);
+//                            } else
+//                                showErrorInLevel1("Unable to send Fuel Characteristics");
+//                        } else
+//                            showErrorInLevel1("Unable to prepare Fuel Characteristics");
+//                    }
+//                    else
+//                        showErrorInLevel1(newStripStatusWithMsg.getErrorMessage());
+//                } else
+//                    l2DFHeating.showMessage("Level2 is not enabled from Level1");
+//                newStripIsBeingHandled.set(false);
+//            }
+//        }
+//        enableSubscriptions(true);
+//    }
 
     boolean sendFuelCharacteristics(L2ZonalFuelProfile zFP) {
         boolean retVal = true;
@@ -1140,37 +1140,37 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         return equipment;
     }
 
-    public void setPublishingInterval(double milliseconds) {
-        logInfo("publishing interval set to " + milliseconds);
-        try {
-            basicSub.setPublishingInterval(milliseconds);
-            messageSub.setPublishingInterval(milliseconds);
-            fieldDataSub.setPublishingInterval(milliseconds);
-            fuelCharSub.setPublishingInterval(milliseconds);
-            updaterChangeSub.setPublishingInterval(milliseconds);
-        } catch (ServiceException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void enableSubscriptions(boolean ena) {
-        org.opcfoundation.ua.core.MonitoringMode monitoringMode = (ena) ? MonitoringMode.Reporting
-                : MonitoringMode.Reporting.Disabled;
-        try {
-            basicSub.setMonitoringMode(monitoringMode);
-            basicSub.updateMonitoringModes();
-            messageSub.setMonitoringMode(monitoringMode);
-            messageSub.updateMonitoringModes();
-            fieldDataSub.setMonitoringMode(monitoringMode);
-            fieldDataSub.updateMonitoringModes();
-            fuelCharSub.setMonitoringMode(monitoringMode);
-
-            updaterChangeSub.setMonitoringMode(monitoringMode);
-
-        } catch (ServiceException e) {
-            e.printStackTrace();
-        }
-    }
+//    public void setPublishingInterval(double milliseconds) {
+//        logInfo("publishing interval set to " + milliseconds);
+//        try {
+//            basicSub.setPublishingInterval(milliseconds);
+//            messageSub.setPublishingInterval(milliseconds);
+//            fieldDataSub.setPublishingInterval(milliseconds);
+//            fuelCharSub.setPublishingInterval(milliseconds);
+//            updaterChangeSub.setPublishingInterval(milliseconds);
+//        } catch (ServiceException e) {
+//            e.printStackTrace();
+//        }
+//    }
+//
+//    public void enableSubscriptions(boolean ena) {
+//        org.opcfoundation.ua.core.MonitoringMode monitoringMode = (ena) ? MonitoringMode.Reporting
+//                : MonitoringMode.Reporting.Disabled;
+//        try {
+//            basicSub.setMonitoringMode(monitoringMode);
+//            basicSub.updateMonitoringModes();
+//            messageSub.setMonitoringMode(monitoringMode);
+//            messageSub.updateMonitoringModes();
+//            fieldDataSub.setMonitoringMode(monitoringMode);
+//            fieldDataSub.updateMonitoringModes();
+//            fuelCharSub.setMonitoringMode(monitoringMode);
+//
+//            updaterChangeSub.setMonitoringMode(monitoringMode);
+//
+//        } catch (ServiceException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     public void logInfo(String msg) {
         l2DFHeating.l2Info("l2DFHFurnace: " + msg);
@@ -1321,8 +1321,8 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         }
 
         public void onTimeout(Subscription s) {
-            l2DFHeating.showMessage(String.format("In L2Furnace %s timeout at %tc, last alive at %tc ",
-                    s, Calendar.getInstance(), s.getLastAlive()));
+            l2DFHeating.showMessage(String.format("In L2Furnace (%s) %s timeout at %tc, last alive at %tc ",
+                    l2DFHeating.releaseDate(), s, Calendar.getInstance(), s.getLastAlive()));
         }
     }
 
