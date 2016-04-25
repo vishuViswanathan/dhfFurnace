@@ -1,4 +1,4 @@
-package level2;
+package level2.common;
 
 import TMopcUa.TMuaClient;
 import com.prosysopc.ua.client.Subscription;
@@ -39,7 +39,7 @@ public class ReadyNotedParam extends L2ZoneParam {
         return retVal;
     }
 
-    void initStatus() {
+    public void initStatus() {
         if (isReadyNotedRead)
             setAsNoted(false);
         if (isReadyNotedWrite)

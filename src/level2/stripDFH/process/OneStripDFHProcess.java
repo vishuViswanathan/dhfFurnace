@@ -1,18 +1,17 @@
-package level2;
+package level2.stripDFH.process;
 
 import basic.ChMaterial;
 import basic.ProductionData;
 import directFiredHeating.DFHTuningParams;
+import level2.applications.L2DFHeating;
 import mvUtils.display.*;
 import mvUtils.math.BooleanWithStatus;
 import mvUtils.math.DoubleWithStatus;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 
-import javax.media.j3d.J3DBuffer;
 import javax.swing.*;
 import java.text.DecimalFormat;
-import java.util.Hashtable;
 import java.util.Vector;
 
 /**
@@ -28,7 +27,7 @@ public class OneStripDFHProcess {
     public String processName;
     ChMaterial chMaterialThin;
     ChMaterial chMaterialThick;
-    double tempDFHExit = 620;
+    public double tempDFHExit = 620;
     double maxExitZoneTemp = 1050;
     double minExitZoneTemp = 900;
     double thinUpperLimit = 0.0004;   // in m
@@ -36,9 +35,9 @@ public class OneStripDFHProcess {
     double minThickness = 0.0001; //m
     double maxSpeed = 120 * 60; // m/h
     public double maxWidth = 1.25;  // m
-    double minWidth = 0.9;  // m
+    public double minWidth = 0.9;  // m
     public double maxUnitOutput = 25000;  // kg/h for 1m with
-    double minUnitOutput = 8500; // kg/h  for 1m width
+    public double minUnitOutput = 8500; // kg/h  for 1m width
     String errMeg = "Error reading StripDFHProcess :";
     public boolean inError = false;
     EditResponse.Response editResponse = EditResponse.Response.EXIT;
@@ -159,7 +158,7 @@ public class OneStripDFHProcess {
         return response;
     }
 
-    DoubleWithStatus getRecommendedSpeed(double output, double width, double thickness) {
+    public DoubleWithStatus getRecommendedSpeed(double output, double width, double thickness) {
         DoubleWithStatus response = checkAndLimitOutput(output, width, thickness);
         StatusWithMessage.DataStat status = response.getDataStatus();
         if (status != StatusWithMessage.DataStat.WithErrorMsg) {

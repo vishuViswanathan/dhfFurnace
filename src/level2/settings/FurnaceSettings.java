@@ -1,6 +1,7 @@
-package level2;
+package level2.settings;
 
 import directFiredHeating.FceSection;
+import level2.applications.L2DFHeating;
 import mvUtils.display.*;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
@@ -10,8 +11,6 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.Vector;
@@ -28,10 +27,10 @@ public class FurnaceSettings   {
 //    double maxSpeed; // m/min
     DoubleRange[] zoneFuelRange;
     DoubleRange totFuelRange;
-    String errMsg = "Error reading Furnace Settings :";
+    public String errMsg = "Error reading Furnace Settings :";
     public boolean inError = false;
 //    double fuelTurnDown = 7;
-    int fuelCharSteps = 7;
+    public int fuelCharSteps = 7;
     public boolean considerFieldZoneTempForLossCorrection = false;
 
     public FurnaceSettings(L2DFHeating l2DFHeating) {

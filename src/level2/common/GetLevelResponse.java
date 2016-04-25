@@ -1,7 +1,7 @@
-package level2;
+package level2.common;
 
-import com.sun.org.apache.bcel.internal.generic.L2I;
 import level2.common.L2Interface;
+import level2.common.ReadyNotedParam;
 import level2.common.Tag;
 
 /**
@@ -20,7 +20,7 @@ public class GetLevelResponse {
         this.readyNotedParam = param;
     }
 
-    boolean getResponse(String msg, int waitSeconds) {
+    public boolean getResponse(String msg, int waitSeconds) {
         boolean retVal = false;
         if (!readyNotedParam.isNoted()) {
             readyNotedParam.setValue(Tag.TagName.Msg, msg);

@@ -6,8 +6,8 @@ import com.prosysopc.ua.ServiceException;
 import com.prosysopc.ua.client.MonitoredDataItem;
 import com.prosysopc.ua.client.Subscription;
 import com.prosysopc.ua.client.SubscriptionAliveListener;
-import level2.GetLevelResponse;
-import level2.ReadyNotedParam;
+import level2.common.GetLevelResponse;
+import level2.common.ReadyNotedParam;
 import level2.common.*;
 import mvUtils.display.FramedPanel;
 import mvUtils.display.InputControl;
@@ -31,7 +31,6 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.Calendar;
 import java.util.Hashtable;
 import java.util.Vector;
 

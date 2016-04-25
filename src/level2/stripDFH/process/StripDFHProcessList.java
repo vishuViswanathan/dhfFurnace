@@ -1,7 +1,7 @@
-package level2;
+package level2.stripDFH.process;
 
 import basic.ChMaterial;
-import level2.fieldResults.FieldResults;
+import level2.applications.L2DFHeating;
 import mvUtils.display.*;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
@@ -71,7 +71,7 @@ public class StripDFHProcessList {
     public OneStripDFHProcess getDFHProcess(String processName) {
         OneStripDFHProcess oneProcess = null;
         for (OneStripDFHProcess proc: list) {
-            l2DFHeating.logInfo(String.format("Looking for %s and got %s", processName, proc.processName));
+//            l2DFHeating.logInfo(String.format("Looking for %s and got %s", processName, proc.processName));
             if (proc.processName.equalsIgnoreCase(processName)) {
                 oneProcess = proc;
                 break;
@@ -80,7 +80,7 @@ public class StripDFHProcessList {
         return oneProcess;
     }
 
-    boolean takeStripProcessListFromXML(String xmlStr) {
+    public boolean takeStripProcessListFromXML(String xmlStr) {
         list.clear();
         boolean retVal = false;
         ValAndPos vp;

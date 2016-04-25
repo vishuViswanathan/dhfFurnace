@@ -1,10 +1,15 @@
-package level2;
+package level2.applications;
 
 import TMopcUa.TMuaClient;
 import basic.*;
 import directFiredHeating.*;
 import display.QueryDialog;
+import level2.stripDFH.L2DFHFurnace;
+import level2.stripDFH.process.OneStripDFHProcess;
+import level2.common.ReadyNotedBothL2;
+import level2.stripDFH.process.StripDFHProcessList;
 import level2.common.Tag;
+import level2.stripDFH.L2DFHZone;
 import mvUtils.display.ErrorStatAndMsg;
 import mvUtils.display.FramedPanel;
 import mvUtils.display.StatusWithMessage;
@@ -77,23 +82,23 @@ public class L2DFHeating extends DFHeating {
 
     static boolean bAllowEditDFHProcess = false;
     static boolean bAllowEditFurnaceSettings = false;
-    static boolean bAllowUpdateWithFieldData = false;
+    static public boolean bAllowUpdateWithFieldData = false;
     static boolean bAllowL2Changes = false;
     static boolean bl2ShowDebugMessages = false;
     static boolean bShowAllmenu = false;
     static boolean bL2Configurator = false;
 
-    enum L2DisplayPageType {NONE, PROCESS, LEVEL2};
+    public enum L2DisplayPageType {NONE, PROCESS, LEVEL2};
     public L2DisplayPageType l2DisplayNow = L2DisplayPageType.NONE;
     String fceDataLocation = "level2FceData/";
     String lockPath = fceDataLocation + "Syncro.lock";
     File lockFile;
 
-    enum AccessLevel {NONE, RUNTIME, UPDATER, EXPERT, CONFIGURATOR};
+    public enum AccessLevel {NONE, RUNTIME, UPDATER, EXPERT, CONFIGURATOR};
     static public AccessLevel accessLevel = AccessLevel.NONE;
     TMuaClient uaClient;
     static String uaServerURI;
-    L2DFHFurnace l2Furnace;
+    public L2DFHFurnace l2Furnace;
     public String equipment;
     StripDFHProcessList dfhProcessList;
     public L2DFHeating(String equipment) {

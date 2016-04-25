@@ -1,9 +1,10 @@
-package level2;
+package level2.common;
 
 import level2.common.L2ParamGroup;
 import level2.common.Tag;
 import level2.common.TagCreationException;
 import level2.display.L2Display;
+import level2.stripDFH.L2DFHFurnace;
 import mvUtils.display.FramedPanel;
 import mvUtils.display.MultiPairColPanel;
 

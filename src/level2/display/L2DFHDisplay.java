@@ -1,7 +1,7 @@
 package level2.display;
 
 import display.SizedLabel;
-import level2.L2DFHZone;
+import level2.stripDFH.L2DFHZone;
 import level2.common.L2ParamGroup;
 import level2.common.L2ZoneParam;
 import level2.common.Tag;

@@ -1,7 +1,8 @@
-package level2;
+package level2.common;
 
 import TMopcUa.TMuaClient;
 import com.prosysopc.ua.client.Subscription;
+import level2.common.ReadyNotedParam;
 import level2.common.Tag;
 import level2.common.TagCreationException;
 

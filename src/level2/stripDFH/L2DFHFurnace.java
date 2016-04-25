@@ -1,4 +1,4 @@
-package level2;
+package level2.stripDFH;
 
 import FceElements.heatExchanger.HeatExchProps;
 import TMopcUa.TMSubscription;
@@ -7,19 +7,20 @@ import basic.Charge;
 import basic.Fuel;
 import basic.FuelFiring;
 import com.prosysopc.ua.ServiceException;
-import com.prosysopc.ua.StatusException;
 import com.prosysopc.ua.client.MonitoredDataItem;
 import com.prosysopc.ua.client.Subscription;
 import com.prosysopc.ua.client.SubscriptionAliveListener;
 import directFiredHeating.*;
+import level2.applications.L2DFHeating;
 import level2.common.*;
 import level2.display.L2DFHDisplay;
 import level2.fieldResults.FieldResults;
+import level2.settings.FurnaceSettings;
+import level2.stripDFH.process.OneStripDFHProcess;
 import mvUtils.display.*;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import org.opcfoundation.ua.builtintypes.DataValue;
-import org.opcfoundation.ua.core.MonitoringMode;
 import performance.stripFce.Performance;
 import performance.stripFce.StripProcessAndSize;
 
@@ -594,7 +595,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         return innerP;
     }
 
-    ErrorStatAndMsg checkConnection() {
+    public ErrorStatAndMsg checkConnection() {
         ErrorStatAndMsg retVal = new ErrorStatAndMsg(false, "Error, connecting to OPC :");
         noteConnectionsCheckStat(basicZone, retVal);
         noteConnectionsCheckStat(commonDFHZ, retVal);
@@ -749,7 +750,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         return fieldResults;
     }
 
-    boolean getFieldDataFromUser() {
+    public boolean getFieldDataFromUser() {
         return oneFieldResults.getDataFromUser();
     }
 
@@ -911,7 +912,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         setTempOForAllSlots();
     }
 
-    void handleNewStrip() {
+    public void handleNewStrip() {
         if (processBeingUpdated.get()) {
             logInfo("process Data is being modified, cannot handle new Strip now!");
         }

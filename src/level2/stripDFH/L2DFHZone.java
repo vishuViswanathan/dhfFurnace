@@ -1,4 +1,4 @@
-package level2;
+package level2.stripDFH;
 
 import com.prosysopc.ua.ServiceException;
 import com.prosysopc.ua.client.*;

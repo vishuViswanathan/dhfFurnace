@@ -3,7 +3,7 @@ package level2.simulator;
 import TMopcUa.ProcessValue;
 import TMopcUa.TMuaClient;
 import com.prosysopc.ua.client.Subscription;
-import level2.ReadyNotedParam;
+import level2.common.ReadyNotedParam;
 import level2.common.Tag;
 import level2.common.TagCreationException;
 

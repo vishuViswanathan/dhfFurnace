@@ -1,4 +1,4 @@
-package level2;
+package level2.stripDFH;
 
 import TMopcUa.ProcessValue;
 import TMopcUa.TMSubscription;
@@ -7,6 +7,8 @@ import com.prosysopc.ua.ServiceException;
 import com.prosysopc.ua.client.MonitoredDataItem;
 import com.prosysopc.ua.client.Subscription;
 import com.prosysopc.ua.client.SubscriptionAliveListener;
+import level2.applications.L2DFHeating;
+import level2.stripDFH.process.OneStripDFHProcess;
 import level2.common.*;
 import mvUtils.display.FramedPanel;
 import mvUtils.display.MultiPairColPanel;
@@ -208,7 +210,7 @@ public class L2StripZone extends L2ParamGroup {
         return theStrip;
     }
 
-    JComponent nowStripProcessTempPanel;
+    public JComponent nowStripProcessTempPanel;
     JComponent nowStripProcessSpeedPanel;
     JComponent nowStripProcessDataPanel;
     JComponent nextStripProcessDataPanel;
