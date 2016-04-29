@@ -4615,20 +4615,13 @@ public class DFHeating extends JApplet implements InputControl {
     static protected boolean parseCmdLineArgs(String[] args) {
         boolean retVal = true;
         CommandLineArgs cmdArg;
-//        onProductionLine = true;
         for (int a = 0; a < args.length; a++) {
             cmdArg = CommandLineArgs.getEnum(args[a]);
             if (cmdArg != null)
                 switch(cmdArg) {
-//                    case ONTEST:
-//                        onTest = true;
-//                        break;
                     case ALLOWSPECSSAVE:
                         enableSpecsSave = true;
                         break;
-//                    case NOTLEVEL2:
-//                        onProductionLine = false;
-//                        break;
                     case JNLP:
                         asJNLP = true;
                         jspConnection = new JSPConnection();

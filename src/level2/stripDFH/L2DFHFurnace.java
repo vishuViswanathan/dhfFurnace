@@ -11,6 +11,7 @@ import com.prosysopc.ua.client.MonitoredDataItem;
 import com.prosysopc.ua.client.Subscription;
 import com.prosysopc.ua.client.SubscriptionAliveListener;
 import directFiredHeating.*;
+import level2.accessControl.L2AccessControl;
 import level2.applications.L2DFHeating;
 import level2.common.*;
 import level2.display.L2DFHDisplay;
@@ -104,7 +105,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         monitoredTags = new Hashtable<MonitoredDataItem, Tag>();
         topL2Zones = new LinkedHashMap<FceSection, L2DFHZone>();
         messagesON = createL2Messages();
-        itIsRuntime = (l2DFHeating.accessLevel == L2DFHeating.AccessLevel.RUNTIME);
+        itIsRuntime = (l2DFHeating.accessLevel == L2AccessControl.AccessLevel.RUNTIME);
         return createInternalZone();
     }
 
@@ -1355,9 +1356,9 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     class FieldDataListener extends L2SubscriptionListener {
         @Override
         public void onDataChange(Subscription subscription, MonitoredDataItem monitoredDataItem, DataValue dataValue) {
-            L2DFHeating.AccessLevel accessLevel = l2DFHeating.accessLevel;
+            L2AccessControl.AccessLevel accessLevel = l2DFHeating.accessLevel;
             if (l2DFHeating.isL2SystemReady() &&
-                    ((accessLevel == L2DFHeating.AccessLevel.UPDATER) || (accessLevel == L2DFHeating.AccessLevel.EXPERT))) {
+                    ((accessLevel == L2AccessControl.AccessLevel.UPDATER) || (accessLevel == L2AccessControl.AccessLevel.EXPERT))) {
                 Tag theTag = monitoredTags.get(monitoredDataItem);
                 if (fieldDataParams.isNewData(theTag))   // the data will be already read if new data
                     if (theTag == tagFieldDataReady)
@@ -1379,7 +1380,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     class UpdaterChangeListener extends L2SubscriptionListener {
         @Override
         public void onDataChange(Subscription subscription, MonitoredDataItem monitoredDataItem, DataValue dataValue) {
-            L2DFHeating.AccessLevel accessLevel = l2DFHeating.accessLevel;
+            L2AccessControl.AccessLevel accessLevel = l2DFHeating.accessLevel;
             if (l2DFHeating.isL2SystemReady()) {
                 Tag theTag = monitoredTags.get(monitoredDataItem);
                 if (processDataStat.isNewData(theTag)) {

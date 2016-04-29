@@ -1,6 +1,7 @@
 package level2.applications;
 
 import directFiredHeating.DFHeating;
+import level2.accessControl.L2AccessControl;
 import mvUtils.display.StatusWithMessage;
 
 /**
@@ -52,7 +53,29 @@ public class Level2Configurator extends L2DFHeating {
         bAllowManualCalculation = true;
         bShowAllmenu = true;
 //        userActionAllowed = true;
-        accessLevel = AccessLevel.CONFIGURATOR;
+        accessLevel = L2AccessControl.AccessLevel.CONFIGURATOR;
+    }
+
+    public Level2Configurator(String equipment, boolean fromLauncher) {
+        super(equipment);
+        bL2Configurator = true;
+        onProductionLine = false;
+        bAllowEditDFHProcess = true;
+        bAllowEditFurnaceSettings = true;
+        bAllowProfileChange = true;
+        bAllowManualCalculation = true;
+        bShowAllmenu = true;
+//        userActionAllowed = true;
+        accessLevel = L2AccessControl.AccessLevel.CONFIGURATOR;
+        setItUp();
+        if (!l2SystemReady) {
+            showError("Level2 could not be started. Aborting ...");
+            System.exit(1);
+        }
+    }
+
+    public static L2AccessControl.AccessLevel defaultLevel() {
+        return L2AccessControl.AccessLevel.CONFIGURATOR;
     }
 
     protected StatusWithMessage getFceFromFile() {
@@ -76,11 +99,6 @@ public class Level2Configurator extends L2DFHeating {
             }
         }
         return retVal;
-    }
-
-    void defaultFurnaceSetting() {
-
-
     }
 
     static protected boolean  parseCmdLineArgs(String[] args) {

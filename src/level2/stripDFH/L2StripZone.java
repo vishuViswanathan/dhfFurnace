@@ -7,6 +7,7 @@ import com.prosysopc.ua.ServiceException;
 import com.prosysopc.ua.client.MonitoredDataItem;
 import com.prosysopc.ua.client.Subscription;
 import com.prosysopc.ua.client.SubscriptionAliveListener;
+import level2.accessControl.L2AccessControl;
 import level2.applications.L2DFHeating;
 import level2.stripDFH.process.OneStripDFHProcess;
 import level2.common.*;
@@ -334,8 +335,8 @@ public class L2StripZone extends L2ParamGroup {
     class StripListener extends L2SubscriptionListener {
         @Override
         public void onDataChange(Subscription subscription, MonitoredDataItem monitoredDataItem, DataValue dataValue) {
-            L2DFHeating.AccessLevel accessLevel = l2DFHeating.accessLevel;
-            if (l2DFHeating.isL2SystemReady() && (accessLevel == L2DFHeating.AccessLevel.RUNTIME)) {
+            L2AccessControl.AccessLevel accessLevel = l2DFHeating.accessLevel;
+            if (l2DFHeating.isL2SystemReady() && (accessLevel == L2AccessControl.AccessLevel.RUNTIME)) {
                 Tag theTag = monitoredTags.get(monitoredDataItem);
                 if (paramStripNextSize.isNewData(theTag))   // the data will be already read if new data
                     if (theTag == tagNextStripDataReady)

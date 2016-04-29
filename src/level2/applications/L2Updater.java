@@ -1,5 +1,7 @@
 package level2.applications;
 
+import level2.accessControl.L2AccessControl;
+
 /**
  * User: M Viswanathan
  * Date: 23-Mar-16
@@ -15,7 +17,34 @@ public class L2Updater extends L2DFHeating{
         bAllowManualCalculation = false;
         bAllowUpdateWithFieldData = true;
         bAllowL2Changes = false;
-        accessLevel = AccessLevel.UPDATER;
+        accessLevel = L2AccessControl.AccessLevel.UPDATER;
+    }
+
+    public L2Updater(String equipment, boolean fromLauncher) {
+        super(equipment);
+        bAllowEditDFHProcess = false;
+        bAllowEditFurnaceSettings = false;
+        bAllowManualCalculation = false;
+        bAllowUpdateWithFieldData = true;
+        bAllowL2Changes = false;
+        accessLevel = L2AccessControl.AccessLevel.UPDATER;
+        if (setupUaClient()) {
+            setItUp();
+            if (l2SystemReady) {
+                informLevel2Ready();
+            } else {
+                showError("Level2 Updater could not be started. Aborting ...");
+                exitFromLevel2();
+            }
+        }
+        else  {
+            showMessage("Facing problem connecting to Level1. Aborting ...");
+            close();
+        }
+    }
+
+    public static L2AccessControl.AccessLevel defaultLevel() {
+        return L2AccessControl.AccessLevel.UPDATER;
     }
 
     public static void main(String[] args) {

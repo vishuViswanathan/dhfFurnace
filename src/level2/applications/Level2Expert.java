@@ -1,5 +1,7 @@
 package level2.applications;
 
+import level2.accessControl.L2AccessControl;
+
 /**
  * User: M Viswanathan
  * Date: 23-Mar-16
@@ -14,7 +16,35 @@ public class Level2Expert extends L2DFHeating {
         bAllowManualCalculation = true;
         bAllowUpdateWithFieldData = true;
         bAllowL2Changes = true;
-        accessLevel = AccessLevel.EXPERT;
+        accessLevel = L2AccessControl.AccessLevel.EXPERT;
+    }
+
+    public Level2Expert(String equipment, boolean fromLauncher) {
+        super(equipment);
+        bAllowEditDFHProcess = true;
+        bAllowEditFurnaceSettings = true;
+        bAllowManualCalculation = true;
+        bAllowUpdateWithFieldData = true;
+        bAllowL2Changes = true;
+        accessLevel = L2AccessControl.AccessLevel.EXPERT;
+        if (setupUaClient()) {
+            setItUp();
+            if (l2SystemReady) {
+                informLevel2Ready();
+            } else {
+                showError("Level2 could not be started. Aborting ...");
+                exitFromLevel2();
+            }
+        }
+        else {
+            showMessage("Facing problem connecting to Level1. Aborting ...");
+            close();
+        }
+
+    }
+
+    public static L2AccessControl.AccessLevel defaultLevel() {
+        return L2AccessControl.AccessLevel.EXPERT;
     }
 
     public static void main(String[] args) {
