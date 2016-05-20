@@ -4,6 +4,7 @@ import FceElements.heatExchanger.HeatExchProps;
 import FceElements.heatExchanger.Recuperator;
 import appReporting.Reporter;
 import basic.*;
+import directFiredHeating.process.FurnaceSettings;
 import display.*;
 import mvUtils.display.TimedMessage;
 import mvUtils.display.TrendsPanel;
@@ -82,6 +83,7 @@ public class DFHFurnace {
     boolean bBaseOnOnlyWallRadiation = false;
     boolean resultsReady = false;
     boolean bDisplayResults = true;
+    public FurnaceSettings furnaceSettings;
 
     public DFHFurnace(DFHeating controller, boolean bTopBot, boolean bAddTopSoak, ActionListener listener) {
         this.controller = controller;
@@ -89,6 +91,30 @@ public class DFHFurnace {
         initStaticData();
         init();
         changeFiringMode(bTopBot, bAddTopSoak);
+    }
+
+    public boolean showEditFceSettings(boolean bEdit) {
+        return furnaceSettings.showEditData(bEdit, controller.parent());
+    }
+
+    public void clearAssociatedData() {
+        evalActiveSecs();
+        furnaceSettings = new FurnaceSettings(controller, getActiveSections(false));
+
+    }
+
+    public String fceSettingsInXML() {
+        return furnaceSettings.dataInXML().toString();
+    }
+
+    public boolean takeFceSettingsFromXML(String xmlStr) {
+        boolean retVal = true;
+        furnaceSettings = new FurnaceSettings(controller, xmlStr);
+        if (furnaceSettings.inError) {
+            controller.showError("Reading Furnace Settings: " + furnaceSettings.errMsg);
+            retVal = false;
+        }
+        return retVal;
     }
 
     boolean enaEdit = true;
@@ -3534,25 +3560,37 @@ public class DFHFurnace {
             evalActiveSecs(true);
     }
 
-    Vector<FceSection> topActiveSections;
-    Vector<FceSection> botActiveSections;
+//    Vector<FceSection> topActiveSections;
+//    Vector<FceSection> botActiveSections;
 
-    public Vector<FceSection> getActiveSections(boolean bBot){
-        return (bBot) ? botActiveSections : topActiveSections;
+//    public Vector<FceSection> getActiveSections(boolean bBot){
+//        return (bBot) ? botActiveSections : topActiveSections;
+//    }
+
+    public Vector<FceSection> getActiveSections(boolean bBot) {
+        Vector<FceSection> active = new Vector<FceSection>();
+        Vector<FceSection> vSec = getVsecs(bBot);
+        for (FceSection sec : vSec) {
+            if (sec.isActive()) {
+                active.add(sec);
+            } else
+                break;
+        }
+        return active;
     }
 
     public void evalActiveSecs(boolean bBot) {
         int nActive = 0;
         Vector<FceSection> vSec = getVsecs(bBot);
-        if (bBot)
-            botActiveSections = new Vector<FceSection>();
-        else
-            topActiveSections = new Vector<FceSection>();
-        Vector<FceSection> activeSecs = getActiveSections(bBot);
+//        if (bBot)
+//            botActiveSections = new Vector<FceSection>();
+//        else
+//            topActiveSections = new Vector<FceSection>();
+//        Vector<FceSection> activeSecs = getActiveSections(bBot);
         for (FceSection sec : vSec) {
             if (sec.isActive()) {
                 sec.getNactive();
-                activeSecs.add(sec);
+//                activeSecs.add(sec);
                 nActive++;
             } else
                 break;

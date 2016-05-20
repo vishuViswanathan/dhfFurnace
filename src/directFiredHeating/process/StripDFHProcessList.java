@@ -1,7 +1,7 @@
-package level2.stripDFH.process;
+package directFiredHeating.process;
 
 import basic.ChMaterial;
-import level2.applications.L2DFHeating;
+import directFiredHeating.DFHeating;
 import mvUtils.display.*;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
@@ -19,15 +19,15 @@ import java.util.Vector;
  * To change this template use File | Settings | File Templates.
  */
 public class StripDFHProcessList {
-    L2DFHeating l2DFHeating;
+    DFHeating dfHeating;
     Vector<ChMaterial> vChMaterial;
     InputControl inpC;
     Vector<OneStripDFHProcess> list;
     StripDFHProcessList me;
-    public StripDFHProcessList(L2DFHeating l2DFHeating) {
-        this.vChMaterial = l2DFHeating.vChMaterial;
-        this.l2DFHeating = l2DFHeating;
-        this.inpC = l2DFHeating;
+    public StripDFHProcessList(DFHeating dfHeating) {
+        this.vChMaterial = dfHeating.vChMaterial;
+        this.dfHeating = dfHeating;
+        this.inpC = dfHeating;
         list = new Vector<OneStripDFHProcess>();
     }
 
@@ -63,7 +63,7 @@ public class StripDFHProcessList {
             return true;
         }
         else {
-            l2DFHeating.showError("DFH process data list is empty.\n       Try Adding Process");
+            dfHeating.showError("DFH process data list is empty.\n       Try Adding Process");
             return false;
         }
     }
@@ -96,9 +96,9 @@ public class StripDFHProcessList {
                 int pNum = Integer.valueOf(vp.val);
                 for (int p = 0; p < pNum; p++) {
                     vp = XMLmv.getTag(xmlStr, "StripP" + ("" + (p + 1)).trim(), vp.endPos);
-                    OneStripDFHProcess oneProc = new OneStripDFHProcess(l2DFHeating, this, vp.val);
+                    OneStripDFHProcess oneProc = new OneStripDFHProcess(dfHeating, this, vp.val);
                     if (oneProc.inError) {
-                            l2DFHeating.showError("In reading StripDFHProc: \n" + oneProc.errMeg);
+                            dfHeating.showError("In reading StripDFHProc: \n" + oneProc.errMeg);
                         retVal = false;
                         break oneBlk;
                     }
@@ -107,7 +107,7 @@ public class StripDFHProcessList {
                 }
                 retVal = true;
             } catch (NumberFormatException e) {
-                l2DFHeating.showError("Error in Number of StripDFHProc");
+                dfHeating.showError("Error in Number of StripDFHProc");
                 break oneBlk;
             }
         }

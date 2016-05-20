@@ -1,9 +1,9 @@
-package level2.stripDFH.process;
+package directFiredHeating.process;
 
 import basic.ChMaterial;
 import basic.ProductionData;
 import directFiredHeating.DFHTuningParams;
-import level2.applications.L2DFHeating;
+import directFiredHeating.DFHeating;
 import mvUtils.display.*;
 import mvUtils.math.BooleanWithStatus;
 import mvUtils.math.DoubleWithStatus;
@@ -23,7 +23,7 @@ import java.util.Vector;
  */
 public class OneStripDFHProcess {
     double density = 7850;
-    L2DFHeating l2DFHeating;
+    DFHeating dfHeating;
     public String processName;
     ChMaterial chMaterialThin;
     ChMaterial chMaterialThick;
@@ -60,12 +60,12 @@ public class OneStripDFHProcess {
         this.thinUpperLimit = thinUpperLimit;
     }
 
-    public OneStripDFHProcess(L2DFHeating l2DFHeating, StripDFHProcessList existingList, String processName, String chMaterialThinName, String chMaterialThickName,
+    public OneStripDFHProcess(DFHeating dfHeating, StripDFHProcessList existingList, String processName, String chMaterialThinName, String chMaterialThickName,
                               double tempDFHExit, double thinUpperLimit) {
         this.existingList = existingList;
         this.processName = processName;
-        this.chMaterialThin = l2DFHeating.getSelChMaterial(chMaterialThinName);
-        this.chMaterialThick = l2DFHeating.getSelChMaterial(chMaterialThickName);
+        this.chMaterialThin = dfHeating.getSelChMaterial(chMaterialThinName);
+        this.chMaterialThick = dfHeating.getSelChMaterial(chMaterialThickName);
         this.tempDFHExit = tempDFHExit;
         this.thinUpperLimit = thinUpperLimit;
     }
@@ -74,9 +74,9 @@ public class OneStripDFHProcess {
         return editResponse;
     }
 
-    public OneStripDFHProcess(L2DFHeating l2DFHeating, StripDFHProcessList existingList, String xmlStr) {
+    public OneStripDFHProcess(DFHeating dfHeating, StripDFHProcessList existingList, String xmlStr) {
         this.existingList = existingList;
-        this.l2DFHeating = l2DFHeating;
+        this.dfHeating = dfHeating;
         if (!takeDataFromXML(xmlStr))
             inError = true;
     }
@@ -163,7 +163,6 @@ public class OneStripDFHProcess {
         StatusWithMessage.DataStat status = response.getDataStatus();
         if (status != StatusWithMessage.DataStat.WithErrorMsg) {
             double speed = response.getValue() / (width * thickness * density);
-//            l2DFHeating.l2Info("output = " + response.getValue());
             if (speed > maxSpeed) {
                 speed = maxSpeed;
                 response.setValue(speed, "Restricted by Maximum Process Speed");
@@ -196,7 +195,7 @@ public class OneStripDFHProcess {
                 String thinMaterialName;
                 vp = XMLmv.getTag(xmlStr, "chMaterialThin", 0);
                 thinMaterialName = vp.val.trim();
-                chMaterialThin = l2DFHeating.getSelChMaterial(thinMaterialName);
+                chMaterialThin = dfHeating.getSelChMaterial(thinMaterialName);
                 if (chMaterialThin == null) {
                     errMeg += "ChMaterialThin not found";
                     break aBlock;
@@ -204,7 +203,7 @@ public class OneStripDFHProcess {
                 String thickMaterialName;
                 vp = XMLmv.getTag(xmlStr, "chMaterialThick", 0);
                 thickMaterialName = vp.val.trim();
-                chMaterialThick = l2DFHeating.getSelChMaterial(thickMaterialName);
+                chMaterialThick = dfHeating.getSelChMaterial(thickMaterialName);
                 if (chMaterialThick == null) {
                     errMeg += "ChMaterialThick not found";
                     break aBlock;
@@ -307,7 +306,7 @@ public class OneStripDFHProcess {
 
     public ErrorStatAndMsg fieldDataOkForProcess(String processName, ProductionData production) {
         ErrorStatAndMsg retVal = new ErrorStatAndMsg(true, "For Process " + processName + " fieldData, ");
-        DFHTuningParams tuning = l2DFHeating.getTuningParams();
+        DFHTuningParams tuning = dfHeating.getTuningParams();
         DecimalFormat mmFmt = new DecimalFormat("#,###");
         DecimalFormat outputFmt = new DecimalFormat("#,###.000");
         DecimalFormat tempFmt = new DecimalFormat("#,###");
@@ -452,18 +451,6 @@ public class OneStripDFHProcess {
                 status.msg = msg.toString();
         }
         return status;
-    }
-
-    public boolean saveData() {
-        return false;
-    }
-
-    public boolean deleteData() {
-        return false;
-    }
-
-    public boolean resetData() {
-        return false;
     }
 
     public void noteDataFromUI() {

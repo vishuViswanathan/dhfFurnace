@@ -1,7 +1,7 @@
 package level2.applications;
 
 import directFiredHeating.DFHeating;
-import level2.accessControl.L2AccessControl;
+import directFiredHeating.accessControl.L2AccessControl;
 import mvUtils.display.StatusWithMessage;
 
 /**
@@ -10,7 +10,7 @@ import mvUtils.display.StatusWithMessage;
  * Time: 11:01 AM
  * To change this template use File | Settings | File Templates.
  */
-public class Level2Configurator extends L2DFHeating {
+public class Level2Installer extends L2DFHeating {
     public enum PreparerCommandLineArgs {
         SHOWDEBUG("-showDebug"),
         UNKNOWN("-UnKnown");
@@ -43,7 +43,7 @@ public class Level2Configurator extends L2DFHeating {
         }
     }
 
-    public Level2Configurator(String equipment) {
+    public Level2Installer(String equipment) {
         super(equipment);
         bL2Configurator = true;
         onProductionLine = false;
@@ -56,7 +56,7 @@ public class Level2Configurator extends L2DFHeating {
         accessLevel = L2AccessControl.AccessLevel.CONFIGURATOR;
     }
 
-    public Level2Configurator(String equipment, boolean fromLauncher) {
+    public Level2Installer(String equipment, boolean fromLauncher) {
         super(equipment);
         bL2Configurator = true;
         onProductionLine = false;
@@ -122,9 +122,8 @@ public class Level2Configurator extends L2DFHeating {
 //        return true;
     }
 
-
     public static void main(String[] args) {
-        final Level2Configurator l2Preparer = new Level2Configurator("Furnace");
+        final Level2Installer l2Preparer = new Level2Installer("Furnace");
         if (l2Preparer.parseCmdLineArgs(args)) {
             l2Preparer.setItUp();
             if (!l2Preparer.l2SystemReady) {

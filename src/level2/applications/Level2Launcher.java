@@ -1,16 +1,19 @@
 package level2.applications;
 
-import level2.accessControl.L2AccessControl;
+import directFiredHeating.DFHeating;
+import directFiredHeating.accessControl.L2AccessControl;
+import display.QueryDialog;
 import mvUtils.display.FramedPanel;
 import mvUtils.display.MultiPairColPanel;
 import mvUtils.display.SimpleDialog;
 import mvUtils.display.StatusWithMessage;
-import mvUtils.file.AccessControl;
+import protection.MachineCheck;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.*;
 
 /**
  * User: M Viswanathan
@@ -51,13 +54,149 @@ public class Level2Launcher {
     String accessDataFile = fceDataLocation + "l2AccessData.txt";
 
     public Level2Launcher() {
-        try {
-            accessControl = new L2AccessControl(accessDataFile, true); // only if file exists
-            init();
-        } catch (Exception e) {
-            showError(e.getMessage());
+        if (!testMachineID()) {
+            showError("Software key mismatch, Aborting ...");
             System.exit(1);
         }
+
+        StatusWithMessage pathStatus = getAccessFilePath();
+        if (pathStatus.getDataStatus() == StatusWithMessage.DataStat.OK) {
+            try {
+                accessControl = new L2AccessControl(accessDataFile, true); // only if file exists
+                init();
+            } catch (Exception e) {
+                showError(e.getMessage());
+                System.exit(1);
+            }
+        }
+        else {
+            showError(pathStatus.getErrorMessage() + "\n\n    ABORTING");
+            System.exit(1);
+        }
+    }
+
+    StatusWithMessage getAccessFilePath() {
+        StatusWithMessage retVal = new StatusWithMessage();
+        File folder = new File(fceDataLocation);
+        File[] files = folder.listFiles(new FilenameFilter() {
+            public boolean accept(File dir, String name) {
+                return name.endsWith("." + L2AccessControl.fileExtension);
+            }
+        });
+        if (files.length < 1) {
+            retVal.setErrorMessage("Unable to load Access Control!");
+        }
+        else if (files.length > 1) {
+            retVal.setErrorMessage("There are more than one Access Control data in the folder!");
+        }
+        else {
+            accessDataFile = files[0].getAbsolutePath();
+        }
+        return retVal;
+    }
+
+    // machine ID methods
+    boolean testMachineID() {
+        boolean keyOK = false;
+        boolean newKey = false;
+        MachineCheck mc = new MachineCheck();
+        String machineId = mc.getMachineID();
+        String key = getKeyFromFile();
+        do {
+            if (key.length() < 5) {
+                key = getKeyFromUser(machineId);
+                newKey = true;
+            }
+            if (key.length() > 5) {
+                StatusWithMessage keyStatus =  mc.checkKey(key);
+                boolean tryAgain = false;
+                switch(keyStatus.getDataStatus()) {
+                    case WithErrorMsg:
+                        showError(keyStatus.getErrorMessage());
+                        break;
+                    case WithInfoMsg:
+                        boolean response = decide("Software key", "There is some problem in the saved key\n"
+                                + " Do you want to delete the earlier key data and enter the key manually?");
+                        if (response) {
+                            key = "";
+                            tryAgain = true;
+                        }
+                        break;
+                    default:
+                        keyOK = true;
+                        break;
+                }
+                if (tryAgain)
+                    continue;
+                if (keyOK && newKey)
+                    saveKeyToFile(key);
+            }
+            break;
+        } while (true);
+        return keyOK;
+    }
+
+    String keyFileHead = "TMIDFHLevel2Key:";
+
+    void saveKeyToFile(String key) {
+        boolean done = false;
+        String filePath = fceDataLocation + "machineKey.ini";
+//        debug("Data file name for saving key:" + filePath);
+        try {
+            BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(filePath));
+            oStream.write(keyFileHead.getBytes());
+            oStream.write(key.getBytes());
+            oStream.close();
+            done = true;
+        } catch (FileNotFoundException e) {
+            showError("Could not create file " + filePath);
+        } catch (IOException e) {
+            showError("Some IO Error in writing to file " + filePath + "!");
+        }
+        if (done)
+            showMessage("key saved to " + filePath);
+        else
+            showError("Unable to save software key");
+    }
+
+    String getKeyFromFile() {
+        String key = "";
+        String filePath = fceDataLocation + "machineKey.ini";
+//        debug("Data file name :" + filePath);
+        try {
+            BufferedInputStream iStream = new BufferedInputStream(new FileInputStream(filePath));
+            //           FileInputStream iStream = new FileInputStream(fileName);
+            File f = new File(filePath);
+            long len = f.length();
+            int headLen = keyFileHead.length();
+            if (len > headLen && len < 100) {
+                int iLen = (int) len;
+                byte[] data = new byte[iLen];
+                iStream.read(data);
+                String dataStr = new String(data);
+                if (dataStr.substring(0, headLen).equals(keyFileHead))
+                    key = dataStr.substring(headLen);
+            } else
+                showError("File size " + len + " for " + filePath);
+        } catch (Exception e) {
+            showError("Some Problem in Software Key!");
+        }
+        return key;
+    }
+
+    String getKeyFromUser(String machineID) {
+        QueryDialog dlg = new QueryDialog(mainF, "Software keyString");
+        JTextField mcID = new JTextField(machineID);
+        mcID.setEditable(false);
+        JTextField keyF = new JTextField(machineID.length() + 1);
+        dlg.addQuery("Installation ID", mcID);
+        dlg.addQuery("Enter key for the above installation ID", keyF);
+        dlg.setLocationRelativeTo(null);
+        dlg.setVisible(true);
+        if (dlg.isUpdated())
+            return keyF.getText();
+        else
+            return "";
     }
 
     Dimension buttonSize = null;
@@ -136,7 +275,7 @@ public class Level2Launcher {
     }
 
     void launchInstaller() {
-        new Level2Configurator("Furnace", true);
+        new Level2Installer("Furnace", true);
         quit();
     }
 
@@ -168,6 +307,21 @@ public class Level2Launcher {
             mainF.toFront();
     }
 
+    public boolean decide(String title, String msg) {
+        return decide(title, msg, true);
+    }
+
+    public boolean decide(String title, String msg, boolean defaultOption) {
+        int resp = SimpleDialog.decide(null, title, msg, defaultOption);
+        if (resp == JOptionPane.YES_OPTION)
+            return true;
+        else
+            return false;
+    }
+
+    public boolean decide(String title, String msg, int forTime) {
+        return SimpleDialog.decide(null, title, msg, forTime);
+    }
     void quit() {
         mainF.setVisible(false);
         mainF.dispose();

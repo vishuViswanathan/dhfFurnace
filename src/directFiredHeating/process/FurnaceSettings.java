@@ -1,7 +1,7 @@
-package level2.settings;
+package directFiredHeating.process;
 
+import directFiredHeating.DFHeating;
 import directFiredHeating.FceSection;
-import level2.applications.L2DFHeating;
 import mvUtils.display.*;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
@@ -23,8 +23,10 @@ import java.util.Vector;
  * To change this template use File | Settings | File Templates.
  */
 public class FurnaceSettings   {
-    L2DFHeating l2DFHeating;
-//    double maxSpeed; // m/min
+    // @@@@@@@@@@@@@@ REMEMBER to modify backup() and restore(), for any change in
+    // data structure
+    DFHeating dfHeating;
+    String opcIP = "opc.tcp://127.0.0.1:49320";
     DoubleRange[] zoneFuelRange;
     DoubleRange totFuelRange;
     public String errMsg = "Error reading Furnace Settings :";
@@ -32,13 +34,15 @@ public class FurnaceSettings   {
 //    double fuelTurnDown = 7;
     public int fuelCharSteps = 7;
     public boolean considerFieldZoneTempForLossCorrection = false;
+    // @@@@@@@@@@@@@@ REMEMBER to modify backup() and restore(), for any change in
+    // data structure
 
-    public FurnaceSettings(L2DFHeating l2DFHeating) {
-        this.l2DFHeating = l2DFHeating;
+    public FurnaceSettings(DFHeating dfHeating) {
+        this.dfHeating = dfHeating;
     }
 
-    public FurnaceSettings(L2DFHeating l2DFHeating, Vector<FceSection> activeSections) {
-        this(l2DFHeating);
+    public FurnaceSettings(DFHeating dfHeating, Vector<FceSection> activeSections) {
+        this(dfHeating);
         fuelCharSteps = 7;
         considerFieldZoneTempForLossCorrection = false;
         zoneFuelRange = new DoubleRange[activeSections.size()];
@@ -53,9 +57,31 @@ public class FurnaceSettings   {
         }
     }
 
-    public FurnaceSettings(L2DFHeating l2DFHeating, String xmlStr) {
-        this(l2DFHeating);
+    public FurnaceSettings(DFHeating dfHeating, String xmlStr) {
+        this(dfHeating);
         takeDataFromXML(xmlStr);
+    }
+
+    public StatusWithMessage checkIntegrity() {
+        StatusWithMessage retVal = new StatusWithMessage("\n");
+        Vector<FceSection> activeSections = dfHeating.furnace.getActiveSections(false);
+        if (zoneFuelRange.length == activeSections.size()) {
+            int i = 0;
+            for (FceSection sec : activeSections) {
+                DoubleRange oneRange = zoneFuelRange[i];
+                if (sec.bRecuType) {
+                    if (oneRange.max != 0 || oneRange.min != 0)
+                        retVal.addErrorMessage("Recuperative section " + sec.sectionName() + " is shown with fuel settings");
+                } else {
+                    if (oneRange.max <= 0 || oneRange.min >= oneRange.max)
+                        retVal.addErrorMessage("Fired section " + sec.sectionName() + " has some Fuel range anomaly");
+                }
+                i++;
+            }
+        }
+        else
+            retVal.addErrorMessage("Mismatch in Zone count");
+        return retVal;
     }
 
     /*
@@ -108,6 +134,9 @@ public class FurnaceSettings   {
             try {
 //                vp = XMLmv.getTag(xmlStr, "maxSpeed", 0);
 //                maxSpeed = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "opcIP", 0);
+                if (vp.val.length() > 5)
+                    opcIP = vp.val.trim();
                 vp = XMLmv.getTag(xmlStr, "fuelCharSteps", 0);
                 fuelCharSteps = Integer.valueOf(vp.val);
                 vp = XMLmv.getTag(xmlStr, "considerFieldZoneTempForLossCorrection", 0);
@@ -119,7 +148,6 @@ public class FurnaceSettings   {
             } catch (NumberFormatException e) {
                 errMsg += "Some Number format error";
                 inError = true;
-                retVal = false;
                 break aBlock;
             }
         }
@@ -128,7 +156,8 @@ public class FurnaceSettings   {
 
     public StringBuffer dataInXML() {
 //        StringBuffer xmlStr = new StringBuffer(XMLmv.putTag("maxSpeed", maxSpeed));
-        StringBuffer xmlStr = new StringBuffer(XMLmv.putTag("fuelCharSteps", "" + fuelCharSteps));
+        StringBuffer xmlStr = new StringBuffer(XMLmv.putTag("opcIP", opcIP));
+        xmlStr.append(XMLmv.putTag("fuelCharSteps", "" + fuelCharSteps));
         xmlStr.append(XMLmv.putTag("considerFieldZoneTempForLossCorrection", considerFieldZoneTempForLossCorrection));
         xmlStr.append(XMLmv.putTag("fuelRanges", fuelRangesInXML()));
         return xmlStr;
@@ -181,6 +210,37 @@ public class FurnaceSettings   {
         return retVal;
     }
 
+    FurnaceSettings getbackup() {
+//        to.dfHeating = dfHeating;
+        FurnaceSettings backup = new FurnaceSettings(dfHeating);
+        backup.zoneFuelRange = new DoubleRange[zoneFuelRange.length];
+        for (int i = 0; i < zoneFuelRange.length; i++)
+            backup.zoneFuelRange[i] = new DoubleRange(zoneFuelRange[i]);
+        backup.fuelCharSteps = fuelCharSteps;
+        backup.considerFieldZoneTempForLossCorrection = considerFieldZoneTempForLossCorrection;
+        return backup;
+    }
+
+    void  restoreFrom(FurnaceSettings from) {
+        for (int i = 0; i < zoneFuelRange.length; i++)
+            zoneFuelRange[i] = new DoubleRange(from.zoneFuelRange[i]);
+        fuelCharSteps = from.fuelCharSteps;
+        considerFieldZoneTempForLossCorrection = from.considerFieldZoneTempForLossCorrection;
+    }
+
+    public boolean getOPCServerIP(InputControl ipc) {
+        boolean retVal = false;
+        OneParameterDialog dlg = new OneParameterDialog(ipc, "IP address of OPC server", true);
+        dlg.setValue("IP address of OPC Server:", opcIP, 20);
+        dlg.setLocationRelativeTo(ipc.parent());
+        dlg.setVisible(true);
+        if (dlg.isOk()) {
+            opcIP = dlg.getTextVal();
+            retVal = true;
+        }
+        return retVal;
+    }
+
     class FceSettingsDlg extends JDialog implements DataHandler {
         InputControl ipc;
         DataListEditorPanel editorPanel;
@@ -193,16 +253,18 @@ public class FurnaceSettings   {
         NumberTextField[] ntTurnDown;
         int nZones;
         boolean edited = false;
+        FurnaceSettings backup;
 
         FceSettingsDlg(boolean editable) {
-             this.editable = editable;
-             setModal(true);
-             init();
+            this.editable = editable;
+            setModal(true);
+            backup = getbackup();
+            init();
         }
 
 
         void init() {
-            ipc = l2DFHeating;
+            ipc = dfHeating;
             addWindowListener(new WindowAdapter() {
                  @Override
                  public void windowClosing(WindowEvent e) {
@@ -218,7 +280,7 @@ public class FurnaceSettings   {
             rbConsiderFieldZoneTempForLossCorrection.addChangeListener(new ChangeListener() {
                 public void stateChanged(ChangeEvent e) {
                     if (rbConsiderFieldZoneTempForLossCorrection.isSelected()) {
-                        l2DFHeating.showError("Not ready for this to be ON", FceSettingsDlg.this);
+                        dfHeating.showError("Not ready for this to be ON", FceSettingsDlg.this);
                         rbConsiderFieldZoneTempForLossCorrection.setSelected(false);
                     }
                 }
@@ -229,7 +291,7 @@ public class FurnaceSettings   {
             editorPanel.addItem(rbConsiderFieldZoneTempForLossCorrection);
             editorPanel.addBlank();
             double max, td;
-            nZones = l2DFHeating.l2Furnace.nTopActiveSecs;
+            nZones = dfHeating.furnace.nTopActiveSecs;
             ntRangeMax = new NumberTextField[nZones];
             ntTurnDown = new NumberTextField[nZones];
 
@@ -281,7 +343,13 @@ public class FurnaceSettings   {
                 zoneFuelRange[z].min = zoneFuelRange[z].max / ntTurnDown[z].getData();
             }
             edited = true;
-            return false;
+            StatusWithMessage stat = checkIntegrity();
+            if (stat.getDataStatus() == StatusWithMessage.DataStat.WithErrorMsg) {
+                dfHeating.showError("Fuel data Error:\n" + stat.getErrorMessage(), this);
+                return false;
+            }
+            else
+                return true;
         }
 
         public void deleteData() {
@@ -289,6 +357,9 @@ public class FurnaceSettings   {
         }
 
         public void resetData() {
+            if (backup != null)
+                restoreFrom(backup);
+            edited = false;
 //            ntMaxSpeed.setData(maxSpeed);
             ntFuelSegments.setData(fuelCharSteps);
             double max, td;
@@ -304,7 +375,8 @@ public class FurnaceSettings   {
         }
 
          public void cancel() {
- //            dataDlg.setVisible(false);
+             if (backup != null)
+                 restoreFrom(backup);
              response = EditResponse.Response.EXIT;
              setVisible(false);
          }

@@ -11,13 +11,13 @@ import com.prosysopc.ua.client.MonitoredDataItem;
 import com.prosysopc.ua.client.Subscription;
 import com.prosysopc.ua.client.SubscriptionAliveListener;
 import directFiredHeating.*;
-import level2.accessControl.L2AccessControl;
+import directFiredHeating.accessControl.L2AccessControl;
 import level2.applications.L2DFHeating;
 import level2.common.*;
 import level2.display.L2DFHDisplay;
 import level2.fieldResults.FieldResults;
-import level2.settings.FurnaceSettings;
-import level2.stripDFH.process.OneStripDFHProcess;
+import directFiredHeating.process.FurnaceSettings;
+import directFiredHeating.process.OneStripDFHProcess;
 import mvUtils.display.*;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     public TMuaClient source;
-    public FurnaceSettings furnaceSettings;
+//    public FurnaceSettings furnaceSettings;
     LinkedHashMap<FceSection, L2DFHZone> topL2Zones;
     LinkedHashMap<FceSection, L2DFHZone> botL2Zones;
     L2OneParameterZone rthExit;
@@ -143,15 +143,11 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         }
     }
 
-    public boolean showEditFceSettings(boolean bEdit) {
-        return furnaceSettings.showEditData(bEdit, controller.parent());
-    }
-
     boolean canResetAccess = true; // resetting the application status in 'Level2.Internal'
 
     /**
-     * Checcks in the the module access level is valid or not
-     * Baically checks if anoher module exisits with this level
+     * Checks in the the module access level is valid or not
+     * Baically checks if another module exists with this level
      * @return
      */
     public StatusWithMessage checkAndNoteAccessLevel() {
@@ -719,10 +715,10 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
 //        L2ZonalFuelProfile fuelProfile = new L2ZonalFuelProfile(perfTable, steps, controller);
 //    }
 
-    public void clearAssociatedData() {
-        furnaceSettings = new FurnaceSettings(l2DFHeating, getActiveSections(false));
-
-    }
+//    public void clearAssociatedData() {
+//        furnaceSettings = new FurnaceSettings(l2DFHeating, getActiveSections(false));
+//
+//    }
 
     public String fceSettingsInXML() {
         return furnaceSettings.dataInXML().toString();

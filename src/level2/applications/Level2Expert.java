@@ -1,6 +1,6 @@
 package level2.applications;
 
-import level2.accessControl.L2AccessControl;
+import directFiredHeating.accessControl.L2AccessControl;
 
 /**
  * User: M Viswanathan

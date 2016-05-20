@@ -7,7 +7,7 @@ import directFiredHeating.FceSection;
 import level2.common.L2ParamGroup;
 import level2.common.Tag;
 import level2.stripDFH.L2DFHFurnace;
-import level2.stripDFH.process.OneStripDFHProcess;
+import directFiredHeating.process.OneStripDFHProcess;
 import mvUtils.display.*;
 import mvUtils.math.DoubleMV;
 import mvUtils.mvXML.ValAndPos;

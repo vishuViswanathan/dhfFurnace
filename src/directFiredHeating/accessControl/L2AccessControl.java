@@ -1,10 +1,8 @@
-package level2.accessControl;
+package directFiredHeating.accessControl;
 
-import level2.applications.L2DFHeating;
 import mvUtils.display.StatusWithMessage;
-import mvUtils.file.AccessControl;
+import mvUtils.file.AccessControlInFile;
 
-import java.util.EnumMap;
 import java.util.HashMap;
 
 /**
@@ -14,21 +12,23 @@ import java.util.HashMap;
  * To change this template use File | Settings | File Templates.
  */
 public class L2AccessControl {
-    public enum AccessLevel {NONE, RUNTIME, UPDATER, EXPERT, CONFIGURATOR};
+    public enum AccessLevel {NONE, RUNTIME, UPDATER, EXPERT, INSTALLER, CONFIGURATOR};
+
+    static public String fileExtension = "l2Acc";
 
     HashMap<AccessLevel, AccessNameAndDescription> accessMap =  new HashMap<AccessLevel, AccessNameAndDescription>(){ {
         put(AccessLevel.NONE, new AccessNameAndDescription("None", "No Access"));
         put(AccessLevel.RUNTIME, new AccessNameAndDescription("Runtime", "Level2 - Runtime"));
         put(AccessLevel.UPDATER, new AccessNameAndDescription("Updater", "Level2 - Updater"));
         put(AccessLevel.EXPERT, new AccessNameAndDescription("Expert", "Level2 - Expert"));
+        put(AccessLevel.INSTALLER, new AccessNameAndDescription("Installer", "Level2 - Installer"));
         put(AccessLevel.CONFIGURATOR, new AccessNameAndDescription("Configurator", "Level2 - Configurator"));
     }};
 
-    AccessControl accessControl;
+    AccessControlInFile accessControl;
 
     public L2AccessControl(String filePath, boolean onlyIfExists) throws Exception {
-        accessControl = new AccessControl(filePath, onlyIfExists);
-
+        accessControl = new AccessControlInFile(filePath, onlyIfExists);
     }
 
     public StatusWithMessage authenticate(AccessLevel forLevel) {
@@ -39,6 +39,17 @@ public class L2AccessControl {
     public StatusWithMessage authenticate(AccessLevel forLevel, String title) {
         AccessNameAndDescription nd = accessMap.get(forLevel);
         return accessControl.getAndCheckPassword(nd.name, title);
+    }
+
+    /**
+     * creates a new access Control file with one access entry for 'forLevel'
+     * @param forLevel
+     * @return
+     */
+    public static StatusWithMessage initiateAccessFile(AccessLevel forLevel) {
+        StatusWithMessage retVal = new StatusWithMessage();
+        retVal.setErrorMessage("Not Ready for Access Control yet");
+        return retVal;
     }
 
     public StatusWithMessage addNewUser(AccessLevel forLevel) {

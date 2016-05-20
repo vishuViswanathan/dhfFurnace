@@ -1,7 +1,7 @@
 package level2.stripDFH;
 
 import level2.applications.L2DFHeating;
-import level2.settings.FurnaceSettings;
+import directFiredHeating.process.FurnaceSettings;
 import mvUtils.display.DataWithMsg;
 import mvUtils.math.DoubleRange;
 import mvUtils.math.XYArray;
