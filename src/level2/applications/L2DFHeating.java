@@ -207,9 +207,9 @@ public class L2DFHeating extends DFHeating {
                         addMenuBar(createL2MenuBar());
                         l2MenuSet = true;
                         getPerformanceList();
-                        dfhProcessList = new StripDFHProcessList(this);
-                        if (getStripDFHProcessList()) {
-                            if (getFurnaceSettings()) {
+//                        dfhProcessList = new StripDFHProcessList(this);
+//                        if (getStripDFHProcessList()) {
+//                            if (getFurnaceSettings()) {
                                 bProfileEdited = false;
                                 if (onProductionLine) {
                                     if (l2Furnace.makeAllConnections()) {   // createL2Zones()) {
@@ -223,10 +223,10 @@ public class L2DFHeating extends DFHeating {
                                     }
                                 } else
                                     l2SystemReady = true;
-                            } else
-                                showError("Problem in loading Furnace Settings");
-                        } else
-                            showError("Problem loading test StripDFHProcess list data");
+//                            } else
+//                                showError("Problem in loading Furnace Settings");
+//                        } else
+//                            showError("Problem loading test StripDFHProcess list data");
                     } else
                         showError("Unable to load Furnace Profile : " + statL2FceFile.getErrorMessage());
                 } else
@@ -261,6 +261,7 @@ public class L2DFHeating extends DFHeating {
     }
 
     boolean loadAssociatedData(String basePath) {
+        showMessage(" call to loadAssociatedData to be modified 20160520");
         boolean retVal = false;
         getPerformanceList(basePath);
         dfhProcessList = new StripDFHProcessList(this);
@@ -1246,6 +1247,7 @@ public class L2DFHeating extends DFHeating {
         disableCompare();
         StatusWithMessage retVal = new StatusWithMessage();
         furnace.resetSections();
+        dfhProcessList = new StripDFHProcessList(this);
         File folder = new File(fceDataLocation);
         File[] files = folder.listFiles(new FilenameFilter() {
             public boolean accept(File dir, String name) {
@@ -1260,14 +1262,17 @@ public class L2DFHeating extends DFHeating {
             furnace.resetLossAssignment();
             hidePerformMenu();
             retVal = getFceFromFceDatFile(files[0].getAbsolutePath());
-            switchPage(DFHDisplayPageType.INPUTPAGE);
+            if (retVal.getDataStatus() != StatusWithMessage.DataStat.WithErrorMsg) {
+                profileFileName = files[0].getName();
+                switchPage(DFHDisplayPageType.INPUTPAGE);
+            }
         }
         return retVal;
     }
 
-    public StatusWithMessage getFceFromFceDatFile(String filePath) {
-        return super.getFceFromFceDatFile(filePath);
-    }
+//    public StatusWithMessage getFceFromFceDatFile(String filePath) {
+//        return super.getFceFromFceDatFile(filePath);
+//    }
 
     void getFuelAndCharge() {
         fuelSpecsFromFile(fceDataLocation + "FuelSpecifications.dfhSpecs");
@@ -1279,13 +1284,13 @@ public class L2DFHeating extends DFHeating {
     String profileCodeTag = "profileCode";
     DecimalFormat profileCodeFormat = new DecimalFormat("000000");
 
-    String createProfileCode() {
+    String createProfileCodeOLD() {
         profileCode = profileCodeFormat.format(Math.random() * 999999.0);
         bProfileEdited = true;
         return profileCode;
     }
 
-    boolean createProfileCodeNEW() {
+    boolean createProfileCode() {
         debug("changeProfileCode: " + changeProfileCode);
         if (changeProfileCode || (profileCode.length() < 1)) {
             profileCode = profileCodeFormat.format(Math.random() * 999999.0);
@@ -1321,7 +1326,7 @@ public class L2DFHeating extends DFHeating {
         return XMLmv.putTag(profileCodeTag, profileCode);
     }
 
-    public StatusWithMessage takeProfileDataFromXML(String xmlStr) {
+    public StatusWithMessage takeProfileDataFromXMLOLD(String xmlStr) {
         StatusWithMessage retVal = new StatusWithMessage();
         ValAndPos vp;
         vp = XMLmv.getTag(xmlStr, profileCodeTag);
@@ -1334,7 +1339,7 @@ public class L2DFHeating extends DFHeating {
         return retVal;
     }
 
-    public StatusWithMessage takeProfileDataFromXMLNEW(String xmlStr) {
+    public StatusWithMessage takeProfileDataFromXML(String xmlStr) {
         StatusWithMessage retVal = new StatusWithMessage();
         ValAndPos vp;
         vp = XMLmv.getTag(xmlStr, profileCodeTag);
@@ -1373,13 +1378,13 @@ public class L2DFHeating extends DFHeating {
         changeProfileCode = true;
     }
 
-    protected void saveFceToFile(boolean withPerformance) {
+    protected void saveFceToFileOLD(boolean withPerformance) {
         takeValuesFromUI();
         String title = "Save Level2 Furnace Data" + ((withPerformance) ? " (with Performance Data)" : "");
         FileDialog fileDlg =
                 new FileDialog(mainF, title,
                         FileDialog.SAVE);
-        createProfileCode();
+        createProfileCodeOLD();
         fileDlg.setFile(profileCode + " FurnaceProfile.dfhDat");
         fileDlg.setVisible(true);
 
@@ -1410,7 +1415,7 @@ public class L2DFHeating extends DFHeating {
         parent().toFront();
     }
 
-    protected void saveFceToFileNEW(boolean withPerformance) {
+    protected void saveFceToFile(boolean withPerformance) {
         takeValuesFromUI();
         StatusWithMessage fceSettingsIntegrity = furnace.furnaceSettings.checkIntegrity();
         if (fceSettingsIntegrity.getDataStatus() == StatusWithMessage.DataStat.OK) {
@@ -1418,7 +1423,7 @@ public class L2DFHeating extends DFHeating {
             FileDialog fileDlg =
                     new FileDialog(mainF, title,
                             FileDialog.SAVE);
-            boolean profileCodeChanged = createProfileCodeNEW();
+            boolean profileCodeChanged = createProfileCode();
             String promptFile = (profileCodeChanged) ?
                     (profileCode + " FurnaceProfile.dfhDat") :
                     profileFileName;
