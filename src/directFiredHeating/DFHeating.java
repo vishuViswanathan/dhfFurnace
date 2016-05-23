@@ -142,7 +142,9 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     static public boolean bAllowEditDFHProcess = false;
     static public boolean bL2Configurator = false;
     static public boolean bAllowEditFurnaceSettings = false;
-    protected String profileFileName = "FurnaceProfile.dfhDat";
+    protected String profileFileExtension = "dfhDat";
+    protected String profileFileName = "FurnaceProfile." + profileFileExtension;
+    protected long maxSizeOfProfileFile = (long)1e6;
     protected String fceDataLocation = "";
     protected FramedPanel mainAppPanel;
 //    FramedPanel panelLT;
@@ -3164,9 +3166,9 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             String bareFile = fileDlg.getFile();
             if (!(bareFile == null)) {
                 int len = bareFile.length();
-                if ((len < 8) || !(bareFile.substring(len - 7).equalsIgnoreCase(".dfhDat"))) {
-                    showMessage("Adding '.dfhDat' to file name");
-                    bareFile = bareFile + ".dfhDat";
+                if ((len < 8) || !(bareFile.substring(len - 7).equalsIgnoreCase("." + profileFileExtension))) {
+                    showMessage("Adding '." + profileFileExtension + "' to file name");
+                    bareFile = bareFile + "." + profileFileExtension;
                 }
                 String fileName = fileDlg.getDirectory() + bareFile;
                 debug("Save Data file name :" + fileName);
@@ -3192,7 +3194,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
     protected void saveFceToFileJNLP(boolean withPerformance) {
         takeValuesFromUI();
-        if (!JNLPFileHandler.saveToFile(inputDataXML(withPerformance), "dfhDat", "furnaceProfile.dfhDat"))
+        if (!JNLPFileHandler.saveToFile(inputDataXML(withPerformance), profileFileExtension, "furnaceProfile." + profileFileExtension))
             showError("Some IO Error in writing to file!");
         parent().toFront();
     }
@@ -3202,7 +3204,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         StatusWithMessage retVal = new StatusWithMessage();
         furnace.resetSections();
         try {
-            FileContents fc = JNLPFileHandler.getReadFile(null, new String[]{"dfhDat", "xls", "test"}, 0, 0);
+            FileContents fc = JNLPFileHandler.getReadFile(null, new String[]{profileFileExtension, "xls", "test"}, 0, 0);
             if (fc != null) {
                 String fileName = fc.getName();
                 boolean bXL = (fileName.length() > 4) && (fileName.substring(fileName.length() - 4).equalsIgnoreCase(".xls"));
@@ -3255,7 +3257,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         FileDialog fileDlg =
                 new FileDialog(mainF, "Read DFH Furnace Data",
                         FileDialog.LOAD);
-        fileDlg.setFile("*.dfhDat; *.xls");
+        fileDlg.setFile("*." + profileFileExtension + "; *.xls");
         fileDlg.setVisible(true);
         String fileName = fileDlg.getFile();
         if (fileName != null) {

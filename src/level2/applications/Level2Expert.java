@@ -32,7 +32,7 @@ public class Level2Expert extends L2DFHeating {
             if (l2SystemReady) {
                 informLevel2Ready();
             } else {
-                showError("Level2 could not be started. Aborting ...");
+                showError("Level2 could not be started. Aborting 002...");
                 exitFromLevel2();
             }
         }

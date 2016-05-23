@@ -167,6 +167,7 @@ public class L2StripZone extends L2ParamGroup {
         StripProcessAndSize theStrip = null;
         if (l2Furnace.level2Enabled) {
             theStrip = getNewStripData();
+            l2Furnace.logTrace("new strip with Process:" + theStrip.process);
             OneStripDFHProcess oneProcess = l2DFHeating.getStripDFHProcess(theStrip.process);
             if (oneProcess != null) {
                 Performance refP = l2Furnace.getBasePerformance(oneProcess, theStrip.thickness);

@@ -639,8 +639,9 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         } catch (ServiceException e) {
             e.printStackTrace();
         }
+        exitFromAccess();
         if (l2DFHeating.isOnProductionLine() && l2DFHeating.isL2SystemReady()) {
-            exitFromAccess();
+//            exitFromAccess();
             for (FceSection sec : topL2Zones.keySet())
                 topL2Zones.get(sec).closeSubscriptions();
             try {

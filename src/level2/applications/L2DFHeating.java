@@ -93,6 +93,7 @@ public class L2DFHeating extends DFHeating {
 
     public L2DisplayPageType l2DisplayNow = L2DisplayPageType.NONE;
     String fceDataLocation = "level2FceData/";
+    String l2BasePath = "";
     String accessDataFile = fceDataLocation + "l2AccessData.txt";
     String lockPath = fceDataLocation + "Syncro.lock";
     String opcIPFilePath = fceDataLocation + "opc.path";
@@ -504,35 +505,35 @@ public class L2DFHeating extends DFHeating {
     String stripProcExtension = "stripProc";
     File fceDataLocationDirectory = new File(fceDataLocation);
 
-    public boolean updateProcessDataFile() {
-        boolean saved = false;
-        FileLock lock;
-        int count = 5;
-        boolean gotTheLock = false;
-        while (--count > 0) {
-            lock = getTheLock();
-            if (lock == null) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                continue;
-            }
-            gotTheLock = true;
-            saved = saveDFHProcessList();
-            releaseLock(lock);
-
-            break;
-        }
-        if (onProductionLine && saved)
-            l2Furnace.informProcessDataModified();
-        else if (!gotTheLock)
-            showError("Facing some problem in getting Lock");
-        else
-            showError("Process Data saved");
-        return saved;
-    }
+//    public boolean updateProcessDataFile() {
+//        boolean saved = false;
+//        FileLock lock;
+//        int count = 5;
+//        boolean gotTheLock = false;
+//        while (--count > 0) {
+//            lock = getTheLock();
+//            if (lock == null) {
+//                try {
+//                    Thread.sleep(1000);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//                continue;
+//            }
+//            gotTheLock = true;
+//            saved = saveDFHProcessList();
+//            releaseLock(lock);
+//
+//            break;
+//        }
+//        if (onProductionLine && saved)
+//            l2Furnace.informProcessDataModified();
+//        else if (!gotTheLock)
+//            showError("Facing some problem in getting Lock");
+//        else
+//            showError("Process Data not saved");
+//        return saved;
+//    }
 
     boolean saveDFHProcessList() {
         boolean retVal = false;
@@ -727,61 +728,64 @@ public class L2DFHeating extends DFHeating {
         return retVal;
     }
 
-    boolean loadStripDFHProcessList() {
-        boolean retVal = false;
-        String title = "Read StripDFHProcess list";
-        FileDialog fileDlg =
-                new FileDialog(mainF, title,
-                        FileDialog.LOAD);
-        fileDlg.setFile("*.stripProc");
-        fileDlg.setVisible(true);
-        String fileName = fileDlg.getFile();
-        if (fileName != null) {
-            String filePath = fileDlg.getDirectory() + fileName;
-            retVal = loadStripDFHProcessList(filePath);
-        }
-        parent().toFront();
-        return retVal;
-    }
+//    boolean loadStripDFHProcessList() {
+//        boolean retVal = false;
+//        String title = "Read StripDFHProcess list";
+//        FileDialog fileDlg =
+//                new FileDialog(mainF, title,
+//                        FileDialog.LOAD);
+//        fileDlg.setFile("*.stripProc");
+//        fileDlg.setVisible(true);
+//        String fileName = fileDlg.getFile();
+//        if (fileName != null) {
+//            String filePath = fileDlg.getDirectory() + fileName;
+//            retVal = loadStripDFHProcessList(filePath);
+//        }
+//        parent().toFront();
+//        return retVal;
+//    }
 
-    boolean loadStripDFHProcessList(String filePath) {
-        boolean retVal = false;
-        if (!filePath.equals("nullnull")) {
-//            debug("File for StripDFHProcess list :" + filePath);
-            try {
-                retVal = loadStripDFHProcessList(new File(filePath));
-            } catch (Exception e) {
-                showError("Some Problem in getting file!");
-            }
-        }
-        return retVal;
-    }
+//    boolean loadStripDFHProcessList(String filePath) {
+//        boolean retVal = false;
+//        if (!filePath.equals("nullnull")) {
+////            debug("File for StripDFHProcess list :" + filePath);
+//            try {
+//                retVal = loadStripDFHProcessList(new File(filePath));
+//            } catch (Exception e) {
+//                showError("Some Problem in getting file!");
+//            }
+//        }
+//        return retVal;
+//    }
+//
 
-    boolean loadStripDFHProcessList(File file) {
-        boolean retVal = false;
+    StatusWithMessage loadStripDFHProcessList(File file) {
+        StatusWithMessage retVal = new StatusWithMessage();
         try {
             BufferedInputStream iStream = new BufferedInputStream(new FileInputStream(file));
             //           FileInputStream iStream = new FileInputStream(fileName);
             long len = file.length();
-            if (len > 50 && len < 10000) {
+            if (len > 50 && len < maxSizeOfProfileFile) {
                 int iLen = (int) len;
                 byte[] data = new byte[iLen + 10];
                 if (iStream.read(data) > 50) {
                     String xmlStr = new String(data);
                     if (checkProfileCodeInXML(xmlStr)) {
-                        if (takeStripProcessListFromXML(xmlStr)) {
-                            l2Info("StripDFHProcess list loaded");
-//                            if (showDebugMessages)
-//                                showMessage("StripDFHProcess list loaded");
-                            retVal = true;
+                        ValAndPos vp;
+                        vp = XMLmv.getTag(xmlStr, "dfhProcessList");
+                        if (vp.val.length() < 10 || !takeStripProcessListFromXML(vp.val)) {
+                            retVal.addErrorMessage("No Strip Process Data available");
+                        }
+                        else if (dfhProcessList.getCount() < 2) {
+                            retVal.addErrorMessage("Process List must have at least one entry");
                         }
                     } else
-                        showError("mismatch in DFH Process List file");
+                        retVal.addErrorMessage("mismatch in Furnace data file");
                 }
             } else
-                showError("File size " + len + " for " + file);
+                retVal.addErrorMessage("File size " + len + " for " + file);
         } catch (Exception e) {
-            showError("Some Problem in getting file!");
+            retVal.addErrorMessage("Some Problem in getting file for Process Data!");
         }
         return retVal;
     }
@@ -1249,9 +1253,11 @@ public class L2DFHeating extends DFHeating {
         furnace.resetSections();
         dfhProcessList = new StripDFHProcessList(this);
         File folder = new File(fceDataLocation);
+        l2BasePath = folder.getAbsolutePath();
+        logInfo("base path = " + l2BasePath);
         File[] files = folder.listFiles(new FilenameFilter() {
             public boolean accept(File dir, String name) {
-                return name.endsWith(".dfhDat");
+                return name.endsWith("." + profileFileExtension);
             }
         });
         if (files.length < 1) {
@@ -1308,8 +1314,14 @@ public class L2DFHeating extends DFHeating {
         return (withThis != null) && (profileCode.equals(withThis));
     }
 
+//    public String inputDataXML(boolean withPerformance) {
+//        return profileCodeInXML() + super.inputDataXML(withPerformance);
+//    }
+//
     public String inputDataXML(boolean withPerformance) {
-        return profileCodeInXML() + super.inputDataXML(withPerformance);
+        return profileCodeInXML() + super.inputDataXML(withPerformance) +
+                XMLmv.putTag("FuelSettings", furnace.fceSettingsInXML()) +
+                XMLmv.putTag("dfhProcessList", stripDFHProcessListInXML());
     }
 
     protected boolean isProfileCodeOK() {
@@ -1349,11 +1361,16 @@ public class L2DFHeating extends DFHeating {
             if (retVal.getDataStatus() == StatusWithMessage.DataStat.OK) {
                 furnace.clearAssociatedData();
                 vp = XMLmv.getTag(xmlStr, "FuelSettings");
-                if (vp.val.length() < 10 || !furnace.takeFceSettingsFromXML(xmlStr))
-                    retVal.addInfoMessage("No Fuel settings data available");
+                if (vp.val.length() < 10 || !furnace.takeFceSettingsFromXML(vp.val)) {
+                    retVal.addErrorMessage("No Fuel settings data available");
+                }
                 vp = XMLmv.getTag(xmlStr, "dfhProcessList");
-                if (vp.val.length() < 10 || !takeStripProcessListFromXML(xmlStr))
-                    retVal.addInfoMessage("No Strip Process Data available");
+                if (vp.val.length() < 10 || !takeStripProcessListFromXML(vp.val)) {
+                    retVal.addErrorMessage("No Strip Process Data available");
+                }
+                else if (dfhProcessList.getCount() < 2) {
+                    retVal.addErrorMessage("Porcess List musta have at least one entry");
+                }
             }
         } else
             retVal.addErrorMessage("ERROR: Not a Level2 Furnace Profile");
@@ -1368,14 +1385,40 @@ public class L2DFHeating extends DFHeating {
     }
 
     boolean updateFurnace() {
-        saveFurnaceWithNowProfileCode();
-        return true;
+        boolean saved = false;
+        FileLock lock;
+        int count = 5;
+        boolean gotTheLock = false;
+        while (--count > 0) {
+            lock = getTheLock();
+            if (lock == null) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                continue;
+            }
+            gotTheLock = true;
+            saved = saveFurnaceWithNowProfileCode();
+            releaseLock(lock);
+
+            break;
+        }
+        if (onProductionLine && saved)
+            l2Furnace.informProcessDataModified();
+        else if (!gotTheLock)
+            showError("Facing some problem in getting Lock");
+        else
+            showError("Furnace Data not saved");
+        return saved;
     }
 
-    void saveFurnaceWithNowProfileCode() {
+    boolean saveFurnaceWithNowProfileCode() {
         changeProfileCode = false;
         saveFceToFile(true);
         changeProfileCode = true;
+        return true;
     }
 
     protected void saveFceToFileOLD(boolean withPerformance) {
@@ -1385,15 +1428,15 @@ public class L2DFHeating extends DFHeating {
                 new FileDialog(mainF, title,
                         FileDialog.SAVE);
         createProfileCodeOLD();
-        fileDlg.setFile(profileCode + " FurnaceProfile.dfhDat");
+        fileDlg.setFile(profileCode + " FurnaceProfile." + profileFileExtension);
         fileDlg.setVisible(true);
 
         String bareFile = fileDlg.getFile();
         if (!(bareFile == null)) {
             int len = bareFile.length();
-            if ((len < 8) || !(bareFile.substring(len - 7).equalsIgnoreCase(".dfhDat"))) {
-                showMessage("Adding '.dfhDat' to file name");
-                bareFile = bareFile + ".dfhDat";
+            if ((len < 8) || !(bareFile.substring(len - 7).equalsIgnoreCase("." + profileFileExtension))) {
+                showMessage("Adding '." + profileFileExtension + "' to file name");
+                bareFile = bareFile + "." + profileFileExtension;
             }
             String fileName = fileDlg.getDirectory() + bareFile;
 //            debug("Save Data file name :" + fileName);
@@ -1425,17 +1468,19 @@ public class L2DFHeating extends DFHeating {
                             FileDialog.SAVE);
             boolean profileCodeChanged = createProfileCode();
             String promptFile = (profileCodeChanged) ?
-                    (profileCode + " FurnaceProfile.dfhDat") :
+                    (profileCode + " FurnaceProfile." + profileFileExtension) :
                     profileFileName;
+            if (l2BasePath.length() > 0 )
+                fileDlg.setDirectory(l2BasePath + "\\");
             fileDlg.setFile(promptFile);
             fileDlg.setVisible(true);
 
             String bareFile = fileDlg.getFile();
             if (!(bareFile == null)) {
                 int len = bareFile.length();
-                if ((len < 8) || !(bareFile.substring(len - 7).equalsIgnoreCase(".dfhDat"))) {
-                    showMessage("Adding '.dfhDat' to file name");
-                    bareFile = bareFile + ".dfhDat";
+                if ((len < 8) || !(bareFile.substring(len - 7).equalsIgnoreCase("." + profileFileExtension))) {
+                    showMessage("Adding '." + profileFileExtension + "' to file name");
+                    bareFile = bareFile + "." + profileFileExtension;
                 }
                 String fileName = fileDlg.getDirectory() + bareFile;
 //            debug("Save Data file name :" + fileName);
@@ -1460,20 +1505,52 @@ public class L2DFHeating extends DFHeating {
             showError("Problem in Fuel Settings :\n" + fceSettingsIntegrity.getErrorMessage());
     }
 
-
-    protected boolean getStripDFHProcessList(String basePath) {  // TODO to be modifed 20160520
+    protected boolean getStripDFHProcessList(String basePath) {  // TODO to be modified 20160520
         boolean retVal = false;
-        File file = getParticularFile(basePath, profileCode, "stripProc");
+        File file = getParticularFile(basePath, profileCode, profileFileExtension);
         if (file != null) {
-            retVal = loadStripDFHProcessList(file);
-            l2Info("loaded file " + file);
+            StatusWithMessage response = loadStripDFHProcessList(file);
+            if (response.getDataStatus() == StatusWithMessage.DataStat.WithErrorMsg)
+                showError("Updated Process List: " + response.getErrorMessage());
+            else {
+                l2Info("loaded Process List from file " + file);
+                retVal = true;
+            }
         } else
-            showError("Unable to locate StripDFHProcess List File");
+            showError("Unable to locate Furnace data File for getting Process List");
         return retVal;
     }
 
     protected boolean getStripDFHProcessList() {
-        return getStripDFHProcessList(fceDataLocation);
+        // to add lock here
+        boolean gotIt = false;
+        FileLock lock;
+        int count = 5;
+        boolean gotTheLock = false;
+        while (--count > 0) {
+            lock = getTheLock();
+            if (lock == null) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                continue;
+            }
+            gotTheLock = true;
+            gotIt = getStripDFHProcessList(fceDataLocation);
+            releaseLock(lock);
+            break;
+        }
+        if (gotIt) {
+            logInfo("Process data read from file");
+        } else {
+            if (!gotTheLock)
+                showError("unable to get fileLock for reading Process Data");
+            else
+                showError("Facing some problem in getting Lock to take Modified Process Data");
+        }
+        return gotIt;
     }
 
     protected boolean getFurnaceSettings(String basePath) {

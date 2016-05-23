@@ -35,6 +35,10 @@ public class StripDFHProcessList {
         list.clear();
     }
 
+    public int getCount() {
+        return list.size();
+    }
+
     public boolean addStripDFHProcess(Window parent) {
         boolean redo = true;
         OneStripDFHProcess lastSelectedP = null;
@@ -113,7 +117,6 @@ public class StripDFHProcessList {
         }
         return retVal;
     }
-
 
     public StringBuilder dataInXMl() {
         StringBuilder xmlStr = new StringBuilder(XMLmv.putTag("pNum", list.size()));

@@ -90,7 +90,7 @@ public class OneStripDFHProcess {
 
     public double minWidthFactor() {
         if (maxWidth > 0)
-            return minWidth /maxWidth;
+            return minWidth / maxWidth;
         else
             return 1;
     }
@@ -124,8 +124,7 @@ public class OneStripDFHProcess {
                 else
                     outputWithStatus.setValue(output);
             }
-        }
-        else
+        } else
             outputWithStatus.setErrorMessage(response.getErrorMessage());
         return outputWithStatus;
     }
@@ -166,8 +165,7 @@ public class OneStripDFHProcess {
             if (speed > maxSpeed) {
                 speed = maxSpeed;
                 response.setValue(speed, "Restricted by Maximum Process Speed");
-            }
-            else {
+            } else {
                 if (status == StatusWithMessage.DataStat.WithInfoMsg)
                     response.setValue(speed, response.getInfoMessage());   // if it had any infoMessage, it ic forwarded
                 else
@@ -177,7 +175,7 @@ public class OneStripDFHProcess {
         return response;
     }
 
-    public double getLimitSpeed(double stripThickness)  {
+    public double getLimitSpeed(double stripThickness) {
         ChMaterial chMet = getChMaterial(stripThickness);
         double limitSpeed = maxUnitOutput / chMet.density / stripThickness;
         return Math.min(limitSpeed, maxSpeed);
@@ -187,64 +185,67 @@ public class OneStripDFHProcess {
         boolean retVal = false;
         ValAndPos vp;
         errMeg = "StripDFHProces reading data:";
-        aBlock:
-        {
-            try {
-                vp = XMLmv.getTag(xmlStr, "processName", 0);
-                processName = vp.val.trim();
-                String thinMaterialName;
-                vp = XMLmv.getTag(xmlStr, "chMaterialThin", 0);
-                thinMaterialName = vp.val.trim();
-                chMaterialThin = dfHeating.getSelChMaterial(thinMaterialName);
-                if (chMaterialThin == null) {
-                    errMeg += "ChMaterialThin not found";
+        if (xmlStr.length() > 100) {
+            aBlock:
+            {
+                try {
+                    vp = XMLmv.getTag(xmlStr, "processName", 0);
+                    processName = vp.val.trim();
+                    String thinMaterialName;
+                    vp = XMLmv.getTag(xmlStr, "chMaterialThin", 0);
+                    thinMaterialName = vp.val.trim();
+                    chMaterialThin = dfHeating.getSelChMaterial(thinMaterialName);
+                    if (chMaterialThin == null) {
+                        errMeg += "ChMaterialThin not found";
+                        break aBlock;
+                    }
+                    String thickMaterialName;
+                    vp = XMLmv.getTag(xmlStr, "chMaterialThick", 0);
+                    thickMaterialName = vp.val.trim();
+                    chMaterialThick = dfHeating.getSelChMaterial(thickMaterialName);
+                    if (chMaterialThick == null) {
+                        errMeg += "ChMaterialThick not found";
+                        break aBlock;
+                    }
+                    vp = XMLmv.getTag(xmlStr, "tempDFHExit", 0);
+                    tempDFHExit = Double.valueOf(vp.val);
+
+                    vp = XMLmv.getTag(xmlStr, "minExitZoneTemp", 0);
+                    minExitZoneTemp = Double.valueOf(vp.val);
+
+                    vp = XMLmv.getTag(xmlStr, "thinUpperLimit", 0);
+                    thinUpperLimit = Double.valueOf(vp.val) / 1000;
+
+                    vp = XMLmv.getTag(xmlStr, "maxUnitOutput", 0);
+                    maxUnitOutput = Double.valueOf(vp.val) * 1000;
+
+                    vp = XMLmv.getTag(xmlStr, "minUnitOutput", 0);
+                    minUnitOutput = Double.valueOf(vp.val) * 1000;
+
+                    vp = XMLmv.getTag(xmlStr, "maxSpeed", 0);
+                    maxSpeed = Double.valueOf(vp.val) * 60;
+
+                    vp = XMLmv.getTag(xmlStr, "maxThickness", 0);
+                    maxThickness = Double.valueOf(vp.val) / 1000;
+
+                    vp = XMLmv.getTag(xmlStr, "minThickness", 0);
+                    minThickness = Double.valueOf(vp.val) / 1000;
+
+                    vp = XMLmv.getTag(xmlStr, "maxWidth", 0);
+                    maxWidth = Double.valueOf(vp.val) / 1000;
+
+                    vp = XMLmv.getTag(xmlStr, "minWidth", 0);
+                    minWidth = Double.valueOf(vp.val) / 1000;
+
+                    retVal = true;
+                } catch (NumberFormatException e) {
+                    errMeg += "Some Number format error";
                     break aBlock;
                 }
-                String thickMaterialName;
-                vp = XMLmv.getTag(xmlStr, "chMaterialThick", 0);
-                thickMaterialName = vp.val.trim();
-                chMaterialThick = dfHeating.getSelChMaterial(thickMaterialName);
-                if (chMaterialThick == null) {
-                    errMeg += "ChMaterialThick not found";
-                    break aBlock;
-                }
-                vp = XMLmv.getTag(xmlStr, "tempDFHExit", 0);
-                tempDFHExit = Double.valueOf(vp.val);
-
-                vp = XMLmv.getTag(xmlStr, "minExitZoneTemp", 0);
-                minExitZoneTemp = Double.valueOf(vp.val);
-
-                vp = XMLmv.getTag(xmlStr, "thinUpperLimit", 0);
-                thinUpperLimit = Double.valueOf(vp.val) / 1000;
-
-                vp = XMLmv.getTag(xmlStr, "maxUnitOutput", 0);
-                maxUnitOutput = Double.valueOf(vp.val) * 1000;
-
-                vp = XMLmv.getTag(xmlStr, "minUnitOutput", 0);
-                minUnitOutput = Double.valueOf(vp.val) * 1000;
-
-                vp = XMLmv.getTag(xmlStr, "maxSpeed", 0);
-                maxSpeed = Double.valueOf(vp.val) * 60;
-
-                vp = XMLmv.getTag(xmlStr, "maxThickness", 0);
-                maxThickness = Double.valueOf(vp.val) / 1000;
-
-                vp = XMLmv.getTag(xmlStr, "minThickness", 0);
-                minThickness = Double.valueOf(vp.val) / 1000;
-
-                vp = XMLmv.getTag(xmlStr, "maxWidth", 0);
-                maxWidth = Double.valueOf(vp.val) / 1000;
-
-                vp = XMLmv.getTag(xmlStr, "minWidth", 0);
-                minWidth = Double.valueOf(vp.val) / 1000;
-
-                retVal = true;
-            } catch (NumberFormatException e) {
-                errMeg += "Some Number format error";
-                retVal = false;
-                break aBlock;
             }
         }
+        else
+            errMeg = "Invalid Process data";
         return retVal;
     }
 
@@ -330,35 +331,27 @@ public class OneStripDFHProcess {
                                     production.exitTemp = tempDFHExit;
                                     if (production.exitZoneFceTemp > minExitZoneTemp) {
                                         retVal.inError = false;
-                                    }
-                                    else
+                                    } else
                                         retVal.msg += "Exit Zone Temperature Low (minimum allowed is " + tempFmt.format(minExitZoneTemp) + " C)";
-                                }
-                                else
+                                } else
                                     retVal.msg += "Exit Temperature Low (minimum allowed is " + tempFmt.format(minExitTempAllowed) + " C)";
-                            }
-                            else
+                            } else
                                 retVal.msg += "Exit Temperature is High - must be less than " + tempFmt.format(maxExitTempAllowed) + " C)";
-                        }
-                        else
+                        } else
                             retVal.msg += "Output too high (maximum allowed for this width is " + outputFmt.format(maxUnitOutputAllowed * chWidth / 1000) + " t/h)";
-                    }
-                    else
+                    } else
                         retVal.msg += "Output too low (minimum required for this width is " + outputFmt.format(minUnitOutputAllowed * chWidth / 1000) + " t/h)";
-                }
-                else
+                } else
                     retVal.msg += "Strip is too narrow (minimum required " + mmFmt.format(minWallowed * 1000) + "mm)";
-            }
-            else
+            } else
                 retVal.msg += "Strip is too Wide (max allowed is " + maxWidth * 1000 + " mm)";
-        }
-        else
+        } else
             retVal.msg += "Not acceptable process name (this is " + this.processName + ")";
         return retVal;
     }
 
     public DataListEditorPanel getEditPanel(Vector<ChMaterial> vChMaterial, InputControl inpC, DataHandler dataHandler,
-                                       boolean editable, boolean startEditable) {
+                                            boolean editable, boolean startEditable) {
         tfProcessName = new JTextField(processName, 10);
         //        tfProcessName.setEditable(false);
         tfProcessName.setName("Process Name");
@@ -391,7 +384,7 @@ public class OneStripDFHProcess {
                 "#,##0", "Minimum Strip Width (mm)");
 
         DataListEditorPanel editorPanel = new DataListEditorPanel("Strip Process Data", dataHandler, editable, editable);
-                                                        // if editable, it is also deletable
+        // if editable, it is also deletable
         editorPanel.addItemPair(tfProcessName);
         editorPanel.addBlank();
         editorPanel.addItemPair(cbChMaterialThin);
@@ -455,10 +448,10 @@ public class OneStripDFHProcess {
 
     public void noteDataFromUI() {
         processName = tfProcessName.getText().trim();
-        chMaterialThin = (ChMaterial)cbChMaterialThin.getSelectedItem();
+        chMaterialThin = (ChMaterial) cbChMaterialThin.getSelectedItem();
         tempDFHExit = ntTempDFHExit.getData();
         minExitZoneTemp = ntMinExitZoneTemp.getData();
-        chMaterialThick = (ChMaterial)cbChMaterialThick.getSelectedItem();
+        chMaterialThick = (ChMaterial) cbChMaterialThick.getSelectedItem();
         maxUnitOutput = ntMaxUnitOutput.getData() * 1000;
         minUnitOutput = ntMinUnitOutput.getData() * 1000;
         maxThickness = ntMaxThickness.getData() / 1000;
