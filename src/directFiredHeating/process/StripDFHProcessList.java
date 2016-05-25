@@ -287,7 +287,7 @@ public class StripDFHProcessList {
                 response = EditResponse.Response.SAVE;
             }
             edited = true;
-            return itsNew;
+            return edited;
         }
 
         public void deleteData() {

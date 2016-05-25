@@ -61,7 +61,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         ALLOWSPECSREAD("-allowSpecsRead"),
 //        NOTLEVEL2("-notLevel2"),
         JNLP("-asJNLP"),
-        L2CONFURATOR("-l2Configurator"),
+//        L2CONFURATOR("-l2Configurator"),
         DEBUGMSG("-showDebugMessages");
         private final String argName;
 
@@ -141,6 +141,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     static public JSPConnection jspConnection;
     static public boolean bAllowEditDFHProcess = false;
     static public boolean bL2Configurator = false;
+    static public boolean bAtSite = false;
     static public boolean bAllowEditFurnaceSettings = false;
     protected String profileFileExtension = "dfhDat";
     protected String profileFileName = "FurnaceProfile." + profileFileExtension;
@@ -913,11 +914,11 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         fileMenu = new JMenu("File");
         if (!onProductionLine) {
             fileMenu.add(mIGetFceProfile);
-            if (!bL2Configurator)
+            if (!bL2Configurator && !bAtSite)
                 fileMenu.add(mILoadRecuSpecs);
             fileMenu.addSeparator();
             fileMenu.add(mISaveFceProfile);
-            if (!bL2Configurator) {
+            if (!bL2Configurator  && !bAtSite) {
                 fileMenu.add(saveToXL);
                 fileMenu.addSeparator();
                 fileMenu.add(saveForTFM);
@@ -943,7 +944,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         inputMenu.add(mIInputData);
         inputMenu.add(mIOpData);
 
-        if (!onProductionLine && !bL2Configurator) {
+        if (!onProductionLine && !bL2Configurator && !bAtSite) {
             inputMenu.addSeparator();
             inputMenu.add(mICreateFuelMix);
             inputMenu.add(mIRegenBurnerStudy);
@@ -2538,6 +2539,11 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     public StatusWithMessage takeProfileDataFromXML(String xmlStr) {
+        return takeProfileDataFromXML(xmlStr, false, null, null);
+    }
+
+    public StatusWithMessage takeProfileDataFromXML(String xmlStr, boolean selective,
+                                                    HeatingMode heatingMode, DFHTuningParams.ForProcess process) {
         StatusWithMessage retVal = new StatusWithMessage();
         enableResultsMenu(false);
         String errMsg = "";
@@ -2582,12 +2588,22 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                     vp = XMLmv.getTag(acTData, "cbFceFor", 0);
 //                    debug("before ForProcess.getEnum, cbFceFor = " + vp.val);
                     DFHTuningParams.ForProcess forProc = DFHTuningParams.ForProcess.getEnum(vp.val);
+                    if (selective && (process != null) && (forProc != process)) {
+                        allOK = false;
+                        errMsg = "Furnace is not for the required Process, " + process;
+                        break aBlock;
+                    }
 //                    debug("forProc = " + forProc + ", mainF =" + mainF + ", cbFceFor = " + cbFceFor);
                     if (forProc != null)
                         cbFceFor.setSelectedItem(forProc);
 //                    debug("Before cbHeatingType");
                     vp = XMLmv.getTag(acTData, "cbHeatingType", 0);
 //                    debug("Before cbHeatingType.setSelectedItem");
+                    if (selective && (heatingMode != null) && !vp.val.equals("" + heatingMode)) {
+                        allOK = false;
+                        errMsg = "Furnace is not with the required Heating mode, " + heatingMode;
+                        break aBlock;
+                    }
                     setHeatingMode(vp.val);
 //                    cbHeatingType.setSelectedItem(vp.val);
 //                    debug("Before cbFuel");
@@ -4635,9 +4651,9 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                         asJNLP = true;
                         jspConnection = new JSPConnection();
                         break;
-                    case L2CONFURATOR:
-                        bL2Configurator = true;
-                        break;
+//                    case L2CONFURATOR:
+//                        bL2Configurator = true;
+//                        break;
                     case DEBUGMSG:
                         showDebugMessages = true;
                         break;

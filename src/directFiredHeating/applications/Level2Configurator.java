@@ -7,7 +7,6 @@ import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
 import directFiredHeating.accessControl.L2AccessControl;
 import directFiredHeating.process.StripDFHProcessList;
-//import jnlp.JNLPFileHandler;
 import mvUtils.display.StatusWithMessage;
 import mvUtils.jnlp.JNLPFileHandler;
 import mvUtils.mvXML.ValAndPos;
@@ -108,7 +107,8 @@ public class Level2Configurator extends DFHeating {
             setTestData();
             displayIt();
 
-            showMessage("It is the responsibility of the user to ensure data integrity among:" +
+            showMessage("The furnace has to be of " + HeatingMode.TOPBOTSTRIP + " for " + DFHTuningParams.ForProcess.STRIP +
+                    "\n\nIt is the responsibility of the user to ensure data integrity among:" +
                     "\n      1) Profile including Fuel type " +
                     "\n      2) IP address of OPC server  '" + mL2Configuration.getText() + "'" +
                     "\n      3) Fuel settings under '" + mL2Configuration.getText() + "'" +
@@ -159,7 +159,8 @@ public class Level2Configurator extends DFHeating {
         vp = XMLmv.getTag(xmlStr, profileCodeTag);
         profileCode = vp.val;
         if (isProfileCodeOK() || bL2Configurator) {
-            retVal = super.takeProfileDataFromXML(xmlStr);
+            retVal = super.takeProfileDataFromXML(xmlStr, true, HeatingMode.TOPBOTSTRIP,
+                    DFHTuningParams.ForProcess.STRIP);
             if (retVal.getDataStatus() == StatusWithMessage.DataStat.OK) {
                 furnace.clearAssociatedData();
                 vp = XMLmv.getTag(xmlStr, "FuelSettings");
@@ -320,8 +321,7 @@ public class Level2Configurator extends DFHeating {
         if (furnace.furnaceSettings.getOPCServerIP(this)) {
             showMessage("Furnace connection Data is modified\n" +
                     "To be effective in Level2 RUNTIME:\n" +
-                    "    1) Save data to file with " + mL2FileMenu.getText() + "->" + mIUpdateFurnace.getText() + "\n" +
-                    "    2) Restart Level2 RUNTIME, if already running");
+                    "Save data to file with " + mL2FileMenu.getText() + "->" + mIUpdateFurnace.getText());
         }
     }
 

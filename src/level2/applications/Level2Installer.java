@@ -45,7 +45,6 @@ public class Level2Installer extends L2DFHeating {
 
     public Level2Installer(String equipment) {
         super(equipment);
-        bL2Configurator = true;
         onProductionLine = false;
         bAllowEditDFHProcess = true;
         bAllowEditFurnaceSettings = true;
@@ -53,12 +52,11 @@ public class Level2Installer extends L2DFHeating {
         bAllowManualCalculation = true;
         bShowAllmenu = true;
 //        userActionAllowed = true;
-        accessLevel = L2AccessControl.AccessLevel.CONFIGURATOR;
+        accessLevel = L2AccessControl.AccessLevel.INSTALLER;
     }
 
     public Level2Installer(String equipment, boolean fromLauncher) {
         super(equipment);
-        bL2Configurator = true;
         onProductionLine = false;
         bAllowEditDFHProcess = true;
         bAllowEditFurnaceSettings = true;
@@ -66,7 +64,7 @@ public class Level2Installer extends L2DFHeating {
         bAllowManualCalculation = true;
         bShowAllmenu = true;
 //        userActionAllowed = true;
-        accessLevel = L2AccessControl.AccessLevel.CONFIGURATOR;
+        accessLevel = L2AccessControl.AccessLevel.INSTALLER;
         setItUp();
         if (!l2SystemReady) {
             showError("Level2 could not be started. Aborting ...");
@@ -75,7 +73,7 @@ public class Level2Installer extends L2DFHeating {
     }
 
     public static L2AccessControl.AccessLevel defaultLevel() {
-        return L2AccessControl.AccessLevel.CONFIGURATOR;
+        return L2AccessControl.AccessLevel.INSTALLER;
     }
 
     protected StatusWithMessage getFceFromFile() {
