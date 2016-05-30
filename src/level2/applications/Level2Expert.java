@@ -27,6 +27,28 @@ public class Level2Expert extends L2DFHeating {
         bAllowUpdateWithFieldData = true;
         bAllowL2Changes = true;
         accessLevel = L2AccessControl.AccessLevel.EXPERT;
+        if (setItUp()) {
+            if (l2SystemReady) {
+                informLevel2Ready();
+            } else {
+                showError("Level2 could not be started. Aborting 002...");
+                exitFromLevel2();
+            }
+        }
+        else {
+            showMessage("Facing problem connecting to Level1. Aborting ...");
+            close();
+        }
+    }
+
+    public Level2Expert(String equipment, boolean fromLauncher, boolean bOLD) {
+        super(equipment);
+        bAllowEditDFHProcess = true;
+        bAllowEditFurnaceSettings = true;
+        bAllowManualCalculation = true;
+        bAllowUpdateWithFieldData = true;
+        bAllowL2Changes = true;
+        accessLevel = L2AccessControl.AccessLevel.EXPERT;
         if (setupUaClient()) {
             setItUp();
             if (l2SystemReady) {
@@ -40,7 +62,6 @@ public class Level2Expert extends L2DFHeating {
             showMessage("Facing problem connecting to Level1. Aborting ...");
             close();
         }
-
     }
 
     public static L2AccessControl.AccessLevel defaultLevel() {

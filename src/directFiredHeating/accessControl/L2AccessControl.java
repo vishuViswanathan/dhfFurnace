@@ -1,6 +1,7 @@
 package directFiredHeating.accessControl;
 
 import mvUtils.display.StatusWithMessage;
+import mvUtils.file.AccessControl;
 import mvUtils.file.AccessControlInFile;
 
 import java.util.HashMap;
@@ -14,7 +15,8 @@ import java.util.HashMap;
 public class L2AccessControl {
     public enum AccessLevel {NONE, RUNTIME, UPDATER, EXPERT, INSTALLER, CONFIGURATOR};
 
-    static public String fileExtension = "l2Acc";
+    static public String l2AccessfileExtension = "l2Acc";
+    static public String installerAccessFileExtension = "instAcc";
 
     HashMap<AccessLevel, AccessNameAndDescription> accessMap =  new HashMap<AccessLevel, AccessNameAndDescription>(){ {
         put(AccessLevel.NONE, new AccessNameAndDescription("None", "No Access"));
@@ -25,7 +27,11 @@ public class L2AccessControl {
         put(AccessLevel.CONFIGURATOR, new AccessNameAndDescription("Configurator", "Level2 - Configurator"));
     }};
 
-    AccessControlInFile accessControl;
+    AccessControl accessControl;
+
+    public L2AccessControl() {
+        accessControl = new AccessControl();
+    }
 
     public L2AccessControl(String filePath, boolean onlyIfExists) throws Exception {
         accessControl = new AccessControlInFile(filePath, onlyIfExists);

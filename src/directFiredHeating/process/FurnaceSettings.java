@@ -62,6 +62,10 @@ public class FurnaceSettings   {
         takeDataFromXML(xmlStr);
     }
 
+    public String getOPCip() {
+        return opcIP;
+    }
+
     public StatusWithMessage checkIntegrity() {
         StatusWithMessage retVal = new StatusWithMessage("\n");
         Vector<FceSection> activeSections = dfHeating.furnace.getActiveSections(false);
@@ -126,7 +130,7 @@ public class FurnaceSettings   {
         return dlg.edited;
     }
 
-    boolean takeDataFromXML(String xmlStr) {  // TODO to add MaxExitZoneTemp
+    boolean takeDataFromXML(String xmlStr) {
         boolean retVal = false;
         ValAndPos vp;
         errMsg = "Furnace Settings - Reading data:";

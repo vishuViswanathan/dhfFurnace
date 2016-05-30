@@ -20,7 +20,7 @@ public class L2Updater extends L2DFHeating{
         accessLevel = L2AccessControl.AccessLevel.UPDATER;
     }
 
-    public L2Updater(String equipment, boolean fromLauncher) {
+    public L2Updater(String equipment, boolean fromLauncher, boolean bOLD) {
         super(equipment);
         bAllowEditDFHProcess = false;
         bAllowEditFurnaceSettings = false;
@@ -30,6 +30,28 @@ public class L2Updater extends L2DFHeating{
         accessLevel = L2AccessControl.AccessLevel.UPDATER;
         if (setupUaClient()) {
             setItUp();
+            if (l2SystemReady) {
+                informLevel2Ready();
+            } else {
+                showError("Level2 Updater could not be started. Aborting ...");
+                exitFromLevel2();
+            }
+        }
+        else  {
+            showMessage("Facing problem connecting to Level1. Aborting ...");
+            close();
+        }
+    }
+
+    public L2Updater(String equipment, boolean fromLauncher) {
+        super(equipment);
+        bAllowEditDFHProcess = false;
+        bAllowEditFurnaceSettings = false;
+        bAllowManualCalculation = false;
+        bAllowUpdateWithFieldData = true;
+        bAllowL2Changes = false;
+        accessLevel = L2AccessControl.AccessLevel.UPDATER;
+        if (setItUp()) {
             if (l2SystemReady) {
                 informLevel2Ready();
             } else {

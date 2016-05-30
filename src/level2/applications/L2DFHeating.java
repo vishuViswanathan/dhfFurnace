@@ -11,6 +11,7 @@ import level2.common.ReadyNotedBothL2;
 import directFiredHeating.process.StripDFHProcessList;
 import level2.common.Tag;
 import level2.stripDFH.L2DFHZone;
+import mvUtils.display.DataWithMsg;
 import mvUtils.display.ErrorStatAndMsg;
 import mvUtils.display.FramedPanel;
 import mvUtils.display.StatusWithMessage;
@@ -118,14 +119,29 @@ public class L2DFHeating extends DFHeating {
         asApplication = true;
         this.equipment = equipment;
         accessLevel = L2AccessControl.AccessLevel.RUNTIME;
-        StatusWithMessage accessFileStat = getAccessFilePath();
-        if (accessFileStat.getDataStatus() != StatusWithMessage.DataStat.OK) {
-            showError(accessFileStat.getErrorMessage() + "\n\n   ABORTING");
+        DataWithMsg accessFileStat = getAccessFilePath();
+        if (accessFileStat.getStatus() != DataWithMsg.DataStat.OK) {
+            showError(accessFileStat.errorMessage + "\n\n   ABORTING");
             System.exit(1);
         }
     }
 
     public L2DFHeating(String equipment, boolean fromLauncher) {
+        this(equipment);
+        if (setItUp()) {
+            if (l2SystemReady) {
+                informLevel2Ready();
+            } else {
+                showError("Level2 could not be started. Aborting ...");
+                exitFromLevel2();
+            }
+        } else {
+            showMessage("Facing problem connecting to Level1. Aborting ...");
+            close();
+        }
+    }
+
+    public L2DFHeating(String equipment, boolean fromLauncher, boolean bOLD) {
         this(equipment);
         if (!onProductionLine || setupUaClient()) {
             setItUp();
@@ -141,22 +157,13 @@ public class L2DFHeating extends DFHeating {
         }
     }
 
-    StatusWithMessage getAccessFilePath() {
-        StatusWithMessage retVal = new StatusWithMessage();
-        File folder = new File(fceDataLocation);
-        File[] files = folder.listFiles(new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                return name.endsWith("." + L2AccessControl.fileExtension);
-            }
-        });
-        if (files.length < 1) {
-            retVal.setErrorMessage("Unable to load Access Control!");
-        } else if (files.length > 1) {
-            retVal.setErrorMessage("There are more than one Access Control data in the folder!");
-        } else {
-            accessDataFile = files[0].getAbsolutePath();
+    DataWithMsg getAccessFilePath() {
+        DataWithMsg pathStatus =
+                FileChooserWithOptions.getOneExistingFilepath(fceDataLocation, L2AccessControl.l2AccessfileExtension, true);
+        if (pathStatus.getStatus() == DataWithMsg.DataStat.OK) {
+            accessDataFile = pathStatus.stringValue;
         }
-        return retVal;
+        return pathStatus;
     }
 
     public static L2AccessControl.AccessLevel defaultLevel() {
@@ -170,6 +177,95 @@ public class L2DFHeating extends DFHeating {
     }
 
     public boolean setItUp() {
+        modifyJTextEdit();
+        fuelList = new Vector<Fuel>();
+        vChMaterial = new Vector<ChMaterial>();
+        setUIDefaults();
+        mainF = new JFrame();
+        mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        if (!asJNLP && (log == null)) {
+            log = Logger.getLogger("level2.L2DFHeating"); //DFHeating.class);
+            // Load Log4j configurations from external file
+        }
+        try {
+            accessControl = new L2AccessControl(accessDataFile, true);
+            mainF.setTitle("DFH Furnace " + accessControl.getDescription(accessLevel) + " - " + releaseDate + testTitle);
+
+            tuningParams = new DFHTuningParams(this, onProductionLine, 1, 5, 30, 1.12, 1, false, false);
+//        debug("Creating new Level2furnace");
+            l2Furnace = new L2DFHFurnace(this, false, false, lNameListener);
+            furnace = l2Furnace;
+            if (!testMachineID()) {
+                showError("Software key mismatch, Aborting ...");
+                justQuit();
+            }
+            furnace.setTuningParams(tuningParams);
+            tuningParams.bConsiderChTempProfile = true;
+            createUIs(false); // without the default menuBar
+            getFuelAndCharge();
+            setDefaultSelections();
+            switchPage(DFHDisplayPageType.INPUTPAGE);
+            StatusWithMessage statL2FceFile = getL2FceFromFile();
+            if (statL2FceFile.getDataStatus() != StatusWithMessage.DataStat.WithErrorMsg) {
+                if (!onProductionLine || setupUaClient()) {
+                    if (!onProductionLine || l2Furnace.basicConnectionToLevel1(uaClient)) {
+                        StatusWithMessage status = l2Furnace.checkAndNoteAccessLevel();
+                        if (status.getDataStatus() == StatusWithMessage.DataStat.OK) {
+//            debug("Created Level2furnace");
+                            furnace.setWidth(width);
+                            enableDataEdit();
+                            addMenuBar(createL2MenuBar());
+                            l2MenuSet = true;
+                            getPerformanceList();
+                            bProfileEdited = false;
+                            if (onProductionLine) {
+                                if (l2Furnace.makeAllConnections()) {   // createL2Zones()) {
+                                    ErrorStatAndMsg connStat = l2Furnace.checkConnection();
+                                    if (connStat.inError)
+                                        showError(connStat.msg);
+                                    else {
+                                        l2Furnace.initForLevel2Operation();
+                                        l2SystemReady = true;
+                                    }
+                                }
+                            } else
+                                l2SystemReady = true;
+                        } else
+                            showError(status.getErrorMessage());
+                    } else
+                        showError("Unable to start Level2 ERROR:001");
+                } else
+                    showError("Unable to connect to OPC server : ERROR:002");
+            } else
+                showError("Unable to load Furnace Profile : " + statL2FceFile.getErrorMessage());
+            if (l2SystemReady) {
+                lockFile = new File(lockPath);
+                displayIt();
+                if (onProductionLine)
+                    l2Furnace.startL2DisplayUpdater();
+                if (accessLevel == L2AccessControl.AccessLevel.RUNTIME || accessLevel == L2AccessControl.AccessLevel.UPDATER)
+                    l2Furnace.enableDeleteInPerformanceData(false);
+                if (accessLevel == L2AccessControl.AccessLevel.INSTALLER) {
+                    showMessage("It is the responsibility of the user to ensure data integrity among:" +
+                            "\n      1) Profile including Fuel type " +
+                            "\n      2) Fuel settings under '" + mL2Configuration.getText() + "'" +
+                            "\n      3) DHFProcess List data under '" + mL2Configuration.getText() + "'" +
+                            "\n      4) Performance Data under '" + perfMenu.getText() + "'" +
+                            "\n\nIt is suggested that the profile with Fuel is finalised before updating" +
+                            "\nthe other data." +
+                            "\n\nBefore exiting, the the above data to be save to respective files." +
+                            "\nThe Profile is to be saved first, followed by the others, since, the profile-save" +
+                            "\nassigns a profile ID, which is used as link in other data files");
+                }
+            }
+        } catch (Exception e) {
+            showError("Could not find/load Access Data file :" + e.getMessage());
+        }
+        System.out.println("Java Version :" + System.getProperty("java.version"));
+        return l2SystemReady;
+    }
+
+    public boolean setItUpOLD() {
         modifyJTextEdit();
         fuelList = new Vector<Fuel>();
         vChMaterial = new Vector<ChMaterial>();
@@ -212,19 +308,19 @@ public class L2DFHeating extends DFHeating {
 //                        dfhProcessList = new StripDFHProcessList(this);
 //                        if (getStripDFHProcessList()) {
 //                            if (getFurnaceSettings()) {
-                                bProfileEdited = false;
-                                if (onProductionLine) {
-                                    if (l2Furnace.makeAllConnections()) {   // createL2Zones()) {
-                                        ErrorStatAndMsg connStat = l2Furnace.checkConnection();
-                                        if (connStat.inError)
-                                            showError(connStat.msg);
-                                        else {
-                                            l2Furnace.initForLevel2Operation();
-                                            l2SystemReady = true;
-                                        }
-                                    }
-                                } else
+                        bProfileEdited = false;
+                        if (onProductionLine) {
+                            if (l2Furnace.makeAllConnections()) {   // createL2Zones()) {
+                                ErrorStatAndMsg connStat = l2Furnace.checkConnection();
+                                if (connStat.inError)
+                                    showError(connStat.msg);
+                                else {
+                                    l2Furnace.initForLevel2Operation();
                                     l2SystemReady = true;
+                                }
+                            }
+                        } else
+                            l2SystemReady = true;
 //                            } else
 //                                showError("Problem in loading Furnace Settings");
 //                        } else
@@ -789,7 +885,11 @@ public class L2DFHeating extends DFHeating {
     }
 
     void setOPCIP() {
-
+        if (furnace.furnaceSettings.getOPCServerIP(this)) {
+            showMessage("Furnace connection Data is modified\n" +
+                    "To be effective in Level2 RUNTIME:\n" +
+                    "Save data to file with " + mL2FileMenu.getText() + "->" + mIUpdateFurnace.getText());
+        }
     }
 
     void createFceSetting() {
@@ -964,36 +1064,47 @@ public class L2DFHeating extends DFHeating {
     }
 
     void manageExpertAccess() {
-        StatusWithMessage stm = accessControl.addNewUser(L2AccessControl.AccessLevel.EXPERT);
-        if (stm.getDataStatus() == StatusWithMessage.DataStat.OK)
-            showMessage("User added for " + accessControl.getDescription(L2AccessControl.AccessLevel.EXPERT));
-        else
-            showError("No user was added");
+        if (authenticate()) {
+            StatusWithMessage stm = accessControl.addNewUser(L2AccessControl.AccessLevel.EXPERT);
+            if (stm.getDataStatus() == StatusWithMessage.DataStat.OK)
+                showMessage("User added for " + accessControl.getDescription(L2AccessControl.AccessLevel.EXPERT));
+            else
+                showError(stm.getErrorMessage() + ": No user was added :");
+        }
+        showError("You are not authorised to add User for " +
+                accessControl.getDescription(L2AccessControl.AccessLevel.EXPERT));
     }
 
     void manageUpdaterAccess() {
-        StatusWithMessage stm = accessControl.authenticate(L2AccessControl.AccessLevel.EXPERT, "Re-confirm authority");
-        if (stm.getDataStatus() == StatusWithMessage.DataStat.OK) {
-            stm = accessControl.addNewUser(L2AccessControl.AccessLevel.UPDATER);
+        if (authenticate()) {
+            StatusWithMessage stm = accessControl.addNewUser(L2AccessControl.AccessLevel.UPDATER);
             if (stm.getDataStatus() == StatusWithMessage.DataStat.OK)
                 showMessage("User added for " + accessControl.getDescription(L2AccessControl.AccessLevel.UPDATER));
             else
-                showError("No user was added");
+                showError(stm.getErrorMessage() + ": No user was added :");
         } else
             showError("You are not authorised to add User for " +
                     accessControl.getDescription(L2AccessControl.AccessLevel.UPDATER));
     }
 
     void manageRuntimeAccess() {
-        StatusWithMessage stm = accessControl.authenticate(accessLevel, "Re-confirm authority");
-        if (stm.getDataStatus() == StatusWithMessage.DataStat.OK) {
-            stm = accessControl.addNewUser(L2AccessControl.AccessLevel.RUNTIME);
+        if (authenticate()) {
+            StatusWithMessage stm = accessControl.addNewUser(L2AccessControl.AccessLevel.RUNTIME);
             if (stm.getDataStatus() == StatusWithMessage.DataStat.OK)
                 showMessage("User added for " + accessControl.getDescription(L2AccessControl.AccessLevel.RUNTIME));
             else
-                showError("No user was added");
+                showError(stm.getErrorMessage() + ": No user was added :");
         } else
-            showError("You are not authorised for this activity");
+            showError("You are not authorised to add User for " +
+                    accessControl.getDescription(L2AccessControl.AccessLevel.RUNTIME));
+    }
+
+    boolean authenticate() {
+        boolean retVal = false;
+        StatusWithMessage stm = accessControl.authenticate(accessLevel, "Re-confirm authority");
+        if (stm.getDataStatus() == StatusWithMessage.DataStat.OK)
+            retVal = true;
+        return retVal;
     }
 
     public void setFieldProductionData(ProductionData pData, double airTemp, double fuelTemp) {
@@ -1113,7 +1224,7 @@ public class L2DFHeating extends DFHeating {
         return retVal;
     }
 
-    String getOPCIPFromFile() {
+    String getOPCIPFromFileOLD() { // TODO to be deleted
         String opcIP = null;
         try {
             FileReader fileReader = new FileReader(new File(opcIPFilePath));
@@ -1129,9 +1240,28 @@ public class L2DFHeating extends DFHeating {
         return opcIP;
     }
 
+    boolean setupUaClientOLD() { // TODO to be removed
+        boolean retVal = false;
+        uaServerURI = getOPCIPFromFileOLD();
+        if (uaServerURI != null) {
+            try {
+                l2debug("Before creating uaClient");
+                uaClient = new TMuaClient(uaServerURI);
+                l2debug("Before uaClient.connect");
+                uaClient.connect();
+                l2debug("uaClient is Connected");
+                retVal = uaClient.isConnected();
+            } catch (Exception e) {
+                showError("Exception :" + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        return retVal;
+    }
+
     boolean setupUaClient() {
         boolean retVal = false;
-        uaServerURI = getOPCIPFromFile();
+        uaServerURI = furnace.furnaceSettings.getOPCip();
         if (uaServerURI != null) {
             try {
                 l2debug("Before creating uaClient");
@@ -1234,7 +1364,7 @@ public class L2DFHeating extends DFHeating {
 //        l2Trace("Access Level set to " + accessLevel);
 //    }
 
-    StatusWithMessage getL2FceFromFile() {
+    StatusWithMessage getL2FceFromFileOLD() {  // TODO to be removed
         disableCompare();
         StatusWithMessage retVal = new StatusWithMessage();
         furnace.resetSections();
@@ -1263,6 +1393,60 @@ public class L2DFHeating extends DFHeating {
         return retVal;
     }
 
+    StatusWithMessage getL2FceFromFile() {
+        DataWithMsg oneFile = FileChooserWithOptions.getOneExistingFilepath(fceDataLocation, profileFileExtension, true);
+        StatusWithMessage retVal = new StatusWithMessage();
+        if (oneFile.getStatus() == DataWithMsg.DataStat.OK) {
+            String filePath = oneFile.stringValue;
+            disableCompare();
+            furnace.resetSections();
+            dfhProcessList = new StripDFHProcessList(this);
+            furnace.resetLossAssignment();
+            hidePerformMenu();
+            retVal = getFceFromFceDatFile(filePath);
+            if (retVal.getDataStatus() != StatusWithMessage.DataStat.WithErrorMsg) {
+                profileFileName = (new File(filePath)).getName();
+                switchPage(DFHDisplayPageType.INPUTPAGE);
+            }
+        }
+        return retVal;
+    }
+
+    /**
+     * Returns the first file matching the extension specified.
+     * @param dirPath
+     * @param extension
+     * @param onlyOneFile  If true, returns error in more than one file exists
+     *                     if not true, gets the first matcching file with InfoMessage stating existence
+     *                     of more files
+     * @return   The stringValue of the retVal has the file path
+     */
+    DataWithMsg getOneExistingFilepath(String dirPath, final String extension, boolean onlyOneFile) {  // TODO to be removed
+
+        DataWithMsg retVal = new DataWithMsg();
+        File folder = new File(dirPath);
+        String basePath = folder.getAbsolutePath();
+        logInfo("base path = " + basePath);
+        File[] files = folder.listFiles(new FilenameFilter() {
+            public boolean accept(File dir, String name) {
+                return name.endsWith("." + extension);
+            }
+        });
+        if (files.length < 1) {
+            retVal.setErrorMsg("Unable to locate any file with extension " + extension + "!");
+        }
+        else {
+            retVal.setData(files[0].getAbsolutePath());
+            if (files.length > 1) {
+                String msg = "There are more than one file with extension " + extension;
+                if (onlyOneFile)
+                    retVal.setErrorMsg(msg + "!");
+                else
+                    retVal.setInfoMsg(msg);
+            }
+        }
+        return retVal;
+    }
 //    public StatusWithMessage getFceFromFceDatFile(String filePath) {
 //        return super.getFceFromFceDatFile(filePath);
 //    }
@@ -1377,11 +1561,12 @@ public class L2DFHeating extends DFHeating {
             gotTheLock = true;
             saved = saveFurnaceWithNowProfileCode();
             releaseLock(lock);
-
             break;
         }
-        if (onProductionLine && saved)
-            l2Furnace.informProcessDataModified();
+        if (saved) {
+            if (onProductionLine)
+                l2Furnace.informProcessDataModified();
+        }
         else if (!gotTheLock)
             showError("Facing some problem in getting Lock");
         else

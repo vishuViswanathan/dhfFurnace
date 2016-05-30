@@ -1,12 +1,9 @@
 package level2.applications;
 
-import directFiredHeating.DFHeating;
 import directFiredHeating.accessControl.L2AccessControl;
 import display.QueryDialog;
-import mvUtils.display.FramedPanel;
-import mvUtils.display.MultiPairColPanel;
-import mvUtils.display.SimpleDialog;
-import mvUtils.display.StatusWithMessage;
+import mvUtils.display.*;
+import mvUtils.file.FileChooserWithOptions;
 import protection.MachineCheck;
 
 import javax.swing.*;
@@ -49,38 +46,72 @@ public class Level2Launcher {
     JFrame mainF;
 
 //    String opcIP = "opc.tcp://127.0.0.1:49320";
-    L2AccessControl accessControl;
+    L2AccessControl l2AccessControl;
+    L2AccessControl installerAccessControl;
     String fceDataLocation = "level2FceData/";
-    String accessDataFile = fceDataLocation + "l2AccessData.txt";
+    String accessDataFile = fceDataLocation + "l2AccessData.txt";    // not used
 
     public Level2Launcher() {
-        if (!testMachineID()) {
+        boolean allOk = false;
+        if (testMachineID()) {
+            init();
+            allOk = true;
+        } else {
             showError("Software key mismatch, Aborting ...");
+            allOk = false;
+            ;
+        }
+        if (!allOk)
             System.exit(1);
-        }
-
-        StatusWithMessage pathStatus = getAccessFilePath();
-        if (pathStatus.getDataStatus() == StatusWithMessage.DataStat.OK) {
-            try {
-                accessControl = new L2AccessControl(accessDataFile, true); // only if file exists
-                init();
-            } catch (Exception e) {
-                showError(e.getMessage());
-                System.exit(1);
-            }
-        }
-        else {
-            showError(pathStatus.getErrorMessage() + "\n\n    ABORTING");
-            System.exit(1);
-        }
     }
 
-    StatusWithMessage getAccessFilePath() {
+    StatusWithMessage getInstallerAccessFile() {
+        StatusWithMessage retVal = new StatusWithMessage();
+        DataWithMsg pathStatus =
+                FileChooserWithOptions.getOneExistingFilepath(fceDataLocation, L2AccessControl.installerAccessFileExtension, true);
+        if (pathStatus.getStatus() == DataWithMsg.DataStat.OK) {
+            try {
+                installerAccessControl = new L2AccessControl(pathStatus.stringValue, true); // only if file exists
+            } catch (Exception e) {
+                retVal.addErrorMessage(e.getMessage());
+            }
+        }
+        else
+            retVal.addErrorMessage(pathStatus.errorMessage);
+        return retVal;
+    }
+
+    boolean getAccessToLevel2(L2AccessControl.AccessLevel forLevel) {
+        boolean retVal = false;
+        StatusWithMessage status = new StatusWithMessage();
+        if (l2AccessControl == null) {
+            DataWithMsg pathStatus =
+                    FileChooserWithOptions.getOneExistingFilepath(fceDataLocation, L2AccessControl.l2AccessfileExtension, true);
+            if (pathStatus.getStatus() == DataWithMsg.DataStat.OK) {
+                try {
+                    l2AccessControl = new L2AccessControl(pathStatus.stringValue, true); // only if file exists
+                } catch (Exception e) {
+                    status.addErrorMessage(e.getMessage());
+                }
+            } else
+                status.addErrorMessage(pathStatus.errorMessage);
+        }
+        if (status.getDataStatus() == StatusWithMessage.DataStat.OK) {
+            status = l2AccessControl.authenticate(forLevel);
+        }
+        if (status.getDataStatus() == StatusWithMessage.DataStat.OK)
+            retVal = true;
+        else
+            showError(status.getErrorMessage());
+        return retVal;
+    }
+
+    StatusWithMessage getAccessFilePath() {   // TODO tobe removed
         StatusWithMessage retVal = new StatusWithMessage();
         File folder = new File(fceDataLocation);
         File[] files = folder.listFiles(new FilenameFilter() {
             public boolean accept(File dir, String name) {
-                return name.endsWith("." + L2AccessControl.fileExtension);
+                return name.endsWith("." + L2AccessControl.l2AccessfileExtension);
             }
         });
         if (files.length < 1) {
@@ -242,41 +273,47 @@ public class Level2Launcher {
     }
 
     void launchRuntime() {
-        StatusWithMessage stm = accessControl.authenticate(L2DFHeating.defaultLevel());
-        if (stm.getDataStatus() == StatusWithMessage.DataStat.OK) {
+        if (getAccessToLevel2(L2DFHeating.defaultLevel())) {
             L2DFHeating l2 = new L2DFHeating("Furnace", true);
             if (l2.l2SystemReady)
                 quit();
         }
-        else
-            showError(stm.getErrorMessage());
     }
 
     void launchUpdater() {
-        StatusWithMessage stm = accessControl.authenticate(L2Updater.defaultLevel());
-        if (stm.getDataStatus() == StatusWithMessage.DataStat.OK) {
+        if (getAccessToLevel2(L2Updater.defaultLevel())) {
             L2DFHeating l2 = new L2Updater("Furnace", true);
             if (l2.l2SystemReady)
                 quit();
         }
-        else
-            showError(stm.getErrorMessage());
     }
 
     void launchExpert() {
-        StatusWithMessage stm = accessControl.authenticate(Level2Expert.defaultLevel());
-        if (stm.getDataStatus() == StatusWithMessage.DataStat.OK) {
+        if (getAccessToLevel2(Level2Expert.defaultLevel())) {
             L2DFHeating l2 = new Level2Expert("Furnace", true);
             if (l2.l2SystemReady)
                 quit();
         }
-        else
-            showError(stm.getErrorMessage());
     }
 
     void launchInstaller() {
-        new Level2Installer("Furnace", true);
-        quit();
+        boolean allOK = (installerAccessControl != null);
+        if (!allOK) {
+            StatusWithMessage status = getInstallerAccessFile();
+            if (status.getDataStatus() == StatusWithMessage.DataStat.OK)
+                allOK = true;
+            else
+                showError("Unable to get Installer Access :" + status.getErrorMessage());
+        }
+        if (allOK) {
+            StatusWithMessage stm =  installerAccessControl.authenticate(Level2Installer.defaultLevel());
+            if (stm.getDataStatus() == StatusWithMessage.DataStat.OK) {
+                new Level2Installer("Furnace", true);
+                quit();
+            }
+            else
+                showError(stm.getErrorMessage());
+        }
     }
 
     boolean getAndSaveOPCIP() {

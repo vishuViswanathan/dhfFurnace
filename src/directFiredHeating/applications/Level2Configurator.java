@@ -6,8 +6,10 @@ import directFiredHeating.DFHFurnace;
 import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
 import directFiredHeating.accessControl.L2AccessControl;
+import directFiredHeating.accessControl.OfflineAccessControl;
 import directFiredHeating.process.StripDFHProcessList;
 import mvUtils.display.StatusWithMessage;
+import mvUtils.file.AccessControl;
 import mvUtils.jnlp.JNLPFileHandler;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
@@ -65,7 +67,7 @@ public class Level2Configurator extends DFHeating {
     boolean associatedDataLoaded = false;
     File fceDataLocationDirectory = new File(fceDataLocation);
     String performanceExtension = "perfData";
-//    L2AccessControl accessControl;
+    OfflineAccessControl accessControl;
 
     public Level2Configurator() {
         super();
@@ -90,7 +92,7 @@ public class Level2Configurator extends DFHeating {
 //            // Load Log4j configurations from external file
 //        }
         try {
-//            accessControl = new L2AccessControl(accessDataFile, true);
+            accessControl = new OfflineAccessControl(asJNLP, mainF);
             mainF.setTitle("DFH Furnace - Level2 Configurator - " + releaseDate + testTitle);
 
             tuningParams = new DFHTuningParams(this, false, 1, 5, 30, 1.12, 1, false, false);
@@ -380,6 +382,9 @@ public class Level2Configurator extends DFHeating {
 
     JMenu mAccessControl;
     JMenuItem mIInstallerAccess;
+    JMenuItem mILoadAccessFile;
+    JMenuItem mISaveAccessFile;
+    boolean accessDataModified = false;
 
     JMenu createL2FileMenu(ActionListener li) {
         mL2FileMenu = new JMenu("File");
@@ -429,9 +434,15 @@ public class Level2Configurator extends DFHeating {
         menuBarLevel2.add(pbEdit);
 
         mAccessControl = new JMenu("Access Control");
-        mIInstallerAccess = new JMenuItem("for L2 Installer");
+        mILoadAccessFile = new JMenuItem("Load Access File");
+        mIInstallerAccess = new JMenuItem("Add Installer Access");
+        mISaveAccessFile = new JMenuItem("Save Access File");
+        mILoadAccessFile.addActionListener(li);
         mIInstallerAccess.addActionListener(li);
+        mISaveAccessFile.addActionListener(li);
+        mAccessControl.add(mILoadAccessFile);
         mAccessControl.add(mIInstallerAccess);
+        mAccessControl.add(mISaveAccessFile);
         menuBarLevel2.add(mAccessControl);
         return menuBarLevel2;
     }
@@ -439,9 +450,20 @@ public class Level2Configurator extends DFHeating {
     public static void showProgress(String msg) {
     }
 
+    boolean loadAccessFile() {
+        accessDataModified = false;
+        return (accessControl.loadAccessFile().getDataStatus() == StatusWithMessage.DataStat.OK);
+
+    }
+
+    boolean saveAccessFile() {
+        accessDataModified = false;
+        return (accessControl.saveAccessFile().getDataStatus() == StatusWithMessage.DataStat.OK);
+    }
+
     void manageInstallerAccess() {
         StatusWithMessage response =
-            L2AccessControl.initiateAccessFile(L2AccessControl.AccessLevel.CONFIGURATOR);
+            accessControl.addNewUser(L2AccessControl.AccessLevel.INSTALLER);
         if (response.getDataStatus() != StatusWithMessage.DataStat.OK)
             showError(response.getErrorMessage());
     }
@@ -465,6 +487,10 @@ public class Level2Configurator extends DFHeating {
                 setOPCIP();
             else if (caller == mIInstallerAccess)
                 manageInstallerAccess();
+            else if (caller == mILoadAccessFile)
+                loadAccessFile();
+            else if (caller == mISaveAccessFile)
+                saveAccessFile();
         }
     }
 
