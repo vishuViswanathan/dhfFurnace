@@ -336,32 +336,32 @@ public class Level2Configurator extends DFHeating {
         }
     }
 
-    FileSystemView currentView;
+//    FileSystemView currentView;
 
     boolean updateFurnace() {
         saveFurnaceWithNowProfileCode();
         return true;
     }
 
-    void markThisFileAsBak(File file) {
-        String bakFilefullName = file.getAbsolutePath() + ".bak";
-        File existingBakFile = new  File(bakFilefullName);
-        if (existingBakFile.exists())
-            existingBakFile.delete();
-        file.renameTo(new File(bakFilefullName));
-    }
-
-    int deleteParticularFiles(String directory, final String startsWith, final String extension) {
-        File folder = new File(directory);
-        File[] files = folder.listFiles(new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                return name.endsWith(extension) && name.startsWith(startsWith);
-            }
-        });
-        for (File file: files)
-            file.delete();
-        return files.length;
-    }
+//    void markThisFileAsBak(File file) {
+//        String bakFilefullName = file.getAbsolutePath() + ".bak";
+//        File existingBakFile = new  File(bakFilefullName);
+//        if (existingBakFile.exists())
+//            existingBakFile.delete();
+//        file.renameTo(new File(bakFilefullName));
+//    }
+//
+//    int deleteParticularFiles(String directory, final String startsWith, final String extension) {
+//        File folder = new File(directory);
+//        File[] files = folder.listFiles(new FilenameFilter() {
+//            public boolean accept(File dir, String name) {
+//                return name.endsWith(extension) && name.startsWith(startsWith);
+//            }
+//        });
+//        for (File file: files)
+//            file.delete();
+//        return files.length;
+//    }
 
     JMenu mL2FileMenu;
     JMenuItem mISaveFurnace;
@@ -375,10 +375,6 @@ public class Level2Configurator extends DFHeating {
     JMenuItem mICreateFceSettings;
 
     JMenuBar menuBarLevel2;
-//    JMenuItem mISavePerformanceData;
-//    JMenuItem mIReadPerformanceData;
-
-
 
     JMenu mAccessControl;
     JMenuItem mIInstallerAccess;
