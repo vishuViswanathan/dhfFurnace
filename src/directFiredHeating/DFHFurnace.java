@@ -4912,7 +4912,7 @@ public class DFHFurnace {
 //        dialog.setVisible(true);
     }
 
-    void showMessage(String msg) {
+    public void showMessage(String msg) {
         (new TimedMessage("In DFHFurnace", msg, TimedMessage.INFO, controller.parent(), 3000)).show();
     }
 

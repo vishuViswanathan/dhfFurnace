@@ -143,6 +143,28 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         }
     }
 
+    Thread speedThread; // for updating recommended at regular intervals based on furnace
+
+    public void startSpeedUpdater() {
+        speedUpdaterOn = true;
+        SpeedUpdater speedUpdater = new SpeedUpdater();
+        speedThread = new Thread(speedUpdater);
+        speedThread.start();
+        logTrace("Strip speed updater started ...");
+    }
+
+    void stopSpeedUpdater() {
+        if (speedUpdaterOn) {
+            speedUpdaterOn = false;
+            try {
+                if (speedThread != null) speedThread.join(speedUpdateInterval * 5);
+            } catch (InterruptedException e) {
+                logError("Problem in stopping Strip Speed Updater");
+                e.printStackTrace();
+            }
+        }
+    }
+
     boolean canResetAccess = true; // resetting the application status in 'Level2.Internal'
 
     /**
@@ -630,9 +652,11 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     }
 
     boolean l2DisplayON = false;
+    boolean speedUpdaterOn = false;
 
     public boolean prepareForDisconnection() {
         stopDisplayUpdater();
+        stopSpeedUpdater();
         try {
             if (updaterChangeSub != null)
                 updaterChangeSub.removeItems();
@@ -859,6 +883,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     }
 
     public double getOutputWithFurnaceTemperatureStatus(Performance refP, double stripWidth, double stripThick) {
+        long stTimeNano = System.nanoTime();
         double exitTempRequired = refP.exitTemp();
         Charge ch = new Charge(controller.getSelChMaterial(refP.chMaterial), stripWidth, 1, stripThick);
         ChargeStatus chStatus = new ChargeStatus(ch, 0, exitTempRequired);
@@ -902,6 +927,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
             } else
                 logInfo("Facing problem in creating calculation steps");
         }
+        logTrace("Nano seconds for calculation = " + (System.nanoTime() - stTimeNano));
         return outputAssumed;
     }
 
@@ -1202,6 +1228,22 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                     e.printStackTrace();
                 }
                 updateUIDisplay();
+            }
+        }
+    }
+
+    long speedUpdateInterval = 1000; // sec
+
+    class SpeedUpdater implements Runnable {
+        public void run() {
+            showMessage("Not ready for Strip speed updater");
+            while (l2DisplayON) {
+                try {
+                    Thread.sleep(speedUpdateInterval);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                // @@@
             }
         }
     }

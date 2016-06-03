@@ -241,7 +241,6 @@ public class FieldResults {
         return retVal;
     }
 
-
     /**
      * Make necessary corrections in calculation based on field results
      *
