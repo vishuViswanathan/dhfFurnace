@@ -3,7 +3,9 @@ package level2.applications;
 import directFiredHeating.accessControl.L2AccessControl;
 import display.QueryDialog;
 import mvUtils.display.*;
+import mvUtils.file.ActInBackground;
 import mvUtils.file.FileChooserWithOptions;
+import mvUtils.file.WaitMsg;
 import protection.MachineCheck;
 
 import javax.swing.*;
@@ -50,6 +52,7 @@ public class Level2Launcher {
     L2AccessControl installerAccessControl;
     String fceDataLocation = "level2FceData/";
     String accessDataFile = fceDataLocation + "l2AccessData.txt";    // not used
+    WaitMsg waitMsg;
 
     public Level2Launcher() {
         boolean allOk = false;
@@ -274,25 +277,37 @@ public class Level2Launcher {
 
     void launchRuntime() {
         if (getAccessToLevel2(L2DFHeating.defaultLevel())) {
-            L2DFHeating l2 = new L2DFHeating("Furnace", true);
-            if (l2.l2SystemReady)
-                quit();
+            new WaitMsg(mainF, "Starting Level2Runtime. Please wait ...", new ActInBackground() {
+                public void doInBackground() {
+                    L2DFHeating l2 = new L2DFHeating("Furnace", true);
+                    if (l2.l2SystemReady)
+                        quit();
+                }
+            });
         }
     }
 
     void launchUpdater() {
         if (getAccessToLevel2(L2Updater.defaultLevel())) {
-            L2DFHeating l2 = new L2Updater("Furnace", true);
-            if (l2.l2SystemReady)
-                quit();
+            new WaitMsg(mainF, "Starting Level2Updater. Please wait ...", new ActInBackground() {
+                public void doInBackground() {
+                    L2DFHeating l2 = new L2Updater("Furnace", true);
+                    if (l2.l2SystemReady)
+                        quit();
+                }
+           });
         }
     }
 
     void launchExpert() {
         if (getAccessToLevel2(Level2Expert.defaultLevel())) {
-            L2DFHeating l2 = new Level2Expert("Furnace", true);
-            if (l2.l2SystemReady)
-                quit();
+            new WaitMsg(mainF, "Starting Level2Expert. Please wait ...", new ActInBackground() {
+                public void doInBackground() {
+                    L2DFHeating l2 = new Level2Expert("Furnace", true);
+                    if (l2.l2SystemReady)
+                        quit();
+                }
+            });
         }
     }
 
@@ -308,8 +323,12 @@ public class Level2Launcher {
         if (allOK) {
             StatusWithMessage stm =  installerAccessControl.authenticate(Level2Installer.defaultLevel());
             if (stm.getDataStatus() == StatusWithMessage.DataStat.OK) {
-                new Level2Installer("Furnace", true);
-                quit();
+                new WaitMsg(mainF, "Starting Level2Installer. Please wait ...", new ActInBackground() {
+                    public void doInBackground() {
+                        new Level2Installer("Furnace", true);
+                        quit();
+                    }
+                });
             }
             else
                 showError(stm.getErrorMessage());

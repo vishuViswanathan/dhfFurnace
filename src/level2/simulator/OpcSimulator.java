@@ -13,6 +13,8 @@ import mvUtils.display.FramedPanel;
 import mvUtils.display.InputControl;
 import mvUtils.display.MultiPairColPanel;
 import mvUtils.display.SimpleDialog;
+import mvUtils.file.ActInBackground;
+import mvUtils.file.WaitMsg;
 import org.opcfoundation.ua.builtintypes.DataValue;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -209,8 +211,7 @@ public class OpcSimulator implements InputControl, L2Interface {
          return retVal;
     }
 
-
-    boolean loadSimulator() {
+    boolean loadSimulatorOLD() {
         boolean retVal = false;
         FileDialog fileDlg =
                 new FileDialog(mainF, "Load Level1 side Simulator",
@@ -245,6 +246,40 @@ public class OpcSimulator implements InputControl, L2Interface {
         return retVal;
     }
 
+    boolean loadSimulator() {
+        boolean retVal = false;
+        FileDialog fileDlg =
+                new FileDialog(mainF, "Load Level1 side Simulator",
+                        FileDialog.LOAD);
+        fileDlg.setFile("*.xml");
+        fileDlg.setVisible(true);
+        fileDlg.toFront();
+        String fileName = fileDlg.getFile();
+        if (fileName != null) {
+            String filePath = fileDlg.getDirectory() + fileName;
+            if (!filePath.equals("nullnull")) {
+                try {
+                    BufferedInputStream iStream = new BufferedInputStream(new FileInputStream(filePath));
+                    //           FileInputStream iStream = new FileInputStream(fileName);
+                    File f = new File(filePath);
+                    long len = f.length();
+                    if (len > 1000 && len < 1e6) {
+                        if (takeDataFromXMLKEP(iStream))  {
+                            showMessage("Simulator loaded");
+                            level2Zones = collectSections("furnace:level2", false);
+                            processZones = collectSections("furnace:process", true);
+                            retVal = true;
+                        }
+                    } else
+                        showError("File size " + len + " for " + filePath);
+                    iStream.close();
+                } catch (Exception e) {
+                    showError("Some Problem in getting file!: " + e.getMessage());
+                }
+            }
+        }
+        return retVal;
+    }
     OpcTagGroup allGroups;
 
     boolean takeDataFromXMLKEP(InputStream iStream) throws Exception {

@@ -202,62 +202,68 @@ public class L2DFHeating extends DFHeating {
             furnace.setTuningParams(tuningParams);
             tuningParams.bConsiderChTempProfile = true;
             createUIs(false); // without the default menuBar
-            getFuelAndCharge();
-            setDefaultSelections();
-            switchPage(DFHDisplayPageType.INPUTPAGE);
-            StatusWithMessage statL2FceFile = getL2FceFromFile();
-            if (statL2FceFile.getDataStatus() != StatusWithMessage.DataStat.WithErrorMsg) {
-                if (!onProductionLine || setupUaClient()) {
-                    if (!onProductionLine || l2Furnace.basicConnectionToLevel1(uaClient)) {
-                        StatusWithMessage status = l2Furnace.checkAndNoteAccessLevel();
-                        if (status.getDataStatus() == StatusWithMessage.DataStat.OK) {
+            if (getFuelAndCharge()) {
+                setDefaultSelections();
+                switchPage(DFHDisplayPageType.INPUTPAGE);
+                StatusWithMessage statL2FceFile = getL2FceFromFile();
+                if (statL2FceFile.getDataStatus() != StatusWithMessage.DataStat.WithErrorMsg) {
+                    if (!onProductionLine || setupUaClient()) {
+                        if (!onProductionLine || l2Furnace.basicConnectionToLevel1(uaClient)) {
+                            StatusWithMessage status = l2Furnace.checkAndNoteAccessLevel();
+                            if (status.getDataStatus() == StatusWithMessage.DataStat.OK) {
 //            debug("Created Level2furnace");
-                            furnace.setWidth(width);
-                            enableDataEdit();
-                            addMenuBar(createL2MenuBar());
-                            l2MenuSet = true;
-                            getPerformanceList();
-                            bProfileEdited = false;
-                            if (onProductionLine) {
-                                if (l2Furnace.makeAllConnections()) {   // createL2Zones()) {
-                                    ErrorStatAndMsg connStat = l2Furnace.checkConnection();
-                                    if (connStat.inError)
-                                        showError(connStat.msg);
-                                    else {
-                                        l2Furnace.initForLevel2Operation();
-                                        l2SystemReady = true;
+                                furnace.setWidth(width);
+                                enableDataEdit();
+                                addMenuBar(createL2MenuBar());
+                                l2MenuSet = true;
+                                getPerformanceList();
+                                bProfileEdited = false;
+                                if (onProductionLine) {
+                                    if (l2Furnace.makeAllConnections()) {   // createL2Zones()) {
+                                        ErrorStatAndMsg connStat = l2Furnace.checkConnection();
+                                        if (connStat.inError)
+                                            showError(connStat.msg);
+                                        else {
+                                            l2Furnace.initForLevel2Operation();
+                                            l2SystemReady = true;
+                                        }
                                     }
-                                }
+                                } else
+                                    l2SystemReady = true;
                             } else
-                                l2SystemReady = true;
+                                showError(status.getErrorMessage());
                         } else
-                            showError(status.getErrorMessage());
+                            showError("Unable to start Level2 ERROR:001");
                     } else
-                        showError("Unable to start Level2 ERROR:001");
+                        showError("Unable to connect to OPC server : ERROR:002");
                 } else
-                    showError("Unable to connect to OPC server : ERROR:002");
-            } else
-                showError("Unable to load Furnace Profile : " + statL2FceFile.getErrorMessage());
-            if (l2SystemReady) {
-                lockFile = new File(lockPath);
-                displayIt();
-                if (onProductionLine)
-                    l2Furnace.startL2DisplayUpdater();
-                if (accessLevel == L2AccessControl.AccessLevel.RUNTIME || accessLevel == L2AccessControl.AccessLevel.UPDATER)
-                    l2Furnace.enableDeleteInPerformanceData(false);
-                if (accessLevel == L2AccessControl.AccessLevel.INSTALLER) {
-                    showMessage("It is the responsibility of the user to ensure data integrity among:" +
-                            "\n      1) Profile including Fuel type " +
-                            "\n      2) Fuel settings under '" + mL2Configuration.getText() + "'" +
-                            "\n      3) DHFProcess List data under '" + mL2Configuration.getText() + "'" +
-                            "\n      4) Performance Data under '" + perfMenu.getText() + "'" +
-                            "\n\nIt is suggested that the profile with Fuel is finalised before updating" +
-                            "\nthe other data." +
-                            "\n\nBefore exiting, the the above data to be save to respective files." +
-                            "\nThe Profile is to be saved first, followed by the others, since, the profile-save" +
-                            "\nassigns a profile ID, which is used as link in other data files");
+                    showError("Unable to load Furnace Profile : " + statL2FceFile.getErrorMessage());
+                if (l2SystemReady) {
+                    lockFile = new File(lockPath);
+                    displayIt();
+                    if (onProductionLine) {
+                        l2Furnace.startL2DisplayUpdater();
+                        if (accessLevel == L2AccessControl.AccessLevel.RUNTIME)
+                            l2Furnace.startSpeedUpdater();
+                    }
+                    if (accessLevel == L2AccessControl.AccessLevel.RUNTIME || accessLevel == L2AccessControl.AccessLevel.UPDATER)
+                        l2Furnace.enableDeleteInPerformanceData(false);
+                    if (accessLevel == L2AccessControl.AccessLevel.INSTALLER) {
+                        showMessage("It is the responsibility of the user to ensure data integrity among:" +
+                                "\n      1) Profile including Fuel type " +
+                                "\n      2) Fuel settings under '" + mL2Configuration.getText() + "'" +
+                                "\n      3) DHFProcess List data under '" + mL2Configuration.getText() + "'" +
+                                "\n      4) Performance Data under '" + perfMenu.getText() + "'" +
+                                "\n\nIt is suggested that the profile with Fuel is finalised before updating" +
+                                "\nthe other data." +
+                                "\n\nBefore exiting, the the above data to be save to respective files." +
+                                "\nThe Profile is to be saved first, followed by the others, since, the profile-save" +
+                                "\nassigns a profile ID, which is used as link in other data files");
+                    }
                 }
             }
+            else
+                showError("Unable to load Fuel and/or Charge Material Specifications");
         } catch (Exception e) {
             showError("Could not find/load Access Data file :" + e.getMessage());
         }
@@ -265,98 +271,98 @@ public class L2DFHeating extends DFHeating {
         return l2SystemReady;
     }
 
-    public boolean setItUpOLD() {
-        modifyJTextEdit();
-        fuelList = new Vector<Fuel>();
-        vChMaterial = new Vector<ChMaterial>();
-        setUIDefaults();
-        mainF = new JFrame();
-        mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        if (!asJNLP && (log == null)) {
-            log = Logger.getLogger("level2.L2DFHeating"); //DFHeating.class);
-            // Load Log4j configurations from external file
-        }
-        try {
-            accessControl = new L2AccessControl(accessDataFile, true);
-            mainF.setTitle("DFH Furnace " + accessControl.getDescription(accessLevel) + " - " + releaseDate + testTitle);
-
-            tuningParams = new DFHTuningParams(this, onProductionLine, 1, 5, 30, 1.12, 1, false, false);
-//        debug("Creating new Level2furnace");
-            l2Furnace = new L2DFHFurnace(this, false, false, lNameListener);
-            if (!testMachineID()) {
-                showError("Software key mismatch, Aborting ...");
-                justQuit();
-            }
-            if (!onProductionLine || l2Furnace.basicConnectionToLevel1(uaClient)) {
-                furnace = l2Furnace;
-                StatusWithMessage status = l2Furnace.checkAndNoteAccessLevel();
-                if (status.getDataStatus() == StatusWithMessage.DataStat.OK) {
-//            debug("Created Level2furnace");
-                    furnace.setTuningParams(tuningParams);
-                    tuningParams.bConsiderChTempProfile = true;
-                    createUIs(false); // without the default menuBar
-                    getFuelAndCharge();
-                    setDefaultSelections();
-                    switchPage(DFHDisplayPageType.INPUTPAGE);
-                    StatusWithMessage statL2FceFile = getL2FceFromFile();
-                    if (statL2FceFile.getDataStatus() != StatusWithMessage.DataStat.WithErrorMsg) {
-                        furnace.setWidth(width);
-                        enableDataEdit();
-                        addMenuBar(createL2MenuBar());
-                        l2MenuSet = true;
-                        getPerformanceList();
-//                        dfhProcessList = new StripDFHProcessList(this);
-//                        if (getStripDFHProcessList()) {
-//                            if (getFurnaceSettings()) {
-                        bProfileEdited = false;
-                        if (onProductionLine) {
-                            if (l2Furnace.makeAllConnections()) {   // createL2Zones()) {
-                                ErrorStatAndMsg connStat = l2Furnace.checkConnection();
-                                if (connStat.inError)
-                                    showError(connStat.msg);
-                                else {
-                                    l2Furnace.initForLevel2Operation();
-                                    l2SystemReady = true;
-                                }
-                            }
-                        } else
-                            l2SystemReady = true;
-//                            } else
-//                                showError("Problem in loading Furnace Settings");
+//    public boolean setItUpOLD() {  // TODO to be removed
+//        modifyJTextEdit();
+//        fuelList = new Vector<Fuel>();
+//        vChMaterial = new Vector<ChMaterial>();
+//        setUIDefaults();
+//        mainF = new JFrame();
+//        mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+//        if (!asJNLP && (log == null)) {
+//            log = Logger.getLogger("level2.L2DFHeating"); //DFHeating.class);
+//            // Load Log4j configurations from external file
+//        }
+//        try {
+//            accessControl = new L2AccessControl(accessDataFile, true);
+//            mainF.setTitle("DFH Furnace " + accessControl.getDescription(accessLevel) + " - " + releaseDate + testTitle);
+//
+//            tuningParams = new DFHTuningParams(this, onProductionLine, 1, 5, 30, 1.12, 1, false, false);
+////        debug("Creating new Level2furnace");
+//            l2Furnace = new L2DFHFurnace(this, false, false, lNameListener);
+//            if (!testMachineID()) {
+//                showError("Software key mismatch, Aborting ...");
+//                justQuit();
+//            }
+//            if (!onProductionLine || l2Furnace.basicConnectionToLevel1(uaClient)) {
+//                furnace = l2Furnace;
+//                StatusWithMessage status = l2Furnace.checkAndNoteAccessLevel();
+//                if (status.getDataStatus() == StatusWithMessage.DataStat.OK) {
+////            debug("Created Level2furnace");
+//                    furnace.setTuningParams(tuningParams);
+//                    tuningParams.bConsiderChTempProfile = true;
+//                    createUIs(false); // without the default menuBar
+//                    getFuelAndCharge();
+//                    setDefaultSelections();
+//                    switchPage(DFHDisplayPageType.INPUTPAGE);
+//                    StatusWithMessage statL2FceFile = getL2FceFromFile();
+//                    if (statL2FceFile.getDataStatus() != StatusWithMessage.DataStat.WithErrorMsg) {
+//                        furnace.setWidth(width);
+//                        enableDataEdit();
+//                        addMenuBar(createL2MenuBar());
+//                        l2MenuSet = true;
+//                        getPerformanceList();
+////                        dfhProcessList = new StripDFHProcessList(this);
+////                        if (getStripDFHProcessList()) {
+////                            if (getFurnaceSettings()) {
+//                        bProfileEdited = false;
+//                        if (onProductionLine) {
+//                            if (l2Furnace.makeAllConnections()) {   // createL2Zones()) {
+//                                ErrorStatAndMsg connStat = l2Furnace.checkConnection();
+//                                if (connStat.inError)
+//                                    showError(connStat.msg);
+//                                else {
+//                                    l2Furnace.initForLevel2Operation();
+//                                    l2SystemReady = true;
+//                                }
+//                            }
 //                        } else
-//                            showError("Problem loading test StripDFHProcess list data");
-                    } else
-                        showError("Unable to load Furnace Profile : " + statL2FceFile.getErrorMessage());
-                } else
-                    showError(status.getErrorMessage());
-            } else
-                showError("Unable to start Level2 ERROR:001");
-            if (l2SystemReady) {
-                lockFile = new File(lockPath);
-                displayIt();
-                if (onProductionLine)
-                    l2Furnace.startL2DisplayUpdater();
-                if (accessLevel == L2AccessControl.AccessLevel.RUNTIME || accessLevel == L2AccessControl.AccessLevel.UPDATER)
-                    l2Furnace.enableDeleteInPerformanceData(false);
-                if (accessLevel == L2AccessControl.AccessLevel.INSTALLER) {
-                    showMessage("It is the responsibility of the user to ensure data integrity among:" +
-                            "\n      1) Profile including Fuel type " +
-                            "\n      2) Fuel settings under '" + mL2Configuration.getText() + "'" +
-                            "\n      3) DHFProcess List data under '" + mL2Configuration.getText() + "'" +
-                            "\n      4) Performance Data under '" + perfMenu.getText() + "'" +
-                            "\n\nIt is suggested that the profile with Fuel is finalised before updating" +
-                            "\nthe other data." +
-                            "\n\nBefore exiting, the the above data to be save to respective files." +
-                            "\nThe Profile is to be saved first, followed by the others, since, the profile-save" +
-                            "\nassigns a profile ID, which is used as link in other data files");
-                }
-            }
-        } catch (Exception e) {
-            showError("Could not find/load Access Data file");
-        }
-        System.out.println("Java Version :" + System.getProperty("java.version"));
-        return l2SystemReady;
-    }
+//                            l2SystemReady = true;
+////                            } else
+////                                showError("Problem in loading Furnace Settings");
+////                        } else
+////                            showError("Problem loading test StripDFHProcess list data");
+//                    } else
+//                        showError("Unable to load Furnace Profile : " + statL2FceFile.getErrorMessage());
+//                } else
+//                    showError(status.getErrorMessage());
+//            } else
+//                showError("Unable to start Level2 ERROR:001");
+//            if (l2SystemReady) {
+//                lockFile = new File(lockPath);
+//                displayIt();
+//                if (onProductionLine)
+//                    l2Furnace.startL2DisplayUpdater();
+//                if (accessLevel == L2AccessControl.AccessLevel.RUNTIME || accessLevel == L2AccessControl.AccessLevel.UPDATER)
+//                    l2Furnace.enableDeleteInPerformanceData(false);
+//                if (accessLevel == L2AccessControl.AccessLevel.INSTALLER) {
+//                    showMessage("It is the responsibility of the user to ensure data integrity among:" +
+//                            "\n      1) Profile including Fuel type " +
+//                            "\n      2) Fuel settings under '" + mL2Configuration.getText() + "'" +
+//                            "\n      3) DHFProcess List data under '" + mL2Configuration.getText() + "'" +
+//                            "\n      4) Performance Data under '" + perfMenu.getText() + "'" +
+//                            "\n\nIt is suggested that the profile with Fuel is finalised before updating" +
+//                            "\nthe other data." +
+//                            "\n\nBefore exiting, the the above data to be save to respective files." +
+//                            "\nThe Profile is to be saved first, followed by the others, since, the profile-save" +
+//                            "\nassigns a profile ID, which is used as link in other data files");
+//                }
+//            }
+//        } catch (Exception e) {
+//            showError("Could not find/load Access Data file");
+//        }
+//        System.out.println("Java Version :" + System.getProperty("java.version"));
+//        return l2SystemReady;
+//    }
 
     boolean loadAssociatedData(String basePath) {
         showMessage(" call to loadAssociatedData to be modified 20160520");
@@ -1451,9 +1457,9 @@ public class L2DFHeating extends DFHeating {
 //        return super.getFceFromFceDatFile(filePath);
 //    }
 
-    void getFuelAndCharge() {
-        fuelSpecsFromFile(fceDataLocation + "FuelSpecifications.dfhSpecs");
-        chMaterialSpecsFromFile(fceDataLocation + "ChMaterialSpecifications.dfhSpecs");
+    boolean getFuelAndCharge() {
+        return (fuelSpecsFromFile(fceDataLocation + "FuelSpecifications.dfhSpecs") &&
+                chMaterialSpecsFromFile(fceDataLocation + "ChMaterialSpecifications.dfhSpecs"));
     }
 
     String profileCode = "";

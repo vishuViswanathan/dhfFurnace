@@ -126,11 +126,11 @@ public class Level2Configurator extends DFHeating {
         return associatedDataLoaded;
     }
 
-    void getFuelAndCharge() {
-        fuelSpecsFromFile(fceDataLocation + "FuelSpecifications.dfhSpecs");
-        chMaterialSpecsFromFile(fceDataLocation + "ChMaterialSpecifications.dfhSpecs");
-    }
-
+//    void getFuelAndCharge() {
+//        fuelSpecsFromFile(fceDataLocation + "FuelSpecifications.dfhSpecs");
+//        chMaterialSpecsFromFile(fceDataLocation + "ChMaterialSpecifications.dfhSpecs");
+//    }
+//
     boolean checkProfileCode(String withThis) {
         return (withThis != null) && (profileCode.equals(withThis));
     }

@@ -78,7 +78,7 @@ public class PerformanceGroup implements ActionListener{
     public boolean noteBasePerformance(Performance performance, boolean fromXML) {
         boolean bNoted = false;
         boolean requiresInterpolCheck = false;
-        int foundAt = getIndexOfSimilarPerformace(performance);
+        int foundAt = getIndexOfSimilarPerformance(performance);
         if (foundAt >= 0) {
             if (controller.decide("Existing Base", "Near Performance base for " +
                     "\n" + refPerformance.get(foundAt) +
@@ -94,8 +94,10 @@ public class PerformanceGroup implements ActionListener{
             }
         }
         else {
-            refPerformance.add(performance);
-            bNoted = true;
+            if (foundAt == -1) {
+                refPerformance.add(performance);
+                bNoted = true;
+            }
         }
         if (bNoted) {
             if (checkChTempProfAvailable() && !fromXML)
@@ -126,18 +128,21 @@ public class PerformanceGroup implements ActionListener{
         return getRefPerformance(performance.processName, performance.chMaterial, performance.exitTemp());
     }
 
-    int getIndexOfSimilarPerformace(Performance performance) {
+    int getIndexOfSimilarPerformance(Performance performance) {
+        int index = -2;
         ChMaterial chMaterial = controller.getSelChMaterial(performance.chMaterial);
-        Performance similarPerformance = getRefPerformance(performance.processName, chMaterial, performance.exitTemp());
-        int index = -1;
-        if (similarPerformance != null)
-            index = refPerformance.indexOf(similarPerformance);
+        if (chMaterial != null) {
+            index = -1;
+            Performance similarPerformance = getRefPerformance(performance.processName, chMaterial, performance.exitTemp());
+            if (similarPerformance != null)
+                index = refPerformance.indexOf(similarPerformance);
+        }
         return index;
     }
 
     public boolean replaceExistingPerformance(Performance performance) {
         boolean retVal = false;
-        int foundAt = getIndexOfSimilarPerformace(performance);
+        int foundAt = getIndexOfSimilarPerformance(performance);
         if (foundAt >= 0) {
             refPerformance.remove(foundAt);
             refPerformance.add(foundAt, performance);
@@ -309,7 +314,8 @@ public class PerformanceGroup implements ActionListener{
                             vp = XMLmv.getTag(xmlStr, "RefP" + ("" + refP).trim(), vp.endPos);
                             p = new Performance(furnace);
                             if (p.takeDataFromXML(vp.val)) {
-                                noteBasePerformance(p, true);
+                                if (!noteBasePerformance(p, true))
+                                    showError("Unable to note performance data :" + p);
                             }
                             else
                                 break; // take no more since seems to have some error

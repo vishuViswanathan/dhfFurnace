@@ -513,8 +513,12 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                 }
             }
             else {
-                fuelSpecsFromFile("defData\\FuelSpecifications.dfhSpecs");
-                chMaterialSpecsFromFile("defData\\ChMaterialSpecifications.dfhSpecs");
+                String fuelSpecsFile = "defData\\FuelSpecifications.dfhSpecs";
+                if (!fuelSpecsFromFile(fuelSpecsFile))
+                    showError("Fuel Specification file :" + fuelSpecsFile + " is not available");
+                String matSpecFile = "defData\\ChMaterialSpecifications.dfhSpecs";
+                if (!chMaterialSpecsFromFile(matSpecFile))
+                    showError("Charge Material Specification file :" + matSpecFile + " is not available");
             }
         }
 
