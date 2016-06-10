@@ -26,6 +26,7 @@ public class L2ParamGroup {
         AFRatio("AFRatio"),
         Pressure("Pressure"),
         Speed("Speed"),
+        SpeedCheck("SpeedCheck"),
         Flue("Flue"),
         FuelCharacteristic("FuelCharacteristic"),
         L2Data("L2Data"),

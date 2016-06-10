@@ -2,7 +2,9 @@ package level2.applications;
 
 import directFiredHeating.DFHeating;
 import directFiredHeating.accessControl.L2AccessControl;
+import mvUtils.display.DataWithMsg;
 import mvUtils.display.StatusWithMessage;
+import mvUtils.file.FileChooserWithOptions;
 
 /**
  * User: M Viswanathan
@@ -43,6 +45,8 @@ public class Level2Installer extends L2DFHeating {
         }
     }
 
+    L2AccessControl installerAccessControl;
+
     public Level2Installer(String equipment) {
         super(equipment);
         onProductionLine = false;
@@ -65,11 +69,16 @@ public class Level2Installer extends L2DFHeating {
         bShowAllmenu = true;
 //        userActionAllowed = true;
         accessLevel = L2AccessControl.AccessLevel.INSTALLER;
-        setItUp();
-        if (!l2SystemReady) {
-            showError("Level2 could not be started. Aborting ...");
-            System.exit(1);
+        StatusWithMessage status = getInstallerAccessFile();
+        if (status.getDataStatus() == StatusWithMessage.DataStat.OK) {
+            setItUp();
+            if (!l2SystemReady) {
+                showError("Level2 could not be started. Aborting ...");
+                System.exit(1);
+            }
         }
+        else
+            showError("Unable to get Installer Access :" + status.getErrorMessage());
     }
 
     public static L2AccessControl.AccessLevel defaultLevel() {
@@ -96,6 +105,30 @@ public class Level2Installer extends L2DFHeating {
                 clearAssociatedData();
             }
         }
+        return retVal;
+    }
+
+    StatusWithMessage getInstallerAccessFile() {
+        StatusWithMessage retVal = new StatusWithMessage();
+        DataWithMsg pathStatus =
+                FileChooserWithOptions.getOneExistingFilepath(fceDataLocation, L2AccessControl.installerAccessFileExtension, true);
+        if (pathStatus.getStatus() == DataWithMsg.DataStat.OK) {
+            try {
+                installerAccessControl = new L2AccessControl(pathStatus.stringValue, true); // only if file exists
+            } catch (Exception e) {
+                retVal.addErrorMessage(e.getMessage());
+            }
+        }
+        else
+            retVal.addErrorMessage(pathStatus.errorMessage);
+        return retVal;
+    }
+
+    protected boolean authenticate() {
+        boolean retVal = false;
+        StatusWithMessage stm = installerAccessControl.authenticate(accessLevel, "Re-confirm authority");
+        if (stm.getDataStatus() == StatusWithMessage.DataStat.OK)
+            retVal = true;
         return retVal;
     }
 

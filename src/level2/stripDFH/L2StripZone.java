@@ -37,6 +37,7 @@ public class L2StripZone extends L2ParamGroup {
     L2DFHFurnace l2Furnace;
     Hashtable<MonitoredDataItem, Tag> monitoredTags;
     TMSubscription stripSub;
+    Tag[] tagsSpeedCheck;
     Tag[] tagsStripDataNow;
     Tag[] tagsStripDataNext;
     Tag[] tagsStripTemperature;
@@ -48,9 +49,12 @@ public class L2StripZone extends L2ParamGroup {
     ReadyNotedParam paramStripNextSize;
     L2ZoneParam paramStripNowTemperature;
     L2ZoneParam paramStripNowSpeed;
+    L2ZoneParam paramStripSpeedCheck;
     L2ZoneParam paramStripNowStatus;
     Vector<ReadyNotedParam> readyNotedParamList = new Vector<ReadyNotedParam>();
     String errorLocation;
+    boolean speedUpdaterThresdOn = false;
+    boolean updateSpeed = false;
 
     public L2StripZone(L2DFHeating l2DFHeating, String zoneName, String descriptiveName) throws TagCreationException {
         super(l2DFHeating.l2Furnace, zoneName, descriptiveName);
@@ -60,8 +64,13 @@ public class L2StripZone extends L2ParamGroup {
         createStripParam();
         createNowStripTempProcessDisplay();
         createNowStripSpeedProcessDisplay();
+        createStripSpeedCheckProcessDisplay();
         createNowStripDataProcessDisplay();
         createNextStripDataProcessDisplay();
+    }
+
+    public boolean IsSpeedUpdaterOn() {
+        return speedUpdaterThresdOn;
     }
 
     boolean createStripParam() throws TagCreationException {
@@ -77,6 +86,7 @@ public class L2StripZone extends L2ParamGroup {
         blk:
         {
             stripSub = source.createTMSubscription("Strip Data", new SubAliveListener(), new StripListener());
+            setSubscription(stripSub);
             Tag[] tags1 = {
                     new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Process, false, false),
                     (tagNowStripDataReady = new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Ready, false, true)),
@@ -114,6 +124,7 @@ public class L2StripZone extends L2ParamGroup {
             readyNotedParamList.add(paramStripNextSize);
             addOneParameter(L2ParamGroup.Parameter.Next, paramStripNextSize);
             noteMonitoredTags(tagsStripDataNext);
+
             String[] modeStr = {"Strip", "Zonal"};
             Tag[] tags3 = {
                     new Tag(L2ParamGroup.Parameter.Temperature, Tag.TagName.SP, false, false, temperatureFmt),
@@ -124,6 +135,7 @@ public class L2StripZone extends L2ParamGroup {
             errorLocation = "Strip Temperature tags";
             paramStripNowTemperature = addOneParameter(L2ParamGroup.Parameter.Temperature, tagsStripTemperature);
             noteMonitoredTags(tagsStripTemperature);
+
             Tag[] tags4 = {
                     new Tag(L2ParamGroup.Parameter.Speed, Tag.TagName.SP, false, false, speedFmt),
                     new Tag(L2ParamGroup.Parameter.Speed, Tag.TagName.PV, false, false, speedFmt)};
@@ -131,12 +143,23 @@ public class L2StripZone extends L2ParamGroup {
             errorLocation = "Strip Speed tags";
             paramStripNowSpeed =  addOneParameter(L2ParamGroup.Parameter.Speed, tagsStripSpeed);
             noteMonitoredTags(tagsStripSpeed);
+
             Tag[] tags5 = {
-                    new Tag(L2ParamGroup.Parameter.Status, Tag.TagName.Length, false, false, lengthFmt)};
+                    new Tag(Parameter.Status, Tag.TagName.Length, false, false, lengthFmt)};
             tagsStripStatus = tags5;
             errorLocation = "Strip Status tags";
             paramStripNowStatus =  addOneParameter(L2ParamGroup.Parameter.Status, tagsStripStatus);
             noteMonitoredTags(tagsStripStatus);
+
+            Tag[] tags6 = {
+                    new Tag(Parameter.SpeedCheck, Tag.TagName.Enabled, false, true),
+                    new Tag(Parameter.SpeedCheck, Tag.TagName.Running, true, false),
+                    new Tag(Parameter.SpeedCheck, Tag.TagName.Msg, true, false)};
+            tagsSpeedCheck = tags6;
+            errorLocation = "Strip SpeedCheck tags";
+            paramStripSpeedCheck =  addOneParameter(Parameter.SpeedCheck, tagsSpeedCheck);
+            noteMonitoredTags(tagsSpeedCheck);
+
             retVal = true;
         }
         return retVal;
@@ -151,10 +174,58 @@ public class L2StripZone extends L2ParamGroup {
     public void initForLevel2Operation() {
         for (ReadyNotedParam p : readyNotedParamList)
             p.initStatus();
+        paramStripSpeedCheck.setValue(Tag.TagName.Running, false);
+        paramStripSpeedCheck.setValue(Tag.TagName.Msg, "");
     }
 
+    public StripProcessAndSize getNowStripData() {
+        double stripWidth = DoubleMV.round(getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Width).floatValue, 3) / 1000;
+        double stripThick = DoubleMV.round(getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Thick).floatValue, 3) / 1000;
+        String process = getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Process).stringValue;
+//        if (l2Furnace.level2Enabled)
+//            setValue(L2ParamGroup.Parameter.Now, Tag.TagName.Noted, true);
+        return new StripProcessAndSize(process, stripWidth, stripThick);
+    }
 
-    public StripProcessAndSize getNewStripData() {
+    public StripProcessAndSize setNowStripAction(StatusWithMessage status) {
+        StripProcessAndSize theStrip = null;
+        if (l2Furnace.level2Enabled) {
+            theStrip = getNowStripData();
+            l2Furnace.logTrace("Running strip with Process:" + theStrip.process);
+            OneStripDFHProcess oneProcess = l2DFHeating.getStripDFHProcess(theStrip.process);
+            if (oneProcess != null) {
+                Performance refP = l2Furnace.getBasePerformance(oneProcess, theStrip.thickness);
+                if (refP != null) {
+                    theStrip.refP = refP;
+                    double output = l2Furnace.getOutputWithFurnaceTemperatureStatus(refP, theStrip.width, theStrip.thickness);
+                    l2Furnace.logTrace("Running Strip capacity Based On temperature= " + (output / 1000) + "t/h");
+                    if (output > 0) {
+                        DoubleWithStatus speedData = oneProcess.getRecommendedSpeed(output, theStrip.width, theStrip.thickness);
+                        StatusWithMessage.DataStat speedStatus = speedData.getDataStatus();
+                        if (speedStatus != StatusWithMessage.DataStat.WithErrorMsg) {
+                            ProcessValue responseSpeed = setValue(L2ParamGroup.Parameter.Now, Tag.TagName.SpeedNow,
+                                    (float)(speedData.getValue() / 60));
+                            if (responseSpeed.valid) {
+                                ProcessValue responseSpeedLimit = setValue(L2ParamGroup.Parameter.Now, Tag.TagName.SpeedMax,
+                                        (float) ((oneProcess.getLimitSpeed(theStrip.thickness) / 60)));
+                            }else
+                                status.setErrorMessage("Running Strip: Unable to set recommended speed" + responseSpeed.errorMessage);
+                        } else
+                            status.setErrorMessage("Running Strip: Unable to get recommended speed: " + speedData.getErrorMessage());
+                    } else
+                        status.setErrorMessage("Running Strip: Unable to calculate recommended capacity from reference");
+                }
+                else
+                    status.setErrorMessage("Running Strip: Unable to get Reference performance in the database");
+            } else
+                status.setErrorMessage("Running Strip: Process " + theStrip.process + " not available");
+        }
+        else
+            status.setErrorMessage("Running Strip: Level2 is not enabled");
+        return theStrip;
+    }
+
+    public StripProcessAndSize getNextStripData() {
         double stripWidth = DoubleMV.round(getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Width).floatValue, 3) / 1000;
         double stripThick = DoubleMV.round(getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Thick).floatValue, 3) / 1000;
         String process = getValue(L2ParamGroup.Parameter.Next, Tag.TagName.Process).stringValue;
@@ -163,10 +234,10 @@ public class L2StripZone extends L2ParamGroup {
         return new StripProcessAndSize(process, stripWidth, stripThick);
     }
 
-    public StripProcessAndSize setNewStripAction(StatusWithMessage status) {
+    public StripProcessAndSize setNextStripAction(StatusWithMessage status) {
         StripProcessAndSize theStrip = null;
         if (l2Furnace.level2Enabled) {
-            theStrip = getNewStripData();
+            theStrip = getNextStripData();
             l2Furnace.logTrace("new strip with Process:" + theStrip.process);
             OneStripDFHProcess oneProcess = l2DFHeating.getStripDFHProcess(theStrip.process);
             if (oneProcess != null) {
@@ -216,6 +287,7 @@ public class L2StripZone extends L2ParamGroup {
     JComponent nowStripProcessSpeedPanel;
     JComponent nowStripProcessDataPanel;
     JComponent nextStripProcessDataPanel;
+    JComponent stripSpeedCheckPanel;
 
     public JComponent stripProcessPanel() {
         JPanel outerP = new JPanel(new BorderLayout()) ;
@@ -230,6 +302,7 @@ public class L2StripZone extends L2ParamGroup {
 //        jp.add(nowStripProcessTempPanel);
         jp.add(nowStripProcessSpeedPanel);
         jp.add(nowStripProcessDataPanel);
+        jp.add(stripSpeedCheckPanel);
         JPanel titleP = new JPanel();
         titleP.add(new JLabel("Strip in Process"));
         innerP.add(titleP, BorderLayout.NORTH);
@@ -276,6 +349,15 @@ public class L2StripZone extends L2ParamGroup {
         return nowStripProcessSpeedPanel;
     }
 
+    JComponent createStripSpeedCheckProcessDisplay() {
+        stripSpeedCheckPanel = new FramedPanel();
+        MultiPairColPanel mp = new MultiPairColPanel("Strip Speed Check");
+        Tag t = paramStripSpeedCheck.getProcessTag(Tag.TagName.Enabled);
+        mp.addItemPair(t.toString(), t.displayComponent());
+        stripSpeedCheckPanel.add(mp);
+        return stripSpeedCheckPanel;
+    }
+
     JComponent createNowStripDataProcessDisplay() {
         nowStripProcessDataPanel = new FramedPanel();
         MultiPairColPanel mp = new MultiPairColPanel("Process and Size");
@@ -319,6 +401,7 @@ public class L2StripZone extends L2ParamGroup {
         updateDisplay(tagsStripDataNow);
         updateDisplay(tagsStripDataNext);
         updateDisplay(tagsStripStatus);
+        updateDisplay(tagsSpeedCheck);
     }
 
     public void updateL2Display() {
@@ -333,17 +416,105 @@ public class L2StripZone extends L2ParamGroup {
         stripSub.removeItems();
     }
 
+    void setSpeedCheckMessge(String msg) {
+        paramStripSpeedCheck.setValue(Tag.TagName.Msg, msg);
+    }
+
+    Thread speedThread; // for updating recommended at regular intervals based on furnace
+
+    public void startSpeedUpdater() {
+        SpeedUpdater speedUpdater = new SpeedUpdater();
+        speedThread = new Thread(speedUpdater);
+        speedThread.start();
+        l2Furnace.logTrace("Strip speed updater started ...");
+    }
+
+    public void stopSpeedUpdater() {
+        if (speedUpdaterThresdOn) {
+            speedUpdaterThresdOn = false;
+            try {
+                if (speedThread != null) speedThread.join(speedNapInterval * 5);
+            } catch (InterruptedException e) {
+                l2Furnace.logError("Problem in stopping Strip Speed Updater");
+                e.printStackTrace();
+            }
+        }
+    }
+
+    long speedNapInterval = 2000; // 2 sec
+    int nNaps = 5;  // TODO the valeu tobe set as 15 or 30
+
+    class SpeedUpdater implements Runnable {
+        public void run() {
+            speedUpdaterThresdOn = true;
+            while (speedUpdaterThresdOn) {
+                if (updateSpeed) {
+                    int count = 5;
+                    boolean gotIt = false;
+                    while (--count > 0) {
+                        if (!l2Furnace.isProcessDataBeingUsed()) {
+                            l2Furnace.stripSpeedRoutineON.set(true);
+                            gotIt = true;
+                            StatusWithMessage nowStripStatusWithMsg = new StatusWithMessage();
+                            setNowStripAction(nowStripStatusWithMsg);
+                            if (nowStripStatusWithMsg.getDataStatus() == StatusWithMessage.DataStat.OK) {
+                                setSpeedCheckMessge("OK");
+                                paramStripSpeedCheck.setValue(Tag.TagName.Running, true);
+                            }
+                            else {
+                                String msg = nowStripStatusWithMsg.getErrorMessage();
+                                setSpeedCheckMessge(msg);
+                                l2Furnace.logInfo(msg);
+                                paramStripSpeedCheck.setValue(Tag.TagName.Running, false);
+                            }
+
+                            break;
+                        }
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    if (!gotIt)
+                        l2Furnace.logInfo("Unable to process Strip speed routine");
+                    l2Furnace.stripSpeedRoutineON.set(false);
+                }
+                try {  // multiple intervals to enable faster exit
+                    for (int n = 0; n < nNaps; n++) {
+                        if (speedUpdaterThresdOn)
+                            Thread.sleep(speedNapInterval);
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+
     class StripListener extends L2SubscriptionListener {
         @Override
         public void onDataChange(Subscription subscription, MonitoredDataItem monitoredDataItem, DataValue dataValue) {
             L2AccessControl.AccessLevel accessLevel = l2DFHeating.accessLevel;
             if (l2DFHeating.isL2SystemReady() && (accessLevel == L2AccessControl.AccessLevel.RUNTIME)) {
                 Tag theTag = monitoredTags.get(monitoredDataItem);
-                if (paramStripNextSize.isNewData(theTag))   // the data will be already read if new data
-                    if (theTag == tagNextStripDataReady)
-                        l2Furnace.handleNewStrip();
+                if (paramStripNextSize.isItAMember(theTag)) {
+                    if (paramStripNextSize.isNewData(theTag))   // the data will be already read if new data
+                        if (theTag == tagNextStripDataReady)
+                            l2Furnace.handleNextStrip();
+                }
+                else if (paramStripSpeedCheck.isItAMember(theTag)) {
+                    updateSpeed = paramStripSpeedCheck.getValue(Tag.TagName.Enabled).booleanValue;
+                    paramStripSpeedCheck.setValue(Tag.TagName.Running, updateSpeed);
+                    setSpeedCheckMessge((updateSpeed) ? "Started" : "Disabled from Level1");
+                }
             }
         }
+    }
+
+    void trace(String msg) {
+        System.out.println("L2StripZone: " + msg);
     }
 
     class SubAliveListener implements SubscriptionAliveListener {     // TODO This is common dummy class used everywhere to be made proper

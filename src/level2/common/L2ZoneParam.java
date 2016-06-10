@@ -104,6 +104,14 @@ public class L2ZoneParam extends OneDataGroup {
         return theTag.setValue(newValue);
     }
 
+    public boolean isItAMember(Tag tag) {
+        return isItAMember(tag, false);
+    }
+
+    public boolean isItAMember(Tag tag, boolean bLevel2) {
+        return (bLevel2) ? level2TagList.contains(tag) : processTagList.contains(tag);
+    }
+
 //    public boolean getFloatValue(Tag.TagName tagName) {
 //        float retVal;
 //        Tag theTag;

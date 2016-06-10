@@ -63,7 +63,7 @@ public class FieldResults {
             oneSec = l2Furnace.getOneSection(false, z);
             oneZone = oneSec.getZonePerfData();
             addZoneResult(false, z, oneZone.fceTemp, oneZone.fuelFlow, l2Furnace.commonAirTemp, 1.0);
-            // @TODO the air fuel ratio is taken as 1.0 here in createOneFieldResults()
+            // TODO the air fuel ratio is taken as 1.0 here in createOneFieldResults()
         }
         if (l2Furnace.bTopBot) {
             nSec = l2Furnace.nBotActiveSecs;
@@ -71,7 +71,7 @@ public class FieldResults {
                 oneSec = l2Furnace.getOneSection(true, z);
                 oneZone = oneSec.getZonePerfData();
                 addZoneResult(false, z, oneZone.fceTemp, oneZone.fuelFlow, l2Furnace.commonAirTemp, 1.0);
-                // @TODO the air fuel ratio is taken as 1.0 here in createOneFieldResults()
+                // the air fuel ratio is taken as 1.0 here in createOneFieldResults()
             }
         }
         airHeatExchProps = l2Furnace.getAirHeatExchProps();
@@ -219,7 +219,7 @@ public class FieldResults {
         return retVal;
     }
 
-    boolean compareResultsOLD() {  // @TODO OLD option with uniform correction
+    boolean compareResultsOLD() {  // TODO OLD option with uniform correction
         boolean retVal = false;
         // the field data
         if (!inError) {

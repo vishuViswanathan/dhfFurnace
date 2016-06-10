@@ -153,7 +153,7 @@ public class L2ZonalFuelProfile extends ZonalFuelProfile {
         XYArray arr;
         Double[][] table;
         if (bBot) {
-            arr = l2SpeedTotalFuelBot;    // TODO speedTotalFuelBot is never initiated for reuse
+            arr = l2SpeedTotalFuelBot;    // speedTotalFuelBot is never initiated for reuse
             table = l2BotZoneFuels;
         } else {
             arr = l2SpeedTotalFuelTop;     // TODO speedTotalFuelTop is never initiated for reuse

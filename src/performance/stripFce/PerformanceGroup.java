@@ -265,16 +265,6 @@ public class PerformanceGroup implements ActionListener{
         return retVal;
     }
 
-    // @TODO - getChInTempProfile with keeping exit temp of first fired zone - NOT USED
-    public int getChInTempProfile(ProductionData forProduction, Fuel withFuel, double[] chInTempProfile,
-                                  int firstFiredSec) {
-        Performance refP = getRefPerformance(forProduction, withFuel);
-        int retVal = 0;
-        if (refP != null)
-            retVal = refP.getChInTempProfile(chInTempProfile, forProduction.exitTemp, firstFiredSec);
-        return retVal;
-    }
-
     public boolean isItToBeSaved() { // new data added
         return tobeSaved;
     }

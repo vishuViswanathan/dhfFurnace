@@ -2322,7 +2322,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return evaluator;
     }
 
-    public boolean evaluate(ThreadController master, double forOutput, double stripWidth) {   // TODO not used
+    public boolean evaluateREMOVE(ThreadController master, double forOutput, double stripWidth) {   // TODO not used
         return furnace.evaluate(master, forOutput, stripWidth);
     }
 
@@ -2381,9 +2381,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                 evaluator.setShowProgress(bShowResults);
                 evalThread = new Thread(evaluator);
                 evaluator.noteYourThread(evalThread);
-//                enablePauseCalcul();   // TODO to be removed since nothing happens?
                 addResultsListener(resultsReadyListener);
-//                runOn = true;
                 evalThread.start();
             } else
                 showError("Earlier Calculation is still ON!");

@@ -3997,35 +3997,6 @@ public class DFHFurnace {
         return retVal;
     }
 
-    void update2ndFiredZone(boolean bBot) {  // TODO to be removed
-        FceSection sec;
-        int secondFired = 1;
-        if (bBot) {
-            if (bZ2BotTempSpecified) {
-                secondFired = get2ndFiredSection(bBot);
-                if (secondFired >= 0) {
-                    sec = botSections.get(secondFired);
-                    sec.setPresetGasTemp(gasTempZ2Bot);
-//                    sec.presetGasTemp = gasTempZ2Bot;
-//                    sec.bGasTempSpecified = true;
-                    sec.setLastSlotGasTemp(gasTempZ2Bot);
-                }
-            }
-
-        } else {
-            if (bZ2TopTempSpecified) {
-                secondFired = get2ndFiredSection(bBot);
-                if (secondFired >= 0) {
-                    sec = topSections.get(secondFired);
-                    sec.setPresetGasTemp(gasTempZ2Top);
-//                    sec.presetGasTemp = gasTempZ2Top;
-//                    sec.bGasTempSpecified = true;
-                    sec.setLastSlotGasTemp(gasTempZ2Top);
-                }
-            }
-        }
-    }
-
     int get2ndFiredSection(boolean bBot) {
         Vector<FceSection> vSec;
         vSec = getVsecs(bBot);
@@ -4040,29 +4011,6 @@ public class DFHFurnace {
         }
         return secondFired;
     }
-
-/*
-    boolean get2ndZoneData(Component caller, boolean bBot) {
-        boolean retVal = false;
-        ZoneParamsDlg dlg = new ZoneParamsDlg(controller.parent(), bBot);
-        if (caller == null)
-            dlg.setLocation(300, 200);
-        else
-            dlg.setLocationRelativeTo(caller);
-        dlg.setVisible(true);
-        if (dlg.ok)  {
-            if (bBot) {
-                retVal = (bZ2BotTempSpecified && (gasTempZ2Bot > 100 && gasTempZ2Bot < 1600)) ||
-                        (!bZ2BotTempSpecified && (flueTempBot > 100 && flueTempBot < 1600));
-            } else {
-                retVal = (bZ2TopTempSpecified && (gasTempZ2Top > 100 && gasTempZ2Top < 1600)) ||
-                        (!bZ2TopTempSpecified && (flueTempTop > 100 && flueTempTop < 1600));
-
-            }
-        }
-        return retVal;
-    }
-*/
 
     Vector<FceSection> getVsecs(boolean bBot) {
         return ((bBot) ? botSections : topSections);
@@ -4082,23 +4030,6 @@ public class DFHFurnace {
             minHt = 0;
         return minHt;
     }
-
-/*
-    double flueFromDEndOLD(boolean bBot, int sNum) {
-        Vector<FceSection> vSec = getVsecs(bBot);
-        FceSection sec;
-//        double totFlue = 0;
-        double flTIn = 0;
-        FlueCompoAndQty flueCompoAndQty = null;
-        for (int s = activeSections(bBot) - 1; s > sNum; s--) {
-            sec = vSec.get(s);
-            flueCompoAndQty = sec.fuelInFsection(flueCompoAndQty);
-//            totFlue += flueCompoAndQty.flow;
-//            flTIn = sec.vUnitFurnaces.get(sec.firstSlot - 1).tempG;
-        }
-        return flueCompoAndQty.flow;
-    }
-*/
 
     FlueCompoAndQty flueFromDEnd(boolean bBot, int sNum) {
         Vector<FceSection> vSec = getVsecs(bBot);

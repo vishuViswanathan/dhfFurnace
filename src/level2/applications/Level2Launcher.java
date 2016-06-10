@@ -50,12 +50,15 @@ public class Level2Launcher {
 //    String opcIP = "opc.tcp://127.0.0.1:49320";
     L2AccessControl l2AccessControl;
     L2AccessControl installerAccessControl;
+    String l2BasePath;
     String fceDataLocation = "level2FceData/";
-    String accessDataFile = fceDataLocation + "l2AccessData.txt";    // not used
-    WaitMsg waitMsg;
 
     public Level2Launcher() {
         boolean allOk = false;
+        File folder = new File("");
+        l2BasePath = folder.getAbsolutePath();
+//        System.out.println("l2BasePath = " + l2BasePath);
+        fceDataLocation = l2BasePath + "\\" + fceDataLocation;
         if (testMachineID()) {
             init();
             allOk = true;
@@ -106,26 +109,6 @@ public class Level2Launcher {
             retVal = true;
         else
             showError(status.getErrorMessage());
-        return retVal;
-    }
-
-    StatusWithMessage getAccessFilePath() {   // TODO tobe removed
-        StatusWithMessage retVal = new StatusWithMessage();
-        File folder = new File(fceDataLocation);
-        File[] files = folder.listFiles(new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                return name.endsWith("." + L2AccessControl.l2AccessfileExtension);
-            }
-        });
-        if (files.length < 1) {
-            retVal.setErrorMessage("Unable to load Access Control!");
-        }
-        else if (files.length > 1) {
-            retVal.setErrorMessage("There are more than one Access Control data in the folder!");
-        }
-        else {
-            accessDataFile = files[0].getAbsolutePath();
-        }
         return retVal;
     }
 
@@ -335,15 +318,15 @@ public class Level2Launcher {
         }
     }
 
-    boolean getAndSaveOPCIP() {
-        boolean retVal = false;
-        return retVal;
-    }
-
-    boolean saveOPCIP() {
-        return false;
-    }
-
+//    boolean getAndSaveOPCIP() {  // TODO to be removed
+//        boolean retVal = false;
+//        return retVal;
+//    }
+//
+//    boolean saveOPCIP() {   // TODO to be removed
+//        return false;
+//    }
+//
     public void showMessage(String msg) {
         showMessage("", msg);
     }
