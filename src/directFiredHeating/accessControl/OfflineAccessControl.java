@@ -80,10 +80,10 @@ public class OfflineAccessControl extends L2AccessControl {
         return retVal;
     }
 
-    public StatusWithMessage addNewUser(AccessLevel forLevel) {
-        AccessNameAndDescription nd = accessMap.get(forLevel);
-        return accessControl.getAndSaveNewAccess(nd.name, nd.description);
-    }
+//    public StatusWithMessage addNewUser(AccessLevel forLevel) {
+//        AccessNameAndDescription nd = accessMap.get(forLevel);
+//        return accessControl.getAndSaveNewAccess(nd.name, nd.description);
+//    }
 
     void debug(String msg) {
         System.out.println(msg);

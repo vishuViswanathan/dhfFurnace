@@ -9,13 +9,11 @@ import directFiredHeating.accessControl.L2AccessControl;
 import directFiredHeating.accessControl.OfflineAccessControl;
 import directFiredHeating.process.StripDFHProcessList;
 import mvUtils.display.StatusWithMessage;
-import mvUtils.file.AccessControl;
 import mvUtils.jnlp.JNLPFileHandler;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 
 import javax.swing.*;
-import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -377,7 +375,8 @@ public class Level2Configurator extends DFHeating {
     JMenuBar menuBarLevel2;
 
     JMenu mAccessControl;
-    JMenuItem mIInstallerAccess;
+    JMenuItem mIDeleteInstallerAccess;
+    JMenuItem mIAddInstallerAccess;
     JMenuItem mILoadAccessFile;
     JMenuItem mISaveAccessFile;
     boolean accessDataModified = false;
@@ -431,13 +430,18 @@ public class Level2Configurator extends DFHeating {
 
         mAccessControl = new JMenu("Access Control");
         mILoadAccessFile = new JMenuItem("Load Access File");
-        mIInstallerAccess = new JMenuItem("Add Installer Access");
+        mIAddInstallerAccess = new JMenuItem("Add Installer Access");
+        mIDeleteInstallerAccess = new JMenuItem("Delete one Installer");
         mISaveAccessFile = new JMenuItem("Save Access File");
         mILoadAccessFile.addActionListener(li);
-        mIInstallerAccess.addActionListener(li);
+        mIAddInstallerAccess.addActionListener(li);
+        mIDeleteInstallerAccess.addActionListener(li);
         mISaveAccessFile.addActionListener(li);
         mAccessControl.add(mILoadAccessFile);
-        mAccessControl.add(mIInstallerAccess);
+        mAccessControl.addSeparator();
+        mAccessControl.add(mIAddInstallerAccess);
+        mAccessControl.add(mIDeleteInstallerAccess);
+        mAccessControl.addSeparator();
         mAccessControl.add(mISaveAccessFile);
         menuBarLevel2.add(mAccessControl);
         return menuBarLevel2;
@@ -457,10 +461,21 @@ public class Level2Configurator extends DFHeating {
         return (accessControl.saveAccessFile().getDataStatus() == StatusWithMessage.DataStat.OK);
     }
 
-    void manageInstallerAccess() {
+    void addInstallerAccess() {
         StatusWithMessage response =
             accessControl.addNewUser(L2AccessControl.AccessLevel.INSTALLER);
-        if (response.getDataStatus() != StatusWithMessage.DataStat.OK)
+        if (response.getDataStatus() == StatusWithMessage.DataStat.OK)
+            accessDataModified = true;
+        else
+            showError(response.getErrorMessage());
+    }
+
+    void deleteInstallerAccess() {
+        StatusWithMessage response =
+                accessControl.deleteUser(L2AccessControl.AccessLevel.INSTALLER);
+        if (response.getDataStatus() == StatusWithMessage.DataStat.OK)
+            accessDataModified = true;
+        else
             showError(response.getErrorMessage());
     }
 
@@ -481,8 +496,10 @@ public class Level2Configurator extends DFHeating {
                 createFceSetting();
             else if (caller == mIOPCServerIP)
                 setOPCIP();
-            else if (caller == mIInstallerAccess)
-                manageInstallerAccess();
+            else if (caller == mIAddInstallerAccess)
+                addInstallerAccess();
+            else if (caller == mIDeleteInstallerAccess)
+                deleteInstallerAccess();
             else if (caller == mILoadAccessFile)
                 loadAccessFile();
             else if (caller == mISaveAccessFile)

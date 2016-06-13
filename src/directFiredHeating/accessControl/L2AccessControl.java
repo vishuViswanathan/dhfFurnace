@@ -63,6 +63,11 @@ public class L2AccessControl {
         return accessControl.getAndSaveNewAccess(nd.name, nd.description);
     }
 
+    public StatusWithMessage deleteUser(AccessLevel forLevel) {
+        AccessNameAndDescription nd = accessMap.get(forLevel);
+        return accessControl.getAndDeleteAccess(nd.name, "Delete One " + nd.description);
+    }
+
     public String getDescription(AccessLevel forLevel) {
         return accessMap.get(forLevel).description;
     }

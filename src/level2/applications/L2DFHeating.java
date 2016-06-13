@@ -360,9 +360,15 @@ public class L2DFHeating extends DFHeating {
     JMenu mShowCalculation;
 
     JMenu mAccessControl;
-    JMenuItem mIRuntimeAccess;
-    JMenuItem mIUpdaterAccess;
-    JMenuItem mIExpertAccess;
+    JMenu mRuntimeAccess;
+    JMenuItem mIAddRuntimeAccess;
+    JMenuItem mIDeleteRuntimeAccess;
+    JMenu mUpdaterAccess;
+    JMenuItem mIAddUpdaterAccess;
+    JMenuItem mIDeleteUpdaterAccess;
+    JMenu mExpertAccess;
+    JMenuItem mIAddExpertAccess;
+    JMenuItem mIDeleteExpertAccess;
 
     JMenu createL2FileMenu(ActionListener li) {
         mL2FileMenu = new JMenu("File");
@@ -451,19 +457,45 @@ public class L2DFHeating extends DFHeating {
         }
 
         mAccessControl = new JMenu("Access Control");
-        mIRuntimeAccess = new JMenuItem("for " + accessControl.getDescription(L2AccessControl.AccessLevel.RUNTIME));
-        mIUpdaterAccess = new JMenuItem("for " + accessControl.getDescription(L2AccessControl.AccessLevel.UPDATER));
-        mIExpertAccess = new JMenuItem("for " + accessControl.getDescription(L2AccessControl.AccessLevel.EXPERT));
-        mIRuntimeAccess.addActionListener(li);
-        mIUpdaterAccess.addActionListener(li);
-        mIExpertAccess.addActionListener(li);
+//        mIAddRuntimeAccess = new JMenuItem("for " + accessControl.getDescription(L2AccessControl.AccessLevel.RUNTIME));
+//        mIAddUpdaterAccess = new JMenuItem("for " + accessControl.getDescription(L2AccessControl.AccessLevel.UPDATER));
+//        mIAddRuntimeAccess.addActionListener(li);
+//        mIAddUpdaterAccess.addActionListener(li);
+
+        String s = accessControl.getDescription(L2AccessControl.AccessLevel.RUNTIME);
+        mRuntimeAccess = new JMenu("for " + s);
+        mIAddRuntimeAccess = new JMenuItem("Add access");
+        mIDeleteRuntimeAccess = new JMenuItem("Delete access");
+        mIAddRuntimeAccess.addActionListener(li);
+        mIDeleteRuntimeAccess.addActionListener(li);
+        mRuntimeAccess.add(mIAddRuntimeAccess);
+        mRuntimeAccess.add(mIDeleteRuntimeAccess);
+
+        s = accessControl.getDescription(L2AccessControl.AccessLevel.UPDATER);
+        mUpdaterAccess = new JMenu("for " + s);
+        mIAddUpdaterAccess = new JMenuItem("Add access");
+        mIDeleteUpdaterAccess = new JMenuItem("Delete access");
+        mIAddUpdaterAccess.addActionListener(li);
+        mIDeleteUpdaterAccess.addActionListener(li);
+        mUpdaterAccess.add(mIAddUpdaterAccess);
+        mUpdaterAccess.add(mIDeleteUpdaterAccess);
+
+        s = accessControl.getDescription(L2AccessControl.AccessLevel.EXPERT);
+        mExpertAccess = new JMenu("for " + s);
+        mIAddExpertAccess = new JMenuItem("Add access");
+        mIDeleteExpertAccess = new JMenuItem("Delete access");
+        mIAddExpertAccess.addActionListener(li);
+        mIDeleteExpertAccess.addActionListener(li);
+        mExpertAccess.add(mIAddExpertAccess);
+        mExpertAccess.add(mIDeleteExpertAccess);
+
         switch (accessLevel) {
             case INSTALLER:
-                mAccessControl.add(mIExpertAccess);
+                mAccessControl.add(mExpertAccess);
             case EXPERT:
-                mAccessControl.add(mIUpdaterAccess);
+                mAccessControl.add(mUpdaterAccess);
             case UPDATER:
-                mAccessControl.add(mIRuntimeAccess);
+                mAccessControl.add(mRuntimeAccess);
                 menuBarLevel2.add(mAccessControl);
                 break;
         }
@@ -504,73 +536,6 @@ public class L2DFHeating extends DFHeating {
 
 //    String stripProcExtension = "stripProc";
     File fceDataLocationDirectory = new File(fceDataLocation);
-
-//    public boolean updateProcessDataFile() {
-//        boolean saved = false;
-//        FileLock lock;
-//        int count = 5;
-//        boolean gotTheLock = false;
-//        while (--count > 0) {
-//            lock = getTheLock();
-//            if (lock == null) {
-//                try {
-//                    Thread.sleep(1000);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//                continue;
-//            }
-//            gotTheLock = true;
-//            saved = saveDFHProcessList();
-//            releaseLock(lock);
-//
-//            break;
-//        }
-//        if (onProductionLine && saved)
-//            l2Furnace.informProcessDataModified();
-//        else if (!gotTheLock)
-//            showError("Facing some problem in getting Lock");
-//        else
-//            showError("Process Data not saved");
-//        return saved;
-//    }
-
-//    boolean saveDFHProcessList() { // TODO not used to be removed
-//        boolean retVal = false;
-//        if (isProfileCodeOK()) {
-//            FileChooserWithOptions fileDlg = new FileChooserWithOptions("Save StripDFHProcess list",
-//                    "StripDFHProcess List (*." + stripProcExtension + ")", stripProcExtension);
-//            fileDlg.setSelectedFile(new File(profileCode + " stripDFHProcessList." + stripProcExtension));
-//            fileDlg.setCurrentDirectory(fceDataLocationDirectory);
-//            fileDlg.setStartWithString(profileCode);
-//            if (currentView != null)
-//                fileDlg.setFileSystemView(currentView);
-//            if (fileDlg.showSaveDialog(parent()) == JFileChooser.APPROVE_OPTION) {
-//                File file = fileDlg.getSelectedFile();
-//                if (fileDlg.isItDuplicate()) {
-//                    String fName = file.getAbsolutePath();
-//                    markThisFileAsBak(file);
-//                    file = new File(fName);
-//                }
-//                deleteParticularFiles("" + fceDataLocation, profileCode, stripProcExtension);
-//                try {
-//                    BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(file));
-//                    oStream.write(("# StripDFhProcess List saved on " + dateFormat.format(new Date()) + " \n\n").getBytes());
-//                    oStream.write((profileCodeInXML() + stripDFHProcessListInXML()).getBytes());
-//                    oStream.close();
-//                    retVal = true;
-//                } catch (FileNotFoundException e) {
-//                    showError("File " + file + " NOT found!");
-//                } catch (IOException e) {
-//                    showError("Some IO Error in writing to file " + file + "!");
-//                }
-//            }
-//            currentView = fileDlg.getFileSystemView();
-//        } else {
-//            showError("Save Profile before saving DFH Process List");
-//        }
-//        return retVal;
-//    }
 
     String performanceExtension = "perfData";
 
@@ -980,42 +945,68 @@ public class L2DFHeating extends DFHeating {
         return retVal;
     }
 
-    void manageExpertAccess() {
+//    void manageExpertAccess() {
+//        if (authenticate()) {
+//            StatusWithMessage stm = accessControl.addNewUser(L2AccessControl.AccessLevel.EXPERT);
+//            if (stm.getDataStatus() == StatusWithMessage.DataStat.OK)
+//                showMessage("User added for " + accessControl.getDescription(L2AccessControl.AccessLevel.EXPERT));
+//            else
+//                showError(stm.getErrorMessage() + ": No user was added :");
+//        }
+//        else
+//            showError("You are not authorised to Add User for " +
+//                accessControl.getDescription(L2AccessControl.AccessLevel.EXPERT));
+//    }
+
+    void addAccess(L2AccessControl.AccessLevel forLevel) {
         if (authenticate()) {
-            StatusWithMessage stm = accessControl.addNewUser(L2AccessControl.AccessLevel.EXPERT);
+            StatusWithMessage stm = accessControl.addNewUser(forLevel);
             if (stm.getDataStatus() == StatusWithMessage.DataStat.OK)
-                showMessage("User added for " + accessControl.getDescription(L2AccessControl.AccessLevel.EXPERT));
+                showMessage("User added for " + accessControl.getDescription(forLevel));
             else
                 showError(stm.getErrorMessage() + ": No user was added :");
         }
         else
-            showError("You are not authorised to add User for " +
-                accessControl.getDescription(L2AccessControl.AccessLevel.EXPERT));
+            showError("You are not authorised to Add User for " +
+                    accessControl.getDescription(forLevel));
     }
 
-    void manageUpdaterAccess() {
+    void deleteAccess(L2AccessControl.AccessLevel forLevel) {
         if (authenticate()) {
-            StatusWithMessage stm = accessControl.addNewUser(L2AccessControl.AccessLevel.UPDATER);
+            StatusWithMessage stm = accessControl.deleteUser(forLevel);
             if (stm.getDataStatus() == StatusWithMessage.DataStat.OK)
-                showMessage("User added for " + accessControl.getDescription(L2AccessControl.AccessLevel.UPDATER));
+                showMessage("One User deleted for " + accessControl.getDescription(forLevel));
             else
-                showError(stm.getErrorMessage() + ": No user was added :");
-        } else
-            showError("You are not authorised to add User for " +
-                    accessControl.getDescription(L2AccessControl.AccessLevel.UPDATER));
+                showError(stm.getErrorMessage() + ": No user was deleted ");
+        }
+        else
+            showError("You are not authorised to Delete User for " +
+                accessControl.getDescription(forLevel));
     }
 
-    void manageRuntimeAccess() {
-        if (authenticate()) {
-            StatusWithMessage stm = accessControl.addNewUser(L2AccessControl.AccessLevel.RUNTIME);
-            if (stm.getDataStatus() == StatusWithMessage.DataStat.OK)
-                showMessage("User added for " + accessControl.getDescription(L2AccessControl.AccessLevel.RUNTIME));
-            else
-                showError(stm.getErrorMessage() + ": No user was added :");
-        } else
-            showError("You are not authorised to add User for " +
-                    accessControl.getDescription(L2AccessControl.AccessLevel.RUNTIME));
-    }
+//    void manageUpdaterAccess() {
+//        if (authenticate()) {
+//            StatusWithMessage stm = accessControl.addNewUser(L2AccessControl.AccessLevel.UPDATER);
+//            if (stm.getDataStatus() == StatusWithMessage.DataStat.OK)
+//                showMessage("User added for " + accessControl.getDescription(L2AccessControl.AccessLevel.UPDATER));
+//            else
+//                showError(stm.getErrorMessage() + ": No user was added :");
+//        } else
+//            showError("You are not authorised to add User for " +
+//                    accessControl.getDescription(L2AccessControl.AccessLevel.UPDATER));
+//    }
+//
+//    void manageRuntimeAccess() {
+//        if (authenticate()) {
+//            StatusWithMessage stm = accessControl.addNewUser(L2AccessControl.AccessLevel.RUNTIME);
+//            if (stm.getDataStatus() == StatusWithMessage.DataStat.OK)
+//                showMessage("User added for " + accessControl.getDescription(L2AccessControl.AccessLevel.RUNTIME));
+//            else
+//                showError(stm.getErrorMessage() + ": No user was added :");
+//        } else
+//            showError("You are not authorised to add User for " +
+//                    accessControl.getDescription(L2AccessControl.AccessLevel.RUNTIME));
+//    }
 
     protected boolean authenticate() {
         boolean retVal = false;
@@ -1593,8 +1584,6 @@ public class L2DFHeating extends DFHeating {
         boolean newKey = false;
         MachineCheck mc = new MachineCheck();
         String machineId = mc.getMachineID();
-//        showMessage("Machine Id = " + machineId);
-//        showMessage("Key = " + mc.getKey(machineId));
         String key = getKeyFromFile();
         do {
             if (key.length() < 5) {
@@ -1602,15 +1591,6 @@ public class L2DFHeating extends DFHeating {
                 newKey = true;
             }
             if (key.length() > 5) {
-//                keyOK = mc.checkKey(key);
-//                if (!newKey && !keyOK) {
-//                    boolean response = decide("Software key", "There is some problem in the saved key\n"
-//                            + " Do you want to delete the earlier key data and enter the key manually?");
-//                    if (response) {
-//                        key = "";
-//                        continue;
-//                    }
-//                }
                 StatusWithMessage keyStatus = mc.checkKey(key);
                 boolean tryAgain = false;
                 switch (keyStatus.getDataStatus()) {
@@ -1881,12 +1861,19 @@ public class L2DFHeating extends DFHeating {
             else if (caller == mIReadPerformanceData) {
                 loadPerformanceData();
                 updateDisplay(DFHDisplayPageType.PERFOMANCELIST);
-            } else if (caller == mIExpertAccess)
-                manageExpertAccess();
-            else if (caller == mIUpdaterAccess)
-                manageUpdaterAccess();
-            else if (caller == mIRuntimeAccess)
-                manageRuntimeAccess();
+            }
+            else if (caller == mIAddExpertAccess)
+                addAccess(L2AccessControl.AccessLevel.EXPERT);
+            else if (caller == mIDeleteExpertAccess)
+                deleteAccess(L2AccessControl.AccessLevel.EXPERT);
+            else if (caller == mIAddUpdaterAccess)
+                addAccess(L2AccessControl.AccessLevel.UPDATER);
+            else if (caller == mIDeleteUpdaterAccess)
+                deleteAccess(L2AccessControl.AccessLevel.UPDATER);
+            else if (caller == mIAddRuntimeAccess)
+                addAccess(L2AccessControl.AccessLevel.RUNTIME);
+            else if (caller == mIDeleteRuntimeAccess)
+                deleteAccess(L2AccessControl.AccessLevel.RUNTIME);
         }
 
 
