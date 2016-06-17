@@ -12,6 +12,7 @@ import com.prosysopc.ua.client.Subscription;
 import com.prosysopc.ua.client.SubscriptionAliveListener;
 import directFiredHeating.*;
 import directFiredHeating.accessControl.L2AccessControl;
+import directFiredHeating.stripDFH.StripFurnace;
 import level2.applications.L2DFHeating;
 import level2.common.*;
 import level2.display.L2DFHDisplay;

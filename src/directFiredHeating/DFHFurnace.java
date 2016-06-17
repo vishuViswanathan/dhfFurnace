@@ -746,7 +746,7 @@ public class DFHFurnace {
 
     void savePerformanceIfDue() {
         if (refFromPerfBase == PerformanceGroup.SAMEWIDTH)
-            addResultsToPerfBase();
+            addResultsToPerfBase(true);
     }
 
     void enablePeformMenu(boolean ena) {
@@ -812,22 +812,22 @@ public class DFHFurnace {
 //        return false;
 //    }
 
-    boolean createPerfBase() {
+    protected boolean createPerfBase() {
         performBase = new PerformanceGroup(this, tuningParams);
 //        performBase.setTableFactors(0.2, 0.2, 0.7, 0.1);
         if (airRecu != null)
             freezeAirRecu();
-        return addResultsToPerfBase();
+        return addResultsToPerfBase(false);
     }
 
     protected boolean addToPerfBase() {
-        return addResultsToPerfBase();
+        return addResultsToPerfBase(false);
     }
 
     boolean perfBaseReady = false;
     boolean chTempProfAvailable = false;
 
-    protected boolean addResultsToPerfBase() {
+    protected boolean addResultsToPerfBase(boolean createTable) {
         boolean retVal = false;
         Performance perform = getPerformance();
         if (perform != null && performBase != null) {
@@ -841,7 +841,7 @@ public class DFHFurnace {
             if (chTempProfAvailable)
                 controller.perfBaseAvailable(true);
 //            perfBaseReady = ((nPerf >= 2) && performBase.canInterpolate);
-            if (perform != null)
+            if (perform != null && createTable)
                 if (decide("Performance Table", "Do you want to create Performance Table?")) {
 //                    perform.setTableFactors(tuningParams.minOutputFactor, tuningParams.outputStep,
 //                            tuningParams.minWidthFactor, tuningParams.widthStep);
@@ -2264,7 +2264,7 @@ public class DFHFurnace {
         return outerP;
     }
 
-    boolean freezeAirRecu() {
+    protected boolean freezeAirRecu() {
         boolean retVal = false;
         if (airRecu != null && existingHeatExch == null) {
             existingHeatExch = airRecu.getHeatExchProps(recuCounterFlow.isSelected());

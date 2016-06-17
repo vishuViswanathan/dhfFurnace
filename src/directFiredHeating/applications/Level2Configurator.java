@@ -9,6 +9,7 @@ import directFiredHeating.accessControl.L2AccessControl;
 import directFiredHeating.accessControl.OfflineAccessControl;
 import directFiredHeating.process.OneStripDFHProcess;
 import directFiredHeating.process.StripDFHProcessList;
+import directFiredHeating.stripDFH.StripFurnace;
 import mvUtils.display.ErrorStatAndMsg;
 import mvUtils.display.StatusWithMessage;
 import mvUtils.jnlp.JNLPFileHandler;
@@ -98,7 +99,7 @@ public class Level2Configurator extends DFHeating {
             mainF.setTitle("DFH Furnace - Level2 Configurator - " + releaseDate + testTitle);
 
             tuningParams = new DFHTuningParams(this, false, 1, 5, 30, 1.12, 1, false, false);
-            furnace = new DFHFurnace(this, false, false, lNameListener);
+            furnace = new StripFurnace(this, false, false, lNameListener);
             furnace.setTuningParams(tuningParams);
             tuningParams.bConsiderChTempProfile = true;
             createUIs(false); // without the default menuBar

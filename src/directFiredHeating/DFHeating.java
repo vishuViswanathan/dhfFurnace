@@ -3869,15 +3869,15 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         furnace.addToPerfBase();
     }
 
-    void performBaseReady() {
-        mICreatePerfBase.setEnabled(false);
-        mIAddToPerfBase.setEnabled(false);
-        mIClearPerfBase.setEnabled(true);
-        perfMenu.setEnabled(true);
-        perfMenu.setVisible(true);
-//        saveFceAndPerf.setEnabled(true);
-    }
-
+//    void performBaseReady() {
+//        mICreatePerfBase.setEnabled(false);
+//        mIAddToPerfBase.setEnabled(false);
+//        mIClearPerfBase.setEnabled(true);
+//        perfMenu.setEnabled(true);
+//        perfMenu.setVisible(true);
+////        saveFceAndPerf.setEnabled(true);
+//    }
+//
     public void clearPerformBase() {
         if (decide("Performance Base", "Do you want to DELETE ALL Performance Data?")) {
             furnace.clearPerfBase();
