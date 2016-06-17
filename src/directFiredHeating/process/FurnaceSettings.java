@@ -31,6 +31,7 @@ public class FurnaceSettings   {
     DoubleRange totFuelRange;
     public String errMsg = "Error reading Furnace Settings :";
     public boolean inError = false;
+    double maxTurndown = 10;
 //    double fuelTurnDown = 7;
     public int fuelCharSteps = 7;
     public boolean considerFieldZoneTempForLossCorrection = false;
@@ -254,7 +255,8 @@ public class FurnaceSettings   {
         NumberTextField ntFuelSegments;
         JRadioButton rbConsiderFieldZoneTempForLossCorrection;
         NumberTextField[] ntRangeMax;
-        NumberTextField[] ntTurnDown;
+        NumberTextField[] ntRangeMin;
+//        NumberTextField[] ntTurnDown;
         int nZones;
         boolean edited = false;
         FurnaceSettings backup;
@@ -294,21 +296,25 @@ public class FurnaceSettings   {
             editorPanel.addBlank();
             editorPanel.addItem(rbConsiderFieldZoneTempForLossCorrection);
             editorPanel.addBlank();
-            double max, td;
+            double max, min, td;
             nZones = dfHeating.furnace.nTopActiveSecs;
             ntRangeMax = new NumberTextField[nZones];
-            ntTurnDown = new NumberTextField[nZones];
+            ntRangeMin = new NumberTextField[nZones];
+//            ntTurnDown = new NumberTextField[nZones];
 
             for (int z = 0; z < nZones; z++) {
                 max = zoneFuelRange[z].max;
+                min = zoneFuelRange[z].min;
                 td = (zoneFuelRange[z].min > 0) ? max / (zoneFuelRange[z].min) : 1;
                 String zHead = "Zone #" + ("" + (z + 1)).trim();
                 ntRangeMax[z] = new NumberTextField(ipc, max, 6, false, 0, 5000, "#,###.00", "Fuel Range Max");
-                ntTurnDown[z] = new NumberTextField(ipc, td, 6, false, 1, 20, "##.00", "Fuel flow turn-down");
+                ntRangeMin[z] = new NumberTextField(ipc, min, 6, false, 0, 5000, "#,###.00", "Fuel Range Min");
+//                ntTurnDown[z] = new NumberTextField(ipc, td, 6, false, 1, 20, "##.00", "Fuel flow turn-down");
                 editorPanel.addGroup();
                 editorPanel.addItemPair(zHead, "", true);
                 editorPanel.addItemPair(ntRangeMax[z]);
-                editorPanel.addItemPair(ntTurnDown[z]);
+                editorPanel.addItemPair(ntRangeMin[z]);
+//                editorPanel.addItemPair(ntTurnDown[z]);
             }
             editorPanel.setVisible(true);
             add(editorPanel);
@@ -332,10 +338,21 @@ public class FurnaceSettings   {
         }
 
         ErrorStatAndMsg checkZoneData(int zNum) {
-            if (ntRangeMax[zNum].inError || ntTurnDown[zNum].inError)
-                return new ErrorStatAndMsg(true, "Data Out of range for Zone #" + ("" + zNum).trim());
-            else
-                return new ErrorStatAndMsg(false, "");
+//            if (ntRangeMax[zNum].inError || ntTurnDown[zNum].inError)
+//                return new ErrorStatAndMsg(true, "Data Out of range for Zone #" + ("" + zNum).trim());
+            ErrorStatAndMsg retVal = new ErrorStatAndMsg();
+            if (ntRangeMax[zNum].inError || ntRangeMin[zNum].inError)
+                retVal.addErrorMsg("Data Out of range for Zone #" + ("" + (zNum + 1)).trim());
+            else {
+                double max = ntRangeMax[zNum].getData();
+                double min = ntRangeMin[zNum].getData();
+                if (max > 0 && min > 0) {
+                    double td = max / min;
+                    if (td < 1 || td > maxTurndown )
+                        retVal.addErrorMsg("Fuel flow range error in zone #" + ("" + (zNum + 1)).trim());
+                }
+            }
+            return retVal;
         }
 
         public boolean saveData() {
@@ -344,7 +361,7 @@ public class FurnaceSettings   {
             considerFieldZoneTempForLossCorrection = rbConsiderFieldZoneTempForLossCorrection.isSelected();
             for (int z = 0; z < nZones; z++) {
                 zoneFuelRange[z].max = ntRangeMax[z].getData();
-                zoneFuelRange[z].min = zoneFuelRange[z].max / ntTurnDown[z].getData();
+                zoneFuelRange[z].min = ntRangeMin[z].getData();
             }
             edited = true;
             StatusWithMessage stat = checkIntegrity();
@@ -366,12 +383,15 @@ public class FurnaceSettings   {
             edited = false;
 //            ntMaxSpeed.setData(maxSpeed);
             ntFuelSegments.setData(fuelCharSteps);
-            double max, td;
+            double max, min;
             for (int z = 0; z < nZones; z++) {
                 max = zoneFuelRange[z].max;
+                min =  zoneFuelRange[z].min;
                 ntRangeMax[z].setData(max);
-                td = (zoneFuelRange[z].min > 0) ? max / (zoneFuelRange[z].min) : 1;
-                ntTurnDown[z].setData(td);
+                ntRangeMin[z].setData(min);
+
+//                td = (zoneFuelRange[z].min > 0) ? max / (zoneFuelRange[z].min) : 1;
+//                ntTurnDown[z].setData(td);
             }
             editorPanel.resetAll();
 //            editorPanel.setVisible(false);

@@ -3,6 +3,7 @@ package performance.stripFce;
 import basic.*;
 import directFiredHeating.DFHFurnace;
 import directFiredHeating.DFHeating;
+import directFiredHeating.process.OneStripDFHProcess;
 import display.*;
 import mvUtils.display.*;
 import mvUtils.mvXML.ValAndPos;
@@ -70,6 +71,7 @@ public class Performance {
     public static final int UNITOUTPUT = 32;
     public static final int EXITTEMP = 64;
     public String processName;
+    OneStripDFHProcess dfhProcess;
     public double output;
     public double unitOutput; // output per stripWidth
     public Vector<OneZone> topZones, botZones;
@@ -208,7 +210,46 @@ public class Performance {
         for (double w:vWF)
             widthList[n++] = w * chLength;
         return true;
-   }
+    }
+
+    public boolean setTableFactors(double outputStep, double widthStep) {
+        OneStripDFHProcess dfhProc = controller.getStripDFHProcess(processName);
+        if (dfhProc != null) {
+            double minOutputFactor = dfhProc.minOutputFactor();
+            double minWidthFactor = dfhProc.minWidthFactor();
+//        int nOutput = (int)((1.0 - minOutputFactor) / outputStep) + 1;
+            Vector<Double> vOF = new Vector<Double>();
+            double of = 1.0; //  + outputStep;
+            while (of > minOutputFactor) {
+                vOF.add(of);
+                of -= outputStep;
+                if (Math.abs(of - minOutputFactor) < (outputStep / 4))
+                    break;
+            }
+            vOF.add(minOutputFactor);
+            outputFactors = new double[vOF.size()];
+            int n = 0;
+            for (double o : vOF)
+                outputFactors[n++] = o;
+
+            Vector<Double> vWF = new Vector<Double>();
+            double wf = 1.0 + widthStep;
+            while (wf > minWidthFactor) {
+                vWF.add(wf);
+                wf -= widthStep;
+                if (Math.abs(wf - minWidthFactor) < (widthStep / 4))
+                    break;
+            }
+            vWF.add(minWidthFactor);
+            widthList = new double[vWF.size()];
+            n = 0;
+            for (double w : vWF)
+                widthList[n++] = w * chLength;
+            return true;
+        }
+        else
+            return false;
+    }
 
     public StatusWithMessage setTableFactors() {
         StatusWithMessage retVal = new StatusWithMessage();
@@ -384,20 +425,6 @@ public class Performance {
         return nowProcessName.equalsIgnoreCase(processName);
     }
 
-    /**
-     *
-     * @param nowChMaterial
-     * @param nowExitTemp
-     * @param allowance     delta allowance in exit temperature
-     * @return
-     */
-
-//    boolean isProductionComparable(ChMaterial nowChMaterial, double nowExitTemp, double allowance) {
-//        boolean bComparable = chMaterial.equals(nowChMaterial.name);
-//        bComparable &= (Math.abs(exitTemp() - nowExitTemp) < allowance);
-//        return bComparable;
-//    }
-//
     boolean isProductionComparable(String nowProcessName, String nowChMaterial, double nowExitTemp, double allowance) {
         boolean bComparable = isProcessNameComparable(nowProcessName);
         bComparable &= chMaterial.equals(nowChMaterial);
@@ -406,11 +433,11 @@ public class Performance {
         return bComparable;
     }
 
-    // @TODO - to be REMOVED
-//    boolean isProductionComparable(ChMaterial nowChMaterial, double nowExitTemp) {
-//        return isProductionComparable(nowChMaterial,nowExitTemp, 1.0);
-//    }
-
+    boolean isProductionComparable(String nowProcessName, String nowChMaterial, String withFuel, double nowExitTemp, double allowance) {
+        boolean retVal = isProductionComparable(nowProcessName, nowChMaterial, nowExitTemp, allowance);
+        retVal &= fuelName.equals(withFuel);
+        return retVal;
+    }
 
     boolean isProductionComparable(ProductionData withProduction, Fuel withFuel, int compTypeFlags, double exitTAllowance) {
         boolean bComparable = isProcessNameComparable(withProduction.processName);

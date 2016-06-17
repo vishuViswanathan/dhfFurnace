@@ -7,7 +7,9 @@ import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
 import directFiredHeating.accessControl.L2AccessControl;
 import directFiredHeating.accessControl.OfflineAccessControl;
+import directFiredHeating.process.OneStripDFHProcess;
 import directFiredHeating.process.StripDFHProcessList;
+import mvUtils.display.ErrorStatAndMsg;
 import mvUtils.display.StatusWithMessage;
 import mvUtils.jnlp.JNLPFileHandler;
 import mvUtils.mvXML.ValAndPos;
@@ -19,6 +21,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.text.DecimalFormat;
+import java.util.Observable;
 import java.util.Vector;
 
 /**
@@ -61,7 +64,7 @@ public class Level2Configurator extends DFHeating {
     }
 
     String fceDataLocation = "level2FceData/mustBeUserEntry/";
-    StripDFHProcessList dfhProcessList;
+//    StripDFHProcessList dfhProcessList;
     boolean associatedDataLoaded = false;
     File fceDataLocationDirectory = new File(fceDataLocation);
     String performanceExtension = "perfData";
@@ -76,6 +79,7 @@ public class Level2Configurator extends DFHeating {
         bAllowProfileChange = true;
         bAllowManualCalculation = true;
         asApplication = true;
+        releaseDate = "20160615 11:11";
     }
 
     public boolean setItUp() {
@@ -121,6 +125,7 @@ public class Level2Configurator extends DFHeating {
             e.printStackTrace();
         }
         System.out.println("Java Version :" + System.getProperty("java.version"));
+        tfProcessName.addActionListener(new DFHProcessListener());
         return associatedDataLoaded;
     }
 
@@ -141,6 +146,16 @@ public class Level2Configurator extends DFHeating {
 
     protected boolean isProfileCodeOK() {
         return (profileCode.length() == profileCodeFormat.format(0).length());
+    }
+
+    protected ErrorStatAndMsg isChargeInFceOK() {
+        ErrorStatAndMsg retVal = super.isChargeInFceOK();
+        if ((forProcess() == DFHTuningParams.ForProcess.STRIP)) {
+            if (getDFHProcess() == null) {
+                retVal.addErrorMsg("\n   Process not available in DFH Process List");
+            }
+        }
+        return retVal;
     }
 
     public boolean checkProfileCodeInXML(String xmlStr) {
@@ -477,6 +492,26 @@ public class Level2Configurator extends DFHeating {
             accessDataModified = true;
         else
             showError(response.getErrorMessage());
+    }
+
+//    OneStripDFHProcess getDFHProcess(String name) {
+//        return dfhProcessList.getDFHProcess(name);
+//    }
+
+    OneStripDFHProcess getDFHProcess() {
+        return getStripDFHProcess(tfProcessName.getText());
+    }
+
+    class DFHProcessListener implements ActionListener  {
+        public void actionPerformed(ActionEvent e) {
+            Object o = e.getSource();
+            if (o == tfProcessName) {
+                if (getDFHProcess() == null) {
+                    showError("Process not available");
+                    tfProcessName.setText("");
+                }
+            }
+        }
     }
 
     class L2MenuListener implements ActionListener {

@@ -125,7 +125,7 @@ public class PerformanceGroup implements ActionListener{
     }
 
     public Performance similarPerformance(Performance performance) {
-        return getRefPerformance(performance.processName, performance.chMaterial, performance.exitTemp());
+        return getRefPerformance(performance.processName, performance.chMaterial, performance.fuelName, performance.exitTemp());
     }
 
     int getIndexOfSimilarPerformance(Performance performance) {
@@ -133,7 +133,7 @@ public class PerformanceGroup implements ActionListener{
         ChMaterial chMaterial = controller.getSelChMaterial(performance.chMaterial);
         if (chMaterial != null) {
             index = -1;
-            Performance similarPerformance = getRefPerformance(performance.processName, chMaterial, performance.exitTemp());
+            Performance similarPerformance = getRefPerformance(performance.processName, chMaterial, performance.fuelName, performance.exitTemp());
             if (similarPerformance != null)
                 index = refPerformance.indexOf(similarPerformance);
         }
@@ -202,8 +202,8 @@ public class PerformanceGroup implements ActionListener{
         return refP;
     }
 
-    public Performance getRefPerformance(String processName, ChMaterial chMaterial, double exitTemp) {
-        return getRefPerformance(processName, chMaterial.name, exitTemp);
+    public Performance getRefPerformance(String processName, ChMaterial chMaterial, String withFuel, double exitTemp) {
+        return getRefPerformance(processName, chMaterial.name, withFuel, exitTemp);
     }
 
     public boolean isRefPerformanceAvailable(String processName, String chMaterialName, double exitTemp) {
@@ -217,10 +217,10 @@ public class PerformanceGroup implements ActionListener{
         return retVal;
     }
 
-    public Performance getRefPerformance(String processName, String chMaterialName, double exitTemp) {
+    public Performance getRefPerformance(String processName, String chMaterialName, String withFuel, double exitTemp) {
         Performance refP = null;
         for (Performance p : refPerformance) {
-            if (p.isProductionComparable(processName, chMaterialName, exitTemp, tuningParams.exitTempTolerance)) {
+            if (p.isProductionComparable(processName, chMaterialName, withFuel, exitTemp, tuningParams.exitTempTolerance)) {
                 refP = p;
                 break;
             }
@@ -228,17 +228,6 @@ public class PerformanceGroup implements ActionListener{
         return refP;
     }
 
-//    private Performance getNearerPerformance(ProductionData forProduction) {
-//        Performance p1 = refPerformance.get(0);
-//        Performance p2 = refPerformance.get(1);
-//        double outputReqd = forProduction.production;
-//        double wrt1 = Math.abs(p1.getOutput() - outputReqd);
-//        double wrt2 = Math.abs(p2.getOutput() - outputReqd);
-//        if (wrt1 < wrt2)
-//            return p1;
-//        else
-//            return p2;
-//    }
 
     // @TODO -  suggestZoneFuels() is not used
     public int suggestZoneFuels(ProductionData forProduction, Fuel withFuel, double[] zoneFuelSuggestion) {

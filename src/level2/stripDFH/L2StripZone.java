@@ -63,10 +63,13 @@ public class L2StripZone extends L2ParamGroup {
         monitoredTags = new Hashtable<MonitoredDataItem, Tag>();
         createStripParam();
         createNowStripTempProcessDisplay();
+        createNowStripTempLevel2Display();
         createNowStripSpeedProcessDisplay();
         createStripSpeedCheckProcessDisplay();
         createNowStripDataProcessDisplay();
+        createNowStripDataLevel2Display();
         createNextStripDataProcessDisplay();
+        createNextStripDataLevel2Display();
     }
 
     public boolean IsSpeedUpdaterOn() {
@@ -284,15 +287,26 @@ public class L2StripZone extends L2ParamGroup {
     }
 
     public JComponent nowStripProcessTempPanel;
+    public JComponent nowStripLevel2TempPanel;
     JComponent nowStripProcessSpeedPanel;
     JComponent nowStripProcessDataPanel;
+    JComponent nowStripLevel2DataPanel;
     JComponent nextStripProcessDataPanel;
+    JComponent nextStripLevel2DataPanel;
     JComponent stripSpeedCheckPanel;
+    JComponent stripSpeedCheckLevel2Panel;
 
     public JComponent stripProcessPanel() {
         JPanel outerP = new JPanel(new BorderLayout()) ;
         outerP.add(stripNowProcessPanel(), BorderLayout.WEST);
         outerP.add(stripNextProcessPanel(), BorderLayout.EAST);
+        return outerP;
+    }
+
+    public JComponent stripLevel2Panel() {
+        JPanel outerP = new JPanel(new BorderLayout()) ;
+        outerP.add(stripNowLevel2Panel(), BorderLayout.WEST);
+        outerP.add(stripNextLevel2Panel(), BorderLayout.EAST);
         return outerP;
     }
 
@@ -310,10 +324,33 @@ public class L2StripZone extends L2ParamGroup {
         return innerP;
     }
 
+    public JComponent stripNowLevel2Panel() {
+        FramedPanel innerP = new FramedPanel(new BorderLayout());
+        FramedPanel jp = new FramedPanel();
+        jp.add(nowStripLevel2DataPanel);
+//        jp.add(stripSpeedCheckPanel);
+        JPanel titleP = new JPanel();
+        titleP.add(new JLabel("Strip in Process"));
+        innerP.add(titleP, BorderLayout.NORTH);
+        innerP.add(jp, BorderLayout.CENTER);
+        return innerP;
+    }
+
     public JComponent stripNextProcessPanel() {
         FramedPanel innerP = new FramedPanel(new BorderLayout());
         FramedPanel jp = new FramedPanel();
         jp.add(nextStripProcessDataPanel);
+        JPanel titleP = new JPanel();
+        titleP.add(new JLabel("Strip in Waiting"));
+        innerP.add(titleP, BorderLayout.NORTH);
+        innerP.add(jp, BorderLayout.CENTER);
+        return innerP;
+    }
+
+    public JComponent stripNextLevel2Panel() {
+        FramedPanel innerP = new FramedPanel(new BorderLayout());
+        FramedPanel jp = new FramedPanel();
+        jp.add(nextStripLevel2DataPanel);
         JPanel titleP = new JPanel();
         titleP.add(new JLabel("Strip in Waiting"));
         innerP.add(titleP, BorderLayout.NORTH);
@@ -334,6 +371,15 @@ public class L2StripZone extends L2ParamGroup {
         mp.addItemPair(t.toString(), t.displayComponent());
         nowStripProcessTempPanel.add(mp);
         return nowStripProcessTempPanel;
+    }
+
+    public JComponent createNowStripTempLevel2Display() {
+        nowStripLevel2TempPanel = new FramedPanel();
+        MultiPairColPanel mp = new MultiPairColPanel("DFH Exit: Strip");
+        Tag t =  paramStripNowSize.getLevel2Tag(Tag.TagName.Temperature);
+        mp.addItemPair(t.toString(), t.displayComponent());
+        nowStripLevel2TempPanel.add(mp);
+        return nowStripLevel2TempPanel;
     }
 
     JComponent createNowStripSpeedProcessDisplay() {
@@ -371,6 +417,17 @@ public class L2StripZone extends L2ParamGroup {
         return nowStripProcessDataPanel;
     }
 
+    JComponent createNowStripDataLevel2Display() {
+        nowStripLevel2DataPanel = new FramedPanel();
+        MultiPairColPanel mp = new MultiPairColPanel("Recommendations");
+        Tag t = paramStripNowSize.getLevel2Tag(Tag.TagName.SpeedNow);
+        mp.addItemPair(t.toString(), t.displayComponent());
+        t = paramStripNowSize.getLevel2Tag(Tag.TagName.SpeedMax);
+        mp.addItemPair(t.toString(), t.displayComponent());
+        nowStripLevel2DataPanel.add(mp);
+        return nowStripLevel2DataPanel;
+    }
+
     JComponent createNextStripDataProcessDisplay() {
         nextStripProcessDataPanel = new FramedPanel();
         MultiPairColPanel mp = new MultiPairColPanel("Process and Size");
@@ -383,17 +440,20 @@ public class L2StripZone extends L2ParamGroup {
         nextStripProcessDataPanel.add(mp);
         return nextStripProcessDataPanel;
     }
-//    public JComponent stripNextProcessPanel() {
-//
-//    }
-//
-//    public JComponent stripNowL2Panel() {
-//
-//    }
-//
-//    public JComponent stripNextL2Panel() {
-//
-//    }
+
+    JComponent createNextStripDataLevel2Display() {
+        nextStripLevel2DataPanel = new FramedPanel();
+        MultiPairColPanel mp = new MultiPairColPanel("Recommendations");
+        Tag t = paramStripNextSize.getLevel2Tag(Tag.TagName.Temperature);
+        mp.addItemPair(t.toString(), t.displayComponent());
+        t = paramStripNextSize.getLevel2Tag(Tag.TagName.SpeedNow);
+        mp.addItemPair(t.toString(), t.displayComponent());
+        t = paramStripNextSize.getLevel2Tag(Tag.TagName.SpeedMax);
+        mp.addItemPair(t.toString(), t.displayComponent());
+        nextStripLevel2DataPanel.add(mp);
+        return nextStripLevel2DataPanel;
+    }
+
 
     public void updateProcessDisplay() {
         updateDisplay(tagsStripTemperature);
@@ -407,6 +467,7 @@ public class L2StripZone extends L2ParamGroup {
     public void updateL2Display() {
 
     }
+
     void updateDisplay(Tag[] tags) {
         for (Tag t: tags)
             t.updateUI();

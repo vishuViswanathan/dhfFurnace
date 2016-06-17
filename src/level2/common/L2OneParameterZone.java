@@ -37,8 +37,10 @@ public class L2OneParameterZone extends L2ParamGroup implements L2Display {
         Tag[] l2Tags = {new Tag(parameter, Tag.TagName.SP, true, false, fmtStr)};
         level2Tags = l2Tags;
         addOneParameter(parameter, l2Tags);
-        if (withDisplay)
+        if (withDisplay) {
             createProcessDisplay();
+            createLevel2Display();
+        }
     }
 
     void createProcessDisplay() {

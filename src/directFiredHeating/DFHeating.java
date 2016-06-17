@@ -2,6 +2,8 @@ package directFiredHeating;
 
 import FceElements.RegenBurner;
 import basic.*;
+import directFiredHeating.process.OneStripDFHProcess;
+import directFiredHeating.process.StripDFHProcessList;
 import display.*;
 import jsp.*;
 //import jnlp.JNLPFileHandler;
@@ -182,7 +184,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 //    JComboBox cbHeatingType;
     JComboBox<HeatingMode> cbHeatingMode;
 //    JComboBox cbFuel;
-    JSPComboBox cbFuel;
+    protected JSPComboBox cbFuel;
     NumberTextField tfExcessAir;
     protected LossNameChangeListener lNameListener = new LossNameChangeListener();
     InputChangeListener inputChangeListener = new InputChangeListener();
@@ -277,6 +279,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     FceEvaluator evaluator;
     static protected boolean onProductionLine = false;
     public boolean bProfileEdited = false;
+    protected StripDFHProcessList dfhProcessList;
 
     public DFHeating() {
         debug("Release " + releaseDate);
@@ -1746,6 +1749,11 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 //        debug("adjustForLossNameChange-updateUI done");
     }
 
+    public OneStripDFHProcess getStripDFHProcess(String forProc) {
+        return dfhProcessList.getDFHProcess(forProc.trim().toUpperCase());
+    }
+
+
     public boolean canNotify() {
         return canNotify;
     }
@@ -1857,6 +1865,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             log.debug("DFHeating:" + msg);
         else
             System.out.println("DFHeating: " + msg);
+    }
+
+    public Fuel getSelectedFuel() {
+        return (Fuel)cbFuel.getSelectedItem();
     }
 
     public void takeValuesFromUI() {
@@ -1981,10 +1993,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         }
     }
 
-    public boolean setTableFactors(Performance performance) {
-        return performance.setTableFactors(tuningParams.minOutputFactor, tuningParams.outputStep,
-                            tuningParams.minWidthFactor, tuningParams.widthStep);
-    }
+//    public boolean setTableFactors(Performance performance) {
+//        return performance.setTableFactors(tuningParams.minOutputFactor, tuningParams.outputStep,
+//                            tuningParams.minWidthFactor, tuningParams.widthStep);
+//    }
 
 //    public String addFuelChoice(String name, String units, String calValStr, String airFuelRatioStr, String flueFuelRatioStr,
 //                                String sensHeatPair,
@@ -2098,17 +2110,17 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return new ErrorStatAndMsg(!ok, msg);
     }
 
-    ErrorStatAndMsg isChargeInFceOK() {
+    protected ErrorStatAndMsg isChargeInFceOK() {
         boolean ok = true;
         String msg = "";
         if (tfBottShadow.isInError()) {
             ok = false;
             msg += "\n   " + tfBottShadow.getName();
         }
-        if ((forProcess() == DFHTuningParams.ForProcess.STRIP)  && (tfProcessName.getText().trim().length() < 1)) {
-            ok = false;
-            msg += "\n   Process Name is required for STRIP furnace";
-        }
+//        if ((forProcess() == DFHTuningParams.ForProcess.STRIP)  && (tfProcessName.getText().trim().length() < 1)) {
+//            ok = false;
+//            msg += "\n   Process Name is required for STRIP furnace";
+//        }
         if (tfChPitch.isInError()) {
             ok = false;
             msg += "\n   " + tfChPitch.getName();
@@ -2306,8 +2318,9 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     public FceEvaluator calculateForPerformanceTable(Performance baseP) {
-        baseP.setTableFactors(tuningParams.minOutputFactor, tuningParams.outputStep,
-                tuningParams.minWidthFactor, tuningParams.widthStep);
+//        baseP.setTableFactors(tuningParams.minOutputFactor, tuningParams.outputStep,
+//                tuningParams.minWidthFactor, tuningParams.widthStep);
+        baseP.setTableFactors(tuningParams.outputStep, tuningParams.widthStep);
         return calculateForPerformanceTable(baseP, null);
     }
 
@@ -2428,7 +2441,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             enableCalculStat();
     }
 
-    DFHTuningParams.ForProcess forProcess() {
+    protected DFHTuningParams.ForProcess forProcess() {
         return proc;
     }
 
@@ -3423,16 +3436,17 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                 if (checkVersion(header)) {
                     String fceData = JNLPFileHandler.readFile(fc);
                     if (fceData != null) {
-                        StatusWithMessage stat = takeProfileDataFromXML(fceData);
-                        if (stat.getDataStatus() == StatusWithMessage.DataStat.OK) {
-//                            retVal.setInfoMessage(fc.getName());
-                            parent().toFront();
-                            if (!onProductionLine)
-                                showMessage("Fuel and Charge Material to be Selected/Checked before Calculation.");
-                        } else {
-                            retVal.setErrorMessage(stat.getErrorMessage());
-                            showError(stat.getErrorMessage());
-                        }
+                        retVal = takeProfileDataFromXML(fceData);
+//                        StatusWithMessage stat = takeProfileDataFromXML(fceData);
+//                        if (stat.getDataStatus() == StatusWithMessage.DataStat.OK) {
+////                            retVal.setInfoMessage(fc.getName());
+//                            parent().toFront();
+//                            if (!onProductionLine)
+//                                showMessage("Fuel and Charge Material to be Selected/Checked before Calculation.");
+//                        } else {
+//                            retVal.setErrorMessage(stat.getErrorMessage());
+//                            showError(stat.getErrorMessage());
+//                        }
                     }
                 } else {
                     retVal.setErrorMessage("This not a proper DFHFurnace data file!");

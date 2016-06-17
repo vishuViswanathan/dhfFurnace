@@ -123,6 +123,10 @@ public class Tag {
         this.bSubscribe = bSubscribe;
         noteFormat(fmtStr);
         createDisplayComponent();
+        if (displayComponent != null) {
+            displayComponent.setEnabled(false);
+        }
+
     }
 
     public Tag(L2ParamGroup.Parameter element, TagName tagName, boolean rw, boolean bSubscribe, String[] onOffString) {
@@ -188,13 +192,19 @@ public class Tag {
             case Ready:
             case Mode:
             case Response:
-                displayComponent = new JTextField(datW);
+                JTextField tf = new JTextField(datW);
+                tf.setDisabledTextColor(Color.BLUE);
+                displayComponent = tf;
                 break;
             case Msg:
-                displayComponent = new JTextArea(4, datW);
+                JTextArea ta = new JTextArea(4, datW);
+                ta.setDisabledTextColor(Color.BLUE);
+                displayComponent = ta;
                 break;
             default:
-                displayComponent = new JTextField(datW);
+                JTextField tf1 = new JTextField(datW);
+                tf1.setDisabledTextColor(Color.BLUE);
+                displayComponent = tf1;
                 if (format != null)
                     ((JTextField)displayComponent).setHorizontalAlignment(JTextField.RIGHT);
                 break;

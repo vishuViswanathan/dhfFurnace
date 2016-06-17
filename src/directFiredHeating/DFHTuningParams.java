@@ -701,10 +701,21 @@ public class DFHTuningParams {
         }
 
         JPanel fieldRefDataSettings() {
-            MultiPairColPanel jp = new MultiPairColPanel("Settings for Field Reference Data", 200, 60);
-            ntUnitOutputOverRange = new NumberTextField(controller, unitOutputOverRange, 6, false, 1.0, 1.2, "0.00", "Unit Output OverRange factor");
-            ntUnitOutputUnderRange = new NumberTextField(controller, unitOutputUnderRange, 6, false, 0.8, 1.0, "0.00", "Unit Output UnderRange factor");
-            ntExitTempTolerance = new NumberTextField(controller, exitTempTolerance, 6, false, 1, 20, "##", "Margin (+-) on Exit Temperature (degC)");
+            MultiPairColPanel jp = new MultiPairColPanel("Settings for Field Reference Data", 250, 60);
+            String msg = "<html><h3>For Field results to be taken in</h3>" +
+                    "<blockQuote>1. The strip Width has to be in the range<p>" +
+                    "&emsp;Maximum Width for DFH Process and<p>" +
+                    "&emsp;Maximum Width / A</blockquote>" +
+                    "<blockquote>2. UnitOutput must be within the the range factors B and C<p>" +
+                    "&emsp;applied to the Maximum Unit Output of the DFHProcess</blockquote>" +
+                    "<blockquote>3. Strip Exit Temperature for the DFH Process with Margin (D)<p>" +
+                    "<&emsp;given below<p>" +
+                    "</html>";
+            JLabel toNote = new JLabel(msg);
+            jp.addItem(toNote);
+            ntUnitOutputOverRange = new NumberTextField(controller, unitOutputOverRange, 6, false, 1.0, 1.2, "0.00", "Unit Output OverRange factor (B)");
+            ntUnitOutputUnderRange = new NumberTextField(controller, unitOutputUnderRange, 6, false, 0.8, 1.0, "0.00", "Unit Output UnderRange factor (C)");
+            ntExitTempTolerance = new NumberTextField(controller, exitTempTolerance, 6, false, 1, 20, "##", "Margin (+-) on Exit Temperature in degC (D)");
 
             jp.addItemPair(ntUnitOutputOverRange);
             jp.addItemPair(ntUnitOutputUnderRange);
@@ -716,11 +727,11 @@ public class DFHTuningParams {
         JPanel perfTableSettings() {
             MultiPairColPanel jp = new MultiPairColPanel("Settings for Performance Table", 200, 60);
             ntMinOutputFactor = new NumberTextField(controller, minOutputFactor, 6, false, 0.1, 0.9, "0.00", "Minimum Unit Output Factor");
-            ntOutputStep = new NumberTextField(controller, outputStep, 6, false, 0.05, 0.5, "0.00", "Unit Output Factor Step");
+            ntOutputStep = new NumberTextField(controller, outputStep, 6, false, 0.05, 0.5, "0.00", "Unit Step Output Factor");
 
-            ntWidthOverRange = new NumberTextField(controller, widthOverRange, 6, false, 1.01, 1.5, "0.00", "Width OverRange Factor");
+            ntWidthOverRange = new NumberTextField(controller, widthOverRange, 6, false, 1.01, 1.5, "0.00", "Width OverRange Factor (A)");
             ntMinWidthFactor = new NumberTextField(controller, minWidthFactor, 6, false, 0.1, 0.9, "0.00", "Minimum Width Factor");
-            ntWidthStep = new NumberTextField(controller, widthStep, 6, false, 0.05, 0.5, "0.00", "Width Factor Step");
+            ntWidthStep = new NumberTextField(controller, widthStep, 6, false, 0.05, 0.5, "0.00", "Width Step Factor");
 
             jp.addItemPair(ntMinOutputFactor);
             jp.addItemPair(ntOutputStep);

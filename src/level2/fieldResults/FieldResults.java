@@ -113,7 +113,7 @@ public class FieldResults {
         double width = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Width).floatValue, 3) / 1000; // m
         double thick = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Thick).floatValue, 3) / 1000; // m
         double speed = stripZone.getValue(L2ParamGroup.Parameter.Speed, Tag.TagName.PV).floatValue * 60; // m/h
-        double output = 7.85 * width * speed * thick * 1000; // kg/h
+//        double output = 7.85 * width * speed * thick * 1000; // kg/h
         String forProcess = stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Process).stringValue;
         stripDFHProc = l2Furnace.l2DFHeating.getStripDFHProcess(forProcess);
         if (stripDFHProc != null) {
@@ -124,12 +124,12 @@ public class FieldResults {
                     Charge ch = new Charge(chMat, width, 1.0, thick, 0.1, Charge.ChType.SOLID_RECTANGLE);
                     production.charge = ch;
                     production.chPitch = 1.0;
-                    production.production = output;
+                    production.production =  chMat.density * width * speed * thick; //output;
                     production.exitTemp = stripExitT;
                     production.exitZoneFceTemp = topZones[topZones.length - 1].frFceTemp;
                     production.minExitZoneTemp = stripDFHProc.getMinExitZoneTemp();
                     DFHTuningParams tune = l2Furnace.tuningParams;
-                    tune.setPerfTurndownSettings(stripDFHProc.minOutputFactor(), stripDFHProc.minWidthFactor());
+//                    tune.setPerfTurndownSettings(stripDFHProc.minOutputFactor(), stripDFHProc.minWidthFactor());
                 } else
                     retVal.addErrorMsg("Could not ascertain Charge Material for " +
                             forProcess + " with strip Thickness " + thick);

@@ -105,7 +105,7 @@ public class L2DFHeating extends DFHeating {
     static String uaServerURI;
     public L2DFHFurnace l2Furnace;
     public String equipment;
-    StripDFHProcessList dfhProcessList;
+//    StripDFHProcessList dfhProcessList;
     L2AccessControl accessControl;
 
     public L2DFHeating(String equipment) {
@@ -274,6 +274,14 @@ public class L2DFHeating extends DFHeating {
         System.out.println("Java Version :" + System.getProperty("java.version"));
         return l2SystemReady;
     }
+
+    protected void setDefaultSelections() {
+        cbFuel.setSelectedIndex(0);
+        if (cbChMaterial.getItemCount() == 1)
+            cbChMaterial.setSelectedIndex(0);
+    }
+
+
 
     boolean loadAssociatedData(String basePath) {
         showMessage(" call to loadAssociatedData to be modified 20160520");
@@ -1553,9 +1561,9 @@ public class L2DFHeating extends DFHeating {
         return selectedFile;
     }
 
-    public OneStripDFHProcess getStripDFHProcess(String forProc) {
-        return dfhProcessList.getDFHProcess(forProc.trim().toUpperCase());
-    }
+//    public OneStripDFHProcess getStripDFHProcess(String forProc) {
+//        return dfhProcessList.getDFHProcess(forProc.trim().toUpperCase());
+//    }
 
     public void resultsReady(Observations observations) {
         super.resultsReady(observations);

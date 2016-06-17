@@ -19,7 +19,6 @@ import level2.fieldResults.FieldResults;
 import directFiredHeating.process.FurnaceSettings;
 import directFiredHeating.process.OneStripDFHProcess;
 import mvUtils.display.*;
-import mvUtils.forTesting.Test;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import org.opcfoundation.ua.builtintypes.DataValue;
@@ -48,7 +47,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     LinkedHashMap<FceSection, L2DFHZone> topL2Zones;
     LinkedHashMap<FceSection, L2DFHZone> botL2Zones;
     L2OneParameterZone rthExit;
-    L2OneParameterZone soakExit;
+    L2OneParameterZone soakZone;
     L2OneParameterZone hbExit;
     ReadyNotedParam l2InfoMessages;
     ReadyNotedParam l2ErrorMessages;
@@ -425,7 +424,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                     break;
             }
             rthExit = new L2OneParameterZone(this, "RTHExit", "RTH Strip Exit", L2ParamGroup.Parameter.Temperature, "#,###", true);
-            soakExit = new L2OneParameterZone(this, "SoakExit", "Soak Strip Exit", L2ParamGroup.Parameter.Temperature, "#,###", true);
+            soakZone = new L2OneParameterZone(this, "SoakZone", "Soak Zone", L2ParamGroup.Parameter.Temperature, "#,###", true);
             hbExit = new L2OneParameterZone(this, "HBExit", " HB Strip Exit", L2ParamGroup.Parameter.Temperature, "#,###", true);
 //            updateUIDisplay();
         } catch (TagCreationException e) {
@@ -452,7 +451,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
             z.updateProcessDisplay();
         stripZone.updateProcessDisplay();
         rthExit.updateProcessDisplay();
-        soakExit.updateProcessDisplay();
+        soakZone.updateProcessDisplay();
         hbExit.updateProcessDisplay();
     }
 
@@ -461,7 +460,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
             z.updateLevel2Display();
         stripZone.updateL2Display();
         rthExit.updateLevel2Display();
-        soakExit.updateLevel2Display();
+        soakZone.updateLevel2Display();
         hbExit.updateLevel2Display();
 
     }
@@ -469,7 +468,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     public JPanel getFurnaceProcessPanel() {
         JPanel outerP = new JPanel(new BorderLayout());
         outerP.add(dfhProcessDisplayPanel(), BorderLayout.NORTH);
-        outerP.add(othersDisplayPanel(), BorderLayout.CENTER);
+        outerP.add(othersProcessDisplayPanel(), BorderLayout.CENTER);
         outerP.add(stripZone.stripProcessPanel(), BorderLayout.SOUTH);
         return outerP;
     }
@@ -477,6 +476,8 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
     public JPanel getFurnaceLevel2Panel() {
         JPanel outerP = new JPanel(new BorderLayout());
         outerP.add(dfhLevel2DisplayPanel(), BorderLayout.NORTH);
+        outerP.add(othersLevel2DisplayPanel(), BorderLayout.CENTER);
+        outerP.add(stripZone.stripLevel2Panel(), BorderLayout.SOUTH);
         return outerP;
     }
 
@@ -504,12 +505,12 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         return innerP;
     }
 
-    JPanel othersDisplayPanel() {
+    JPanel othersProcessDisplayPanel() {
         FramedPanel innerP = new FramedPanel(new BorderLayout());
         FramedPanel jp = new FramedPanel();
         jp.add(stripZone.nowStripProcessTempPanel);
         jp.add(rthExit.getProcessDisplay());
-        jp.add(soakExit.getProcessDisplay());
+        jp.add(soakZone.getProcessDisplay());
         jp.add(hbExit.getProcessDisplay());
         JPanel titleP = new JPanel();
         titleP.add(new JLabel("Sections After DFH"));
@@ -518,6 +519,19 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         return innerP;
     }
 
+    JPanel othersLevel2DisplayPanel() {
+        FramedPanel innerP = new FramedPanel(new BorderLayout());
+        FramedPanel jp = new FramedPanel();
+        jp.add(stripZone.nowStripLevel2TempPanel);
+        jp.add(rthExit.getLevel2Display());
+        jp.add(soakZone.getLevel2Display());
+        jp.add(hbExit.getLevel2Display());
+        JPanel titleP = new JPanel();
+        titleP.add(new JLabel("Sections After DFH"));
+        innerP.add(titleP, BorderLayout.NORTH);
+        innerP.add(jp, BorderLayout.CENTER);
+        return innerP;
+    }
     public ErrorStatAndMsg checkConnection() {
         ErrorStatAndMsg retVal = new ErrorStatAndMsg(false, "Error, connecting to OPC :");
         noteConnectionsCheckStat(basicZone, retVal);
@@ -587,7 +601,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
 
     public Performance getBasePerformance(OneStripDFHProcess stripDFHProc, double stripThick) {
         return performBase.getRefPerformance(stripDFHProc.processName, stripDFHProc.getChMaterial(stripDFHProc.processName, stripThick),
-                stripDFHProc.tempDFHExit);
+                l2DFHeating.getSelectedFuel().name, stripDFHProc.tempDFHExit);
     }
 
     public Performance getBasePerformance(String forProcess, double stripThick) {
@@ -597,7 +611,7 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
 //            prf = performBase.getRefPerformance(stripDFHProc.getChMaterial(forProcess, stripThick),
 //                    stripDFHProc.tempDFHExit, exitTempAllowance);
             prf = performBase.getRefPerformance(stripDFHProc.processName, stripDFHProc.getChMaterial(forProcess, stripThick),
-                stripDFHProc.tempDFHExit);
+                l2DFHeating.getSelectedFuel().name, stripDFHProc.tempDFHExit);
         else
             logInfo("strip process " + forProcess + " is not available in the database");
         return prf;
