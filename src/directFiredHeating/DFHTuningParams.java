@@ -537,15 +537,15 @@ public class DFHTuningParams {
     NumberTextField ntExitTempTolerance;
 
     // parameters for Performance Table
-    double minOutputFactor = 0.7;
-    double outputStep = 0.2;
+//    double minOutputFactor = 0.7;
+    public double outputStep = 0.2;
     public double widthOverRange = 1.1;
-    double minWidthFactor = 0.8;
-    double widthStep = 0.1;
-    NumberTextField ntMinOutputFactor;
+//    double minWidthFactor = 0.8;
+    public double widthStep = 0.1;
+//    NumberTextField ntMinOutputFactor;
     NumberTextField ntOutputStep;
     NumberTextField ntWidthOverRange;
-    NumberTextField ntMinWidthFactor;
+//    NumberTextField ntMinWidthFactor;
     NumberTextField ntWidthStep;
 
     JPanel settings1Pan() {
@@ -654,11 +654,11 @@ public class DFHTuningParams {
         controller.mainF.setVisible(true);
     }
 
-    public void setPerfTurndownSettings(double minOutputFactor, double minWidthFactor) {
-        this. minOutputFactor = minOutputFactor;
-        this.minWidthFactor = minWidthFactor;
-    }
-
+//    public void setPerfTurndownSettings(double minOutputFactor, double minWidthFactor) {
+//        this. minOutputFactor = minOutputFactor;
+//        this.minWidthFactor = minWidthFactor;
+//    }
+//
     class PerfTableSetting extends JDialog {
         JButton ok = new JButton("OK");
         JButton cancel = new JButton("Cancel");
@@ -726,18 +726,18 @@ public class DFHTuningParams {
 
         JPanel perfTableSettings() {
             MultiPairColPanel jp = new MultiPairColPanel("Settings for Performance Table", 200, 60);
-            ntMinOutputFactor = new NumberTextField(controller, minOutputFactor, 6, false, 0.1, 0.9, "0.00", "Minimum Unit Output Factor");
+//            ntMinOutputFactor = new NumberTextField(controller, minOutputFactor, 6, false, 0.1, 0.9, "0.00", "Minimum Unit Output Factor");
             ntOutputStep = new NumberTextField(controller, outputStep, 6, false, 0.05, 0.5, "0.00", "Unit Step Output Factor");
 
             ntWidthOverRange = new NumberTextField(controller, widthOverRange, 6, false, 1.01, 1.5, "0.00", "Width OverRange Factor (A)");
-            ntMinWidthFactor = new NumberTextField(controller, minWidthFactor, 6, false, 0.1, 0.9, "0.00", "Minimum Width Factor");
+//            ntMinWidthFactor = new NumberTextField(controller, minWidthFactor, 6, false, 0.1, 0.9, "0.00", "Minimum Width Factor");
             ntWidthStep = new NumberTextField(controller, widthStep, 6, false, 0.05, 0.5, "0.00", "Width Step Factor");
 
-            jp.addItemPair(ntMinOutputFactor);
+//            jp.addItemPair(ntMinOutputFactor);
             jp.addItemPair(ntOutputStep);
             jp.addBlank();
             jp.addItemPair(ntWidthOverRange);
-            jp.addItemPair(ntMinWidthFactor);
+//            jp.addItemPair(ntMinWidthFactor);
             jp.addItemPair(ntWidthStep);
             return jp;
         }
@@ -753,7 +753,7 @@ public class DFHTuningParams {
             boolean stat;
             String msg = "ERROR : ";
             // new Values
-            double oMin = ntMinOutputFactor.getData();
+//            double oMin = ntMinOutputFactor.getData();
 //             double oStep =ntOutputStep.getData();
 //             double wMin = ntMinWidthFactor.getData();
 //             double wStep = ntWidthStep.getData();
@@ -772,9 +772,9 @@ public class DFHTuningParams {
         }
 
         void takeSetValues() {
-            minOutputFactor = ntMinOutputFactor.getData();
+//            minOutputFactor = ntMinOutputFactor.getData();
             outputStep = ntOutputStep.getData();
-            minWidthFactor = ntMinWidthFactor.getData();
+//            minWidthFactor = ntMinWidthFactor.getData();
             widthStep = ntWidthStep.getData();
             widthOverRange = ntWidthOverRange.getData();
 

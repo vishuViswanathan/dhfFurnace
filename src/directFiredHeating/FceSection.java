@@ -2500,8 +2500,6 @@ public class FceSection {
             return retVal;
         }
 
-
-
         void closeThisWindow() {
             setVisible(false);
             dispose();

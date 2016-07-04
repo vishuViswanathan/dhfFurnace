@@ -233,10 +233,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     FramedPanel titleAndFceCommon;
     MultiPairColPanel mpTitlePanel;
     MultiPairColPanel mpFceCommDataPanel;
-    double chWidth = 1.2, chThickness = 0.2, chLength = 9, chDiameter = 0.2;
+    protected double chWidth = 1.2, chThickness = 0.2, chLength = 9, chDiameter = 0.2;
     protected JComboBox cbChType;
     protected int nChargeRows = 1;
-    ChMaterial selChMaterial;
+    protected ChMaterial selChMaterial;
     protected NumberTextField tfChWidth, tfChThickness, tfChLength, tfChDiameter;
 //    protected JComboBox cbChMaterial;
     protected JSPComboBox cbChMaterial;
@@ -275,7 +275,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     ChMaterial material;
     Charge theCharge;
     XYArray hC, tk, emiss;
-    ProductionData production;
+    protected ProductionData production;
     FceEvaluator evaluator;
     static protected boolean onProductionLine = false;
     public boolean bProfileEdited = false;
@@ -627,6 +627,16 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             cbFuel.setSelectedIndex(0);
         if (cbChMaterial.getItemCount() == 1)
             cbChMaterial.setSelectedIndex(0);
+    }
+
+    protected void setChMaterial(ChMaterial material) {
+        selChMaterial = material;
+        cbChMaterial.setSelectedItem(selChMaterial);
+    }
+
+    protected void setExitTemperaure(double temperature) {
+        exitTemp = temperature;
+        tfExitTemp.setData(exitTemp);
     }
 
     void setAllowSecFuel(boolean allow) {
@@ -1871,6 +1881,13 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return (Fuel)cbFuel.getSelectedItem();
     }
 
+    protected void setExitZoneTemperatures(double tNormal, double tMin) {
+        tfExitZoneFceTemp.setData(tNormal);
+        exitZoneFceTemp = tNormal;
+        tfMinExitZoneFceTemp.setData(tMin);
+        minExitZoneFceTemp = tMin;
+    }
+
     public void takeValuesFromUI() {
         reference = tfReference.getText();
         fceTtitle = tfFceTitle.getText();
@@ -2356,7 +2373,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
      *
      * @param resultsReadyListener
      */
-    public FceEvaluator calculateFce(ResultsReadyListener resultsReadyListener, boolean bShowResults, boolean bResetLossFactor, boolean bCheckData) {
+    public FceEvaluator calculateFce(ResultsReadyListener resultsReadyListener, boolean bShowResults, boolean bResetLossFactor, boolean bCheckData) { // TODO 20160622 is bCheckData required
         if (bShowResults) {
             initPrintGroups();
             enableResultsMenu(false);
@@ -2404,7 +2421,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
     public boolean setProductionData(Charge charge, double output) {
         production = new ProductionData(processName);
-        production.setCharge(theCharge, chPitch);
+        production.setCharge(charge, chPitch);
         production.setProduction(output, nChargeRows, entryTemp, exitTemp, deltaTemp, bottShadow);
         production.setExitZoneTempData(exitZoneFceTemp, minExitZoneFceTemp);
         furnace.setProduction(production);

@@ -362,8 +362,12 @@ public class FceSubSection {
             double loss = Double.valueOf(vp.val);
             setTfFixedLosses(loss);
             vp = XMLmv.getTag(xmlStr, "lossFactor", 0);
-            if (vp.val.length() > 1)
+            if (vp.val.length() > 1) {
                 lossFactor = Double.valueOf(vp.val);
+                if (lossFactor != 1.0)
+                    controller.showError("Loss factor is " + lossFactor + " for " + section.sectionName() +
+                        " sub section " + subNum);
+            }
             else
                 lossFactor = 1.0;
             changeData(l, sH, eH);

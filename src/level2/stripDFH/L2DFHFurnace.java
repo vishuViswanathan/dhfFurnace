@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Time: 10:59 AM
  * To change this template use File | Settings | File Templates.
  */
-public class L2DFHFurnace extends DFHFurnace implements L2Interface {
+public class L2DFHFurnace extends StripFurnace implements L2Interface {
     public TMuaClient source;
 //    public FurnaceSettings furnaceSettings;
     LinkedHashMap<FceSection, L2DFHZone> topL2Zones;
@@ -661,9 +661,9 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         return retVal;
     }
 
-    public StringBuilder fieldResultsInXML() {
-        return new StringBuilder(XMLmv.putTag("fieldResults", createOneFieldResults().dataInXML()));
-    }
+//    public StringBuilder fieldResultsInXML() {
+//        return new StringBuilder(XMLmv.putTag("fieldResults", createOneFieldResults().dataInXML()));
+//    }
 
     /**
      * creates FieldResults type data from the calculated Results
@@ -948,8 +948,8 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
         }
         if (goAhead) {
             l2DFHeating.enablePerfMenu(false);
-            StatusWithMessage resp = l2DFHeating.setPerformanceTableLimits(perform);
-            if (resp.getDataStatus() == StatusWithMessage.DataStat.OK) {
+//            StatusWithMessage resp = l2DFHeating.setPerformanceTableLimits(perform);
+//            if (resp.getDataStatus() == StatusWithMessage.DataStat.OK) {
                 FceEvaluator eval = controller.calculateForPerformanceTable(perform);
                 if (eval != null) {
                     logTrace("eval for Performance table is ok");
@@ -969,9 +969,9 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                     }
                 } else
                     logInfo("eval for Performance table is null");
-            }
-            else
-                showError(resp.getErrorMessage() + "\nField production/strips size data outside range\nPerformance not saved");
+//            }
+//            else
+//                showError(resp.getErrorMessage() + "\nField production/strips size data outside range\nPerformance not saved");
         }
         return retVal;
     }
@@ -1137,6 +1137,8 @@ public class L2DFHFurnace extends DFHFurnace implements L2Interface {
                                                     l2DFHeating.showMessage("Field Performance", "Save updated Performance to file from Performance Menu");
                                             }
                                         }
+                                        resetLossFactor();
+                                        logTrace("lossFactors reset");
                                     }
                                 }
                             } catch (InterruptedException e) {

@@ -349,14 +349,14 @@ public class L2DFHeating extends DFHeating {
 //    JMenuItem mISaveFceSettings;
 //    JMenuItem mIReadFceSettings;
 
-    JMenuItem mICreateFieldResultsData;
-    JMenuItem mISaveFieldResultsToFile;
+//    JMenuItem mICreateFieldResultsData;
+//    JMenuItem mISaveFieldResultsToFile;
     JMenuItem mILoadFieldResult;
-    JMenuItem mILevel1FieldResults;
-    JMenuItem mISaveAsFieldResult;
+//    JMenuItem mILevel1FieldResults;
+//    JMenuItem mISaveAsFieldResult;
 
-    JMenuItem mIEvalForFieldProduction;
-    JMenuItem mIEvalWithFieldCorrection;
+//    JMenuItem mIEvalForFieldProduction;
+//    JMenuItem mIEvalWithFieldCorrection;
 
     boolean l2MenuSet = false;
 
@@ -917,23 +917,23 @@ public class L2DFHeating extends DFHeating {
     }
 
     ErrorStatAndMsg takeResultsFromLevel1() {
-        if (bAllowL2Changes) {
-            mIEvalForFieldProduction.setEnabled(false);
-            mIEvalWithFieldCorrection.setEnabled(false);
-        }
+//        if (bAllowL2Changes) {
+//            mIEvalForFieldProduction.setEnabled(false);
+//            mIEvalWithFieldCorrection.setEnabled(false);
+//        }
 //        boolean retVal = false;
         ErrorStatAndMsg stat = l2Furnace.takeFieldResultsFromLevel1(true);
         if (stat.inError) {
-            if (bAllowL2Changes)
-                mIEvalForFieldProduction.setEnabled(true);
+//            if (bAllowL2Changes)
+//                mIEvalForFieldProduction.setEnabled(true);
             l2Info("ERROR in L2DFeating.takeResultsFromLevel1, in return from takeResultsFromLevel1 " + stat.msg);
         }
         return stat;
     }
 
     boolean loadFieldResults() {
-        mIEvalForFieldProduction.setEnabled(false);
-        mIEvalWithFieldCorrection.setEnabled(false);
+//        mIEvalForFieldProduction.setEnabled(false);
+//        mIEvalWithFieldCorrection.setEnabled(false);
         boolean retVal = false;
         String title = "Loading Field Results";
         FileDialog fileDlg =
@@ -947,9 +947,9 @@ public class L2DFHeating extends DFHeating {
             retVal = loadFieldResults(filePath);
         }
         parent().toFront();
-        if (retVal) {
-            mIEvalForFieldProduction.setEnabled(true);
-        }
+//        if (retVal) {
+//            mIEvalForFieldProduction.setEnabled(true);
+//        }
         return retVal;
     }
 
@@ -1057,29 +1057,29 @@ public class L2DFHeating extends DFHeating {
         tfFuelTemp.setData(fuelTemp);
     }
 
-    public FceEvaluator evalForFieldProduction(ResultsReadyListener resultsReadyListener) {
-        if (bAllowL2Changes)
-            mIEvalWithFieldCorrection.setEnabled(true);
-        if (l2Furnace.setFieldProductionData()) {
-            l2Furnace.setCurveSmoothening(false);
-            return calculateFce(true, resultsReadyListener);
-        } else
-            return null;
-    }
+//    public FceEvaluator evalForFieldProduction(ResultsReadyListener resultsReadyListener) {
+////        if (bAllowL2Changes)
+////            mIEvalWithFieldCorrection.setEnabled(true);
+//        if (l2Furnace.setFieldProductionData()) {
+//            l2Furnace.setCurveSmoothening(false);
+//            return calculateFce(true, resultsReadyListener);
+//        } else
+//            return null;
+//    }
 
-    public FceEvaluator evalForFieldProduction() {
-        return evalForFieldProduction(null);
-    }
+//    public FceEvaluator evalForFieldProduction() {
+//        return evalForFieldProduction(null);
+//    }
 
-    public FceEvaluator recalculateWithFieldCorrections(ResultsReadyListener resultsReadyListener) {
-        if (l2Furnace.adjustForFieldResults()) {
-            FceEvaluator fceEvaluator = calculateFce(false, resultsReadyListener); // without reset the loss Factors
-            if (bAllowL2Changes)
-                mIEvalForFieldProduction.setEnabled(false);
-            return fceEvaluator;
-        } else
-            return null;
-    }
+//    public FceEvaluator recalculateWithFieldCorrections(ResultsReadyListener resultsReadyListener) {
+//        if (l2Furnace.adjustForFieldResults()) {
+//            FceEvaluator fceEvaluator = calculateFce(false, resultsReadyListener); // without reset the loss Factors
+////            if (bAllowL2Changes)
+////                mIEvalForFieldProduction.setEnabled(false);
+//            return fceEvaluator;
+//        } else
+//            return null;
+//    }
 
     boolean loadFieldResults(String filePath) {
         boolean retVal = false;
@@ -1111,33 +1111,33 @@ public class L2DFHeating extends DFHeating {
         return false;
     }
 
-    boolean saveAsFieldResults() {
-        boolean retVal = false;
-        if (bResultsReady) {
-            String ext = ".fResult";
-            String filePath = getSaveFilePath("Save as Field Results", ext);
-            if (filePath.length() > ext.length())
-                retVal = saveAsFieldResults(filePath);
-        }
-        return retVal;
-    }
-
-    boolean saveAsFieldResults(String filePath) {
-        boolean retVal = false;
-        try {
-            BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(filePath));
-            oStream.write(("# Field Results saved on " + dateFormat.format(new Date()) + " \n\n").getBytes());
-
-            oStream.write(l2Furnace.fieldResultsInXML().toString().getBytes());
-            oStream.close();
-            retVal = true;
-        } catch (FileNotFoundException e) {
-            showError("File " + filePath + " NOT found!");
-        } catch (IOException e) {
-            showError("Some IO Error in writing to file " + filePath + "!");
-        }
-        return retVal;
-    }
+//    boolean saveAsFieldResults() {
+//        boolean retVal = false;
+//        if (bResultsReady) {
+//            String ext = ".fResult";
+//            String filePath = getSaveFilePath("Save as Field Results", ext);
+//            if (filePath.length() > ext.length())
+//                retVal = saveAsFieldResults(filePath);
+//        }
+//        return retVal;
+//    }
+//
+//    boolean saveAsFieldResults(String filePath) {
+//        boolean retVal = false;
+//        try {
+//            BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(filePath));
+//            oStream.write(("# Field Results saved on " + dateFormat.format(new Date()) + " \n\n").getBytes());
+//
+//            oStream.write(l2Furnace.fieldResultsInXML().toString().getBytes());
+//            oStream.close();
+//            retVal = true;
+//        } catch (FileNotFoundException e) {
+//            showError("File " + filePath + " NOT found!");
+//        } catch (IOException e) {
+//            showError("Some IO Error in writing to file " + filePath + "!");
+//        }
+//        return retVal;
+//    }
 
     boolean setupUaClient() {
         boolean retVal = false;
@@ -1381,43 +1381,6 @@ public class L2DFHeating extends DFHeating {
         return true;
     }
 
-    protected void saveFceToFileOLD(boolean withPerformance) {
-        takeValuesFromUI();
-        String title = "Save Level2 Furnace Data" + ((withPerformance) ? " (with Performance Data)" : "");
-        FileDialog fileDlg =
-                new FileDialog(mainF, title,
-                        FileDialog.SAVE);
-        createProfileCodeOLD();
-        fileDlg.setFile(profileCode + " FurnaceProfile." + profileFileExtension);
-        fileDlg.setVisible(true);
-
-        String bareFile = fileDlg.getFile();
-        if (!(bareFile == null)) {
-            int len = bareFile.length();
-            if ((len < 8) || !(bareFile.substring(len - 7).equalsIgnoreCase("." + profileFileExtension))) {
-                showMessage("Adding '." + profileFileExtension + "' to file name");
-                bareFile = bareFile + "." + profileFileExtension;
-            }
-            String fileName = fileDlg.getDirectory() + bareFile;
-//            debug("Save Data file name :" + fileName);
-            boolean goAhead = true;
-            if (goAhead) {
-                try {
-                    BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(fileName));
-                    oStream.write(inputDataXML(withPerformance).getBytes());
-                    oStream.close();
-                    if (withPerformance)
-                        furnace.performanceIsSaved();
-                } catch (FileNotFoundException e) {
-                    showError("File " + fileName + " NOT found!");
-                } catch (IOException e) {
-                    showError("Some IO Error in writing to file " + fileName + "!");
-                }
-            }
-        }
-        parent().toFront();
-    }
-
     protected void saveFceToFile(boolean withPerformance) {
         takeValuesFromUI();
         StatusWithMessage fceSettingsIntegrity = furnace.furnaceSettings.checkIntegrity();
@@ -1578,13 +1541,13 @@ public class L2DFHeating extends DFHeating {
         super.resultsReady(observations, switchDisplayTo);
     }
 
-    protected void enableResultsMenu(boolean enable) {
-        super.enableResultsMenu(enable);
-        if (l2MenuSet && bAllowL2Changes) {
-            if (mISaveAsFieldResult != null)
-                mISaveAsFieldResult.setEnabled(enable);
-        }
-    }
+//    protected void enableResultsMenu(boolean enable) {
+//        super.enableResultsMenu(enable);
+//        if (l2MenuSet && bAllowL2Changes) {
+//            if (mISaveAsFieldResult != null)
+//                mISaveAsFieldResult.setEnabled(enable);
+//        }
+//    }
 
     // machine ID methods
     boolean testMachineID() {
@@ -1694,10 +1657,10 @@ public class L2DFHeating extends DFHeating {
         }
     }
 
-    public StatusWithMessage setPerformanceTableLimits(Performance baseP) {
-        OneStripDFHProcess dfhProcess = getStripDFHProcess(baseP.processName);
-        return baseP.setLimits(dfhProcess.minWidth, dfhProcess.maxWidth, 0.2, dfhProcess.minUnitOutput, dfhProcess.maxUnitOutput, 0.2);
-    }
+//    public StatusWithMessage setPerformanceTableLimits(Performance baseP) {
+//        OneStripDFHProcess dfhProcess = getStripDFHProcess(baseP.processName);
+//        return baseP.setLimits(dfhProcess.minWidth, dfhProcess.maxWidth, 0.2, dfhProcess.minUnitOutput, dfhProcess.maxUnitOutput, 0.2);
+//    }
 
     public FceEvaluator calculateForPerformanceTable(Performance baseP) {
 //        OneStripDFHProcess dfhProcess = getStripDFHProcess(baseP.processName);
@@ -1850,20 +1813,20 @@ public class L2DFHeating extends DFHeating {
 //                 saveFurnaceSettings();
             else if (caller == mIOPCServerIP)
                 setOPCIP();
-            else if (caller == mICreateFieldResultsData)
-                takeFieldResultsFromUser();
-            else if (caller == mISaveFieldResultsToFile)
-                saveFieldResultsToFile();
-            else if (caller == mISaveAsFieldResult)
-                saveAsFieldResults();
-            else if (caller == mILevel1FieldResults)
-                takeResultsFromLevel1();
+//            else if (caller == mICreateFieldResultsData)
+//                takeFieldResultsFromUser();
+//            else if (caller == mISaveFieldResultsToFile)
+//                saveFieldResultsToFile();
+//            else if (caller == mISaveAsFieldResult)
+//                saveAsFieldResults();
+//            else if (caller == mILevel1FieldResults)
+//                takeResultsFromLevel1();
             else if (caller == mILoadFieldResult)
                 loadFieldResults();
-            else if (caller == mIEvalForFieldProduction)
-                evalForFieldProduction();
-            else if (caller == mIEvalWithFieldCorrection)
-                recalculateWithFieldCorrections(null);
+//            else if (caller == mIEvalForFieldProduction)
+//                evalForFieldProduction();
+//            else if (caller == mIEvalWithFieldCorrection)
+//                recalculateWithFieldCorrections(null);
             else if (caller == mISavePerformanceData)
                 updatePerformanceDataFile();
             else if (caller == mIReadPerformanceData) {

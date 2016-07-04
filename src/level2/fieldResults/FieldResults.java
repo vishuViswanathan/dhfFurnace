@@ -128,7 +128,7 @@ public class FieldResults {
                     production.exitTemp = stripExitT;
                     production.exitZoneFceTemp = topZones[topZones.length - 1].frFceTemp;
                     production.minExitZoneTemp = stripDFHProc.getMinExitZoneTemp();
-                    DFHTuningParams tune = l2Furnace.tuningParams;
+//                    DFHTuningParams tune = l2Furnace.tuningParams;
 //                    tune.setPerfTurndownSettings(stripDFHProc.minOutputFactor(), stripDFHProc.minWidthFactor());
                 } else
                     retVal.addErrorMsg("Could not ascertain Charge Material for " +
@@ -142,7 +142,7 @@ public class FieldResults {
     }
 
     public ErrorStatAndMsg processOkForFieldResults() {
-        return stripDFHProc.fieldDataOkForProcess(stripDFHProc.processName, production);
+        return stripDFHProc.productionOkForPerformanceSave(stripDFHProc.processName, production);
     }
 
     public void copyTempAtTCtoSection() {

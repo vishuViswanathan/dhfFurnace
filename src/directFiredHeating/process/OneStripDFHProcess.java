@@ -9,6 +9,7 @@ import mvUtils.math.BooleanWithStatus;
 import mvUtils.math.DoubleWithStatus;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
+import performance.stripFce.Performance;
 
 import javax.swing.*;
 import java.text.DecimalFormat;
@@ -45,30 +46,31 @@ public class OneStripDFHProcess {
 
     public OneStripDFHProcess(StripDFHProcessList existingList, String processName, Vector<ChMaterial> vChMaterial, InputControl inpC) {
         this.existingList = existingList;
+        this.dfHeating = existingList.dfHeating;
         this.processName = processName;
         chMaterialThin = vChMaterial.get(0);
         chMaterialThick = vChMaterial.get(0);
 //        editResponse = getDataFromUser(vChMaterial, inpC);
     }
 
-    public OneStripDFHProcess(String processName, ChMaterial chMaterialThin, ChMaterial chMaterialThick,
-                              double tempDFHExit, double thinUpperLimit) {
-        this.processName = processName;
-        this.chMaterialThin = chMaterialThin;
-        this.chMaterialThick = chMaterialThick;
-        this.tempDFHExit = tempDFHExit;
-        this.thinUpperLimit = thinUpperLimit;
-    }
-
-    public OneStripDFHProcess(DFHeating dfHeating, StripDFHProcessList existingList, String processName, String chMaterialThinName, String chMaterialThickName,
-                              double tempDFHExit, double thinUpperLimit) {
-        this.existingList = existingList;
-        this.processName = processName;
-        this.chMaterialThin = dfHeating.getSelChMaterial(chMaterialThinName);
-        this.chMaterialThick = dfHeating.getSelChMaterial(chMaterialThickName);
-        this.tempDFHExit = tempDFHExit;
-        this.thinUpperLimit = thinUpperLimit;
-    }
+//    public OneStripDFHProcess(String processName, ChMaterial chMaterialThin, ChMaterial chMaterialThick,
+//                              double tempDFHExit, double thinUpperLimit) {
+//        this.processName = processName;
+//        this.chMaterialThin = chMaterialThin;
+//        this.chMaterialThick = chMaterialThick;
+//        this.tempDFHExit = tempDFHExit;
+//        this.thinUpperLimit = thinUpperLimit;
+//    }
+//
+//    public OneStripDFHProcess(DFHeating dfHeating, StripDFHProcessList existingList, String processName, String chMaterialThinName, String chMaterialThickName,
+//                              double tempDFHExit, double thinUpperLimit) {
+//        this.existingList = existingList;
+//        this.processName = processName;
+//        this.chMaterialThin = dfHeating.getSelChMaterial(chMaterialThinName);
+//        this.chMaterialThick = dfHeating.getSelChMaterial(chMaterialThickName);
+//        this.tempDFHExit = tempDFHExit;
+//        this.thinUpperLimit = thinUpperLimit;
+//    }
 
     public EditResponse.Response getEditResponse() {
         return editResponse;
@@ -210,6 +212,10 @@ public class OneStripDFHProcess {
                     vp = XMLmv.getTag(xmlStr, "tempDFHExit", 0);
                     tempDFHExit = Double.valueOf(vp.val);
 
+                    vp = XMLmv.getTag(xmlStr, "maxExitZoneTemp", 0);
+                    if (vp.val.length() > 0)
+                        maxExitZoneTemp = Double.valueOf(vp.val);
+
                     vp = XMLmv.getTag(xmlStr, "minExitZoneTemp", 0);
                     minExitZoneTemp = Double.valueOf(vp.val);
 
@@ -274,11 +280,16 @@ public class OneStripDFHProcess {
         return minExitZoneTemp;
     }
 
+    public double getMaxExitZoneTemp() {
+        return maxExitZoneTemp;
+    }
+
     public StringBuffer dataInXML() {
         StringBuffer xmlStr = new StringBuffer(XMLmv.putTag("processName", processName));
         xmlStr.append(XMLmv.putTag("chMaterialThin", "" + chMaterialThin));
         xmlStr.append(XMLmv.putTag("chMaterialThick", "" + chMaterialThick));
         xmlStr.append(XMLmv.putTag("tempDFHExit", "" + tempDFHExit));
+        xmlStr.append(XMLmv.putTag("maxExitZoneTemp", "" + maxExitZoneTemp));
         xmlStr.append(XMLmv.putTag("minExitZoneTemp", "" + minExitZoneTemp));
         xmlStr.append(XMLmv.putTag("thinUpperLimit", "" + (thinUpperLimit * 1000)));
         xmlStr.append(XMLmv.putTag("maxUnitOutput", "" + (maxUnitOutput / 1000)));
@@ -297,6 +308,7 @@ public class OneStripDFHProcess {
     JComboBox cbChMaterialThick;
     NumberTextField ntTempDFHExit;
     NumberTextField ntMinExitZoneTemp;
+    NumberTextField ntMaxExitZoneTemp;
     NumberTextField ntMaxUnitOutput;
     NumberTextField ntMinUnitOutput;
     NumberTextField ntMaxSpeed;
@@ -305,7 +317,25 @@ public class OneStripDFHProcess {
     NumberTextField ntMaxWidth;
     NumberTextField ntMinWidth;
 
-    public ErrorStatAndMsg fieldDataOkForProcess(String processName, ProductionData production) {
+    public ErrorStatAndMsg checkExitTemperature(double nowExitTemp) {
+        ErrorStatAndMsg retVal = new ErrorStatAndMsg();
+        DFHTuningParams tuning = dfHeating.getTuningParams();
+        DecimalFormat tempFmt = new DecimalFormat("#,###");
+        double maxExitTempAllowed = tempDFHExit + tuning.exitTempTolerance;
+        double minExitTempAllowed = tempDFHExit - tuning.exitTempTolerance;
+        if (nowExitTemp < maxExitTempAllowed) {
+            if (nowExitTemp < minExitTempAllowed)
+                retVal.addErrorMsg("Exit Temperature Low (minimum allowed is " + tempFmt.format(minExitTempAllowed) + " C)");
+        } else
+            retVal.addErrorMsg("Exit Temperature is High - must be less than " + tempFmt.format(maxExitTempAllowed) + " C)");
+        return retVal;
+    }
+
+    public ErrorStatAndMsg productionOkForPerformanceSave(ProductionData production) {
+        return productionOkForPerformanceSave(processName, production);
+    }
+
+    public ErrorStatAndMsg productionOkForPerformanceSave(String processName, ProductionData production) {
         ErrorStatAndMsg retVal = new ErrorStatAndMsg(true, "For Process " + processName + " fieldData, ");
         DFHTuningParams tuning = dfHeating.getTuningParams();
         DecimalFormat mmFmt = new DecimalFormat("#,###");
@@ -322,21 +352,31 @@ public class OneStripDFHProcess {
                     double unitOutputNow = output / chWidth;
                     if (unitOutputNow >= minUnitOutputAllowed) {
                         if (unitOutputNow <= maxUnitOutputAllowed) {
-                            double maxExitTempAllowed = tempDFHExit + tuning.exitTempTolerance;
-                            double minExitTempAllowed = tempDFHExit - tuning.exitTempTolerance;
-                            double nowExitTemp = production.exitTemp;
-//                            if (nowExitTemp <= maxExitTempAllowed) {
-                            if (nowExitTemp < maxExitTempAllowed) {
-                                if (nowExitTemp >= minExitTempAllowed) {
-                                    production.exitTemp = tempDFHExit;
-                                    if (production.exitZoneFceTemp > minExitZoneTemp) {
-                                        retVal.inError = false;
-                                    } else
-                                        retVal.msg += "Exit Zone Temperature Low (minimum allowed is " + tempFmt.format(minExitZoneTemp) + " C)";
+                            ErrorStatAndMsg tempStat = checkExitTemperature(production.exitTemp);
+                            if (!tempStat.inError) {
+                                production.exitTemp = tempDFHExit;
+                                if (production.exitZoneFceTemp > minExitZoneTemp) {
+                                    retVal.inError = false;
                                 } else
-                                    retVal.msg += "Exit Temperature Low (minimum allowed is " + tempFmt.format(minExitTempAllowed) + " C)";
-                            } else
-                                retVal.msg += "Exit Temperature is High - must be less than " + tempFmt.format(maxExitTempAllowed) + " C)";
+                                    retVal.msg += "Exit Zone Temperature Low (minimum allowed is " + tempFmt.format(minExitZoneTemp) + " C)";
+                            }
+                            else
+                                retVal.msg += tempStat.msg;
+//                            double maxExitTempAllowed = tempDFHExit + tuning.exitTempTolerance;
+//                            double minExitTempAllowed = tempDFHExit - tuning.exitTempTolerance;
+//                            double nowExitTemp = production.exitTemp;
+////                            if (nowExitTemp <= maxExitTempAllowed) {
+//                            if (nowExitTemp < maxExitTempAllowed) {
+//                                if (nowExitTemp >= minExitTempAllowed) {
+//                                    production.exitTemp = tempDFHExit;
+//                                    if (production.exitZoneFceTemp > minExitZoneTemp) {
+//                                        retVal.inError = false;
+//                                    } else
+//                                        retVal.msg += "Exit Zone Temperature Low (minimum allowed is " + tempFmt.format(minExitZoneTemp) + " C)";
+//                                } else
+//                                    retVal.msg += "Exit Temperature Low (minimum allowed is " + tempFmt.format(minExitTempAllowed) + " C)";
+//                            } else
+//                                retVal.msg += "Exit Temperature is High - must be less than " + tempFmt.format(maxExitTempAllowed) + " C)";
                         } else
                             retVal.msg += "Output too high (maximum allowed for this width is " + outputFmt.format(maxUnitOutputAllowed * chWidth / 1000) + " t/h)";
                     } else
@@ -365,6 +405,8 @@ public class OneStripDFHProcess {
         cbChMaterialThick.setSelectedItem(chMaterialThick);
         ntTempDFHExit = new NumberTextField(inpC, tempDFHExit, 6, false, 400, 1000,
                 "#,##0", "Strip Temperature at DFH Exit (deg C)");
+        ntMaxExitZoneTemp = new NumberTextField(inpC, maxExitZoneTemp, 6, false, 800, 1200,
+                "#,##0", "Maximum DFH Exit Zone Temperature (deg C)");
         ntMinExitZoneTemp = new NumberTextField(inpC, minExitZoneTemp, 6, false, 800, 1200,
                 "#,##0", "Minimum DFH Exit Zone Temperature (deg C)");
         ntMaxUnitOutput = new NumberTextField(inpC, maxUnitOutput / 1000, 6, false, 0.2, 1000.0,
@@ -392,6 +434,8 @@ public class OneStripDFHProcess {
         editorPanel.addItemPair(cbChMaterialThick);
         editorPanel.addBlank();
         editorPanel.addItemPair(ntTempDFHExit);
+        editorPanel.addBlank();
+        editorPanel.addItemPair(ntMaxExitZoneTemp);
         editorPanel.addItemPair(ntMinExitZoneTemp);
         editorPanel.addBlank();
         editorPanel.addItemPair(ntMaxUnitOutput);
@@ -416,10 +460,12 @@ public class OneStripDFHProcess {
             // check data in range
             if (ntMaxUnitOutput.isInError() || ntMinUnitOutput.isInError() || ntMaxThickness.isInError() ||
                     ntMaxThickness.isInError() || ntMaxSpeed.isInError() || ntMaxWidth.isInError() ||
-                    ntMaxWidth.isInError()) {
+                    ntMaxWidth.isInError() || ntMinExitZoneTemp.isInError() || ntMaxExitZoneTemp.isInError()) {
                 inError = true;
                 msg.append("Some Data is/are out of range");
             } else {
+                double maxExitZoneTempX = ntMaxExitZoneTemp.getData();
+                double minExitZoneTempX = ntMinExitZoneTemp.getData();
                 double maxUnitOutputX = ntMaxUnitOutput.getData();
                 double minUnitOutputX = ntMinUnitOutput.getData();
                 double maxThicknessX = ntMaxThickness.getData();
@@ -427,6 +473,10 @@ public class OneStripDFHProcess {
 //                double maxSpeedX = ntMaxSpeed.getData();
                 double maxWidthX = ntMaxWidth.getData();
                 double minWidthX = ntMaxWidth.getData();
+                if (maxExitZoneTempX <= minExitZoneTempX) {
+                    msg.append(ntMaxExitZoneTemp.getName() + " must be > " + ntMinExitZoneTemp.getName() + "\n");
+                    status.inError = true;
+                }
                 if (maxUnitOutputX < minUnitOutputX) {
                     msg.append(ntMaxUnitOutput.getName() + " must be >= " + ntMinUnitOutput.getName() + "\n");
                     status.inError = true;
@@ -450,6 +500,7 @@ public class OneStripDFHProcess {
         processName = tfProcessName.getText().trim();
         chMaterialThin = (ChMaterial) cbChMaterialThin.getSelectedItem();
         tempDFHExit = ntTempDFHExit.getData();
+        maxExitZoneTemp = ntMaxExitZoneTemp.getData();
         minExitZoneTemp = ntMinExitZoneTemp.getData();
         chMaterialThick = (ChMaterial) cbChMaterialThick.getSelectedItem();
         maxUnitOutput = ntMaxUnitOutput.getData() * 1000;

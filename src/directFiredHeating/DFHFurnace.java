@@ -5,6 +5,7 @@ import FceElements.heatExchanger.Recuperator;
 import appReporting.Reporter;
 import basic.*;
 import directFiredHeating.process.FurnaceSettings;
+import directFiredHeating.process.OneStripDFHProcess;
 import display.*;
 import mvUtils.display.TimedMessage;
 import mvUtils.display.TrendsPanel;
@@ -828,13 +829,27 @@ public class DFHFurnace {
     boolean chTempProfAvailable = false;
 
     protected boolean addResultsToPerfBase(boolean createTable) {
-        boolean retVal = false;
+        boolean retVal = true;
         Performance perform = getPerformance();
-        if (perform != null && performBase != null) {
+        if (createTable) {
+            OneStripDFHProcess stripProc = controller.getStripDFHProcess(perform.processName);
+            if (stripProc != null) {
+                ErrorStatAndMsg performanceStat = stripProc.productionOkForPerformanceSave(production);
+//                production.minExitZoneTemp = stripProc.getMinExitZoneTemp();
+                if (performanceStat.inError) {
+                    showError("Cannot save Performance, " + performanceStat.msg);
+                    retVal = false;
+                }
+                else
+                    retVal = true;
+            }
+        }
+        if (retVal && perform != null && performBase != null) {
             retVal = performBase.noteBasePerformance(perform);
             if (retVal) {
-                showMessage("Performance Data:" + perform);
                 chTempProfAvailable = performBase.chTempProfAvailable;
+                if (!createTable)
+                    showMessage("Performance Data:" + perform);
             }
         }
         if (retVal) {
@@ -842,11 +857,12 @@ public class DFHFurnace {
                 controller.perfBaseAvailable(true);
 //            perfBaseReady = ((nPerf >= 2) && performBase.canInterpolate);
             if (perform != null && createTable)
-                if (decide("Performance Table", "Do you want to create Performance Table?")) {
+//                if (decide("Performance Table", "Do you want to create Performance Table?")) {
 //                    perform.setTableFactors(tuningParams.minOutputFactor, tuningParams.outputStep,
 //                            tuningParams.minWidthFactor, tuningParams.widthStep);
                     controller.calculateForPerformanceTable(perform);
-                }
+                    showMessage("Preparing performance table for Base: " + perform);
+//                }
         }
         return retVal;
     }
@@ -997,7 +1013,7 @@ public class DFHFurnace {
 
     // the following two used for temporary storage of data while calculating base performance
     ProductionData tempProductionData;
-    boolean inPerformanceBaseMode = false;
+    boolean inPerformanceBaseMode = false;  // TODO This is not clear (is always false)
     boolean inPerfTableMode = false;
 
 //    boolean changeToPerformanceBaseProduction() {

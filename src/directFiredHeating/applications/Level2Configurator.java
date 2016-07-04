@@ -80,7 +80,7 @@ public class Level2Configurator extends DFHeating {
         bAllowProfileChange = true;
         bAllowManualCalculation = true;
         asApplication = true;
-        releaseDate = "20160615 11:11";
+        releaseDate = "20160622 16:38";
     }
 
     public boolean setItUp() {
@@ -103,6 +103,7 @@ public class Level2Configurator extends DFHeating {
             furnace.setTuningParams(tuningParams);
             tuningParams.bConsiderChTempProfile = true;
             createUIs(false); // without the default menuBar
+            disableSomeUIs();
 //            getFuelAndCharge();
             setDefaultSelections();
             addMenuBar(createL2MenuBar());
@@ -130,6 +131,12 @@ public class Level2Configurator extends DFHeating {
         return associatedDataLoaded;
     }
 
+    void disableSomeUIs() {
+        tfMinExitZoneFceTemp.setEnabled(false);
+        tfExitZoneFceTemp.setEnabled(false);
+        tfExitTemp.setEnabled(false);
+    }
+
 //    void getFuelAndCharge() {
 //        fuelSpecsFromFile(fceDataLocation + "FuelSpecifications.dfhSpecs");
 //        chMaterialSpecsFromFile(fceDataLocation + "ChMaterialSpecifications.dfhSpecs");
@@ -149,11 +156,39 @@ public class Level2Configurator extends DFHeating {
         return (profileCode.length() == profileCodeFormat.format(0).length());
     }
 
-    protected ErrorStatAndMsg isChargeInFceOK() {
+    protected ErrorStatAndMsg isChargeInFceOK() {    // TODO 20160622 considered that UI is already read
         ErrorStatAndMsg retVal = super.isChargeInFceOK();
         if ((forProcess() == DFHTuningParams.ForProcess.STRIP)) {
-            if (getDFHProcess() == null) {
-                retVal.addErrorMsg("\n   Process not available in DFH Process List");
+            OneStripDFHProcess oneProc = getDFHProcess();
+            if (oneProc != null) {
+                boolean someDecisionRequired = false;
+                String toDecide = "<html><h4>Some parameters are set from Strip DFH Process <b>"+ oneProc.processName + "</b>";
+                ChMaterial material = oneProc.getChMaterial(chThickness);
+                if (material != selChMaterial) {
+                    toDecide += "<blockQuote> # Charge Material selected is not matching for thickness <b>" + (chThickness * 1000) + "mm</b>.<p>" +
+                            "&emsp;Will be changed to <b>" + material + "</b> as per DFH Strip Process</blockQuote>";
+                    someDecisionRequired = true;
+                }
+                toDecide += "<blockQuote># Exit Temperature set as <b>" + oneProc.tempDFHExit + "</b></blockQuote>" +
+                    "<blockQuote># Exit Zone Temperature set as <b>" + oneProc.getMaxExitZoneTemp() + "</b></blockQuote>" +
+                        "<blockQuote># Minimum Exit Zone Temperature set as <b>" + oneProc.getMinExitZoneTemp() + "</b></blockQuote>";
+                toDecide += "</html>";
+                boolean proceed = true;
+                String title = "Strip DFH Process";
+                if (someDecisionRequired)
+                    proceed = decide(title, toDecide);
+                else
+                    showMessage(title, toDecide);
+                if (proceed) {
+                    setChMaterial(material);
+                    setExitTemperaure(oneProc.tempDFHExit);
+                    setExitZoneTemperatures(oneProc.getMaxExitZoneTemp(), oneProc.getMinExitZoneTemp());
+                }
+                else
+                    retVal.addErrorMsg("\n   ABORTING");
+            }
+            else {
+                    retVal.addErrorMsg("\n   Process not available in DFH Process List");
             }
         }
         return retVal;
@@ -167,6 +202,11 @@ public class Level2Configurator extends DFHeating {
 
     String profileCodeInXML() {
         return XMLmv.putTag(profileCodeTag, profileCode);
+    }
+
+    protected void setFcefor(boolean showSuggestion) {
+        super.setFcefor(showSuggestion);
+        disableSomeUIs();
     }
 
     public StatusWithMessage takeProfileDataFromXML(String xmlStr) {
@@ -357,26 +397,6 @@ public class Level2Configurator extends DFHeating {
         return true;
     }
 
-//    void markThisFileAsBak(File file) {
-//        String bakFilefullName = file.getAbsolutePath() + ".bak";
-//        File existingBakFile = new  File(bakFilefullName);
-//        if (existingBakFile.exists())
-//            existingBakFile.delete();
-//        file.renameTo(new File(bakFilefullName));
-//    }
-//
-//    int deleteParticularFiles(String directory, final String startsWith, final String extension) {
-//        File folder = new File(directory);
-//        File[] files = folder.listFiles(new FilenameFilter() {
-//            public boolean accept(File dir, String name) {
-//                return name.endsWith(extension) && name.startsWith(startsWith);
-//            }
-//        });
-//        for (File file: files)
-//            file.delete();
-//        return files.length;
-//    }
-
     JMenu mL2FileMenu;
     JMenuItem mISaveFurnace;
     JMenuItem mILoadFurnace;
@@ -495,10 +515,6 @@ public class Level2Configurator extends DFHeating {
             showError(response.getErrorMessage());
     }
 
-//    OneStripDFHProcess getDFHProcess(String name) {
-//        return dfhProcessList.getDFHProcess(name);
-//    }
-
     OneStripDFHProcess getDFHProcess() {
         return getStripDFHProcess(tfProcessName.getText());
     }
@@ -508,7 +524,7 @@ public class Level2Configurator extends DFHeating {
             Object o = e.getSource();
             if (o == tfProcessName) {
                 if (getDFHProcess() == null) {
-                    showError("Process not available");
+                    showError("Process not available in DFH Process List");
                     tfProcessName.setText("");
                 }
             }

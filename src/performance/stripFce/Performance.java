@@ -2,6 +2,7 @@ package performance.stripFce;
 
 import basic.*;
 import directFiredHeating.DFHFurnace;
+import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
 import directFiredHeating.process.OneStripDFHProcess;
 import display.*;
@@ -91,6 +92,7 @@ public class Performance {
     double maxWidth, minWidth, widthStep;
     double maxUnitOutput, minUnitOutput, outputStep;
     boolean bLimitsReady = false;
+
     public Performance() {
 
     }
@@ -136,33 +138,47 @@ public class Performance {
     }
 
 
-    public StatusWithMessage setLimits( double minWidth, double maxWidth, double widthStep,
-                              double minUnitOutput, double maxUnitOutput, double outputStep) {
+//    public StatusWithMessage setLimits( double minWidth, double maxWidth, double widthStep,
+//                              double minUnitOutput, double maxUnitOutput, double outputStep) {
+//        StatusWithMessage retVal = new StatusWithMessage();
+//        this.minWidth = minWidth;
+//        this.maxWidth = maxWidth;
+//        this.widthStep = widthStep;
+//        this.minUnitOutput = minUnitOutput;
+//        this.maxUnitOutput = maxUnitOutput;
+//        this.outputStep = outputStep;
+//        if (minWidth < maxWidth && minUnitOutput < maxUnitOutput) {
+//            bLimitsReady = true;
+//            retVal = setTableFactors();
+//        }
+//        else
+//            retVal.setErrorMessage("Error in limits for preparing Performance Table");
+//        return retVal;
+//    }
+
+    public StatusWithMessage setLimits() {
         StatusWithMessage retVal = new StatusWithMessage();
-        this.minWidth = minWidth;
-        this.maxWidth = maxWidth;
-        this.widthStep = widthStep;
-        this.minUnitOutput = minUnitOutput;
-        this.maxUnitOutput = maxUnitOutput;
-        this.outputStep = outputStep;
-        if (minWidth < maxWidth && minUnitOutput < maxUnitOutput) {
-            bLimitsReady = true;
-            retVal = setTableFactors();
+        OneStripDFHProcess dfhProcess = controller.getStripDFHProcess(processName);
+        if (dfhProcess == null)
+            retVal.setErrorMessage("Strip Process " + processName + " is not available");
+        else {
+            minWidth = dfhProcess.minWidth;
+            maxWidth = dfhProcess.maxWidth;
+            minUnitOutput = dfhProcess.minUnitOutput;
+            maxUnitOutput = dfhProcess.maxUnitOutput;
+            DFHTuningParams tuning = controller.getTuningParams();
+            widthStep = tuning.widthStep;
+            outputStep = tuning.outputStep;
+            if (minWidth < maxWidth && minUnitOutput < maxUnitOutput) {
+                bLimitsReady = true;
+                retVal = setTableFactors();
+            }
+            else
+                retVal.setErrorMessage("Error in limits for preparing Performance Table");
         }
-        else
-            retVal.setErrorMessage("Error in limits for preparing Performance Table");
         return retVal;
     }
 
-//    void getProcessName() {
-//        OneParameterDialog dlg = new OneParameterDialog(controller, "Process Name", true);
-//        dlg.setValue("enter Process Name" , processName, 15);
-//        dlg.setLocationRelativeTo(controller.parent());
-//        dlg.setVisible(true);
-//        if (dlg.isOk())
-//            processName = dlg.getTextVal();
-//    }
-//
     public void addToZones(boolean bBot, OneZone zone) {
         if (bBot) {
             if (botZones == null)
@@ -258,10 +274,11 @@ public class Performance {
             double refUnitOutput = output / chLength;
             if (refWidth >= minWidth) {
                 if (refWidth <= maxWidth) {
+                    double maxUnitOutputAllowed = maxUnitOutput * controller.getTuningParams().unitOutputOverRange;
                     if (refUnitOutput >= minUnitOutput) {
-                        if (refUnitOutput <= maxUnitOutput) {
+                        if (refUnitOutput <= maxUnitOutputAllowed) {
                             Vector<Double> vOF = new Vector<Double>();
-                            double nowOutputFactor = maxUnitOutput / refUnitOutput;
+                            double nowOutputFactor = maxUnitOutputAllowed / refUnitOutput;
                             double minUnitOutputFactor = minUnitOutput / refUnitOutput;
                             while (nowOutputFactor > minUnitOutputFactor) {
                                 vOF.add(nowOutputFactor);
@@ -292,7 +309,7 @@ public class Performance {
                         }
                         else
                             retVal.setErrorMessage(String.format("Production is more than limit of %5.3f t/h/meter width",
-                                     maxUnitOutput / 1000));
+                                    maxUnitOutputAllowed / 1000));
                     }
                     else
                         retVal.setErrorMessage(String.format("Production is less than limit of %5.3f t/h/meter width",
@@ -315,32 +332,36 @@ public class Performance {
 
     public boolean createPerfTable(ThreadController master) {
 //        controller.setTableFactors(this);
-        perfTable = new PerformanceTable(this, outputFactors, widthList);
-        double forOutput;
-        double forWidth;
-        Performance onePerf;
-        boolean allOk = true;
-        for (double capF:outputFactors) {
-            for (double widthF : widthList) {
+        boolean allOk = false;
+        StatusWithMessage settingStat = setLimits();
+        if (settingStat.getDataStatus() == StatusWithMessage.DataStat.OK) {
+            perfTable = new PerformanceTable(this, outputFactors, widthList);
+            double forOutput;
+            double forWidth;
+            Performance onePerf;
+            allOk = true;
+            for (double capF : outputFactors) {
+                for (double widthF : widthList) {
 //                if (widthF <= chLength || capF <= 1)  {
-                forWidth = widthF; // chLength * widthF;
-                forOutput = unitOutput * capF * forWidth;
-                if (furnace.evaluate(master, forOutput, forWidth)) {
-                    onePerf = furnace.getPerformance();
-                    if (onePerf == null)
-                        showError("The data for " + forWidth + " not saved to the table");
-                    else
-                        perfTable.addToTable(widthF, capF, onePerf);
-                } else
-                    allOk = false;
+                    forWidth = widthF; // chLength * widthF;
+                    forOutput = unitOutput * capF * forWidth;
+                    if (furnace.evaluate(master, forOutput, forWidth)) {
+                        onePerf = furnace.getPerformance();
+                        if (onePerf == null)
+                            showError("The data for " + forWidth + " not saved to the table");
+                        else
+                            perfTable.addToTable(widthF, capF, onePerf);
+                    } else
+                        allOk = false;
+                    if (!allOk)
+                        break;
+//                }
+                }
                 if (!allOk)
                     break;
-//                }
             }
-            if (!allOk)
-                break;
+            controller.enableDataEdit();
         }
-        controller.enableDataEdit();
         return allOk;
     }
 
