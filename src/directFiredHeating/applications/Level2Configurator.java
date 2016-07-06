@@ -80,7 +80,7 @@ public class Level2Configurator extends DFHeating {
         bAllowProfileChange = true;
         bAllowManualCalculation = true;
         asApplication = true;
-        releaseDate = "20160622 16:38";
+        releaseDate = "20160704 16:39";
     }
 
     public boolean setItUp() {

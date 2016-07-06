@@ -215,7 +215,7 @@ public class FurnaceSettings   {
         return retVal;
     }
 
-    FurnaceSettings getbackup() {
+    FurnaceSettings getBackup() {
 //        to.dfHeating = dfHeating;
         FurnaceSettings backup = new FurnaceSettings(dfHeating);
         backup.zoneFuelRange = new DoubleRange[zoneFuelRange.length];
@@ -264,7 +264,7 @@ public class FurnaceSettings   {
         FceSettingsDlg(boolean editable) {
             this.editable = editable;
             setModal(true);
-            backup = getbackup();
+            backup = getBackup();
             init();
         }
 
@@ -369,8 +369,10 @@ public class FurnaceSettings   {
                 dfHeating.showError("Fuel data Error:\n" + stat.getErrorMessage(), this);
                 return false;
             }
-            else
+            else {
+                backup = getBackup();
                 return true;
+            }
         }
 
         public void deleteData() {

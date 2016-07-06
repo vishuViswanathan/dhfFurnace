@@ -460,7 +460,8 @@ public class OneStripDFHProcess {
             // check data in range
             if (ntMaxUnitOutput.isInError() || ntMinUnitOutput.isInError() || ntMaxThickness.isInError() ||
                     ntMaxThickness.isInError() || ntMaxSpeed.isInError() || ntMaxWidth.isInError() ||
-                    ntMaxWidth.isInError() || ntMinExitZoneTemp.isInError() || ntMaxExitZoneTemp.isInError()) {
+                    ntMaxWidth.isInError() || ntMinExitZoneTemp.isInError() || ntMaxExitZoneTemp.isInError() ||
+                    ntThinUpperLimit.isInError()) {
                 inError = true;
                 msg.append("Some Data is/are out of range");
             } else {
@@ -503,6 +504,7 @@ public class OneStripDFHProcess {
         maxExitZoneTemp = ntMaxExitZoneTemp.getData();
         minExitZoneTemp = ntMinExitZoneTemp.getData();
         chMaterialThick = (ChMaterial) cbChMaterialThick.getSelectedItem();
+        thinUpperLimit = ntThinUpperLimit.getData() / 1000;
         maxUnitOutput = ntMaxUnitOutput.getData() * 1000;
         minUnitOutput = ntMinUnitOutput.getData() * 1000;
         maxThickness = ntMaxThickness.getData() / 1000;
