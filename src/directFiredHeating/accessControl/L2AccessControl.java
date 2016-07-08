@@ -18,7 +18,7 @@ public class L2AccessControl {
     static public String l2AccessfileExtension = "l2Acc";
     static public String installerAccessFileExtension = "instAcc";
 
-    HashMap<AccessLevel, AccessNameAndDescription> accessMap =  new HashMap<AccessLevel, AccessNameAndDescription>(){ {
+    static HashMap<AccessLevel, AccessNameAndDescription> accessMap =  new HashMap<AccessLevel, AccessNameAndDescription>(){ {
         put(AccessLevel.NONE, new AccessNameAndDescription("None", "No Access"));
         put(AccessLevel.RUNTIME, new AccessNameAndDescription("Runtime", "Level2 - Runtime"));
         put(AccessLevel.UPDATER, new AccessNameAndDescription("Updater", "Level2 - Updater"));
@@ -68,20 +68,20 @@ public class L2AccessControl {
         return accessControl.getAndDeleteAccess(nd.name, "Delete One " + nd.description);
     }
 
-    public String getDescription(AccessLevel forLevel) {
+    public static String getDescription(AccessLevel forLevel) {
         return accessMap.get(forLevel).description;
     }
 
-    class AccessNameAndDescription {
-        String name;
-        String description;
-
-        AccessNameAndDescription(String name, String description) {
-            this.name = name;
-            this.description = description;
-        }
-    }
-
+//    class AccessNameAndDescription {
+//        String name;
+//        String description;
+//
+//        AccessNameAndDescription(String name, String description) {
+//            this.name = name;
+//            this.description = description;
+//        }
+//    }
+//
     static public void main(String[] args) {
         try {
             L2AccessControl access = new L2AccessControl("level2FceData/l2AccessData.txt", false);

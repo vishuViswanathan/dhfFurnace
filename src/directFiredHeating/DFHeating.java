@@ -28,7 +28,6 @@ import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.PageRanges;
 import javax.swing.*;
-import javax.swing.event.CellEditorListener;
 import javax.swing.plaf.basic.BasicComboBoxRenderer;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
@@ -135,7 +134,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     static public JFrame mainF; // = new JFrame("DFH Furnace");
     static public Vector<Fuel> fuelList = new Vector<Fuel>();
     static public Vector<ChMaterial> vChMaterial; // = new Vector<ChMaterial>();
-    static boolean enableSpecsSave = false;
+    static protected boolean enableSpecsSave = false;
     public static Logger log;
     static boolean onTest = false;
     static public boolean showDebugMessages = false;
@@ -218,8 +217,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
     JMenuItem saveForTFM; //, saveForFE;
 
-    JMenuItem saveFuelSpecs;
-    JMenuItem saveSteelSpecs;
+    protected JMenuItem saveFuelSpecs;
+    protected JMenuItem saveSteelSpecs;
 
     Vector<PanelAndName> heatBalances, allTrends;
     FramedPanel lossPanel;
@@ -246,7 +245,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected double entryTemp = 30, exitTemp = 1200, deltaTemp = 25;
     protected double exitZoneFceTemp = 1050; // for strip heating
     protected double minExitZoneFceTemp = 900; // for strip heating
-    String processName = "Reheating";
+    protected String processName = "Reheating";
     protected JTextField tfProcessName;
     protected NumberTextField tfBottShadow, tfChPitch, tfChRows, tfProduction;
     protected NumberTextField tfEntryTemp, tfExitTemp, tfDeltaTemp;
@@ -803,7 +802,9 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         gbcOP.gridwidth = 1;
         gbcOP.gridy++;
         gbcOP.anchor = GridBagConstraints.EAST;
-        jp.add(chargeDataPanel(), gbcOP);
+
+//        jp.add(chargeDataPanel(), gbcOP);
+        jp.add(processAndCharge(), gbcOP);
         gbcChDatLoc = new GridBagConstraints();
         gbcChDatLoc.gridx = gbcOP.gridx;
         gbcChDatLoc.gridy = gbcOP.gridy;
@@ -1048,6 +1049,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         perfMenu.add(mIAddToPerfBase);
         perfMenu.addSeparator();
         perfMenu.add(mISetPerfTablelimits);
+        mISetPerfTablelimits.setVisible(false);
         perfMenu.addSeparator();
         perfMenu.add(mIShowPerfBase);
         perfMenu.addSeparator();
@@ -1448,6 +1450,21 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
     JPanel chSizePanel = new JPanel();
 
+    JPanel processAndCharge() {
+        JPanel jp = new JPanel(new BorderLayout());
+        tfProcessName = new XLTextField(processName, 10);
+        jp.add(processPanel(), BorderLayout.NORTH);
+        jp.add(chargeDataPanel(), BorderLayout.SOUTH);
+        return jp;
+    }
+
+    protected JPanel processPanel() {
+        MultiPairColPanel jp = new MultiPairColPanel("Process");
+//        tfProcessName = new XLTextField(processName, 10);
+        jp.addItemPair("Process Name", tfProcessName);
+        return jp;
+    }
+
     JPanel chargeDataPanel() {
         MultiPairColPanel jp = new MultiPairColPanel("Charge Details");
         cbChType = new XLComboBox(Charge.ChType.values());
@@ -1520,8 +1537,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
     JPanel chargeInFurnacePanel() {
         MultiPairColPanel jp = new MultiPairColPanel("Charge In Furnace");
-        tfProcessName = new XLTextField(processName, 10);
-        jp.addItemPair("Process Name", tfProcessName);
+//        tfProcessName = new XLTextField(processName, 10);
+//        jp.addItemPair("Process Name", tfProcessName);
         tfBottShadow = new NumberTextField(this, bottShadow * 100, 5, false, 0, 100, "###", "Shadow on Bottom Surface (%)");
         jp.addItemPair(tfBottShadow.getLabel(), tfBottShadow);
         tfChPitch = new NumberTextField(this, chPitch * 1000, 5, false, 0, 10000, "#,###", "Charge Pitch (mm)");
@@ -1888,6 +1905,11 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         minExitZoneFceTemp = tMin;
     }
 
+    protected String getProcessName() {
+        processName = tfProcessName.getText();
+        return processName;
+    }
+
     public void takeValuesFromUI() {
         reference = tfReference.getText();
         fceTtitle = tfFceTitle.getText();
@@ -1911,7 +1933,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         selChMaterial = (ChMaterial) cbChMaterial.getSelectedItem();
 
         bottShadow = tfBottShadow.getData() / 100;
-        processName = tfProcessName.getText();
+        getProcessName();
+//        processName = tfProcessName.getText();
         if (cbFceFor.getSelectedItem() == DFHTuningParams.ForProcess.STRIP)
             chPitch = 1;
         else
@@ -2335,8 +2358,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     public FceEvaluator calculateForPerformanceTable(Performance baseP) {
-//        baseP.setTableFactors(tuningParams.minOutputFactor, tuningParams.outputStep,
-//                tuningParams.minWidthFactor, tuningParams.widthStep);
         baseP.setTableFactors(tuningParams.outputStep, tuningParams.widthStep);
         return calculateForPerformanceTable(baseP, null);
     }
@@ -2352,10 +2373,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return evaluator;
     }
 
-    public boolean evaluateREMOVE(ThreadController master, double forOutput, double stripWidth) {   // TODO not used
-        return furnace.evaluate(master, forOutput, stripWidth);
-    }
-
     ResultsReadyListener theResultsListener;
 
     void addResultsListener(ResultsReadyListener resultReadyListener) {
@@ -2363,11 +2380,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     Vector<CalculationsDoneListener> calculationListeners = new Vector<CalculationsDoneListener>();
-
-    public void addCalculationsDoneListener(CalculationsDoneListener listener) {
-        if (!calculationListeners.contains(listener))
-            calculationListeners.add(listener);
-    }
 
     /**
      *

@@ -835,7 +835,6 @@ public class DFHFurnace {
             OneStripDFHProcess stripProc = controller.getStripDFHProcess(perform.processName);
             if (stripProc != null) {
                 ErrorStatAndMsg performanceStat = stripProc.productionOkForPerformanceSave(production);
-//                production.minExitZoneTemp = stripProc.getMinExitZoneTemp();
                 if (performanceStat.inError) {
                     showError("Cannot save Performance, " + performanceStat.msg);
                     retVal = false;
@@ -855,14 +854,10 @@ public class DFHFurnace {
         if (retVal) {
             if (chTempProfAvailable)
                 controller.perfBaseAvailable(true);
-//            perfBaseReady = ((nPerf >= 2) && performBase.canInterpolate);
-            if (perform != null && createTable)
-//                if (decide("Performance Table", "Do you want to create Performance Table?")) {
-//                    perform.setTableFactors(tuningParams.minOutputFactor, tuningParams.outputStep,
-//                            tuningParams.minWidthFactor, tuningParams.widthStep);
-                    controller.calculateForPerformanceTable(perform);
-                    showMessage("Preparing performance table for Base: " + perform);
-//                }
+            if (perform != null && createTable) {
+                controller.calculateForPerformanceTable(perform);
+                showMessage("Preparing performance table for Base: " + perform);
+            }
         }
         return retVal;
     }

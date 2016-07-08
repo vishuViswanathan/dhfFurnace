@@ -13,6 +13,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 
 /**
  * User: M Viswanathan
@@ -52,6 +54,8 @@ public class Level2Launcher {
     L2AccessControl installerAccessControl;
     String l2BasePath;
     String fceDataLocation = "level2FceData/";
+    String lockPath;
+    File lockFile;
 
     public Level2Launcher() {
         boolean allOk = false;
@@ -59,8 +63,10 @@ public class Level2Launcher {
         l2BasePath = folder.getAbsolutePath();
 //        System.out.println("l2BasePath = " + l2BasePath);
         fceDataLocation = l2BasePath + "\\" + fceDataLocation;
+        lockPath = fceDataLocation + "Syncro.lock";
         if (testMachineID()) {
             init();
+            lockFile = new File(lockPath);
             allOk = true;
         } else {
             showError("Software key mismatch, Aborting ...");
@@ -258,75 +264,180 @@ public class Level2Launcher {
         return true;
     }
 
-    void launchRuntime() {
-        if (getAccessToLevel2(L2DFHeating.defaultLevel())) {
-            new WaitMsg(mainF, "Starting Level2Runtime. Please wait ...", new ActInBackground() {
-                public void doInBackground() {
-                    L2DFHeating l2 = new L2DFHeating("Furnace", true);
-                    if (l2.l2SystemReady)
-                        quit();
-                }
-            });
+    String getStatusFileName(L2AccessControl.AccessLevel level)  {
+        return fceDataLocation + l2AccessControl.getDescription(level) + " is ON";
+    }
+
+    DataWithMsg isThisAppActive(L2AccessControl.AccessLevel level) {
+        DataWithMsg retVal = new DataWithMsg();
+        FileLock lock = getFileLock();
+        if (lock != null) {
+            File f = new File(getStatusFileName(level));
+            if (f.exists())
+                retVal.setData(true);
+            else
+                retVal.setData(false);
+            releaseLock(lock);
         }
+        else
+            retVal.setErrorMsg("Unable to get the lock to get Status of application " + l2AccessControl.getDescription(level));
+        return retVal;
+    }
+
+    DataWithMsg isAnyAppActive(L2AccessControl.AccessLevel[] levels) {
+        DataWithMsg retVal = new DataWithMsg();
+        retVal.setData(false);
+        FileLock lock = getFileLock();
+        if (lock != null) {
+            File f;
+            for (L2AccessControl.AccessLevel level: levels) {
+                f = new File(getStatusFileName(level));
+                if (f.exists()) {
+                    retVal.setData(true);
+                    break;
+                }
+            }
+            releaseLock(lock);
+        }
+        else
+            retVal.setErrorMsg("Unable to get the lock to get Status of applications ");
+        return retVal;
+    }
+
+    FileLock getFileLock() {
+        FileLock lock = null;
+        int count = 5;
+        while (--count > 0) {
+            lock = getTheLock();
+            if (lock == null) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                continue;
+            }
+            break;
+        }
+        return lock;
+    }
+
+    public FileLock getTheLock() {
+        FileLock lock = null;
+        try {
+            FileChannel channel = new RandomAccessFile(lockFile, "rw").getChannel();
+            lock = channel.tryLock();
+        } catch (IOException e) {
+            lock = null;
+        }
+        return lock;
+    }
+
+    public void releaseLock(FileLock lock) {
+        try {
+            lock.release();
+        } catch (IOException e) {
+            showError("Some Error in releasing file Lock");
+        }
+    }
+
+    void launchRuntime() {
+        DataWithMsg stat = isAnyAppActive(
+                new L2AccessControl.AccessLevel[]{L2AccessControl.AccessLevel.RUNTIME,
+                        L2AccessControl.AccessLevel.INSTALLER});
+        if (stat.getStatus() == DataWithMsg.DataStat.OK) {
+            if (!stat.booleanValue) {
+                if (getAccessToLevel2(L2DFHeating.defaultLevel())) {
+                    new WaitMsg(mainF, "Starting Level2Runtime. Please wait ...", new ActInBackground() {
+                        public void doInBackground() {
+                            L2DFHeating l2 = new L2DFHeating("Furnace", true);
+                            if (l2.l2SystemReady)
+                                quit();
+                        }
+                    });
+                }
+            } else
+                showError("One of level2 Runtime/ Installer is running");
+        } else
+            showError(stat.errorMessage);
     }
 
     void launchUpdater() {
-        if (getAccessToLevel2(L2Updater.defaultLevel())) {
-            new WaitMsg(mainF, "Starting Level2Updater. Please wait ...", new ActInBackground() {
-                public void doInBackground() {
-                    L2DFHeating l2 = new L2Updater("Furnace", true);
-                    if (l2.l2SystemReady)
-                        quit();
+        DataWithMsg stat = isAnyAppActive(
+                new L2AccessControl.AccessLevel[] {L2AccessControl.AccessLevel.UPDATER,
+                        L2AccessControl.AccessLevel.EXPERT, L2AccessControl.AccessLevel.INSTALLER});
+        if (stat.getStatus() == DataWithMsg.DataStat.OK) {
+            if (!stat.booleanValue) {
+                if (getAccessToLevel2(L2Updater.defaultLevel())) {
+                    new WaitMsg(mainF, "Starting Level2Updater. Please wait ...", new ActInBackground() {
+                        public void doInBackground() {
+                            L2DFHeating l2 = new L2Updater("Furnace", true);
+                            if (l2.l2SystemReady)
+                                quit();
+                        }
+                    });
                 }
-           });
+            }
+            else
+                showError("One of level2 Updater/ Expert/ Installer is running");
         }
+        else
+            showError(stat.errorMessage);
     }
 
     void launchExpert() {
-        if (getAccessToLevel2(Level2Expert.defaultLevel())) {
-            new WaitMsg(mainF, "Starting Level2Expert. Please wait ...", new ActInBackground() {
-                public void doInBackground() {
-                    L2DFHeating l2 = new Level2Expert("Furnace", true);
-                    if (l2.l2SystemReady)
-                        quit();
+        DataWithMsg stat = isAnyAppActive(
+                new L2AccessControl.AccessLevel[]{L2AccessControl.AccessLevel.UPDATER,
+                        L2AccessControl.AccessLevel.EXPERT, L2AccessControl.AccessLevel.INSTALLER});
+        if (stat.getStatus() == DataWithMsg.DataStat.OK) {
+            if (!stat.booleanValue) {
+                if (getAccessToLevel2(Level2Expert.defaultLevel())) {
+                    new WaitMsg(mainF, "Starting Level2Expert. Please wait ...", new ActInBackground() {
+                        public void doInBackground() {
+                            L2DFHeating l2 = new Level2Expert("Furnace", true);
+                            if (l2.l2SystemReady)
+                                quit();
+                        }
+                    });
                 }
-            });
-        }
+            } else
+                showError("One of level2 Updater/ Expert/ Installer is running");
+        } else
+            showError(stat.errorMessage);
     }
 
     void launchInstaller() {
-        boolean allOK = (installerAccessControl != null);
-        if (!allOK) {
-            StatusWithMessage status = getInstallerAccessFile();
-            if (status.getDataStatus() == StatusWithMessage.DataStat.OK)
-                allOK = true;
-            else
-                showError("Unable to get Installer Access :" + status.getErrorMessage());
-        }
-        if (allOK) {
-            StatusWithMessage stm =  installerAccessControl.authenticate(Level2Installer.defaultLevel());
-            if (stm.getDataStatus() == StatusWithMessage.DataStat.OK) {
-                new WaitMsg(mainF, "Starting Level2Installer. Please wait ...", new ActInBackground() {
-                    public void doInBackground() {
-                        new Level2Installer("Furnace", true);
-                        quit();
-                    }
-                });
+        DataWithMsg stat = isAnyAppActive(
+                new L2AccessControl.AccessLevel[] {L2AccessControl.AccessLevel.EXPERT,
+                        L2AccessControl.AccessLevel.UPDATER, L2AccessControl.AccessLevel.RUNTIME});
+        if (stat.getStatus() == DataWithMsg.DataStat.OK) {
+            if (!stat.booleanValue) {
+                boolean allOK = (installerAccessControl != null);
+                if (!allOK) {
+                    StatusWithMessage status = getInstallerAccessFile();
+                    if (status.getDataStatus() == StatusWithMessage.DataStat.OK)
+                        allOK = true;
+                    else
+                        showError("Unable to get Installer Access :" + status.getErrorMessage());
+                }
+                if (allOK) {
+                    StatusWithMessage stm = installerAccessControl.authenticate(Level2Installer.defaultLevel());
+                    if (stm.getDataStatus() == StatusWithMessage.DataStat.OK) {
+                        new WaitMsg(mainF, "Starting Level2Installer. Please wait ...", new ActInBackground() {
+                            public void doInBackground() {
+                                new Level2Installer("Furnace", true);
+                                quit();
+                            }
+                        });
+                    } else
+                        showError(stm.getErrorMessage());
+                }
             }
             else
-                showError(stm.getErrorMessage());
+                showError("One of level2 Runtime/ Updater/ Expert is running");
         }
     }
 
-//    boolean getAndSaveOPCIP() {  // TODO to be removed
-//        boolean retVal = false;
-//        return retVal;
-//    }
-//
-//    boolean saveOPCIP() {   // TODO to be removed
-//        return false;
-//    }
-//
     public void showMessage(String msg) {
         showMessage("", msg);
     }

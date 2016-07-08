@@ -26,6 +26,7 @@ public class OneStripDFHProcess {
     double density = 7850;
     DFHeating dfHeating;
     public String processName;
+    public String description = "...Process Details";
     ChMaterial chMaterialThin;
     ChMaterial chMaterialThick;
     public double tempDFHExit = 620;
@@ -50,27 +51,7 @@ public class OneStripDFHProcess {
         this.processName = processName;
         chMaterialThin = vChMaterial.get(0);
         chMaterialThick = vChMaterial.get(0);
-//        editResponse = getDataFromUser(vChMaterial, inpC);
     }
-
-//    public OneStripDFHProcess(String processName, ChMaterial chMaterialThin, ChMaterial chMaterialThick,
-//                              double tempDFHExit, double thinUpperLimit) {
-//        this.processName = processName;
-//        this.chMaterialThin = chMaterialThin;
-//        this.chMaterialThick = chMaterialThick;
-//        this.tempDFHExit = tempDFHExit;
-//        this.thinUpperLimit = thinUpperLimit;
-//    }
-//
-//    public OneStripDFHProcess(DFHeating dfHeating, StripDFHProcessList existingList, String processName, String chMaterialThinName, String chMaterialThickName,
-//                              double tempDFHExit, double thinUpperLimit) {
-//        this.existingList = existingList;
-//        this.processName = processName;
-//        this.chMaterialThin = dfHeating.getSelChMaterial(chMaterialThinName);
-//        this.chMaterialThick = dfHeating.getSelChMaterial(chMaterialThickName);
-//        this.tempDFHExit = tempDFHExit;
-//        this.thinUpperLimit = thinUpperLimit;
-//    }
 
     public EditResponse.Response getEditResponse() {
         return editResponse;
@@ -193,6 +174,8 @@ public class OneStripDFHProcess {
                 try {
                     vp = XMLmv.getTag(xmlStr, "processName", 0);
                     processName = vp.val.trim();
+                    vp = XMLmv.getTag(xmlStr, "description", 0);
+                    description = vp.val.trim();
                     String thinMaterialName;
                     vp = XMLmv.getTag(xmlStr, "chMaterialThin", 0);
                     thinMaterialName = vp.val.trim();
@@ -286,6 +269,7 @@ public class OneStripDFHProcess {
 
     public StringBuffer dataInXML() {
         StringBuffer xmlStr = new StringBuffer(XMLmv.putTag("processName", processName));
+        xmlStr.append(XMLmv.putTag("description", description));
         xmlStr.append(XMLmv.putTag("chMaterialThin", "" + chMaterialThin));
         xmlStr.append(XMLmv.putTag("chMaterialThick", "" + chMaterialThick));
         xmlStr.append(XMLmv.putTag("tempDFHExit", "" + tempDFHExit));
@@ -303,6 +287,7 @@ public class OneStripDFHProcess {
     }
 
     JTextField tfProcessName;
+    JTextField tfDescription;
     JComboBox cbChMaterialThin;
     NumberTextField ntThinUpperLimit;
     JComboBox cbChMaterialThick;
@@ -362,21 +347,6 @@ public class OneStripDFHProcess {
                             }
                             else
                                 retVal.msg += tempStat.msg;
-//                            double maxExitTempAllowed = tempDFHExit + tuning.exitTempTolerance;
-//                            double minExitTempAllowed = tempDFHExit - tuning.exitTempTolerance;
-//                            double nowExitTemp = production.exitTemp;
-////                            if (nowExitTemp <= maxExitTempAllowed) {
-//                            if (nowExitTemp < maxExitTempAllowed) {
-//                                if (nowExitTemp >= minExitTempAllowed) {
-//                                    production.exitTemp = tempDFHExit;
-//                                    if (production.exitZoneFceTemp > minExitZoneTemp) {
-//                                        retVal.inError = false;
-//                                    } else
-//                                        retVal.msg += "Exit Zone Temperature Low (minimum allowed is " + tempFmt.format(minExitZoneTemp) + " C)";
-//                                } else
-//                                    retVal.msg += "Exit Temperature Low (minimum allowed is " + tempFmt.format(minExitTempAllowed) + " C)";
-//                            } else
-//                                retVal.msg += "Exit Temperature is High - must be less than " + tempFmt.format(maxExitTempAllowed) + " C)";
                         } else
                             retVal.msg += "Output too high (maximum allowed for this width is " + outputFmt.format(maxUnitOutputAllowed * chWidth / 1000) + " t/h)";
                     } else
@@ -393,8 +363,9 @@ public class OneStripDFHProcess {
     public DataListEditorPanel getEditPanel(Vector<ChMaterial> vChMaterial, InputControl inpC, DataHandler dataHandler,
                                             boolean editable, boolean startEditable) {
         tfProcessName = new JTextField(processName, 10);
-        //        tfProcessName.setEditable(false);
         tfProcessName.setName("Process Name");
+        tfDescription = new JTextField(description, 30);
+        tfDescription.setName("Process Description");
         cbChMaterialThin = new JComboBox(vChMaterial);
         cbChMaterialThin.setName("Select Material to be taken for Thin strips");
         cbChMaterialThin.setSelectedItem(chMaterialThin);
@@ -428,6 +399,7 @@ public class OneStripDFHProcess {
         DataListEditorPanel editorPanel = new DataListEditorPanel("Strip Process Data", dataHandler, editable, editable);
         // if editable, it is also deletable
         editorPanel.addItemPair(tfProcessName);
+        editorPanel.addItemPair(tfDescription);
         editorPanel.addBlank();
         editorPanel.addItemPair(cbChMaterialThin);
         editorPanel.addItemPair(ntThinUpperLimit);
@@ -451,6 +423,10 @@ public class OneStripDFHProcess {
 //        dlg.setLocation(100, 50);
         editorPanel.setVisible(true, startEditable);
         return editorPanel;
+    }
+
+    public String toString() {
+        return processName + ": " + description;
     }
 
     public ErrorStatAndMsg checkData() {
@@ -499,6 +475,7 @@ public class OneStripDFHProcess {
 
     public void noteDataFromUI() {
         processName = tfProcessName.getText().trim();
+        description = tfDescription.getText().trim();
         chMaterialThin = (ChMaterial) cbChMaterialThin.getSelectedItem();
         tempDFHExit = ntTempDFHExit.getData();
         maxExitZoneTemp = ntMaxExitZoneTemp.getData();

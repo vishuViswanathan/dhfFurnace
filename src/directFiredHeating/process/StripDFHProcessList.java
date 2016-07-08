@@ -24,11 +24,23 @@ public class StripDFHProcessList {
     InputControl inpC;
     Vector<OneStripDFHProcess> list;
     StripDFHProcessList me;
+    JComboBox<OneStripDFHProcess> cbProcess;
+
     public StripDFHProcessList(DFHeating dfHeating) {
         this.vChMaterial = dfHeating.vChMaterial;
         this.dfHeating = dfHeating;
         this.inpC = dfHeating;
         list = new Vector<OneStripDFHProcess>();
+        cbProcess = new JComboBox<OneStripDFHProcess>(list);
+        cbProcess.setPreferredSize(new Dimension(300, 20));
+    }
+
+    public String getSelectedProcessName() {
+        String retVal = "";
+        OneStripDFHProcess p = (OneStripDFHProcess)cbProcess.getSelectedItem();
+        if (p != null)
+            retVal = p.processName;
+        return retVal;
     }
 
     public void clear() {
@@ -56,6 +68,7 @@ public class StripDFHProcessList {
             lastSelectedP = dlg.getLastSelectedP();
             edited |= dlg.edited;
         } while (redo);
+        cbProcess.updateUI();
         return edited;
     }
 
@@ -115,6 +128,7 @@ public class StripDFHProcessList {
                 break oneBlk;
             }
         }
+        cbProcess.updateUI();
         return retVal;
     }
 
@@ -175,9 +189,8 @@ public class StripDFHProcessList {
         return status;
     }
 
-    boolean saveOneProcess(OneStripDFHProcess oneProcess) {
-        list.add(oneProcess);
-        return true;
+    public JComponent getListUI() {
+        return cbProcess;
     }
 
     class AddProcessDlg extends JDialog implements DataHandler{

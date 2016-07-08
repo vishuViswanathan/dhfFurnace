@@ -11,7 +11,9 @@ import directFiredHeating.process.OneStripDFHProcess;
 import directFiredHeating.process.StripDFHProcessList;
 import directFiredHeating.stripDFH.StripFurnace;
 import mvUtils.display.ErrorStatAndMsg;
+import mvUtils.display.MultiPairColPanel;
 import mvUtils.display.StatusWithMessage;
+import mvUtils.display.XLTextField;
 import mvUtils.jnlp.JNLPFileHandler;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
@@ -32,7 +34,7 @@ import java.util.Vector;
  * To change this template use File | Settings | File Templates.
  */
 public class Level2Configurator extends DFHeating {
-    public enum PreparerCommandLineArgs {
+    public enum PreparerCommandLineArgs {   // TODO not used - REMOVE
         SHOWDEBUG("-showDebug"),
         UNKNOWN("-UnKnown");
         private final String argName;
@@ -65,35 +67,30 @@ public class Level2Configurator extends DFHeating {
     }
 
     String fceDataLocation = "level2FceData/mustBeUserEntry/";
-//    StripDFHProcessList dfhProcessList;
     boolean associatedDataLoaded = false;
-    File fceDataLocationDirectory = new File(fceDataLocation);
-    String performanceExtension = "perfData";
     OfflineAccessControl accessControl;
 
     public Level2Configurator() {
         super();
         bL2Configurator = true;
+        enableSpecsSave = true;
         onProductionLine = false;
         bAllowEditDFHProcess = true;
         bAllowEditFurnaceSettings = true;
         bAllowProfileChange = true;
         bAllowManualCalculation = true;
         asApplication = true;
-        releaseDate = "20160704 16:39";
+        releaseDate = "20160706 15:00";
     }
 
     public boolean setItUp() {
         modifyJTextEdit();
         fuelList = new Vector<Fuel>();
         vChMaterial = new Vector<ChMaterial>();
+        dfhProcessList = new StripDFHProcessList(this);
         setUIDefaults();
         mainF = new JFrame();
         mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-//        if (!asJNLP && (log == null)) {
-//            log = Logger.getLogger("level2.L2DFHeating"); //DFHeating.class);
-//            // Load Log4j configurations from external file
-//        }
         try {
             accessControl = new OfflineAccessControl(asJNLP, mainF);
             mainF.setTitle("DFH Furnace - Level2 Configurator - " + releaseDate + testTitle);
@@ -103,14 +100,13 @@ public class Level2Configurator extends DFHeating {
             furnace.setTuningParams(tuningParams);
             tuningParams.bConsiderChTempProfile = true;
             createUIs(false); // without the default menuBar
+            mISetPerfTablelimits.setVisible(true);
             disableSomeUIs();
-//            getFuelAndCharge();
             setDefaultSelections();
             addMenuBar(createL2MenuBar());
-            switchPage(DFHDisplayPageType.INPUTPAGE);
             associatedDataLoaded = true;
-            dfhProcessList = new StripDFHProcessList(this);
             setTestData();
+            switchPage(DFHDisplayPageType.INPUTPAGE);
             displayIt();
 
             showMessage("The furnace has to be of " + HeatingMode.TOPBOTSTRIP + " for " + DFHTuningParams.ForProcess.STRIP +
@@ -127,8 +123,18 @@ public class Level2Configurator extends DFHeating {
             e.printStackTrace();
         }
         System.out.println("Java Version :" + System.getProperty("java.version"));
-        tfProcessName.addActionListener(new DFHProcessListener());
         return associatedDataLoaded;
+    }
+
+    protected JPanel processPanel() {
+        MultiPairColPanel jp = new MultiPairColPanel("Process");
+        jp.addItemPair("Process Name", dfhProcessList.getListUI());
+        return jp;
+    }
+
+    protected String getProcessName() {
+        processName = dfhProcessList.getSelectedProcessName();
+        return processName;
     }
 
     void disableSomeUIs() {
@@ -137,11 +143,6 @@ public class Level2Configurator extends DFHeating {
         tfExitTemp.setEnabled(false);
     }
 
-//    void getFuelAndCharge() {
-//        fuelSpecsFromFile(fceDataLocation + "FuelSpecifications.dfhSpecs");
-//        chMaterialSpecsFromFile(fceDataLocation + "ChMaterialSpecifications.dfhSpecs");
-//    }
-//
     boolean checkProfileCode(String withThis) {
         return (withThis != null) && (profileCode.equals(withThis));
     }
@@ -308,25 +309,6 @@ public class Level2Configurator extends DFHeating {
         parent().toFront();
     }
 
-    File getParticularFile(String directory, final String startName, final String extension) {
-        File selectedFile = null;
-        File folder = new File(directory);
-        File[] files = folder.listFiles(new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                if (startName != null && startName.length() > 0)
-                    return name.endsWith(extension) && name.startsWith(startName);
-                else
-                    return name.endsWith(extension);
-            }
-        });
-        if (files.length > 0) {
-            selectedFile = files[0];
-            if (files.length > 1)
-                showMessage("loading the first matching file " + files[0]);
-        }
-        return selectedFile;
-    }
-
     protected StatusWithMessage getFceFromFile() {
         StatusWithMessage retVal = super.getFceFromFile();
         if (retVal.getDataStatus() != StatusWithMessage.DataStat.WithErrorMsg) {
@@ -429,6 +411,8 @@ public class Level2Configurator extends DFHeating {
         mL2FileMenu.add(mISaveFurnace);
         mL2FileMenu.add(mIUpdateFurnace);
         mL2FileMenu.addSeparator();
+        mL2FileMenu.add(saveFuelSpecs);
+        mL2FileMenu.add(saveSteelSpecs);
         mL2FileMenu.add(mIExit);
         return mL2FileMenu;
     }
@@ -516,20 +500,20 @@ public class Level2Configurator extends DFHeating {
     }
 
     OneStripDFHProcess getDFHProcess() {
-        return getStripDFHProcess(tfProcessName.getText());
+        return getStripDFHProcess(getProcessName());
     }
 
-    class DFHProcessListener implements ActionListener  {
-        public void actionPerformed(ActionEvent e) {
-            Object o = e.getSource();
-            if (o == tfProcessName) {
-                if (getDFHProcess() == null) {
-                    showError("Process not available in DFH Process List");
-                    tfProcessName.setText("");
-                }
-            }
-        }
-    }
+//    class DFHProcessListener implements ActionListener  {
+//        public void actionPerformed(ActionEvent e) {
+//            Object o = e.getSource();
+//            if (o == tfProcessName) {
+//                if (getDFHProcess() == null) {
+//                    showError("Process not available in DFH Process List");
+//                    tfProcessName.setText("");
+//                }
+//            }
+//        }
+//    }
 
     class L2MenuListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
