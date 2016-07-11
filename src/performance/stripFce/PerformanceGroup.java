@@ -7,6 +7,7 @@ import directFiredHeating.DFHFurnace;
 import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
 import mvUtils.display.TimedMessage;
+import mvUtils.math.MoreOrLess;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 
@@ -80,11 +81,18 @@ public class PerformanceGroup implements ActionListener{
         boolean requiresInterpolCheck = false;
         int foundAt = getIndexOfSimilarPerformance(performance);
         if (foundAt >= 0) {
-            if (controller.decide("Existing Base", "Near Performance base for " +
-                    "\n" + refPerformance.get(foundAt) +
-                    "\nALREADY EXISTS!" +
-                            "\n\nDo you want to OVERWRITE it?")) {
-                // replace data
+            MoreOrLess.CompareResult compareResult =
+                    MoreOrLess.compare(refPerformance.get(foundAt).dateOfResult, performance.dateOfResult);
+            boolean overWrite = true;
+            if (compareResult == MoreOrLess.CompareResult.DATA1MORE) {
+                overWrite = controller.decide("Existing Base", "Near Performance base for " +
+                        "\n" + refPerformance.get(foundAt) +
+                        "\nof Later Date ALREADY EXISTS!" +
+                        "\n\nDo you want to OVERWRITE it?");
+            }
+            else
+                overWrite = (compareResult == MoreOrLess.CompareResult.DATA1LESS);
+            if (overWrite)  {
                 refPerformance.remove(foundAt);
                 refPerformance.add(foundAt, performance);
                 bNoted = true;
@@ -279,8 +287,9 @@ public class PerformanceGroup implements ActionListener{
         tobeSaved = false;
     }
 
-    public boolean takeDataFromXML(String xmlStr) {
-        clearData();
+    public boolean takeDataFromXML(String xmlStr, boolean append) {
+        if (!append)
+            clearData();
         ValAndPos vp;
         vp = XMLmv.getTag(xmlStr, "nRefP", 0);
         if (vp.val.length() > 0) {

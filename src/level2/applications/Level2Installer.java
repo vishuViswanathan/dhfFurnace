@@ -87,35 +87,12 @@ public class Level2Installer extends L2DFHeating {
         return L2AccessControl.AccessLevel.INSTALLER;
     }
 
-//    protected StatusWithMessage getFceFromFile() {
-//        StatusWithMessage retVal = super.getFceFromFile();
-//        if (retVal.getDataStatus() != StatusWithMessage.DataStat.WithErrorMsg) {
-//            if (isProfileCodeOK()) {
-//                String filepath = retVal.getInfoMessage();
-//                int endOfBasePath = filepath.lastIndexOf("\\");
-//                if (endOfBasePath > 0) {
-//                    String basePath = filepath.substring(0, endOfBasePath) + "\\";
-//                    if (!loadAssociatedData(basePath)) {
-//                        retVal.setErrorMessage("Some problem in reading Associated Data");
-//                    }
-//                }
-//            }
-//            else {
-//                showMessage("No ProfileCode found." +
-//                        "\n   Preparing default Zonal Fuel Range Data" +
-//                        "\n   This must be updated and saved");
-//                clearAssociatedData();
-//            }
-//        }
-//        return retVal;
-//    }
-
     protected boolean getFieldPerformanceList(String basePath) {
         boolean retVal = false;
         File file = getParticularFile(basePath, profileCode, "perfData");
         if (file != null) {
-            if (decide("Field Performace Data", "<html>Performance Data File with updated Field data is available" +
-                    "<br />   Do you want load this, overwriting Data with the Furnace Profle</html>")) {
+            if (decide("Field Performance Data", "<html>Performance Data File with updated Field data is available" +
+                    "<br />   Do you want load this, overwriting Data with the Furnace Profile</html>")) {
                 loadThePerformanceList(file);
             }
         }

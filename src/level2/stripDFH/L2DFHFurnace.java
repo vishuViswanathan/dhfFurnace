@@ -674,9 +674,9 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         return fieldResults;
     }
 
-    public boolean getFieldDataFromUser() {
-        return oneFieldResults.getDataFromUser();
-    }
+//    public boolean getFieldDataFromUser() {
+//        return oneFieldResults.getDataFromUser();
+//    }
 
     public FceSection getOneSection(boolean bBot, int nSec) {
         return ((bBot) ? botSections : topSections).get(nSec);
@@ -684,17 +684,15 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
 
     FieldResults oneFieldResults;
 
-    synchronized public boolean setFieldProductionData() {
-        if (oneFieldResults != null) {
-//            oneFieldResults.compareResults();
-            l2DFHeating.setFieldProductionData(oneFieldResults.production, oneFieldResults.commonAirTemp,
-                    oneFieldResults.commonFuelTemp);
-            return true;
-        }
-        else
-            return false;
-
-    }
+//    synchronized public boolean setFieldProductionData() {
+//        if (oneFieldResults != null) {
+//            l2DFHeating.setFieldProductionData(oneFieldResults);
+//            return true;
+//        }
+//        else
+//            return false;
+//
+//    }
 
     public FuelFiring getFuelFiring(boolean bRegen, double excessAir, double airTemp, double fuelTemp)  {
         Fuel f = l2DFHeating.getSelFuel(); // TODO considers only one fuel
@@ -886,7 +884,8 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     }
 
     void handleFieldPerformance() {
-        FieldPerformanceHandler thePerfHandler= new FieldPerformanceHandler(oneFieldResults);
+//        FieldPerformanceHandler thePerfHandler= new FieldPerformanceHandler(oneFieldResults);
+        FieldPerformanceHandler thePerfHandler= new FieldPerformanceHandler();
         Thread t = new Thread(thePerfHandler);
         t.start();
     }
@@ -1104,10 +1103,10 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     }
 
     class FieldPerformanceHandler implements Runnable {
-        FieldResults theFieldData;
-        FieldPerformanceHandler(FieldResults theFieldData) {
-            this.theFieldData = theFieldData;
-        }
+//        FieldResults theFieldData;
+//        FieldPerformanceHandler(FieldResults theFieldData) {
+//            this.theFieldData = theFieldData;
+//        }
         public void run() {
             setFieldDataBeingHandled();
             boolean response = getYesNoResponseFromLevel1("Confirm that Strip Size Data is updated", 20);
@@ -1118,7 +1117,8 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                     showErrorInLevel1("Taking Field Performance", stat.msg);
                 }
                 else {
-                    if (setFieldProductionData()) {
+//                    if (setFieldProductionData()) {
+                    if (l2DFHeating.setFieldProductionData(oneFieldResults)) {
                         setCurveSmoothening(false);
                         l2DFHeating.showMessage("Field Performance", "Evaluating from Model");
                         FceEvaluator eval1 = l2DFHeating.calculateFce(true, null);

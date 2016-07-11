@@ -2638,8 +2638,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                         break aBlock;
                     }
 //                    debug("forProc = " + forProc + ", mainF =" + mainF + ", cbFceFor = " + cbFceFor);
-                    if (forProc != null)
+                    if (forProc != null) {
                         cbFceFor.setSelectedItem(forProc);
+                        proc = forProc;
+                    }
 //                    debug("Before cbHeatingType");
                     vp = XMLmv.getTag(acTData, "cbHeatingType", 0);
 //                    debug("Before cbHeatingType.setSelectedItem");

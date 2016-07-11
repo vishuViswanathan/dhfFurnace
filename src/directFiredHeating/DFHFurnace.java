@@ -4262,12 +4262,17 @@ public class DFHFurnace {
     }
 
     public boolean takePerformanceFromXML(String xmlStr) {
+        return takePerformanceFromXML(xmlStr, false);
+    }
+
+    public boolean takePerformanceFromXML(String xmlStr, boolean append) {
         boolean retVal = false;
         ValAndPos vp;
         vp = XMLmv.getTag(xmlStr, "PerformanceData", 0);
         if (vp.val.length() > 100) { //may be some data
-            performBase = new PerformanceGroup(this, tuningParams);
-            if (performBase.takeDataFromXML(vp.val)) {
+            if ((!append) || performBase == null)
+                performBase = new PerformanceGroup(this, tuningParams);
+            if (performBase.takeDataFromXML(vp.val, append)) {
                 chTempProfAvailable = performBase.chTempProfAvailable;
                 controller.perfBaseAvailable(chTempProfAvailable);
                 retVal = true;

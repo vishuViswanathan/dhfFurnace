@@ -5,6 +5,7 @@ import basic.*;
 import directFiredHeating.*;
 import display.QueryDialog;
 import directFiredHeating.accessControl.L2AccessControl;
+import level2.fieldResults.FieldResults;
 import level2.stripDFH.L2DFHFurnace;
 import directFiredHeating.process.OneStripDFHProcess;
 import level2.common.ReadyNotedBothL2;
@@ -356,26 +357,19 @@ public class L2DFHeating extends DFHeating {
         return processName;
     }
 
+    public boolean setSelectedProcess(OneStripDFHProcess selProc) {
+        return dfhProcessList.setSelectedProcess(selProc);
+    }
+
+    public boolean setSelectedProcess(String selProc) {
+        return dfhProcessList.setSelectedProcess(selProc);
+    }
+
     protected void setDefaultSelections() {
         cbFuel.setSelectedIndex(0);
         if (cbChMaterial.getItemCount() == 1)
             cbChMaterial.setSelectedIndex(0);
     }
-
-//    boolean loadAssociatedData(String basePath) {
-//        showMessage(" call to loadAssociatedData to be modified 20160520");
-//        boolean retVal = false;
-//        getPerformanceList(basePath);
-//        dfhProcessList = new StripDFHProcessList(this);
-//        if (getStripDFHProcessList(basePath)) {
-//            if (getFurnaceSettings(basePath)) {
-//                retVal = true;
-//            } else
-//                showError("Problem in loading Furnace Settings");
-//        } else
-//            showError("Problem loading test StripDFHProcess list data");
-//        return retVal;
-//    }
 
     //---------------- Create InternalZone ----------------------------
     L2DFHZone internalZone;
@@ -422,20 +416,8 @@ public class L2DFHeating extends DFHeating {
     JMenuItem mIOPCServerIP;
     JMenuItem mIEditDFHStripProcess;
     JMenuItem mIViewDFHStripProcess;
-    //    JMenuItem mIReadDFHStripProcess;
-//    JMenuItem mISaveDFHStripProcess;
     JMenuItem mICreateFceSettings;
-//    JMenuItem mISaveFceSettings;
-//    JMenuItem mIReadFceSettings;
-
-//    JMenuItem mICreateFieldResultsData;
-//    JMenuItem mISaveFieldResultsToFile;
     JMenuItem mILoadFieldResult;
-//    JMenuItem mILevel1FieldResults;
-//    JMenuItem mISaveAsFieldResult;
-
-//    JMenuItem mIEvalForFieldProduction;
-//    JMenuItem mIEvalWithFieldCorrection;
 
     boolean l2MenuSet = false;
 
@@ -483,7 +465,6 @@ public class L2DFHeating extends DFHeating {
         L2MenuListener li = new L2MenuListener();
         menuBarLevel2 = new JMenuBar();
         menuBarLevel2.add(createL2FileMenu(li));
-//        menuBarLevel2.add(fileMenu);
         boolean bShowRuntimeData = (accessLevel == L2AccessControl.AccessLevel.RUNTIME) ||
                 (accessLevel == L2AccessControl.AccessLevel.UPDATER) ||
                 (accessLevel == L2AccessControl.AccessLevel.EXPERT);
@@ -500,7 +481,6 @@ public class L2DFHeating extends DFHeating {
             jm.add(mIShowL2Data);
             menuBarLevel2.add(jm);
         }
-//        mISetPerfTablelimits.setVisible(false);
         mIClearPerfBase.setVisible(false);
 
         if (bAllowL2Changes) {
@@ -523,8 +503,6 @@ public class L2DFHeating extends DFHeating {
             menuBarLevel2.add(perfMenu);
         }
         if (bAllowL2Changes) {
-//            menuBarLevel2.add(inputMenu);
-//            menuBarLevel2.add(resultsMenu);
             mL2Configuration = new JMenu("L2 Config");
             mIOPCServerIP = new JMenuItem("Set OPC server IP");
             mICreateFceSettings = new JMenuItem("View/Edit Zonal Fuel Range");
@@ -550,11 +528,6 @@ public class L2DFHeating extends DFHeating {
         }
 
         mAccessControl = new JMenu("Access Control");
-//        mIAddRuntimeAccess = new JMenuItem("for " + accessControl.getDescription(L2AccessControl.AccessLevel.RUNTIME));
-//        mIAddUpdaterAccess = new JMenuItem("for " + accessControl.getDescription(L2AccessControl.AccessLevel.UPDATER));
-//        mIAddRuntimeAccess.addActionListener(li);
-//        mIAddUpdaterAccess.addActionListener(li);
-
         String s = accessControl.getDescription(L2AccessControl.AccessLevel.RUNTIME);
         mRuntimeAccess = new JMenu("for " + s);
         mIAddRuntimeAccess = new JMenuItem("Add access");
@@ -609,16 +582,6 @@ public class L2DFHeating extends DFHeating {
     int SCREEENWIDTH = 1366;
     int SCREENHEIGHT = 768;
 
-//    public DFHTuningParams getTuningParams() {
-//        return tuningParams;
-//    }
-
-//    void setStripProcessLookup() { // TODO not used,to be removed
-//        dfhProcessList.clear();
-//        dfhProcessList.addOneDFHProcess(new OneStripDFHProcess(this, dfhProcessList, "FH", "CR Lo-C emiss 0.32", "CR Lo-C emiss 0.34", 550, 0.00015));
-//        dfhProcessList.addOneDFHProcess(new OneStripDFHProcess(this, dfhProcessList, "CQ", "CR Lo-C emiss 0.32", "CR Lo-C emiss 0.34", 620, 0.0002));
-//    }
-
     String stripDFHProcessListInXML() {
         return dfhProcessList.dataInXMl().toString();
     }
@@ -627,7 +590,6 @@ public class L2DFHeating extends DFHeating {
         return dfhProcessList.takeStripProcessListFromXML(xmlStr);
     }
 
-//    String stripProcExtension = "stripProc";
     File fceDataLocationDirectory = new File(fceDataLocation);
 
     String performanceExtension = "perfData";
@@ -771,7 +733,7 @@ public class L2DFHeating extends DFHeating {
                 if (iStream.read(data) > 50) {
                     String xmlStr = new String(data);
                     if (checkProfileCodeInXML(xmlStr)) {
-                        if (furnace.takePerformanceFromXML(xmlStr)) {
+                        if (furnace.takePerformanceFromXML(xmlStr, true)) {
                             if (showDebugMessages)
                                 showMessage("Performance Data loaded");
                             retVal = true;
@@ -786,37 +748,6 @@ public class L2DFHeating extends DFHeating {
         }
         return retVal;
     }
-
-//    boolean loadStripDFHProcessList() {
-//        boolean retVal = false;
-//        String title = "Read StripDFHProcess list";
-//        FileDialog fileDlg =
-//                new FileDialog(mainF, title,
-//                        FileDialog.LOAD);
-//        fileDlg.setFile("*.stripProc");
-//        fileDlg.setVisible(true);
-//        String fileName = fileDlg.getFile();
-//        if (fileName != null) {
-//            String filePath = fileDlg.getDirectory() + fileName;
-//            retVal = loadStripDFHProcessList(filePath);
-//        }
-//        parent().toFront();
-//        return retVal;
-//    }
-
-//    boolean loadStripDFHProcessList(String filePath) {
-//        boolean retVal = false;
-//        if (!filePath.equals("nullnull")) {
-////            debug("File for StripDFHProcess list :" + filePath);
-//            try {
-//                retVal = loadStripDFHProcessList(new File(filePath));
-//            } catch (Exception e) {
-//                showError("Some Problem in getting file!");
-//            }
-//        }
-//        return retVal;
-//    }
-//
 
     StatusWithMessage loadStripDFHProcessList(File file) {
         StatusWithMessage retVal = new StatusWithMessage();
@@ -937,23 +868,6 @@ public class L2DFHeating extends DFHeating {
         return files.length;
     }
 
-    boolean readFurnaceSettings() {
-        boolean retVal = false;
-        String title = "Read StripDFHProcess list";
-        FileDialog fileDlg =
-                new FileDialog(mainF, title,
-                        FileDialog.LOAD);
-        fileDlg.setFile("*.fceSett");
-        fileDlg.setVisible(true);
-        String fileName = fileDlg.getFile();
-        if (fileName != null) {
-            String filePath = fileDlg.getDirectory() + fileName;
-            retVal = loadFurnaceSettings(filePath);
-        }
-        parent().toFront();
-        return retVal;
-    }
-
     boolean loadFurnaceSettings(File file) {
         boolean retVal = false;
         try {
@@ -984,42 +898,33 @@ public class L2DFHeating extends DFHeating {
         return retVal;
     }
 
-    boolean loadFurnaceSettings(String filePath) {
-        boolean retVal = false;
-        if (!filePath.equals("nullnull")) {
-//            debug("File for Zonal Fuel Range :" + filePath);
-            try {
-                File file = new File(filePath);
-                retVal = loadFurnaceSettings(file);
-            } catch (Exception e) {
-                showError("Some Problem in getting Fuel Range file " + filePath);
-            }
-        }
-        return retVal;
-    }
-
-    boolean takeFieldResultsFromUser() {
-        return l2Furnace.getFieldDataFromUser();
-    }
-
-    ErrorStatAndMsg takeResultsFromLevel1() {
-//        if (bAllowL2Changes) {
-//            mIEvalForFieldProduction.setEnabled(false);
-//            mIEvalWithFieldCorrection.setEnabled(false);
-//        }
+//    boolean loadFurnaceSettings(String filePath) {
 //        boolean retVal = false;
-        ErrorStatAndMsg stat = l2Furnace.takeFieldResultsFromLevel1(true);
-        if (stat.inError) {
-//            if (bAllowL2Changes)
-//                mIEvalForFieldProduction.setEnabled(true);
-            l2Info("ERROR in L2DFeating.takeResultsFromLevel1, in return from takeResultsFromLevel1 " + stat.msg);
-        }
-        return stat;
-    }
+//        if (!filePath.equals("nullnull")) {
+////            debug("File for Zonal Fuel Range :" + filePath);
+//            try {
+//                File file = new File(filePath);
+//                retVal = loadFurnaceSettings(file);
+//            } catch (Exception e) {
+//                showError("Some Problem in getting Fuel Range file " + filePath);
+//            }
+//        }
+//        return retVal;
+//    }
 
+//    boolean takeFieldResultsFromUser() {
+//        return l2Furnace.getFieldDataFromUser();
+//    }
+//
+//    ErrorStatAndMsg takeResultsFromLevel1() {
+//        ErrorStatAndMsg stat = l2Furnace.takeFieldResultsFromLevel1(true);
+//        if (stat.inError) {
+//            l2Info("ERROR in L2DFeating.takeResultsFromLevel1, in return from takeResultsFromLevel1 " + stat.msg);
+//        }
+//        return stat;
+//    }
+//
     boolean loadFieldResults() {
-//        mIEvalForFieldProduction.setEnabled(false);
-//        mIEvalWithFieldCorrection.setEnabled(false);
         boolean retVal = false;
         String title = "Loading Field Results";
         FileDialog fileDlg =
@@ -1033,24 +938,8 @@ public class L2DFHeating extends DFHeating {
             retVal = loadFieldResults(filePath);
         }
         parent().toFront();
-//        if (retVal) {
-//            mIEvalForFieldProduction.setEnabled(true);
-//        }
         return retVal;
     }
-
-//    void manageExpertAccess() {
-//        if (authenticate()) {
-//            StatusWithMessage stm = accessControl.addNewUser(L2AccessControl.AccessLevel.EXPERT);
-//            if (stm.getDataStatus() == StatusWithMessage.DataStat.OK)
-//                showMessage("User added for " + accessControl.getDescription(L2AccessControl.AccessLevel.EXPERT));
-//            else
-//                showError(stm.getErrorMessage() + ": No user was added :");
-//        }
-//        else
-//            showError("You are not authorised to Add User for " +
-//                accessControl.getDescription(L2AccessControl.AccessLevel.EXPERT));
-//    }
 
     void addAccess(L2AccessControl.AccessLevel forLevel) {
         if (authenticate()) {
@@ -1078,30 +967,6 @@ public class L2DFHeating extends DFHeating {
                 accessControl.getDescription(forLevel));
     }
 
-//    void manageUpdaterAccess() {
-//        if (authenticate()) {
-//            StatusWithMessage stm = accessControl.addNewUser(L2AccessControl.AccessLevel.UPDATER);
-//            if (stm.getDataStatus() == StatusWithMessage.DataStat.OK)
-//                showMessage("User added for " + accessControl.getDescription(L2AccessControl.AccessLevel.UPDATER));
-//            else
-//                showError(stm.getErrorMessage() + ": No user was added :");
-//        } else
-//            showError("You are not authorised to add User for " +
-//                    accessControl.getDescription(L2AccessControl.AccessLevel.UPDATER));
-//    }
-//
-//    void manageRuntimeAccess() {
-//        if (authenticate()) {
-//            StatusWithMessage stm = accessControl.addNewUser(L2AccessControl.AccessLevel.RUNTIME);
-//            if (stm.getDataStatus() == StatusWithMessage.DataStat.OK)
-//                showMessage("User added for " + accessControl.getDescription(L2AccessControl.AccessLevel.RUNTIME));
-//            else
-//                showError(stm.getErrorMessage() + ": No user was added :");
-//        } else
-//            showError("You are not authorised to add User for " +
-//                    accessControl.getDescription(L2AccessControl.AccessLevel.RUNTIME));
-//    }
-
     protected boolean authenticate() {
         boolean retVal = false;
         StatusWithMessage stm = accessControl.authenticate(accessLevel, "Re-confirm authority");
@@ -1113,6 +978,13 @@ public class L2DFHeating extends DFHeating {
     public void setFieldProductionData(ProductionData pData, double airTemp, double fuelTemp) {
         fillChargeInFurnaceUI(pData);
         fillRecuDataUI(airTemp, fuelTemp);
+    }
+
+    public boolean setFieldProductionData(FieldResults oneFieldResult) {
+        fillChargeInFurnaceUI(oneFieldResult.production);
+        fillRecuDataUI(oneFieldResult.commonAirTemp, oneFieldResult.commonFuelTemp);
+        setSelectedProcess(oneFieldResult.stripDFHProc);
+        return true;
     }
 
     void fillChargeDetailsUI(Charge ch) {
@@ -1143,30 +1015,6 @@ public class L2DFHeating extends DFHeating {
         tfFuelTemp.setData(fuelTemp);
     }
 
-//    public FceEvaluator evalForFieldProduction(ResultsReadyListener resultsReadyListener) {
-////        if (bAllowL2Changes)
-////            mIEvalWithFieldCorrection.setEnabled(true);
-//        if (l2Furnace.setFieldProductionData()) {
-//            l2Furnace.setCurveSmoothening(false);
-//            return calculateFce(true, resultsReadyListener);
-//        } else
-//            return null;
-//    }
-
-//    public FceEvaluator evalForFieldProduction() {
-//        return evalForFieldProduction(null);
-//    }
-
-//    public FceEvaluator recalculateWithFieldCorrections(ResultsReadyListener resultsReadyListener) {
-//        if (l2Furnace.adjustForFieldResults()) {
-//            FceEvaluator fceEvaluator = calculateFce(false, resultsReadyListener); // without reset the loss Factors
-////            if (bAllowL2Changes)
-////                mIEvalForFieldProduction.setEnabled(false);
-//            return fceEvaluator;
-//        } else
-//            return null;
-//    }
-
     boolean loadFieldResults(String filePath) {
         boolean retVal = false;
         try {
@@ -1196,34 +1044,6 @@ public class L2DFHeating extends DFHeating {
         showError("Not ready toSave Field Results to file yet");
         return false;
     }
-
-//    boolean saveAsFieldResults() {
-//        boolean retVal = false;
-//        if (bResultsReady) {
-//            String ext = ".fResult";
-//            String filePath = getSaveFilePath("Save as Field Results", ext);
-//            if (filePath.length() > ext.length())
-//                retVal = saveAsFieldResults(filePath);
-//        }
-//        return retVal;
-//    }
-//
-//    boolean saveAsFieldResults(String filePath) {
-//        boolean retVal = false;
-//        try {
-//            BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(filePath));
-//            oStream.write(("# Field Results saved on " + dateFormat.format(new Date()) + " \n\n").getBytes());
-//
-//            oStream.write(l2Furnace.fieldResultsInXML().toString().getBytes());
-//            oStream.close();
-//            retVal = true;
-//        } catch (FileNotFoundException e) {
-//            showError("File " + filePath + " NOT found!");
-//        } catch (IOException e) {
-//            showError("Some IO Error in writing to file " + filePath + "!");
-//        }
-//        return retVal;
-//    }
 
     boolean setupUaClient() {
         boolean retVal = false;
@@ -1380,31 +1200,10 @@ public class L2DFHeating extends DFHeating {
         if ((forProcess() == DFHTuningParams.ForProcess.STRIP)) {
             OneStripDFHProcess oneProc = getDFHProcess();
             if (oneProc != null) {
-                boolean someDecisionRequired = false;
-                String toDecide = "<html><h4>Some parameters are set from Strip DFH Process <b>"+ oneProc.processName + "</b>";
                 ChMaterial material = oneProc.getChMaterial(chThickness);
-                if (material != selChMaterial) {
-                    toDecide += "<blockQuote> # Charge Material selected is not matching for thickness <b>" + (chThickness * 1000) + "mm</b>.<p>" +
-                            "&emsp;Will be changed to <b>" + material + "</b> as per DFH Strip Process</blockQuote>";
-                    someDecisionRequired = true;
-                }
-                toDecide += "<blockQuote># Exit Temperature set as <b>" + oneProc.tempDFHExit + "</b></blockQuote>" +
-                        "<blockQuote># Exit Zone Temperature set as <b>" + oneProc.getMaxExitZoneTemp() + "</b></blockQuote>" +
-                        "<blockQuote># Minimum Exit Zone Temperature set as <b>" + oneProc.getMinExitZoneTemp() + "</b></blockQuote>";
-                toDecide += "</html>";
-                boolean proceed = true;
-                String title = "Strip DFH Process";
-                if (someDecisionRequired)
-                    proceed = decide(title, toDecide);
-                else
-                    showMessage(title, toDecide);
-                if (proceed) {
-                    setChMaterial(material);
-                    setExitTemperaure(oneProc.tempDFHExit);
-                    setExitZoneTemperatures(oneProc.getMaxExitZoneTemp(), oneProc.getMinExitZoneTemp());
-                }
-                else
-                    retVal.addErrorMsg("\n   ABORTING");
+                setChMaterial(material);
+                setExitTemperaure(oneProc.tempDFHExit);
+                setExitZoneTemperatures(oneProc.getMaxExitZoneTemp(), oneProc.getMinExitZoneTemp());
             }
             else {
                 retVal.addErrorMsg("\n   Process not available in DFH Process List");

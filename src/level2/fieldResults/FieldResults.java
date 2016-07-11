@@ -27,7 +27,7 @@ import java.text.DecimalFormat;
  */
 public class FieldResults {
     L2DFHFurnace l2Furnace;
-    OneStripDFHProcess stripDFHProc;
+    public OneStripDFHProcess stripDFHProc;
     public ProductionData production;
     FuelFiring fuelFiring;
     double flueTempOut;

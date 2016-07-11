@@ -43,6 +43,20 @@ public class StripDFHProcessList {
         return retVal;
     }
 
+    public boolean setSelectedProcess(String processName) {
+        OneStripDFHProcess process = getDFHProcess(processName);
+        boolean retVal = false;
+        if (process != null) {
+            retVal = setSelectedProcess(process);
+        }
+        return retVal;
+    }
+
+    public boolean setSelectedProcess(OneStripDFHProcess process) {
+        cbProcess.setSelectedItem(process);
+        return true;
+    }
+
     public void clear() {
         list.clear();
     }
@@ -88,7 +102,6 @@ public class StripDFHProcessList {
     public OneStripDFHProcess getDFHProcess(String processName) {
         OneStripDFHProcess oneProcess = null;
         for (OneStripDFHProcess proc: list) {
-//            l2DFHeating.logInfo(String.format("Looking for %s and got %s", processName, proc.processName));
             if (proc.processName.equalsIgnoreCase(processName)) {
                 oneProcess = proc;
                 break;

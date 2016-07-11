@@ -7,6 +7,7 @@ import directFiredHeating.DFHeating;
 import directFiredHeating.process.OneStripDFHProcess;
 import display.*;
 import mvUtils.display.*;
+import mvUtils.math.MoreOrLess;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 
@@ -17,10 +18,7 @@ import java.awt.event.ActionListener;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.TimerTask;
-import java.util.Vector;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -137,24 +135,9 @@ public class Performance {
         this(production, fuel, airTemp, topZones, null, dateOfResult, furnace);
     }
 
-
-//    public StatusWithMessage setLimits( double minWidth, double maxWidth, double widthStep,
-//                              double minUnitOutput, double maxUnitOutput, double outputStep) {
-//        StatusWithMessage retVal = new StatusWithMessage();
-//        this.minWidth = minWidth;
-//        this.maxWidth = maxWidth;
-//        this.widthStep = widthStep;
-//        this.minUnitOutput = minUnitOutput;
-//        this.maxUnitOutput = maxUnitOutput;
-//        this.outputStep = outputStep;
-//        if (minWidth < maxWidth && minUnitOutput < maxUnitOutput) {
-//            bLimitsReady = true;
-//            retVal = setTableFactors();
-//        }
-//        else
-//            retVal.setErrorMessage("Error in limits for preparing Performance Table");
-//        return retVal;
-//    }
+    public MoreOrLess.CompareResult isDateOfResultSame(Performance p) {
+        return MoreOrLess.compare(dateOfResult, p.dateOfResult);
+    }
 
     public StatusWithMessage setLimits() {
         StatusWithMessage retVal = new StatusWithMessage();
