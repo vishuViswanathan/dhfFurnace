@@ -546,6 +546,13 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         return retVal;
     }
 
+    double totalFuelFlowNow() {
+        double totFlow = 0;
+        for (L2DFHZone oneZone: topL2Zones.values())
+            totFlow += oneZone.fuelFlowNow();
+        return totFlow;
+    }
+
     boolean noteConnectionsCheckStat(L2ParamGroup oneZ, ErrorStatAndMsg stat) {
         ErrorStatAndMsg oneSecStat;
         oneSecStat = oneZ.checkConnections();
@@ -665,14 +672,14 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
 //        return new StringBuilder(XMLmv.putTag("fieldResults", createOneFieldResults().dataInXML()));
 //    }
 
-    /**
-     * creates FieldResults type data from the calculated Results
-     */
-    FieldResults createOneFieldResults() {
-        FieldResults fieldResults = new FieldResults(this);
-        fieldResults.takeFromCalculations();
-        return fieldResults;
-    }
+//    /**
+//     * creates FieldResults type data from the calculated Results
+//     */
+//    FieldResults createOneFieldResults() {
+//        FieldResults fieldResults = new FieldResults(this);
+//        fieldResults.takeFromCalculations();
+//        return fieldResults;
+//    }
 
 //    public boolean getFieldDataFromUser() {
 //        return oneFieldResults.getDataFromUser();
@@ -682,7 +689,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         return ((bBot) ? botSections : topSections).get(nSec);
     }
 
-    FieldResults oneFieldResults;
+//    FieldResults oneFieldResults;
 
 //    synchronized public boolean setFieldProductionData() {
 //        if (oneFieldResults != null) {
@@ -702,46 +709,46 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             return null;
     }
 
-    public boolean adjustForFieldResults() {
-        if (oneFieldResults != null) {
-            return oneFieldResults.adjustForFieldResults();
-        }
-        else
-            return false;
-    }
+//    public boolean adjustForFieldResults() {
+//        if (oneFieldResults != null) {
+//            return oneFieldResults.adjustForFieldResults();
+//        }
+//        else
+//            return false;
+//    }
 
-     public boolean takeFieldResultsFromXML(String xmlStr) {
-        boolean retVal = false;
-        ValAndPos vp;
-        vp = XMLmv.getTag(xmlStr, "fieldResults", 0);
-        if (vp.val.length() > 10) {
-            oneFieldResults = new FieldResults(this, xmlStr);
-            retVal = !oneFieldResults.inError;
-            if (!retVal)
-                controller.showError(oneFieldResults.errMsg);
-        }
-        else
-            controller.showError("Field Results data NOT found!");
-        return retVal;
-    }
+//     public boolean takeFieldResultsFromXML(String xmlStr) {
+//        boolean retVal = false;
+//        ValAndPos vp;
+//        vp = XMLmv.getTag(xmlStr, "fieldResults", 0);
+//        if (vp.val.length() > 10) {
+//            oneFieldResults = new FieldResults(this, xmlStr);
+//            retVal = !oneFieldResults.inError;
+//            if (!retVal)
+//                controller.showError(oneFieldResults.errMsg);
+//        }
+//        else
+//            controller.showError("Field Results data NOT found!");
+//        return retVal;
+//    }
 
-    /**
-     *
-     * @param withStripData  this is required only for taking results from Level1
-     * @return
-     */
-    public ErrorStatAndMsg takeFieldResultsFromLevel1(boolean withStripData) {
-        oneFieldResults = new FieldResults(this, withStripData);
-        if (oneFieldResults.inError)
-            return new ErrorStatAndMsg(true, oneFieldResults.errMsg);
-        else {
-            if (withStripData) {
-                return oneFieldResults.processOkForFieldResults();
-            }
-            else
-                return new ErrorStatAndMsg(); // all ok
-        }
-    }
+//    /**
+//     *
+//     * @param withStripData  this is required only for taking results from Level1
+//     * @return
+//     */
+//    public ErrorStatAndMsg takeFieldResultsFromLevel1(boolean withStripData) {
+//        oneFieldResults = new FieldResults(this, withStripData);
+//        if (oneFieldResults.inError)
+//            return new ErrorStatAndMsg(true, oneFieldResults.errMsg);
+//        else {
+//            if (withStripData) {
+//                return oneFieldResults.processOkForFieldResults();
+//            }
+//            else
+//                return new ErrorStatAndMsg(); // all ok
+//        }
+//    }
 
     public HeatExchProps getAirHeatExchProps() {
         return airRecu.getHeatExchProps(recuCounterFlow.isSelected());
@@ -778,19 +785,20 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     }
 
     public DataWithMsg getSpeedWithFurnaceFuelStatus(L2ZonalFuelProfile zFP) {
-        double totFuel = oneFieldResults.totFuel(); // oneFieldResults already read
+        double totFuel = totalFuelFlowNow();
+        logTrace("total fuel = " + totFuel);
         return zFP.recommendedSpeed(totFuel, false);
     }
 
-    public double getOutputWithFurnaceTemperatureStatus() {
-        ErrorStatAndMsg response = takeFieldResultsFromLevel1(false);
-        if (response.inError) {
-            logInfo("stripSpeedUpdate: Facing some problem in reading furnace field data: " + response.msg);
-        }
-        else {
-        }
-        return 0;
-    }
+//    public double getOutputWithFurnaceTemperatureStatus() {
+//        ErrorStatAndMsg response = takeFieldResultsFromLevel1(false);
+//        if (response.inError) {
+//            logInfo("stripSpeedUpdate: Facing some problem in reading furnace field data: " + response.msg);
+//        }
+//        else {
+//        }
+//        return 0;
+//    }
 
     public double getOutputWithFurnaceTemperatureStatus(Performance refP, double stripWidth, double stripThick) {
 //        long stTimeNano = System.nanoTime();
@@ -799,23 +807,23 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         ChargeStatus chStatus = new ChargeStatus(ch, 0, exitTempRequired);
         double outputAssumed = 0;
         tuningParams.setSelectedProc(controller.proc);
-        ErrorStatAndMsg response = takeFieldResultsFromLevel1(false);
-        if (response.inError) {
-            logInfo("Facing some problem in reading furnace field data: " + response.msg);
+        FieldResults fieldData = new FieldResults(this, false);
+        if (fieldData.inError)   {
+            logInfo("Facing some problem in reading furnace field data: " + fieldData.errMsg);
         }
         else {
-            outputAssumed = getOutputWithFurnaceTemperatureStatus(chStatus, refP, exitTempRequired);
+            outputAssumed = getOutputWithFurnaceTemperatureStatus(fieldData, chStatus, refP, exitTempRequired);
         }
         return outputAssumed;
     }
 
-    public double getOutputWithFurnaceTemperatureStatus(ChargeStatus chStatus, Performance refP, double exitTempRequired) {
+    public double getOutputWithFurnaceTemperatureStatus(FieldResults fieldData, ChargeStatus chStatus, Performance refP, double exitTempRequired) {
         long stTimeNano = System.nanoTime();
         double outputAssumed = 0;
         this.calculStep = controller.calculStep;
         setProduction(chStatus.getProductionData());
         if (prepareSlots()) {
-            prepareSlotsWithTempO();
+            prepareSlotsWithTempO(fieldData);
             double tempAllowance = 2;
             outputAssumed = refP.unitOutput * chStatus.getProductionData().charge.getLength();
             boolean done = false;
@@ -847,8 +855,8 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         return outputAssumed;
     }
 
-    void prepareSlotsWithTempO() {
-        oneFieldResults.copyTempAtTCtoSection();
+    void prepareSlotsWithTempO(FieldResults results) {
+        results.copyTempAtTCtoSection();
         setTempOForAllSlots();
     }
 
@@ -1112,13 +1120,25 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             boolean response = getYesNoResponseFromLevel1("Confirm that Strip Size Data is updated", 20);
             logTrace("L2 " + ((response) ? "Responded " : "did not Respond ") + "to Confirm-Strip-Data query");
             if ((response) && (l2YesNoQuery.getValue(Tag.TagName.Response).booleanValue)) {
-                ErrorStatAndMsg stat = takeFieldResultsFromLevel1(true); // l2DFHeating.takeResultsFromLevel1();
-                if (stat.inError) {
-                    showErrorInLevel1("Taking Field Performance", stat.msg);
+                boolean canContinue = true;
+                FieldResults theFieldResults = new FieldResults(L2DFHFurnace.this, true);    // TODO does this work?
+                if (theFieldResults.inError) {
+                    canContinue = false;
+                    logError("Getting Field Results: " + theFieldResults.errMsg);
                 }
-                else {
+                else  {
+                    ErrorStatAndMsg dataOkStat =  theFieldResults.processOkForFieldResults();
+                    if (dataOkStat.inError) {
+                        canContinue = false;
+                        logError("Checking Field Data: " + dataOkStat.msg);
+                    }
+                }
+                if (theFieldResults.inError || theFieldResults.processOkForFieldResults().inError) {
+                    showErrorInLevel1("Taking Field Performance");
+                }
+                if (canContinue) {
 //                    if (setFieldProductionData()) {
-                    if (l2DFHeating.setFieldProductionData(oneFieldResults)) {
+                    if (l2DFHeating.setFieldProductionData(theFieldResults)) {
                         setCurveSmoothening(false);
                         l2DFHeating.showMessage("Field Performance", "Evaluating from Model");
                         FceEvaluator eval1 = l2DFHeating.calculateFce(true, null);
@@ -1126,7 +1146,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                             try {
                                 eval1.awaitThreadToExit();
                                 if (eval1.healthyExit()) {
-                                    if (adjustForFieldResults()) {
+                                    if (theFieldResults.adjustForFieldResults()) { // was (adjustForFieldResults()) {
                                         FceEvaluator eval2 = l2DFHeating.calculateFce(false, null); // without reset the loss Factors
                                         if (eval2 != null) {
                                             eval2.awaitThreadToExit();

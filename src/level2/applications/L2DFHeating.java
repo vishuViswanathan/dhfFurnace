@@ -417,7 +417,7 @@ public class L2DFHeating extends DFHeating {
     JMenuItem mIEditDFHStripProcess;
     JMenuItem mIViewDFHStripProcess;
     JMenuItem mICreateFceSettings;
-    JMenuItem mILoadFieldResult;
+//    JMenuItem mILoadFieldResult;
 
     boolean l2MenuSet = false;
 
@@ -924,22 +924,22 @@ public class L2DFHeating extends DFHeating {
 //        return stat;
 //    }
 //
-    boolean loadFieldResults() {
-        boolean retVal = false;
-        String title = "Loading Field Results";
-        FileDialog fileDlg =
-                new FileDialog(mainF, title,
-                        FileDialog.LOAD);
-        fileDlg.setFile("*.fResult");
-        fileDlg.setVisible(true);
-        String fileName = fileDlg.getFile();
-        if (fileName != null) {
-            String filePath = fileDlg.getDirectory() + fileName;
-            retVal = loadFieldResults(filePath);
-        }
-        parent().toFront();
-        return retVal;
-    }
+//    boolean loadFieldResults() {
+//        boolean retVal = false;
+//        String title = "Loading Field Results";
+//        FileDialog fileDlg =
+//                new FileDialog(mainF, title,
+//                        FileDialog.LOAD);
+//        fileDlg.setFile("*.fResult");
+//        fileDlg.setVisible(true);
+//        String fileName = fileDlg.getFile();
+//        if (fileName != null) {
+//            String filePath = fileDlg.getDirectory() + fileName;
+//            retVal = loadFieldResults(filePath);
+//        }
+//        parent().toFront();
+//        return retVal;
+//    }
 
     void addAccess(L2AccessControl.AccessLevel forLevel) {
         if (authenticate()) {
@@ -1015,30 +1015,30 @@ public class L2DFHeating extends DFHeating {
         tfFuelTemp.setData(fuelTemp);
     }
 
-    boolean loadFieldResults(String filePath) {
-        boolean retVal = false;
-        try {
-            BufferedInputStream iStream = new BufferedInputStream(new FileInputStream(filePath));
-            //           FileInputStream iStream = new FileInputStream(fileName);
-            File f = new File(filePath);
-            long len = f.length();
-            if (len > 50 && len < 10000) {
-                int iLen = (int) len;
-                byte[] data = new byte[iLen + 10];
-                if (iStream.read(data) > 50) {
-                    if (l2Furnace.takeFieldResultsFromXML(new String(data))) {
-                        showMessage("Field results loaded");
-                        retVal = true;
-                    }
-                }
-                iStream.close();
-            } else
-                showError("File size " + len + " for " + filePath);
-        } catch (Exception e) {
-            showError("Some Problem in getting file!");
-        }
-        return retVal;
-    }
+//    boolean loadFieldResults(String filePath) {
+//        boolean retVal = false;
+//        try {
+//            BufferedInputStream iStream = new BufferedInputStream(new FileInputStream(filePath));
+//            //           FileInputStream iStream = new FileInputStream(fileName);
+//            File f = new File(filePath);
+//            long len = f.length();
+//            if (len > 50 && len < 10000) {
+//                int iLen = (int) len;
+//                byte[] data = new byte[iLen + 10];
+//                if (iStream.read(data) > 50) {
+//                    if (l2Furnace.takeFieldResultsFromXML(new String(data))) {
+//                        showMessage("Field results loaded");
+//                        retVal = true;
+//                    }
+//                }
+//                iStream.close();
+//            } else
+//                showError("File size " + len + " for " + filePath);
+//        } catch (Exception e) {
+//            showError("Some Problem in getting file!");
+//        }
+//        return retVal;
+//    }
 
     boolean saveFieldResultsToFile() {
         showError("Not ready toSave Field Results to file yet");
@@ -1774,8 +1774,8 @@ public class L2DFHeating extends DFHeating {
 //                saveAsFieldResults();
 //            else if (caller == mILevel1FieldResults)
 //                takeResultsFromLevel1();
-            else if (caller == mILoadFieldResult)
-                loadFieldResults();
+//            else if (caller == mILoadFieldResult)
+//                loadFieldResults();
 //            else if (caller == mIEvalForFieldProduction)
 //                evalForFieldProduction();
 //            else if (caller == mIEvalWithFieldCorrection)

@@ -107,6 +107,10 @@ public class L2DFHZone extends L2ParamGroup {
                 monitoredTags.put(tag.getMonitoredDataItem(), tag);
     }
 
+    public double fuelFlowNow() {
+        return getValue(Parameter.FuelFlow, Tag.TagName.PV).floatValue;
+    }
+
     public boolean setFuelCharacteristic(L2ZonalFuelProfile zFP) {
         boolean retVal = true;
         double[][] fuelTable = zFP.oneZoneFuelArray(theSection.secNum - 1, theSection.botSection);
