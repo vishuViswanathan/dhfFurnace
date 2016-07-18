@@ -91,7 +91,7 @@ public class PerformanceGroup implements ActionListener{
                         "\n\nDo you want to OVERWRITE it?");
             }
             else
-                overWrite = (compareResult == MoreOrLess.CompareResult.DATA1LESS);
+                overWrite = true;  // (compareResult == MoreOrLess.CompareResult.DATA1LESS or EQUAL);
             if (overWrite)  {
                 refPerformance.remove(foundAt);
                 refPerformance.add(foundAt, performance);
@@ -115,6 +115,10 @@ public class PerformanceGroup implements ActionListener{
                 checkIfCanInterpolate();
         }
         return bNoted;
+    }
+
+    public void markToBeSaved(boolean tobeSaved) {
+        this.tobeSaved = tobeSaved;
     }
 
     public boolean isValid() {

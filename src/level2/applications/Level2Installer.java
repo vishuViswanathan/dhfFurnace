@@ -91,9 +91,12 @@ public class Level2Installer extends L2DFHeating {
         boolean retVal = false;
         File file = getParticularFile(basePath, profileCode, "perfData");
         if (file != null) {
-            if (decide("Field Performance Data", "<html>Performance Data File with updated Field data is available" +
+            if (decide("Field Performance Data", "<html>Fiel-updated Performance Data File is available" +
                     "<br />   Do you want load this, overwriting Data with the Furnace Profile</html>")) {
                 loadThePerformanceList(file);
+                markThisFileAsBak(file);
+                showMessage("Field Performance Data", "<html>Combined the Field Performance with the data with Furnace Profile." +
+                        "<br />The existing Field-updated Performance file is marked as *.bak</html>");
             }
         }
         return retVal;

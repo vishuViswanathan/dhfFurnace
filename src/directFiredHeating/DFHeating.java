@@ -413,15 +413,15 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
          }
     }
 
+
+    protected void disableSomeUIs() {
+    }
+
     void enableDataEntry(boolean ena) {
         ena &= bAllowManualCalculation;
         if (ena)
             furnace.resetSections();
         titleAndFceCommon.setEnabled(ena && bAllowProfileChange);
-//        tfReference.setEditable(ena && !onProductionLine);
-//        tfFceTitle.setEditable(ena && !onProductionLine);
-//        tfCustomer.setEditable(ena && !onProductionLine);
-//        ntfWidth.setEditable(ena && !onProductionLine);
 
         cbChType.setEnabled((furnaceFor != DFHTuningParams.FurnaceFor.STRIP) && ena && bAllowProfileChange);
         tfChLength.setEditable(ena);
@@ -438,13 +438,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         tfAmbTemp.setEditable(ena  && bAllowProfileChange);
         tfAirTemp.setEditable(ena);
         tfCalculStep.setEditable(ena && bAllowProfileChange);
-//        tfExcessAir.setEditable(ena);
-//        cbFceFor.setEnabled(ena && !onProductionLine);
-//        cbHeatingMode.setEnabled(ena && !onProductionLine);
-//        cbFuel.setEnabled(ena && !onProductionLine);
         cbChMaterial.setEnabled(ena);
 
-//        if (tfFuelTemp.isEnabled())
         tfFuelTemp.setEditable(ena);
 
         ntdeltaTAirFromRecu.setEditable(ena && bAllowProfileChange);
@@ -465,13 +460,11 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         pbCalculate.setEnabled(ena);
         bDataEntryON = ena;
         if (ena) {
-//            if (saveForFE != null)
-//                saveForFE.setEnabled(false && !onProductionLine);
             saveForTFM.setEnabled(false && !onProductionLine);
             saveToXL.setEnabled(false);
         }
         tuningParams.enableDataEntry(ena && bAllowProfileChange);
-//        enableResultsMenu(false);
+        disableSomeUIs();
     }
 
     protected void setTestData() {
@@ -481,7 +474,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         addLossType("1004", "Charging End Loss", "" + 30000, "FIXED", "NONE");
         addLossType("1005", "Discharge End Loss", "" + 60000, "FIXED", "NONE");
 
-//        cbHeatingType.setSelectedItem("TOP AND BOTTOM FIRED");
         cbHeatingMode.setSelectedItem("TOP AND BOTTOM FIRED");
         furnace.changeSubSecData(false, 0, 0, 2.0, 0.9, 0.9, 0);
         furnace.assignLoss(0, 0, false, 1005);

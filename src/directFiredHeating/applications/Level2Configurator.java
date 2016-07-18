@@ -103,7 +103,7 @@ public class Level2Configurator extends DFHeating {
         return processName;
     }
 
-    void disableSomeUIs() {
+    protected void disableSomeUIs() {
         tfMinExitZoneFceTemp.setEnabled(false);
         tfExitZoneFceTemp.setEnabled(false);
         tfExitTemp.setEnabled(false);

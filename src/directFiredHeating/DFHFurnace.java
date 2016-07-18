@@ -4014,6 +4014,7 @@ public class DFHFurnace {
             if (performBase.takeDataFromXML(vp.val, append)) {
                 chTempProfAvailable = performBase.chTempProfAvailable;
                 controller.perfBaseAvailable(chTempProfAvailable);
+                performBase.markToBeSaved(append);
                 retVal = true;
             } else {
                 showError("Some problem in reading Performance Data");

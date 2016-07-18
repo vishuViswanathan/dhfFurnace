@@ -276,6 +276,7 @@ public class L2DFHeating extends DFHeating {
                 switchPage(DFHDisplayPageType.INPUTPAGE);
                 StatusWithMessage statL2FceFile = getL2FceFromFile();
                 if (statL2FceFile.getDataStatus() != StatusWithMessage.DataStat.WithErrorMsg) {
+                    disableSomeUIs();
                     if (!onProductionLine || setupUaClient()) {
                         if (!onProductionLine || l2Furnace.basicConnectionToLevel1(uaClient)) {
                             StatusWithMessage status = l2Furnace.checkAndNoteAccessLevel();
@@ -593,7 +594,7 @@ public class L2DFHeating extends DFHeating {
 
     String performanceExtension = "perfData";
 
-    public boolean savePerformanceDataToFile() {
+    boolean savePerformanceDataToFile() {   // only called by updatePerformanceDtaToFile after getting fileLock
         boolean retVal = false;
         if (isProfileCodeOK()) {
             FileChooserWithOptions fileDlg = new FileChooserWithOptions("Save Performance Data",
@@ -739,6 +740,7 @@ public class L2DFHeating extends DFHeating {
                     } else
                         showError("mismatch in Performance Data file");
                 }
+                iStream.close();
             } else
                 showError("File size " + len + " for " + file);
         } catch (Exception e) {
@@ -809,42 +811,42 @@ public class L2DFHeating extends DFHeating {
     FileSystemView currentView;
     String fceSettExtension = "fceSett";
 
-    boolean saveFurnaceSettings() {
-        boolean retVal = false;
-        if (isProfileCodeOK()) {
-            String title = "Save Zonal Fuel Range";
-            FileChooserWithOptions fileDlg = new FileChooserWithOptions(title, "Zonal Fuel Range (*." + fceSettExtension + ")", fceSettExtension);
-            fileDlg.setSelectedFile(new File(profileCode + " Zonal Fuel Range." + fceSettExtension));
-            fileDlg.setCurrentDirectory(fceDataLocationDirectory);
-            fileDlg.setStartWithString(profileCode);
-            if (currentView != null)
-                fileDlg.setFileSystemView(currentView);
-            if (fileDlg.showSaveDialog(parent()) == JFileChooser.APPROVE_OPTION) {
-                File file = fileDlg.getSelectedFile();
-                if (fileDlg.isItDuplicate()) {
-                    String fName = file.getAbsolutePath();
-                    markThisFileAsBak(file);
-                    file = new File(fName);
-                }
-                deleteParticularFiles("" + fceDataLocation, profileCode, fceSettExtension);
-                try {
-                    BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(file));
-                    oStream.write(("# Zonal Fuel Range saved on " + dateFormat.format(new Date()) + " \n\n").getBytes());
-                    oStream.write((profileCodeInXML() + l2Furnace.fceSettingsInXML()).getBytes());
-                    oStream.close();
-                    retVal = true;
-                } catch (FileNotFoundException e) {
-                    showError("File " + file + " NOT found!");
-                } catch (IOException e) {
-                    showError("Some IO Error in writing to file " + file + "!");
-                }
-            }
-            currentView = fileDlg.getFileSystemView();
-        } else {
-            showError("Save Profile before saving Zonal Fuel Range");
-        }
-        return retVal;
-    }
+//    boolean saveFurnaceSettings() {
+//        boolean retVal = false;
+//        if (isProfileCodeOK()) {
+//            String title = "Save Zonal Fuel Range";
+//            FileChooserWithOptions fileDlg = new FileChooserWithOptions(title, "Zonal Fuel Range (*." + fceSettExtension + ")", fceSettExtension);
+//            fileDlg.setSelectedFile(new File(profileCode + " Zonal Fuel Range." + fceSettExtension));
+//            fileDlg.setCurrentDirectory(fceDataLocationDirectory);
+//            fileDlg.setStartWithString(profileCode);
+//            if (currentView != null)
+//                fileDlg.setFileSystemView(currentView);
+//            if (fileDlg.showSaveDialog(parent()) == JFileChooser.APPROVE_OPTION) {
+//                File file = fileDlg.getSelectedFile();
+//                if (fileDlg.isItDuplicate()) {
+//                    String fName = file.getAbsolutePath();
+//                    markThisFileAsBak(file);
+//                    file = new File(fName);
+//                }
+//                deleteParticularFiles("" + fceDataLocation, profileCode, fceSettExtension);
+//                try {
+//                    BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(file));
+//                    oStream.write(("# Zonal Fuel Range saved on " + dateFormat.format(new Date()) + " \n\n").getBytes());
+//                    oStream.write((profileCodeInXML() + l2Furnace.fceSettingsInXML()).getBytes());
+//                    oStream.close();
+//                    retVal = true;
+//                } catch (FileNotFoundException e) {
+//                    showError("File " + file + " NOT found!");
+//                } catch (IOException e) {
+//                    showError("Some IO Error in writing to file " + file + "!");
+//                }
+//            }
+//            currentView = fileDlg.getFileSystemView();
+//        } else {
+//            showError("Save Profile before saving Zonal Fuel Range");
+//        }
+//        return retVal;
+//    }
 
     void markThisFileAsBak(File file) {
         String bakFilefullName = file.getAbsolutePath() + ".bak";
@@ -1193,7 +1195,52 @@ public class L2DFHeating extends DFHeating {
 //        return getStripDFHProcess(getProcessName());
 //    }
 
+    protected void disableSomeUIs() {
+        tfMinExitZoneFceTemp.setEnabled(false);
+        tfExitZoneFceTemp.setEnabled(false);
+        tfExitTemp.setEnabled(false);
+        cbChMaterial.setEnabled(false);
+    }
+
     protected ErrorStatAndMsg isChargeInFceOK() {    // TODO 20160622 considered that UI is already read
+        ErrorStatAndMsg retVal = super.isChargeInFceOK();
+        if ((furnaceFor() == DFHTuningParams.FurnaceFor.STRIP)) {
+            OneStripDFHProcess oneProc = getDFHProcess();
+            if (oneProc != null) {
+                boolean someDecisionRequired = false;
+                String toDecide = "<html><h4>Some parameters are set from Strip DFH Process <b>"+ oneProc.processName + "</b>";
+                ChMaterial material = oneProc.getChMaterial(chThickness);
+                if (material != selChMaterial) {
+                    toDecide += "<blockQuote> # Charge Material selected is not matching for thickness <b>" + (chThickness * 1000) + "mm</b>.<p>" +
+                            "&emsp;Will be changed to <b>" + material + "</b> as per DFH Strip Process</blockQuote>";
+                    someDecisionRequired = true;
+                }
+                toDecide += "<blockQuote># Exit Temperature set as <b>" + oneProc.tempDFHExit + "</b></blockQuote>" +
+                        "<blockQuote># Exit Zone Temperature set as <b>" + oneProc.getMaxExitZoneTemp() + "</b></blockQuote>" +
+                        "<blockQuote># Minimum Exit Zone Temperature set as <b>" + oneProc.getMinExitZoneTemp() + "</b></blockQuote>";
+                toDecide += "</html>";
+                boolean proceed = true;
+                String title = "Strip DFH Process";
+                if (someDecisionRequired)
+                    proceed = decide(title, toDecide);
+                else
+                    showMessage(title, toDecide);
+                if (proceed) {
+                    setChMaterial(material);
+                    setExitTemperaure(oneProc.tempDFHExit);
+                    setExitZoneTemperatures(oneProc.getMaxExitZoneTemp(), oneProc.getMinExitZoneTemp());
+                }
+                else
+                    retVal.addErrorMsg("\n   ABORTING");
+            }
+            else {
+                retVal.addErrorMsg("\n   Process not available in DFH Process List");
+            }
+        }
+        return retVal;
+    }
+
+    protected ErrorStatAndMsg isChargeInFceOKOLD() {    // TODO 20160622 considered that UI is already read
         ErrorStatAndMsg retVal = super.isChargeInFceOK();
         if ((furnaceFor() == DFHTuningParams.FurnaceFor.STRIP)) {
             OneStripDFHProcess oneProc = getDFHProcess();
