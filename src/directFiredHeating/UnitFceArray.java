@@ -52,15 +52,15 @@ public class UnitFceArray {
     }
 
     int colFceTemp = 0, colGasTemp = 0, colChTempMean = 0;
-    protected DFHTuningParams.ForProcess forProcess;
+    protected DFHTuningParams.FurnaceFor furnaceFor;
 
-    public UnitFceArray(boolean bBot, DFHTuningParams.ForProcess forProcess) {
+    public UnitFceArray(boolean bBot, DFHTuningParams.FurnaceFor furnaceFor) {
         this.bBot = bBot;
-        this.forProcess = forProcess;
+        this.furnaceFor = furnaceFor;
     }
 
-    public UnitFceArray(boolean bBot, Vector<UnitFurnace> vUfs, DFHTuningParams.ForProcess forProcess){
-        this(bBot, forProcess);
+    public UnitFceArray(boolean bBot, Vector<UnitFurnace> vUfs, DFHTuningParams.FurnaceFor furnaceFor){
+        this(bBot, furnaceFor);
         this.vUfs = vUfs;
 //        this.bBot = bBot;
 //        this.forProcess = forProcess;
@@ -81,7 +81,7 @@ public class UnitFceArray {
             colFceTemp = fceT.colNum;
             ColNumAndData chSurfT = null;
             ColNumAndData chCoreT = null;
-            if (forProcess != DFHTuningParams.ForProcess.STRIP) {
+            if (furnaceFor != DFHTuningParams.FurnaceFor.STRIP) {
                 chSurfT = new ColNumAndData(suffix + "ChSurfTemp", "#,###", Color.yellow);
                 chCoreT = new ColNumAndData(suffix + "ChCoreTemp", "#,###", Color.cyan);
             }
@@ -114,7 +114,7 @@ public class UnitFceArray {
                  uf = vUfs.get(u);
                  gasT.addData(u, uf.dpTempG);
                  fceT.addData(u, uf.dpTempO);
-                 if (forProcess != DFHTuningParams.ForProcess.STRIP) {
+                 if (furnaceFor != DFHTuningParams.FurnaceFor.STRIP) {
                      chSurfT.addData(u, uf.dpTempWO);
                      chCoreT.addData(u, uf.dpTempWcore);
                  }
@@ -134,7 +134,7 @@ public class UnitFceArray {
             }
             gasT.fillMultiColData();
             fceT.fillMultiColData();
-            if (forProcess != DFHTuningParams.ForProcess.STRIP) {
+            if (furnaceFor != DFHTuningParams.FurnaceFor.STRIP) {
                 chSurfT.fillMultiColData();
                 chCoreT.fillMultiColData();
             }

@@ -2,7 +2,6 @@ package directFiredHeating.applications;
 
 import basic.ChMaterial;
 import basic.Fuel;
-import directFiredHeating.DFHFurnace;
 import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
 import directFiredHeating.accessControl.L2AccessControl;
@@ -13,7 +12,6 @@ import directFiredHeating.stripDFH.StripFurnace;
 import mvUtils.display.ErrorStatAndMsg;
 import mvUtils.display.MultiPairColPanel;
 import mvUtils.display.StatusWithMessage;
-import mvUtils.display.XLTextField;
 import mvUtils.jnlp.JNLPFileHandler;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
@@ -24,7 +22,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.text.DecimalFormat;
-import java.util.Observable;
 import java.util.Vector;
 
 /**
@@ -34,37 +31,6 @@ import java.util.Vector;
  * To change this template use File | Settings | File Templates.
  */
 public class Level2Configurator extends DFHeating {
-    public enum PreparerCommandLineArgs {   // TODO not used - REMOVE
-        SHOWDEBUG("-showDebug"),
-        UNKNOWN("-UnKnown");
-        private final String argName;
-
-        PreparerCommandLineArgs(String argName) {
-            this.argName = argName;
-        }
-
-        public String getValue() {
-            return name();
-        }
-
-        @Override
-        public String toString() {
-            return argName;
-        }
-
-        public static PreparerCommandLineArgs getEnum(String text) {
-            PreparerCommandLineArgs retVal = UNKNOWN;
-            if (text != null) {
-                for (PreparerCommandLineArgs b : PreparerCommandLineArgs.values()) {
-                    if (text.equalsIgnoreCase(b.argName)) {
-                        retVal = b;
-                        break;
-                    }
-                }
-            }
-            return retVal;
-        }
-    }
 
     String fceDataLocation = "level2FceData/mustBeUserEntry/";
     boolean associatedDataLoaded = false;
@@ -109,7 +75,7 @@ public class Level2Configurator extends DFHeating {
             switchPage(DFHDisplayPageType.INPUTPAGE);
             displayIt();
 
-            showMessage("The furnace has to be of " + HeatingMode.TOPBOTSTRIP + " for " + DFHTuningParams.ForProcess.STRIP +
+            showMessage("The furnace has to be of " + HeatingMode.TOPBOTSTRIP + " for " + DFHTuningParams.FurnaceFor.STRIP +
                     "\n\nIt is the responsibility of the user to ensure data integrity among:" +
                     "\n      1) Profile including Fuel type " +
                     "\n      2) IP address of OPC server  '" + mL2Configuration.getText() + "'" +
@@ -159,7 +125,7 @@ public class Level2Configurator extends DFHeating {
 
     protected ErrorStatAndMsg isChargeInFceOK() {    // TODO 20160622 considered that UI is already read
         ErrorStatAndMsg retVal = super.isChargeInFceOK();
-        if ((forProcess() == DFHTuningParams.ForProcess.STRIP)) {
+        if ((furnaceFor() == DFHTuningParams.FurnaceFor.STRIP)) {
             OneStripDFHProcess oneProc = getDFHProcess();
             if (oneProc != null) {
                 boolean someDecisionRequired = false;
@@ -217,7 +183,7 @@ public class Level2Configurator extends DFHeating {
         profileCode = vp.val;
         if (isProfileCodeOK() || bL2Configurator) {
             retVal = super.takeProfileDataFromXML(xmlStr, true, HeatingMode.TOPBOTSTRIP,
-                    DFHTuningParams.ForProcess.STRIP);
+                    DFHTuningParams.FurnaceFor.STRIP);
             if (retVal.getDataStatus() == StatusWithMessage.DataStat.OK) {
                 furnace.clearAssociatedData();
                 vp = XMLmv.getTag(xmlStr, "FuelSettings");
@@ -499,10 +465,10 @@ public class Level2Configurator extends DFHeating {
             showError(response.getErrorMessage());
     }
 
-    OneStripDFHProcess getDFHProcess() {
-        return getStripDFHProcess(getProcessName());
-    }
-
+//    OneStripDFHProcess getDFHProcess() {
+//        return getStripDFHProcess(getProcessName());
+//    }
+//
 //    class DFHProcessListener implements ActionListener  {
 //        public void actionPerformed(ActionEvent e) {
 //            Object o = e.getSource();

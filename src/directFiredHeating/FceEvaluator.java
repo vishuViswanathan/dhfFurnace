@@ -299,11 +299,7 @@ public class FceEvaluator implements Runnable, ThreadController{
         slate.setViewportView(mainFp);
     }
 
-    public FramedPanel getProgressPanel() {    // TODO to be removed (not used ?)
-        return mainFp;
-    }
-
-      class LocalControl extends JPanel implements Runnable {
+    class LocalControl extends JPanel implements Runnable {
         LocalControl() {
              super();
              pbAbort.addActionListener(localControl);

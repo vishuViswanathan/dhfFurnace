@@ -280,7 +280,6 @@ public class L2DFHeating extends DFHeating {
                         if (!onProductionLine || l2Furnace.basicConnectionToLevel1(uaClient)) {
                             StatusWithMessage status = l2Furnace.checkAndNoteAccessLevel();
                             if (status.getDataStatus() == StatusWithMessage.DataStat.OK) {
-//            debug("Created Level2furnace");
                                 furnace.setWidth(width);
                                 enableDataEdit();
                                 addMenuBar(createL2MenuBar());
@@ -630,7 +629,6 @@ public class L2DFHeating extends DFHeating {
         }
         return retVal;
     }
-
 
     public boolean updatePerformanceDataFile() {
         boolean saved = false;
@@ -1191,13 +1189,13 @@ public class L2DFHeating extends DFHeating {
         return (withThis != null) && (profileCode.equals(withThis));
     }
 
-    OneStripDFHProcess getDFHProcess() {
-        return getStripDFHProcess(getProcessName());
-    }
+//    OneStripDFHProcess getDFHProcess() {
+//        return getStripDFHProcess(getProcessName());
+//    }
 
     protected ErrorStatAndMsg isChargeInFceOK() {    // TODO 20160622 considered that UI is already read
         ErrorStatAndMsg retVal = super.isChargeInFceOK();
-        if ((forProcess() == DFHTuningParams.ForProcess.STRIP)) {
+        if ((furnaceFor() == DFHTuningParams.FurnaceFor.STRIP)) {
             OneStripDFHProcess oneProc = getDFHProcess();
             if (oneProc != null) {
                 ChMaterial material = oneProc.getChMaterial(chThickness);
@@ -1212,10 +1210,6 @@ public class L2DFHeating extends DFHeating {
         return retVal;
     }
 
-    //    public String inputDataXML(boolean withPerformance) {
-//        return profileCodeInXML() + super.inputDataXML(withPerformance);
-//    }
-//
     public String inputDataXML(boolean withPerformance) {
         return profileCodeInXML() + super.inputDataXML(withPerformance) +
                 XMLmv.putTag("FuelSettings", furnace.fceSettingsInXML()) +
@@ -1243,7 +1237,7 @@ public class L2DFHeating extends DFHeating {
         profileCode = vp.val;
         if (isProfileCodeOK()) {
             retVal = super.takeProfileDataFromXML(xmlStr, true, HeatingMode.TOPBOTSTRIP,
-                    DFHTuningParams.ForProcess.STRIP);
+                    DFHTuningParams.FurnaceFor.STRIP);
             if (retVal.getDataStatus() == StatusWithMessage.DataStat.OK) {
                 furnace.clearAssociatedData();
                 vp = XMLmv.getTag(xmlStr, "FuelSettings");
@@ -1479,23 +1473,12 @@ public class L2DFHeating extends DFHeating {
     public void resultsReady(Observations observations) {
         super.resultsReady(observations);
         l2Furnace.setCurveSmoothening(true);
-//        if (proc == DFHTuningParams.ForProcess.STRIP) {
-//            mISaveAsFieldResult.setEnabled(true);
-//        }
     }
 
     public void resultsReady(Observations observations, DFHResult.Type switchDisplayTo) {
         userActionAllowed = false;
         super.resultsReady(observations, switchDisplayTo);
     }
-
-//    protected void enableResultsMenu(boolean enable) {
-//        super.enableResultsMenu(enable);
-//        if (l2MenuSet && bAllowL2Changes) {
-//            if (mISaveAsFieldResult != null)
-//                mISaveAsFieldResult.setEnabled(enable);
-//        }
-//    }
 
     // machine ID methods
     boolean testMachineID() {
@@ -1605,14 +1588,7 @@ public class L2DFHeating extends DFHeating {
         }
     }
 
-//    public StatusWithMessage setPerformanceTableLimits(Performance baseP) {
-//        OneStripDFHProcess dfhProcess = getStripDFHProcess(baseP.processName);
-//        return baseP.setLimits(dfhProcess.minWidth, dfhProcess.maxWidth, 0.2, dfhProcess.minUnitOutput, dfhProcess.maxUnitOutput, 0.2);
-//    }
-
     public FceEvaluator calculateForPerformanceTable(Performance baseP) {
-//        OneStripDFHProcess dfhProcess = getStripDFHProcess(baseP.processName);
-//        baseP.setLimits(dfhProcess.minWidth, dfhProcess.maxWidth, 0.2, dfhProcess.minUnitOutput, dfhProcess.maxUnitOutput, 0.2);
         return calculateForPerformanceTable(baseP, null);
     }
 
@@ -1672,21 +1648,17 @@ public class L2DFHeating extends DFHeating {
     }
 
     public static void l2debug(String msg) {
-//        if (bl2ShowDebugMessages) {
         if (log == null)
             System.out.println("" + (new Date()) + ": DEBUG: " + msg);
         else
             log.debug(accessLevel.toString() + ":" + msg);
-//        }
     }
 
     public static void l2Trace(String msg) {
-//        if (bl2ShowDebugMessages) {
         if (log == null)
             System.out.println("" + (new Date()) + ": TRACE: " + msg);
         else
             log.trace(accessLevel.toString() + ":" + msg);
-//        }
     }
 
     public static void l2Info(String msg) {
@@ -1703,11 +1675,6 @@ public class L2DFHeating extends DFHeating {
         if (!check || decide("Quitting Level2", "Do you really want to Exit this " +
                 accessControl.getDescription(accessLevel) + "?", false))
             exitFromLevel2();
-//        {l2Furnace.prepareForDisconnection();
-//            if (uaClient != null)
-//                uaClient.disconnect();
-//            super.close();
-//        }
     }
 
     void justQuit() {
@@ -1730,10 +1697,6 @@ public class L2DFHeating extends DFHeating {
     public void exitFromLevel2() {
         if (canClose()) {
             justQuit();
-//            l2Furnace.prepareForDisconnection();
-//            if (uaClient != null)
-//                uaClient.disconnect();
-//            close();
         }
     }
 
@@ -1750,36 +1713,14 @@ public class L2DFHeating extends DFHeating {
                 switchPage(L2DisplayPageType.PROCESS);
             else if (caller == mIShowL2Data)
                 switchPage(L2DisplayPageType.LEVEL2);
-//             else if (caller == mIReadDFHStripProcess)
-//                 loadStripDFHProcessList();
-//             else if (caller == mISaveDFHStripProcess)
-//                 updateProcessDataFile();
             else if (caller == mIViewDFHStripProcess)
                 viewStripDFHProcess();
             else if (caller == mIEditDFHStripProcess)
                 editStripDFHProcess();
             else if (caller == mICreateFceSettings)
                 createFceSetting();
-//             else if (caller == mIReadFceSettings)
-//                 readFurnaceSettings();
-//             else if (caller == mISaveFceSettings)
-//                 saveFurnaceSettings();
             else if (caller == mIOPCServerIP)
                 setOPCIP();
-//            else if (caller == mICreateFieldResultsData)
-//                takeFieldResultsFromUser();
-//            else if (caller == mISaveFieldResultsToFile)
-//                saveFieldResultsToFile();
-//            else if (caller == mISaveAsFieldResult)
-//                saveAsFieldResults();
-//            else if (caller == mILevel1FieldResults)
-//                takeResultsFromLevel1();
-//            else if (caller == mILoadFieldResult)
-//                loadFieldResults();
-//            else if (caller == mIEvalForFieldProduction)
-//                evalForFieldProduction();
-//            else if (caller == mIEvalWithFieldCorrection)
-//                recalculateWithFieldCorrections(null);
             else if (caller == mISavePerformanceData)
                 updatePerformanceDataFile();
             else if (caller == mIReadPerformanceData) {
@@ -1820,9 +1761,6 @@ public class L2DFHeating extends DFHeating {
 
 
     public static void main(String[] args) {
-        //        PropertyConfigurator.configureAndWatch(DFHeating.class
-        //                .getResource("log.properties").getFile(), 5000);
-//        L2DFHeating.log = Logger.getLogger("L2DFHeating.class");
         final L2DFHeating level2Heating = new L2DFHeating("Furnace");
         if (level2Heating.parseCmdLineArgs(args)) {
             if (!onProductionLine || level2Heating.setupUaClient()) {
@@ -1832,7 +1770,6 @@ public class L2DFHeating extends DFHeating {
                 } else {
                     level2Heating.showError("Level2 could not be started. Aborting ...");
                     level2Heating.exitFromLevel2();
-//                    System.exit(1);
                 }
             } else
                 level2Heating.showMessage("Facing problem connecting to Level1. Aborting ...");

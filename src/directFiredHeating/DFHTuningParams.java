@@ -22,13 +22,13 @@ import java.util.LinkedHashMap;
  * To change this template use File | Settings | File Templates.
  */
 public class DFHTuningParams {
-    static public enum ForProcess {
+    public enum FurnaceFor {
         BILLETS("Billet/Slab Heating"),
         STRIP("Strip Heating"),
         MANUAL("Manually set");
         private final String proName;
 
-        ForProcess(String proName) {
+        FurnaceFor(String proName) {
             this.proName = proName;
         }
 
@@ -41,10 +41,10 @@ public class DFHTuningParams {
             return proName;
         }
 
-        public static ForProcess getEnum(String text) {
-            ForProcess retVal = null;
+        public static FurnaceFor getEnum(String text) {
+            FurnaceFor retVal = null;
             if (text != null) {
-                for (ForProcess b : ForProcess.values()) {
+                for (FurnaceFor b : FurnaceFor.values()) {
                     if (text.equalsIgnoreCase(b.proName)) {
                         retVal = b;
                         break;
@@ -84,9 +84,9 @@ public class DFHTuningParams {
     public boolean bNoGasAbsorptionInWallBalance = false;
     public boolean bBaseOnZonalTemperature = false;
     public double radiationMultiplier = 1.0;  // used for calculation only with wall radiation for fuel furnace
-    LinkedHashMap<ForProcess, PreSetTunes> preSets;
+    LinkedHashMap<FurnaceFor, PreSetTunes> preSets;
     final DFHeating controller;
-    ForProcess selectedProc;
+    FurnaceFor selectedProc;
     PreSetTunes selectedPreset;
     UnitFceArray.ProfileBasis tfmBasis = UnitFceArray.ProfileBasis.FCETEMP;
     private double tfmStep = 1.0;
@@ -109,10 +109,10 @@ public class DFHTuningParams {
 
     public DFHTuningParams(DFHeating controller) {
         this.controller = controller;
-        preSets = new LinkedHashMap<ForProcess, PreSetTunes>();
-        preSets.put(ForProcess.BILLETS, new PreSetTunes(1, 5, 30, 30, 1.12, 1.0, false));
-        preSets.put(ForProcess.STRIP, new PreSetTunes(0.8, 1, 15, 15, 1, 1.0, false));
-        preSets.put(ForProcess.MANUAL, new PreSetTunes(1, 5, 30, 30, 1, 1.0, true));
+        preSets = new LinkedHashMap<FurnaceFor, PreSetTunes>();
+        preSets.put(FurnaceFor.BILLETS, new PreSetTunes(1, 5, 30, 30, 1.12, 1.0, false));
+        preSets.put(FurnaceFor.STRIP, new PreSetTunes(0.8, 1, 15, 15, 1, 1.0, false));
+        preSets.put(FurnaceFor.MANUAL, new PreSetTunes(1, 5, 30, 30, 1, 1.0, true));
         tferrorAllowed = new NumberTextField(controller, errorAllowed, 6, false, 0.001, 5, "#,###.00", "", true);
         tfwallLoss = new NumberTextField(controller, wallLoss, 6, false, 0, 1000, "#,###.00", "", true);
         tfsuggested1stCorrection = new NumberTextField(controller, suggested1stCorrection, 6, false, 0, 20, "#,###.00", "", true);
@@ -252,7 +252,7 @@ public class DFHTuningParams {
     }
 
     void takeValuesFromUI() {
-        preSets.get(ForProcess.MANUAL).takeFromUI();
+        preSets.get(FurnaceFor.MANUAL).takeFromUI();
         epsilonO = selectedPreset.eO;
         gasWallHTMultipler = selectedPreset.gMulti;
         alphaConvFired = selectedPreset.aConvFired;
@@ -309,7 +309,7 @@ public class DFHTuningParams {
             cBAllowSecFuel.doClick();   // this fire event, setSelected() does not!
         cBAllowRegenAirTemp.setSelected(bAllowRegenAirTemp);
         cBShowFlueCompo.setSelected(bShowFlueCompo);
-        preSets.get(ForProcess.MANUAL).putInUI();
+        preSets.get(FurnaceFor.MANUAL).putInUI();
         cBProfileForTFM.setSelectedItem(tfmBasis);
         tfTFMStep.setData(tfmStep * 1000);
         cBbAutoTempForLosses.setSelected(bAutoTempForLosses);
@@ -325,7 +325,7 @@ public class DFHTuningParams {
         cBbaseOnZonalTemperature.setSelected(bBaseOnZonalTemperature);
     }
 
-    public void setSelectedProc(ForProcess selectedProc) {
+    public void setSelectedProc(FurnaceFor selectedProc) {
         this.selectedProc = selectedProc;
         selectedPreset = preSets.get(selectedProc);
         takeValuesFromUI();
@@ -345,7 +345,7 @@ public class DFHTuningParams {
     public String dataInXML() {
         updateUI();
         String xmlStr = "";
-        PreSetTunes pre = preSets.get(ForProcess.MANUAL);
+        PreSetTunes pre = preSets.get(FurnaceFor.MANUAL);
         xmlStr += XMLmv.putTag("epsilonO", pre.eO);
         xmlStr += XMLmv.putTag("gasWallHTMultipler", pre.gMulti);
         xmlStr += XMLmv.putTag("alphaConv", pre.aConvFired);
@@ -378,7 +378,7 @@ public class DFHTuningParams {
         ValAndPos vp;
         boolean bRetVal = true;
         try {
-            PreSetTunes pre = preSets.get(ForProcess.MANUAL);
+            PreSetTunes pre = preSets.get(FurnaceFor.MANUAL);
             vp = XMLmv.getTag(xmlStr, "epsilonO", 0);
             pre.eO = Double.valueOf(vp.val);
             vp = XMLmv.getTag(xmlStr, "gasWallHTMultipler", 0);
@@ -492,7 +492,7 @@ public class DFHTuningParams {
         jp.add(cBOnTest, gbc);
         gbc.gridx = 1;
         gbc.gridy++;
-        for (ForProcess proc : ForProcess.values()) {
+        for (FurnaceFor proc : FurnaceFor.values()) {
             h = new JLabel("" + proc);
             h.setPreferredSize(headSize);
             if (selectedProc == proc)

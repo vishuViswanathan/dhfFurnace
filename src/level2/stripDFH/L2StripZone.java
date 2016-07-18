@@ -56,16 +56,24 @@ public class L2StripZone extends L2ParamGroup {
     boolean speedUpdaterThresdOn = false;
     boolean updateSpeed = false;
 
+    long oneNapInterval = 2000; // 2 sec
+    int nNaps = 5;  // TODO the value tobe set as 15 or 30
+
+
     public L2StripZone(L2DFHeating l2DFHeating, String zoneName, String descriptiveName) throws TagCreationException {
         super(l2DFHeating.l2Furnace, zoneName, descriptiveName);
         this.l2DFHeating = l2DFHeating;
         this.l2Furnace = l2DFHeating.l2Furnace;
         monitoredTags = new Hashtable<MonitoredDataItem, Tag>();
+        processTags = new Vector<Tag>();
+        l2Tags = new Vector<Tag>();;
+        nNaps = Math.max(1, l2DFHeating.l2Furnace.furnaceSettings.speedCheckInterval * 1000 / (int) oneNapInterval);
         createStripParam();
         createNowStripTempProcessDisplay();
         createNowStripTempLevel2Display();
         createNowStripSpeedProcessDisplay();
         createStripSpeedCheckProcessDisplay();
+        createStripSpeedCheck2Display();
         createNowStripDataProcessDisplay();
         createNowStripDataLevel2Display();
         createNextStripDataProcessDisplay();
@@ -286,6 +294,7 @@ public class L2StripZone extends L2ParamGroup {
         return theStrip;
     }
 
+
     public JComponent nowStripProcessTempPanel;
     public JComponent nowStripLevel2TempPanel;
     JComponent nowStripProcessSpeedPanel;
@@ -295,6 +304,9 @@ public class L2StripZone extends L2ParamGroup {
     JComponent nextStripLevel2DataPanel;
     JComponent stripSpeedCheckPanel;
     JComponent stripSpeedCheckLevel2Panel;
+
+    Vector<Tag> processTags;
+    Vector<Tag> l2Tags;
 
     public JComponent stripProcessPanel() {
         JPanel outerP = new JPanel(new BorderLayout()) ;
@@ -328,7 +340,7 @@ public class L2StripZone extends L2ParamGroup {
         FramedPanel innerP = new FramedPanel(new BorderLayout());
         FramedPanel jp = new FramedPanel();
         jp.add(nowStripLevel2DataPanel);
-//        jp.add(stripSpeedCheckPanel);
+        jp.add(stripSpeedCheckLevel2Panel);
         JPanel titleP = new JPanel();
         titleP.add(new JLabel("Strip in Process"));
         innerP.add(titleP, BorderLayout.NORTH);
@@ -362,12 +374,16 @@ public class L2StripZone extends L2ParamGroup {
         nowStripProcessTempPanel = new FramedPanel();
         MultiPairColPanel mp = new MultiPairColPanel("DFH Exit: Temperature");
         Tag t =  paramStripNowTemperature.getProcessTag(Tag.TagName.SP);
+        processTags.add(t);
         mp.addItemPair(t.toString(), t.displayComponent());
         t =  paramStripNowTemperature.getProcessTag(Tag.TagName.PV);
+        processTags.add(t);
         mp.addItemPair(t.toString(), t.displayComponent());
         t =  paramStripNowTemperature.getProcessTag(Tag.TagName.Mode);
+        processTags.add(t);
         mp.addItemPair(t.toString(), t.displayComponent());
         t =  paramStripNowTemperature.getProcessTag(Tag.TagName.CV);
+        processTags.add(t);
         mp.addItemPair(t.toString(), t.displayComponent());
         nowStripProcessTempPanel.add(mp);
         return nowStripProcessTempPanel;
@@ -386,10 +402,14 @@ public class L2StripZone extends L2ParamGroup {
         nowStripProcessSpeedPanel = new FramedPanel();
         MultiPairColPanel mp = new MultiPairColPanel("Speed");
         Tag t = paramStripNowSpeed.getProcessTag(Tag.TagName.SP);
+        processTags.add(t);
         mp.addItemPair(t.toString(), t.displayComponent());
         t = paramStripNowSpeed.getProcessTag(Tag.TagName.PV);
+        processTags.add(t);
         mp.addItemPair(t.toString(), t.displayComponent());
+        processTags.add(t);
         t = paramStripNowStatus.getProcessTag(Tag.TagName.Length);
+        processTags.add(t);
         mp.addItemPair(t.toString(), t.displayComponent());
         nowStripProcessSpeedPanel.add(mp);
         return nowStripProcessSpeedPanel;
@@ -399,19 +419,33 @@ public class L2StripZone extends L2ParamGroup {
         stripSpeedCheckPanel = new FramedPanel();
         MultiPairColPanel mp = new MultiPairColPanel("Strip Speed Check");
         Tag t = paramStripSpeedCheck.getProcessTag(Tag.TagName.Enabled);
+        processTags.add(t);
         mp.addItemPair(t.toString(), t.displayComponent());
         stripSpeedCheckPanel.add(mp);
         return stripSpeedCheckPanel;
+    }
+
+    JComponent createStripSpeedCheck2Display() {
+        stripSpeedCheckLevel2Panel = new FramedPanel();
+        MultiPairColPanel mp = new MultiPairColPanel("Strip Speed Check");
+        Tag t = paramStripSpeedCheck.getLevel2Tag(Tag.TagName.Running);
+        l2Tags.add(t);
+        mp.addItemPair(t.toString(), t.displayComponent());
+        stripSpeedCheckLevel2Panel.add(mp);
+        return stripSpeedCheckLevel2Panel;
     }
 
     JComponent createNowStripDataProcessDisplay() {
         nowStripProcessDataPanel = new FramedPanel();
         MultiPairColPanel mp = new MultiPairColPanel("Process and Size");
         Tag t = paramStripNowSize.getProcessTag(Tag.TagName.Process);
+        processTags.add(t);
         mp.addItemPair(t.toString(), t.displayComponent());
         t = paramStripNowSize.getProcessTag(Tag.TagName.Thick);
+        processTags.add(t);
         mp.addItemPair(t.toString(), t.displayComponent());
         t = paramStripNowSize.getProcessTag(Tag.TagName.Width);
+        processTags.add(t);
         mp.addItemPair(t.toString(), t.displayComponent());
         nowStripProcessDataPanel.add(mp);
         return nowStripProcessDataPanel;
@@ -421,8 +455,10 @@ public class L2StripZone extends L2ParamGroup {
         nowStripLevel2DataPanel = new FramedPanel();
         MultiPairColPanel mp = new MultiPairColPanel("Recommendations");
         Tag t = paramStripNowSize.getLevel2Tag(Tag.TagName.SpeedNow);
+        l2Tags.add(t);
         mp.addItemPair(t.toString(), t.displayComponent());
         t = paramStripNowSize.getLevel2Tag(Tag.TagName.SpeedMax);
+        l2Tags.add(t);
         mp.addItemPair(t.toString(), t.displayComponent());
         nowStripLevel2DataPanel.add(mp);
         return nowStripLevel2DataPanel;
@@ -432,10 +468,13 @@ public class L2StripZone extends L2ParamGroup {
         nextStripProcessDataPanel = new FramedPanel();
         MultiPairColPanel mp = new MultiPairColPanel("Process and Size");
         Tag t = paramStripNextSize.getProcessTag(Tag.TagName.Process);
+        processTags.add(t);
         mp.addItemPair(t.toString(), t.displayComponent());
         t = paramStripNextSize.getProcessTag(Tag.TagName.Thick);
+        processTags.add(t);
         mp.addItemPair(t.toString(), t.displayComponent());
         t = paramStripNextSize.getProcessTag(Tag.TagName.Width);
+        processTags.add(t);
         mp.addItemPair(t.toString(), t.displayComponent());
         nextStripProcessDataPanel.add(mp);
         return nextStripProcessDataPanel;
@@ -445,10 +484,13 @@ public class L2StripZone extends L2ParamGroup {
         nextStripLevel2DataPanel = new FramedPanel();
         MultiPairColPanel mp = new MultiPairColPanel("Recommendations");
         Tag t = paramStripNextSize.getLevel2Tag(Tag.TagName.Temperature);
+        l2Tags.add(t);
         mp.addItemPair(t.toString(), t.displayComponent());
         t = paramStripNextSize.getLevel2Tag(Tag.TagName.SpeedNow);
+        l2Tags.add(t);
         mp.addItemPair(t.toString(), t.displayComponent());
         t = paramStripNextSize.getLevel2Tag(Tag.TagName.SpeedMax);
+        l2Tags.add(t);
         mp.addItemPair(t.toString(), t.displayComponent());
         nextStripLevel2DataPanel.add(mp);
         return nextStripLevel2DataPanel;
@@ -456,21 +498,25 @@ public class L2StripZone extends L2ParamGroup {
 
 
     public void updateProcessDisplay() {
-        updateDisplay(tagsStripTemperature);
-        updateDisplay(tagsStripSpeed);
-        updateDisplay(tagsStripDataNow);
-        updateDisplay(tagsStripDataNext);
-        updateDisplay(tagsStripStatus);
-        updateDisplay(tagsSpeedCheck);
+        for (Tag tag: processTags) {
+            try {
+                tag.updateUI();
+            } catch (Exception e) {
+                System.out.println("Tag : " + tag + " had some display problem");
+//                e.printStackTrace();
+            }
+        }
     }
 
-    public void updateL2Display() {
-
-    }
-
-    void updateDisplay(Tag[] tags) {
-        for (Tag t: tags)
-            t.updateUI();
+    public void updateLevel2Display() {
+        for (Tag tag: l2Tags) {
+            try {
+                tag.updateUI();
+            } catch (Exception e) {
+                System.out.println("Tag : " + tag + " had some display problem");
+//                e.printStackTrace();
+            }
+        }
     }
 
     public void prepareForDisconnection()throws ServiceException {
@@ -494,16 +540,13 @@ public class L2StripZone extends L2ParamGroup {
         if (speedUpdaterThresdOn) {
             speedUpdaterThresdOn = false;
             try {
-                if (speedThread != null) speedThread.join(speedNapInterval * 5);
+                if (speedThread != null) speedThread.join(oneNapInterval * 5);
             } catch (InterruptedException e) {
                 l2Furnace.logError("Problem in stopping Strip Speed Updater");
                 e.printStackTrace();
             }
         }
     }
-
-    long speedNapInterval = 2000; // 2 sec
-    int nNaps = 5;  // TODO the valeu tobe set as 15 or 30
 
     class SpeedUpdater implements Runnable {
         public void run() {
@@ -544,7 +587,7 @@ public class L2StripZone extends L2ParamGroup {
                 try {  // multiple intervals to enable faster exit
                     for (int n = 0; n < nNaps; n++) {
                         if (speedUpdaterThresdOn)
-                            Thread.sleep(speedNapInterval);
+                            Thread.sleep(oneNapInterval);
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();

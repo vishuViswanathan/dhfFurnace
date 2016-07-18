@@ -60,10 +60,10 @@ public class L2ZonalFuelProfile extends ZonalFuelProfile {
         // extrapolate down speed and production
         double fuelFactorAtMin = (l2TopZoneFuels[0][TotFuelCol] - l2TopZoneFuels[1][TotFuelCol]) /
                 (l2TopZoneFuels[1][TotFuelCol] - l2TopZoneFuels[2][TotFuelCol]);
-        l2TopZoneFuels[0][USpeedCol] =  l2TopZoneFuels[1][USpeedCol]   +
-                fuelFactorAtMin * (l2TopZoneFuels[1][USpeedCol]- l2TopZoneFuels[2][USpeedCol]);
-        l2TopZoneFuels[0][UOutputCol] =  l2TopZoneFuels[1][UOutputCol]   +
-                fuelFactorAtMin * (l2TopZoneFuels[1][UOutputCol]- l2TopZoneFuels[2][UOutputCol]);
+        l2TopZoneFuels[0][USpeedCol] =  Math.max(0, l2TopZoneFuels[1][USpeedCol]   +
+                fuelFactorAtMin * (l2TopZoneFuels[1][USpeedCol]- l2TopZoneFuels[2][USpeedCol]));
+        l2TopZoneFuels[0][UOutputCol] =  Math.max(0, l2TopZoneFuels[1][UOutputCol]   +
+                fuelFactorAtMin * (l2TopZoneFuels[1][UOutputCol]- l2TopZoneFuels[2][UOutputCol]));
 
         l2TopZoneFuels[extendedSteps - 1][TotFuelCol] = totFuelRange.max;
         for (int z = 0; z < zoneFuelRange.length; z++) {
@@ -95,8 +95,8 @@ public class L2ZonalFuelProfile extends ZonalFuelProfile {
             if (totFuel < originalTotal)  {
                 logInfo("Fuel has been adjusted to limits for capacityStep " + capacityStep );
                 double ratio = totFuel/ originalTotal;
-                l2TopZoneFuels[capacityStep][USpeedCol] *= ratio;
-                l2TopZoneFuels[capacityStep][UOutputCol] *= ratio;
+                l2TopZoneFuels[capacityStep][USpeedCol] = Math.max(0, l2TopZoneFuels[capacityStep][USpeedCol] * ratio);
+                l2TopZoneFuels[capacityStep][UOutputCol] = Math.max(0, l2TopZoneFuels[capacityStep][UOutputCol] * ratio);
                 l2TopZoneFuels[capacityStep][TotFuelCol] = totFuel;
             }
         }

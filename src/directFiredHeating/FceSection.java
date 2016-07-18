@@ -953,7 +953,7 @@ public class FceSection {
                             hEnd = hBig + slope * slotLen;
                             totLen += slotLen;
                             theSlot = new UnitFurnace(sSec, bRecuType, slotLen, totLen,
-                                    furnace.width, hBig, hEnd, controller.proc);
+                                    furnace.width, hBig, hEnd, controller.furnaceFor);
                             endTime += theSlot.delTime;
                             theSlot.setEndTme(endTime);
                             iSlot++;
@@ -1545,28 +1545,8 @@ public class FceSection {
         return topRow;
     }
 
-    public int addSubSection(FceSubSection sub) {     // TODO REMOVE
-        subSections.add(sub);
-        seclength += sub.length;
-        return subSections.size();
-    }
-
-    public void addBalanceSectionsREMOVE() {    // TODO REMOVE
-        int nSec = subSections.size();
-        for (int s = nSec; s < 3; s++)
-            subSections.add(new FceSubSection(controller, this, 0, 0, 0, (s + 1)));
-    }
-
-//    public void setFuelChoice(Vector<Fuel> fuelList) {
-//        cbFuels = new JComboBox(fuelList);
-//    }
-
-//    public JComponent getFuelComboBox() { return cbFuels; }
-//    public JComponent getTfFlueExhPercent()  { return tfFlueExhPercent;}
-//    public JComponent getTfRegenPHtemp()  { return tfRegenPHtemp;}
 
     public Component sectionsPanel() {
-//        preparePanel();
         return sectionsPanel;
     }
 
@@ -1574,10 +1554,6 @@ public class FceSection {
         for (int s = 0; s < subSections.size(); s++)
             subSections.get(s).noteLossListChange();
     }
-
-//    public void setFuel(Fuel fuel) {
-//        this.fuel = fuel;
-//    }
 
     public boolean addToProfileTrace(Vector<DoublePoint> vProf, double scale, double baseY) {
         FceSubSection sub;
@@ -1649,15 +1625,6 @@ public class FceSection {
 
     public OneZone getZonePerfData() {
         return new OneZone(furnace, this);
-//        double atPos = secStartPos + tcLocationFromZoneStart;
-//
-//        return new OneZone(botSection, bRecuType, secFuelFlow,
-//                furnace.getFceTempAt(atPos, botSection),
-//                furnace.getGasTempAt(atPos, botSection),
-//                furnace.getChTempAt(secStartPos, botSection),
-//                furnace.getChTempAt(secStartPos + sectionLength(), botSection),
-//                heatToCharge(), heatFromPassingFlue, getLosses()
-//                );
     }
 
     public double getTcPosition() {
@@ -1763,13 +1730,6 @@ public class FceSection {
             vp = XMLmv.getTag(xmlStr, "tcLocation", 0);
             if (vp.val.length() > 0)
                 tcLocationFromZoneStart = Double.valueOf(vp.val);
-
-//            vp = XMLmv.getTag(xmlStr, "bGasTempSpecified", vp.endPos) ;
-//            bGasTempSpecified = (vp.val.length() > 0) && vp.val.equals("1");
-//            if (bGasTempSpecified) {
-//                vp = XMLmv.getTag(xmlStr, "presetGasTemp", vp.endPos);
-//                presetGasTemp = Double.valueOf(vp.val);
-//            }
         } catch (Exception e) {
             bRetVal &= false;
         }
@@ -1778,7 +1738,6 @@ public class FceSection {
         vp = XMLmv.getTag(xmlStr, "subsections", vp.endPos);
         bRetVal &= takeSubSecsFromXML(vp.val);
         takeValuesFromUI();
-//        setSummaryText();
         return bRetVal;
      }
 
@@ -1815,15 +1774,6 @@ public class FceSection {
         }
         return bRetVal;
     }
-
-/*
-    public void setRegenParams(double airTempK, double flueExhFract) {
-        this.regenPHTemp = airTempK;
-        this.flueExhFract = flueExhFract > 1 ? 1.0 : flueExhFract;
-        bRegenBurner = (flueExhFract < 1);
-    }
-*/
-
 
     void debug(String msg) {
         System.out.println("FceSection: " + msg);
@@ -2058,14 +2008,9 @@ public class FceSection {
    }
 
    public double heatToCharge() {
-       double stTemp, endTemp;
-       stTemp = vUnitFurnaces.get(firstSlot - 1).tempWmean;
-       endTemp = vUnitFurnaces.get(lastSlot).tempWmean;
        chargeHeat = 0;
        for (int s = firstSlot; s <= lastSlot; s++)
            chargeHeat += vUnitFurnaces.get(s).chargeHeat;
-//       chargeHeatFraction = chargeHeat /
-//                   (production.production * production.charge.getDeltaHeat(stTemp, endTemp));
        return  chargeHeat;
    }
 
@@ -2099,11 +2044,9 @@ public class FceSection {
        secFuelFlow = heat / fuelHDet.effctiveCalVal;   //realCalVal;
        double combustionFlue =  secFuelFlow * fuelFiring.actFFratio;
        secFlueFlow = combustionFlue * (1 - burnerFlueExhFract);
-//       burnerFlueQty =   combustionFlue * burnerFlueExhFract;
        tempFlueOut = flueExitTemp;
        airSensible = secFuelFlow * fuelHDet.airHeat;
        heatToSecFlue = secFuelFlow * fuelHDet.lossToFlue; // flueHeat;
-//       burnerFlueHeat = heatToSecFlue * burnerFlueExhFract;
        combustionHeat = secFuelFlow * fuelInSection.calVal;
        totalFlueExitHeat = heatPassingFlueOut + heatToSecFlue;
        regenFlue =  combustionFlue * burnerFlueExhFract;
@@ -2126,10 +2069,6 @@ public class FceSection {
     public FceEvaluator.EvalStat oneSectionInRev() {
         FceEvaluator.EvalStat response = FceEvaluator.EvalStat.OK;
         UnitFurnace theSlot, prevSlot, nextSlot;
-        boolean allOK = true;
-        int trial;
- //    showOneResult (lastSlot) ' starting conditions
-        boolean done;
         boolean bLastSlot;
         theSlot = vUnitFurnaces.get(lastSlot);
         for (int slot = lastSlot; slot >= firstSlot; slot--) {
@@ -2140,7 +2079,6 @@ public class FceSection {
             if (response != FceEvaluator.EvalStat.OK)
                 break;
             theSlot = prevSlot;
-//            yield();
         }
         if (response == FceEvaluator.EvalStat.OK) {
             if(bRecuType)
@@ -2157,8 +2095,6 @@ public class FceSection {
     public FceEvaluator.EvalStat oneSectionInRev(double entryTemp) {
         FceEvaluator.EvalStat response = FceEvaluator.EvalStat.OK;
         UnitFurnace theSlot, prevSlot, nextSlot;
-        boolean allOK = true;
-        int trial;
         boolean done = false;
         double nowTempG, newTempG;
         double nowEntryTemp;
@@ -2239,11 +2175,8 @@ public class FceSection {
 
     public FceEvaluator.EvalStat oneSectionInFwdWithWallRadiation() {
         FceEvaluator.EvalStat response = FceEvaluator.EvalStat.OK;
-//        double two;
         UnitFurnace theSlot, prevSlot;
         prevSlot = vUnitFurnaces.get(firstSlot - 1);
-//        two = prevSlot.chargeSurfTemp();
-//        if (firstSlot > 1) prevSlot.tempWO = two;
         prevSlot.showResult();
         for (int iSlot = firstSlot; iSlot <= lastSlot; iSlot++){
             theSlot = vUnitFurnaces.get(iSlot);
@@ -2276,7 +2209,7 @@ public class FceSection {
         return ambientData;
     }
 
-    void getObServations(Observations observations) {
+    void getObservations(Observations observations) {
         if (isActive() && !bRecuType) {
             if (secFuelFlow < 0)
                 observations.add("Fuel flow in " + sectionName() + " is negative at " +

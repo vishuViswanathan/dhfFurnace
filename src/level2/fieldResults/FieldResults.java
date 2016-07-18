@@ -219,29 +219,7 @@ public class FieldResults {
         return retVal;
     }
 
-    boolean compareResultsOLD() {  // TODO OLD option with uniform correction
-        boolean retVal = false;
-        // the field data
-        if (!inError) {
-            double netHeatFromFuel = totFuel() * fuelFiring.netUsefulFromFuel(flueTempOut);
-            double heatToCharge = production.totalChargeHeat();
-            double frTotalLosses = netHeatFromFuel - heatToCharge;
-            double calculLosses = l2Furnace.totLosses;
-            double lossFactor = frTotalLosses / calculLosses;
-            FieldZone[] zones = topZones;
-            for (FieldZone z : zones)
-                z.lossFactor = lossFactor;
-            if (l2Furnace.bTopBot) {
-                zones = botZones;
-                for (FieldZone z : zones)
-                    z.lossFactor = lossFactor;
-            }
-            return true;
-        }
-        return retVal;
-    }
-
-    /**
+     /**
      * Make necessary corrections in calculation based on field results
      *
      * @return
@@ -403,7 +381,7 @@ public class FieldResults {
     }
 
     class FieldResultsDlg extends JDialog {
-        DFHTuningParams.ForProcess proc;
+        DFHTuningParams.FurnaceFor proc;
         InputControl ipc;
         DataListEditorPanel editorPanel;
         boolean editable = false;
@@ -453,7 +431,7 @@ public class FieldResults {
         FieldResultsDlg(boolean editable) {
             this.editable = editable;
             setModal(true);
-            proc = l2Furnace.l2DFHeating.proc;
+            proc = l2Furnace.l2DFHeating.furnaceFor;
             init();
         }
 
@@ -480,7 +458,7 @@ public class FieldResults {
         }
 
         public void setVisible(boolean ena) {
-            if (ena && (proc != DFHTuningParams.ForProcess.STRIP))
+            if (ena && (proc != DFHTuningParams.FurnaceFor.STRIP))
                 l2Furnace.l2DFHeating.showError("This is available only for STRIP Furnace at the moment");
             else
                 super.setVisible(ena);

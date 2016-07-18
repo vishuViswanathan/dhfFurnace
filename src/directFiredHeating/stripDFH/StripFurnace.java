@@ -1,7 +1,10 @@
 package directFiredHeating.stripDFH;
 
+import basic.Observations;
 import directFiredHeating.DFHFurnace;
 import directFiredHeating.DFHeating;
+import directFiredHeating.FceSection;
+import mvUtils.display.StatusWithMessage;
 import performance.stripFce.PerformanceGroup;
 
 import java.awt.event.ActionListener;
@@ -19,7 +22,6 @@ public class StripFurnace extends DFHFurnace {
 
     protected boolean createPerfBase() {
         performBase = new PerformanceGroup(this, tuningParams);
-//        performBase.setTableFactors(0.2, 0.2, 0.7, 0.1);
         if (airRecu != null)
             freezeAirRecu();
         return addResultsToPerfBase(true);
@@ -29,5 +31,14 @@ public class StripFurnace extends DFHFurnace {
         return addResultsToPerfBase(true);
     }
 
-
+    protected Observations getObservations() {
+        Observations observations = super.getObservations();
+        for (int sec = 0; sec < nTopActiveSecs; sec++) {
+            FceSection oneSection = topSections.get(sec);
+            StatusWithMessage status = furnaceSettings.checkFuelFlowInRange(sec, oneSection.secFuelFlow);
+            if (status.getDataStatus() == StatusWithMessage.DataStat.WithErrorMsg)
+                observations.add("Fuel Flow in " +  oneSection.sectionName() + " is out of Range: " + status.getErrorMessage());
+        }
+        return observations;
+    }
 }

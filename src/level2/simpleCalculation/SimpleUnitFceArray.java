@@ -3,7 +3,6 @@ package level2.simpleCalculation;
 import directFiredHeating.DFHTuningParams;
 import directFiredHeating.UnitFceArray;
 import directFiredHeating.UnitFurnace;
-import mvUtils.math.MultiColData;
 
 import java.awt.*;
 import java.util.Vector;
@@ -19,8 +18,8 @@ public class SimpleUnitFceArray extends UnitFceArray {
     ColNumAndData fieldFceT;
     Vector<SimpleUnitFurnace> svUfs;
 
-    public SimpleUnitFceArray(boolean bBot, Vector<SimpleUnitFurnace> svUfs, DFHTuningParams.ForProcess forProcess){
-        super(bBot, forProcess);
+    public SimpleUnitFceArray(boolean bBot, Vector<SimpleUnitFurnace> svUfs, DFHTuningParams.FurnaceFor furnaceFor){
+        super(bBot, furnaceFor);
         this.svUfs = svUfs;
         this.vUfs = new Vector<UnitFurnace>();
 

@@ -29,11 +29,12 @@ public class FurnaceSettings   {
     String opcIP = "opc.tcp://127.0.0.1:49320";
     DoubleRange[] zoneFuelRange;
     DoubleRange totFuelRange;
+    public int speedCheckInterval = 30; // in s
     public String errMsg = "Error reading Furnace Settings :";
     public boolean inError = false;
     double maxTurndown = 10;
 //    double fuelTurnDown = 7;
-    public int fuelCharSteps = 7;
+    public int fuelCharSteps = 5;
     public boolean considerFieldZoneTempForLossCorrection = false;
     // @@@@@@@@@@@@@@ REMEMBER to modify backup() and restore(), for any change in
     // data structure
@@ -144,6 +145,9 @@ public class FurnaceSettings   {
                     opcIP = vp.val.trim();
                 vp = XMLmv.getTag(xmlStr, "fuelCharSteps", 0);
                 fuelCharSteps = Integer.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "speedCheckInterval", 0);
+                if (vp.val.length() > 0)
+                    speedCheckInterval = Integer.valueOf(vp.val);
                 vp = XMLmv.getTag(xmlStr, "considerFieldZoneTempForLossCorrection", 0);
                 considerFieldZoneTempForLossCorrection = (vp.val.equals("1"));
                 vp = XMLmv.getTag(xmlStr, "fuelRanges", 0);
@@ -163,6 +167,7 @@ public class FurnaceSettings   {
 //        StringBuffer xmlStr = new StringBuffer(XMLmv.putTag("maxSpeed", maxSpeed));
         StringBuffer xmlStr = new StringBuffer(XMLmv.putTag("opcIP", opcIP));
         xmlStr.append(XMLmv.putTag("fuelCharSteps", "" + fuelCharSteps));
+        xmlStr.append(XMLmv.putTag("speedCheckInterval", "" + speedCheckInterval));
         xmlStr.append(XMLmv.putTag("considerFieldZoneTempForLossCorrection", considerFieldZoneTempForLossCorrection));
         xmlStr.append(XMLmv.putTag("fuelRanges", fuelRangesInXML()));
         return xmlStr;
@@ -216,13 +221,13 @@ public class FurnaceSettings   {
     }
 
     FurnaceSettings getBackup() {
-//        to.dfHeating = dfHeating;
         FurnaceSettings backup = new FurnaceSettings(dfHeating);
         backup.zoneFuelRange = new DoubleRange[zoneFuelRange.length];
         for (int i = 0; i < zoneFuelRange.length; i++)
             backup.zoneFuelRange[i] = new DoubleRange(zoneFuelRange[i]);
         backup.fuelCharSteps = fuelCharSteps;
         backup.considerFieldZoneTempForLossCorrection = considerFieldZoneTempForLossCorrection;
+        backup.speedCheckInterval = speedCheckInterval;
         return backup;
     }
 
@@ -231,6 +236,11 @@ public class FurnaceSettings   {
             zoneFuelRange[i] = new DoubleRange(from.zoneFuelRange[i]);
         fuelCharSteps = from.fuelCharSteps;
         considerFieldZoneTempForLossCorrection = from.considerFieldZoneTempForLossCorrection;
+        speedCheckInterval = from.speedCheckInterval;
+    }
+
+    public StatusWithMessage checkFuelFlowInRange(int secNumber, double fuelFlow) {
+        return zoneFuelRange[secNumber].checkAStatus(fuelFlow);
     }
 
     public boolean getOPCServerIP(InputControl ipc) {
@@ -252,6 +262,7 @@ public class FurnaceSettings   {
         boolean editable = false;
         EditResponse.Response response;
 //        NumberTextField ntMaxSpeed;
+        NumberTextField ntSpeedCheckInterval;
         NumberTextField ntFuelSegments;
         JRadioButton rbConsiderFieldZoneTempForLossCorrection;
         NumberTextField[] ntRangeMax;
@@ -280,7 +291,9 @@ public class FurnaceSettings   {
             });
             editorPanel = new DataListEditorPanel("Furnace Fuel Settings", this, true);
 //            ntMaxSpeed = new NumberTextField(ipc, maxSpeed, 6, false, 10, 500, "#,###", "Maximum Process Speed (m/mt)");
-            ntFuelSegments = new NumberTextField(ipc, fuelCharSteps, 6, false, 3, 10, "##", "Fuel Characteristics-steps)");
+            ntFuelSegments = new NumberTextField(ipc, fuelCharSteps, 6, false, 3, 10, "##", "Fuel Characteristics-steps");
+            ntSpeedCheckInterval = new NumberTextField(ipc, speedCheckInterval, 6, true, 10, 60000, "#,##0", "Speed Check Interval (s)");
+
             rbConsiderFieldZoneTempForLossCorrection =
                     new JRadioButton("Take Field Zone Temp For Loss Check", considerFieldZoneTempForLossCorrection);
             rbConsiderFieldZoneTempForLossCorrection.addChangeListener(new ChangeListener() {
@@ -293,6 +306,8 @@ public class FurnaceSettings   {
             });
 //            editorPanel.addItemPair(ntMaxSpeed);
             editorPanel.addItemPair(ntFuelSegments);
+            editorPanel.addBlank();
+            editorPanel.addItemPair(ntSpeedCheckInterval);
             editorPanel.addBlank();
             editorPanel.addItem(rbConsiderFieldZoneTempForLossCorrection);
             editorPanel.addBlank();
@@ -327,7 +342,7 @@ public class FurnaceSettings   {
 
         public ErrorStatAndMsg checkData() {
 //            if (ntMaxSpeed.inError || ntFuelSegments.inError)
-           if (ntFuelSegments.inError)
+           if (ntFuelSegments.inError || ntSpeedCheckInterval.inError)
                 return new ErrorStatAndMsg(true, "Data out of Range");
             else {
                 ErrorStatAndMsg errorStat = new ErrorStatAndMsg(false, "Error:");
@@ -358,6 +373,7 @@ public class FurnaceSettings   {
         public boolean saveData() {
 //            maxSpeed = ntMaxSpeed.getData();
             fuelCharSteps = (int)ntFuelSegments.getData();
+            speedCheckInterval = (int)ntSpeedCheckInterval.getData();
             considerFieldZoneTempForLossCorrection = rbConsiderFieldZoneTempForLossCorrection.isSelected();
             for (int z = 0; z < nZones; z++) {
                 zoneFuelRange[z].max = ntRangeMax[z].getData();
@@ -385,6 +401,7 @@ public class FurnaceSettings   {
             edited = false;
 //            ntMaxSpeed.setData(maxSpeed);
             ntFuelSegments.setData(fuelCharSteps);
+            ntSpeedCheckInterval.setData(speedCheckInterval);
             double max, min;
             for (int z = 0; z < nZones; z++) {
                 max = zoneFuelRange[z].max;

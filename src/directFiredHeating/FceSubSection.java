@@ -201,13 +201,6 @@ public class FceSubSection {
         showLossHeader();
     }
 
-//    public static FramedPanel getRowHeader(ActionListener li, Component tfTopLen, Component tfBottLen) {   //TODO not used
-//        initStaticData(tfTopLen, tfBottLen);
-//        rbBot.addActionListener(li);
-//        rbTop.addActionListener(li);
-//        return rowHead;
-//    }
-
     public static FramedPanel getRowHeader(Component tfTopLen, Component tfBottLen) {
         initStaticData(tfTopLen, tfBottLen);
         ActionListener li = new ActionListener() {

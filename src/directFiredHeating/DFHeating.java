@@ -4,7 +4,6 @@ import FceElements.RegenBurner;
 import basic.*;
 import directFiredHeating.process.OneStripDFHProcess;
 import directFiredHeating.process.StripDFHProcessList;
-import display.*;
 import jsp.*;
 //import jnlp.JNLPFileHandler;
 import mvUtils.display.*;
@@ -175,7 +174,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     FuelFiring commFuelFiring;
     String nlSpace = ErrorStatAndMsg.nlSpace;
     Hashtable<DFHResult.Type, ResultPanel> resultPanels, printPanels;
-    public DFHTuningParams.ForProcess proc = DFHTuningParams.ForProcess.BILLETS;
+    public DFHTuningParams.FurnaceFor furnaceFor = DFHTuningParams.FurnaceFor.BILLETS;
     protected DFHTuningParams tuningParams;
     JTextField tfReference, tfFceTitle, tfCustomer;
     NumberTextField ntfWidth;
@@ -410,7 +409,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
              slate.setViewportView(inpPage);
              mainAppPanel.add(slate, BorderLayout.CENTER);
              switchPage(DFHDisplayPageType.INPUTPAGE);
-             cbFceFor.setSelectedItem(proc);
+             cbFceFor.setSelectedItem(furnaceFor);
          }
     }
 
@@ -424,7 +423,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 //        tfCustomer.setEditable(ena && !onProductionLine);
 //        ntfWidth.setEditable(ena && !onProductionLine);
 
-        cbChType.setEnabled((proc != DFHTuningParams.ForProcess.STRIP) && ena && bAllowProfileChange);
+        cbChType.setEnabled((furnaceFor != DFHTuningParams.FurnaceFor.STRIP) && ena && bAllowProfileChange);
         tfChLength.setEditable(ena);
         tfChWidth.setEditable(ena);
         tfChDiameter.setEditable(ena);
@@ -648,10 +647,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         furnace.allowManualTempForLosses(allow);
     }
 
-    protected DFHTuningParams.ForProcess  getFceFor() {
-        return (DFHTuningParams.ForProcess)cbFceFor.getSelectedItem();
-    }
-
     DFHDisplayPageType lastDisplayPage = null;
 
     protected void updateDisplay(DFHDisplayPageType page) {
@@ -770,11 +765,11 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                     changeTopBot(false);
 //                    String msg1 = "";
 //                    String msg2 = "Enter Furnace Profile for Combined Top And Bottom.\nie. TOTAL Height from Floor to Roof";
-                    if (cbFceFor.getSelectedItem() != DFHTuningParams.ForProcess.STRIP) {
+                    if (cbFceFor.getSelectedItem() != DFHTuningParams.FurnaceFor.STRIP) {
 //                        msg1 = "Changing 'Furnace For' to Strip Heating\n\n";
 //                        if (!onProductionLine)
 //                            showMessage(msg1 + msg2);
-                        cbFceFor.setSelectedItem(DFHTuningParams.ForProcess.STRIP);
+                        cbFceFor.setSelectedItem(DFHTuningParams.FurnaceFor.STRIP);
                     }
 //                    else {
 //                        if (!onProductionLine)
@@ -1360,7 +1355,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         titlePanel.addItemPair("Title ", tfFceTitle);
         tfCustomer = new XLTextField(customer, 40);
         titlePanel.addItemPair("Customer ", tfCustomer);
-        cbFceFor = new XLComboBox(DFHTuningParams.ForProcess.values());
+        cbFceFor = new XLComboBox(DFHTuningParams.FurnaceFor.values());
 //        cbFceFor.setSelectedItem(proc);
         cbFceFor.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -1776,6 +1771,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 //        debug("adjustForLossNameChange-updateUI done");
     }
 
+    public OneStripDFHProcess getDFHProcess() {
+        return getStripDFHProcess(getProcessName());
+    }
+
     public OneStripDFHProcess getStripDFHProcess(String forProc) {
         return dfhProcessList.getDFHProcess(forProc.trim().toUpperCase());
     }
@@ -1915,8 +1914,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         fceTtitle = tfFceTitle.getText();
         customer = tfCustomer.getText();
 
-        proc = (DFHTuningParams.ForProcess) cbFceFor.getSelectedItem();
-        tuningParams.setSelectedProc(proc);
+        furnaceFor = (DFHTuningParams.FurnaceFor) cbFceFor.getSelectedItem();
+        tuningParams.setSelectedProc(furnaceFor);
 //        bTopBot = (cbHeatingType.getSelectedIndex() == 1);
         width = ntfWidth.getData() / 1000;
         furnace.setWidth(width);
@@ -1924,9 +1923,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         excessAir = tfExcessAir.getData() / 100;
 
         chWidth = tfChWidth.getData() / 1000;
-//        if (cbFceFor.getSelectedItem() == DFHTuningParams.ForProcess.STRIP)
-//            chLength = 1;
-//        else
         chLength = tfChLength.getData() / 1000;
         chThickness = tfChThickness.getData() / 1000;
         chDiameter = tfChDiameter.getData() / 1000;
@@ -1935,7 +1931,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         bottShadow = tfBottShadow.getData() / 100;
         getProcessName();
 //        processName = tfProcessName.getText();
-        if (cbFceFor.getSelectedItem() == DFHTuningParams.ForProcess.STRIP)
+        if (cbFceFor.getSelectedItem() == DFHTuningParams.FurnaceFor.STRIP)
             chPitch = 1;
         else
             chPitch = tfChPitch.getData() / 1000;
@@ -1970,8 +1966,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
      }
 
     protected void setFcefor(boolean showSuggestion) {
-        proc = (DFHTuningParams.ForProcess)cbFceFor.getSelectedItem();
-        if (proc == DFHTuningParams.ForProcess.STRIP) {
+        furnaceFor = (DFHTuningParams.FurnaceFor)cbFceFor.getSelectedItem();
+        if (furnaceFor == DFHTuningParams.FurnaceFor.STRIP) {
             tfChDiameter.setEnabled(false);
             cbChType.setSelectedItem(Charge.ChType.SOLID_RECTANGLE);
             cbChType.setEnabled(false);
@@ -2012,14 +2008,14 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             hidePerformMenu();
         }
         opPage.updateUI();
-        if (proc == DFHTuningParams.ForProcess.MANUAL)
+        if (furnaceFor == DFHTuningParams.FurnaceFor.MANUAL)
             showMessage("You have selected 'Furnace For' as 'Manually Set'.\n\n   YOU ARE ON YOUR OWN NOW !!!");
     }
 
     void setChargeSizeChoice() {
         if (cbChType.getSelectedItem() == Charge.ChType.SOLID_RECTANGLE) {
             tfChDiameter.setEnabled(false);
-            tfChWidth.setEnabled(true && proc != DFHTuningParams.ForProcess.STRIP);
+            tfChWidth.setEnabled(true && furnaceFor != DFHTuningParams.FurnaceFor.STRIP);
             tfChThickness.setEnabled(true);
 //            if (saveForFE != null)
 //                saveForFE.setEnabled(true);
@@ -2157,10 +2153,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             ok = false;
             msg += "\n   " + tfBottShadow.getName();
         }
-//        if ((forProcess() == DFHTuningParams.ForProcess.STRIP)  && (tfProcessName.getText().trim().length() < 1)) {
-//            ok = false;
-//            msg += "\n   Process Name is required for STRIP furnace";
-//        }
         if (tfChPitch.isInError()) {
             ok = false;
             msg += "\n   " + tfChPitch.getName();
@@ -2280,22 +2272,22 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                         " and " + tfExitTemp.titleAndVal();
             }
 
-            DFHTuningParams.ForProcess proc;
-            proc = (DFHTuningParams.ForProcess) cbFceFor.getSelectedItem();
+            DFHTuningParams.FurnaceFor proc;
+            proc = (DFHTuningParams.FurnaceFor) cbFceFor.getSelectedItem();
 
-            if (proc == DFHTuningParams.ForProcess.BILLETS) {  // billets
+            if (proc == DFHTuningParams.FurnaceFor.BILLETS) {  // billets
                 if (chThickness < 0.01) {
                     retVal &= false;
                     msg += nlSpace + "Check " + tfChThickness.titleAndVal() +
-                            " for Furnace for " + DFHTuningParams.ForProcess.BILLETS;
+                            " for Furnace for " + DFHTuningParams.FurnaceFor.BILLETS;
                 }
             }
 
-            if (proc == DFHTuningParams.ForProcess.STRIP) {
+            if (proc == DFHTuningParams.FurnaceFor.STRIP) {
                 if (chThickness > 0.01) {
                     retVal &= false;
                     msg += nlSpace + "Check " + tfChThickness.titleAndVal() +
-                            " for Furnace for " + DFHTuningParams.ForProcess.STRIP;
+                            " for Furnace for " + DFHTuningParams.FurnaceFor.STRIP;
                 }
                 if (exitZoneFceTemp < exitTemp) {
                     retVal &= false;
@@ -2470,8 +2462,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             enableCalculStat();
     }
 
-    protected DFHTuningParams.ForProcess forProcess() {
-        return proc;
+    protected DFHTuningParams.FurnaceFor furnaceFor() {
+        return furnaceFor;
     }
 
 //    boolean runOn = false;
@@ -2587,7 +2579,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     public StatusWithMessage takeProfileDataFromXML(String xmlStr, boolean selective,
-                                                    HeatingMode heatingMode, DFHTuningParams.ForProcess process) {
+                                                    HeatingMode heatingMode, DFHTuningParams.FurnaceFor process) {
         StatusWithMessage retVal = new StatusWithMessage();
         enableResultsMenu(false);
         String errMsg = "";
@@ -2630,17 +2622,17 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                     }
                     fceFor1stSwitch = true; // to disable fceFor switch warning
                     vp = XMLmv.getTag(acTData, "cbFceFor", 0);
-//                    debug("before ForProcess.getEnum, cbFceFor = " + vp.val);
-                    DFHTuningParams.ForProcess forProc = DFHTuningParams.ForProcess.getEnum(vp.val);
-                    if (selective && (process != null) && (forProc != process)) {
+//                    debug("before FurnaceFor.getEnum, cbFceFor = " + vp.val);
+                    DFHTuningParams.FurnaceFor fceFor = DFHTuningParams.FurnaceFor.getEnum(vp.val);
+                    if (selective && (process != null) && (fceFor != process)) {
                         allOK = false;
                         errMsg = "Furnace is not for the required Process, " + process;
                         break aBlock;
                     }
-//                    debug("forProc = " + forProc + ", mainF =" + mainF + ", cbFceFor = " + cbFceFor);
-                    if (forProc != null) {
-                        cbFceFor.setSelectedItem(forProc);
-                        proc = forProc;
+//                    debug("fceFor = " + fceFor + ", mainF =" + mainF + ", cbFceFor = " + cbFceFor);
+                    if (fceFor != null) {
+                        cbFceFor.setSelectedItem(fceFor);
+                        furnaceFor = fceFor;
                     }
 //                    debug("Before cbHeatingType");
                     vp = XMLmv.getTag(acTData, "cbHeatingType", 0);
@@ -2811,7 +2803,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         XMLgroupStat grpStat = new XMLgroupStat();
         DoubleWithErrStat dblWithStat;
         ValAndPos vp;
-        if (cbFceFor.getSelectedItem() != DFHTuningParams.ForProcess.STRIP) {
+        if (cbFceFor.getSelectedItem() != DFHTuningParams.FurnaceFor.STRIP) {
             vp = XMLmv.getTag(xmlStr, "nChargeRows", 0);
             if ((dblWithStat = new DoubleWithErrStat(vp.val, "Charge Rows, taking as 1", grpStat)).allOK)
                 nChargeRows = (int) dblWithStat.val;
@@ -2997,7 +2989,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
     public void resultsReady(Observations observations, DFHResult.Type switchDisplayTo) {
         setResultsReady(true);
-        if (proc == DFHTuningParams.ForProcess.STRIP) {
+        if (furnaceFor == DFHTuningParams.FurnaceFor.STRIP) {
             enableCompareMenu(true);
             enableSaveForComparison(true);
         }
@@ -3019,7 +3011,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             theResultsListener = null;
             theNowListener.noteResultsReady();
         }
-
     }
 
     void initPrintGroups() {
@@ -3185,31 +3176,41 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     void showMessage(String msg, int forTime) {
-        JOptionPane pane = new JOptionPane(msg, JOptionPane.INFORMATION_MESSAGE);
-        JDialog dialog = pane.createDialog(parent(), "FOR INFORMATION");
-        java.util.Timer timer = new java.util.Timer();
-        timer.schedule(new CloseDialogTask(dialog), forTime);
-        dialog.setVisible(true);
+        (new TimedMessage("In DFHFurnace: FOR INFORMATION", msg, TimedMessage.INFO, parent(), forTime)).show();
+//
+//
+//        JOptionPane pane = new JOptionPane(msg, JOptionPane.INFORMATION_MESSAGE);
+//        JDialog dialog = pane.createDialog(parent(), "FOR INFORMATION");
+//        final java.util.Timer timer = new java.util.Timer();
+//        timer.schedule(new CloseDialogTask(dialog), forTime);
+//        dialog.addMouseListener(new MouseAdapter() {
+//            @Override
+//            public void mouseEntered(MouseEvent e) {
+//                timer.purge();
+//                timer.cancel();
+//            }
+//        });
+//        dialog.setVisible(true);
     }
 
-    class CloseDialogTask extends TimerTask {
-        JDialog dlg;
-        CloseDialogTask(JDialog dlg) {
-            this.dlg = dlg;
-        }
+//    class CloseDialogTask extends TimerTask {
+//        JDialog dlg;
+//        CloseDialogTask(JDialog dlg) {
+//            this.dlg = dlg;
+//        }
+//
+//        public void run() {
+//            dlg.setVisible(false);
+//        }
+//    }
+//
 
-        public void run() {
-            dlg.setVisible(false);
-        }
-    }
-
-
-    void testFunctions() {
-        debug("In testFunctions");
-        String s = "";
-        s = s.trim();
-        debug("s = [" + s + "]");
-    }
+//    void testFunctions() {
+//        debug("In testFunctions");
+//        String s = "";
+//        s = s.trim();
+//        debug("s = [" + s + "]");
+//    }
 
     protected void saveFceToFile(boolean withPerformance) {
         if (asJNLP)

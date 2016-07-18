@@ -22,13 +22,13 @@ public class SimpleUnitFurnace extends UnitFurnace {
     public double fieldTempO;
 
     public SimpleUnitFurnace(FceSubSection fceSubSec, boolean bRecuType, double length, double endPos, double width,
-                        double heightEntry, double heightExit, DFHTuningParams.ForProcess forProcess) {
+                        double heightEntry, double heightExit, DFHTuningParams.FurnaceFor furnaceFor) {
         super(fceSubSec,  bRecuType, length, endPos, width,
-                               heightEntry, heightExit, forProcess);
+                               heightEntry, heightExit, furnaceFor);
     }
 
-    public SimpleUnitFurnace(DFHTuningParams.ForProcess forProcess) {
-        super(forProcess);
+    public SimpleUnitFurnace(DFHTuningParams.FurnaceFor furnaceFor) {
+        super(furnaceFor);
         dpFieldTempO = new MultiColDataPoint();
     }
 

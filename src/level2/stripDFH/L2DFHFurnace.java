@@ -20,8 +20,6 @@ import level2.fieldResults.FieldResults;
 import directFiredHeating.process.FurnaceSettings;
 import directFiredHeating.process.OneStripDFHProcess;
 import mvUtils.display.*;
-import mvUtils.mvXML.ValAndPos;
-import mvUtils.mvXML.XMLmv;
 import org.opcfoundation.ua.builtintypes.DataValue;
 import performance.stripFce.Performance;
 import performance.stripFce.StripProcessAndSize;
@@ -144,7 +142,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         stripZone.startSpeedUpdater();
     }
 
-    boolean canResetAccess = true; // resetting the application status in 'Level2.Internal'
+    boolean canResetAccess = false; // resetting the application status in 'Level2.Internal'
 
     /**
      * Checks in the the module access level is valid or not
@@ -459,7 +457,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     void updateLevel2Display() {
         for (L2DFHDisplay z: furnaceDisplayZones)
             z.updateLevel2Display();
-        stripZone.updateL2Display();
+        stripZone.updateLevel2Display();
         rthExit.updateLevel2Display();
         soakZone.updateLevel2Display();
         hbExit.updateLevel2Display();
@@ -591,7 +589,6 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         }
         exitFromAccess();
         if (l2DFHeating.isOnProductionLine() && l2DFHeating.isL2SystemReady()) {
-//            exitFromAccess();
             for (FceSection sec : topL2Zones.keySet())
                 topL2Zones.get(sec).closeSubscriptions();
             try {
@@ -806,7 +803,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         Charge ch = new Charge(controller.getSelChMaterial(refP.chMaterial), stripWidth, 1, stripThick);
         ChargeStatus chStatus = new ChargeStatus(ch, 0, exitTempRequired);
         double outputAssumed = 0;
-        tuningParams.setSelectedProc(controller.proc);
+        tuningParams.setSelectedProc(controller.furnaceFor);
         FieldResults fieldData = new FieldResults(this, false);
         if (fieldData.inError)   {
             logInfo("Facing some problem in reading furnace field data: " + fieldData.errMsg);
@@ -1121,7 +1118,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             logTrace("L2 " + ((response) ? "Responded " : "did not Respond ") + "to Confirm-Strip-Data query");
             if ((response) && (l2YesNoQuery.getValue(Tag.TagName.Response).booleanValue)) {
                 boolean canContinue = true;
-                FieldResults theFieldResults = new FieldResults(L2DFHFurnace.this, true);    // TODO does this work?
+                FieldResults theFieldResults = new FieldResults(L2DFHFurnace.this, true);
                 if (theFieldResults.inError) {
                     canContinue = false;
                     logError("Getting Field Results: " + theFieldResults.errMsg);

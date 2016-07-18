@@ -51,7 +51,7 @@ public class UnitFurnace {
     double vWallTop, vWallBot;
     FceSubSection fceSubSec;
     public FceSection fceSec;
-    public DFHTuningParams.ForProcess forProcess;
+    public DFHTuningParams.FurnaceFor furnaceFor;
 //    FlueComposition flue;
     protected DFHFurnace furnace;
     protected ChMaterial ch;
@@ -63,8 +63,8 @@ public class UnitFurnace {
 //    UnitFurnace sharingUfce = null; // corresponding top or bottom UnitFurnace - in case of top bottom firing
 
     public UnitFurnace(FceSubSection fceSubSec, boolean bRecuType, double length, double endPos, double width,
-                       double heightEntry, double heightExit, DFHTuningParams.ForProcess forProcess) {
-        this(forProcess);
+                       double heightEntry, double heightExit, DFHTuningParams.FurnaceFor furnaceFor) {
+        this(furnaceFor);
         noteSubSec(fceSubSec);
         bBot = fceSec.botSection;
 //        g = (bBot) ? furnace.gBot : ((bAddedTopSoak) ? furnace.gTopAS : furnace.gTop);
@@ -81,11 +81,11 @@ public class UnitFurnace {
         radSrc = new Stack<RadToNeighbors>();
     }
 
-    public UnitFurnace(DFHTuningParams.ForProcess forProcess) {
-        this.forProcess = forProcess;
+    public UnitFurnace(DFHTuningParams.FurnaceFor furnaceFor) {
+        this.furnaceFor = furnaceFor;
         dpTempG = new MultiColDataPoint();
         dpTempO = new MultiColDataPoint();
-        if (forProcess != DFHTuningParams.ForProcess.STRIP) {
+        if (furnaceFor != DFHTuningParams.FurnaceFor.STRIP) {
             dpTempWO = new MultiColDataPoint();
             dpTempWcore = new MultiColDataPoint();
         }
@@ -127,7 +127,7 @@ public class UnitFurnace {
     }
 
     UnitFurnace(UnitFurnace copyFrom) {
-        this(copyFrom.forProcess);
+        this(copyFrom.furnaceFor);
         noteSubSec(copyFrom.fceSubSec);
         this.endPos = copyFrom.endPos;
         this.stPos = copyFrom.endPos;
@@ -840,7 +840,7 @@ public class UnitFurnace {
     protected void uploadData() {
         dpTempG.updateVal(tempG);
         dpTempO.updateVal(tempO);
-        if (forProcess != DFHTuningParams.ForProcess.STRIP) {
+        if (furnaceFor != DFHTuningParams.FurnaceFor.STRIP) {
             dpTempWO.updateVal(tempWO);
             dpTempWcore.updateVal(tempWcore);
         }

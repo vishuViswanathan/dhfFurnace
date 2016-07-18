@@ -12,14 +12,13 @@ import javax.swing.*;
  * To change this template use File | Settings | File Templates.
  */
 public interface ThreadController {
-    public boolean isRunOn();
-    public boolean isPauseOn();
-    public boolean isAborted();
-    public void showStatus(String msg);
-    public void updateGraph();
-    public void setProgressGraph(String title1, String title2, JPanel panel);
-    public void setMainTitle(String title);
-    public void setCalculTitle(String title);
-    public void abortIt();
-    public FramedPanel getProgressPanel();
+    boolean isRunOn();
+    boolean isPauseOn();
+    boolean isAborted();
+    void showStatus(String msg);
+    void updateGraph();
+    void setProgressGraph(String title1, String title2, JPanel panel);
+    void setMainTitle(String title);
+    void setCalculTitle(String title);
+    void abortIt();
 }
