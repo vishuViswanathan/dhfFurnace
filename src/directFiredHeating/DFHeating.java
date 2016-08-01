@@ -1065,14 +1065,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         perfMenu.setVisible(show);
     }
 
-    synchronized void enablePerfMenu(boolean ena)  {
-//        perfMenu.setVisible(ena);
-//        debug("enablePerfmenu<" + ena + ">");
+    synchronized public void enablePerfMenu(boolean ena)  {
         perfMenu.setEnabled(ena);
-//        if (!perfMenu.isEnabled()) {
-//            perfMenu.setEnabled(ena);
-//            enableCreatePerform(ena);
-//        }
     }
 
     JMenu getCompareMenu() {
@@ -1959,6 +1953,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
     protected void setFcefor(boolean showSuggestion) {
         furnaceFor = (DFHTuningParams.FurnaceFor)cbFceFor.getSelectedItem();
+        logInfo("In setFceFor, furnaceFor =  " + furnaceFor);
         if (furnaceFor == DFHTuningParams.FurnaceFor.STRIP) {
             tfChDiameter.setEnabled(false);
             cbChType.setSelectedItem(Charge.ChType.SOLID_RECTANGLE);
@@ -1974,8 +1969,9 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             tfMinExitZoneFceTemp.setEnabled(bDataEntryON);
             tfDeltaTemp.setEnabled(false);
             setValuesToUI();
-            showPerfMenu(true);
+//            perfMenu.setEnabled(true);
             enablePerfMenu(true);
+            showPerfMenu(true);
             if (showSuggestion && cbHeatingMode.getSelectedItem() != HeatingMode.TOPBOTSTRIP)
                 showMessage("Suggest selecting 'Heating Mode' to STRIP - TOP and BOTTOM");
 //            perfMenu.setVisible(true);

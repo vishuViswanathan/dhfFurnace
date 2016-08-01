@@ -116,7 +116,7 @@ public class L2DFHeating extends DFHeating {
         bAtSite = true;
         bAllowProfileChange = false;
         userActionAllowed = false;
-        releaseDate = "20160420";
+        releaseDate = "20160801";
         onProductionLine = true;
         asApplication = true;
         this.equipment = equipment;
@@ -568,9 +568,11 @@ public class L2DFHeating extends DFHeating {
         return menuBarLevel2;
     }
 
-    public void enablePerfMenu(boolean ena) {
+    synchronized public void enablePerfMenu(boolean ena) {
+//        logInfo("L2DHeating.enablePerfMenu- bAllowUpdateWithFieldData = " + bAllowUpdateWithFieldData +
+//                "ena = " + ena);
         if (bAllowUpdateWithFieldData) {
-            perfMenu.setEnabled(ena);
+            super.enablePerfMenu(ena);   // perfMenu.setEnabled(ena);
         }
     }
 

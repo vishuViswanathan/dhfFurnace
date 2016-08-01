@@ -57,6 +57,7 @@ public class Level2Installer extends L2DFHeating {
         bAllowProfileChange = true;
         bAllowManualCalculation = true;
         bShowAllmenu = true;
+        bAllowUpdateWithFieldData = true;
 //        userActionAllowed = true;
         accessLevel = L2AccessControl.AccessLevel.INSTALLER;
     }
@@ -69,6 +70,7 @@ public class Level2Installer extends L2DFHeating {
         bAllowProfileChange = true;
         bAllowManualCalculation = true;
         bShowAllmenu = true;
+        bAllowUpdateWithFieldData = true;
 //        userActionAllowed = true;
         accessLevel = L2AccessControl.AccessLevel.INSTALLER;
         StatusWithMessage status = getInstallerAccessFile();
