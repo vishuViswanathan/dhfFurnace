@@ -32,7 +32,7 @@ import java.util.Vector;
  */
 public class Level2Configurator extends DFHeating {
 
-    String fceDataLocation = "level2FceData/mustBeUserEntry/";
+    protected String fceDataLocation = "level2FceData/mustBeUserEntry/";
     boolean associatedDataLoaded = false;
     OfflineAccessControl accessControl;
 
@@ -378,6 +378,7 @@ public class Level2Configurator extends DFHeating {
         mL2FileMenu.add(mIUpdateFurnace);
         mL2FileMenu.addSeparator();
         mL2FileMenu.add(saveFuelSpecs);
+
         mL2FileMenu.add(saveSteelSpecs);
         mL2FileMenu.add(mIExit);
         return mL2FileMenu;
@@ -521,7 +522,7 @@ public class Level2Configurator extends DFHeating {
 
     public static void main(String[] args) {
         final Level2Configurator l2Preparer = new Level2Configurator();
-        if (l2Preparer.parseCmdLineArgs(args)) {
+        if (parseCmdLineArgs(args)) {
             l2Preparer.setItUp();
             if (!l2Preparer.associatedDataLoaded) {
                 l2Preparer.showError(" Aborting ...");

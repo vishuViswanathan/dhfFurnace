@@ -121,7 +121,7 @@ public class LossType {
         tfLossName = new JTextField(lossName, 20);
         tfLossName.addActionListener(listener);
         tfLossName.addFocusListener((FocusListener) listener);
-        tfFactor = new NumberTextField(controller, factor, 10, false, 1e-10, 1e6, "#.###E00", "Loss Factor", false);
+        tfFactor = new NumberTextField(controller, factor, 10, false, 0, 1e6, "#.###E00", "Loss Factor", false);
         tfFactor.addActionListener(listener);
         tfFactor.addFocusListener((FocusListener)listener);
         cbBasis = new JComboBox<LossBasis>(LossBasis.values());
