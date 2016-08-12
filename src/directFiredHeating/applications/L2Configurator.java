@@ -38,7 +38,7 @@ public class L2Configurator extends StripHeating {
         bAllowProfileChange = true;
         bAllowManualCalculation = true;
         asApplication = true;
-        releaseDate = "20160727 17:20";
+        releaseDate = "20160812 20:40";
     }
 
     public boolean setItUp() {
