@@ -332,7 +332,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
 
     boolean createL2Messages() {
         boolean retVal = false;
-        logDebug("creating L2 Massages");
+        logDebug("creating L2 Messages");
         messageSub = source.createTMSubscription("Messages Data", new SubAliveListener(), new MessageListener());
         Tag[] errMessageTags = {new Tag(L2ParamGroup.Parameter.ErrMsg, Tag.TagName.Msg, false, false),
                 new Tag(L2ParamGroup.Parameter.ErrMsg, Tag.TagName.Ready, false, true),
@@ -757,7 +757,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
      */
     public ChargeStatus processInFurnace(ChargeStatus chargeStatus) {
         if (controller.heatingMode == DFHeating.HeatingMode.TOPBOTSTRIP) {
-            setOnlyWallRadiation();
+            setOnlyWallRadiation(true);
             setDisplayResults(false);
             chargeStatus.setProductionData(production);
             getReadyToCalcul(true); // do not create new slots if already created
@@ -952,42 +952,40 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         }
         if (goAhead) {
             l2DFHeating.enablePerfMenu(false);
-//            StatusWithMessage resp = l2DFHeating.setPerformanceTableLimits(perform);
-//            if (resp.getDataStatus() == StatusWithMessage.DataStat.OK) {
-                FceEvaluator eval = controller.calculateForPerformanceTable(perform);
-                if (eval != null) {
-                    logTrace("eval for Performance table is ok");
-                    try {
-                        eval.awaitThreadToExit();
-                        logTrace("eval for Performance table is completed");
-                        if (eval.healthyExit()) {
-                            logTrace("eval for Performance table had healthy exit");
-                            if (replace)
-                                performBase.replaceExistingPerformance(perform);
-                            else
-                                performBase.noteBasePerformance(perform);
-                            retVal = true;
-                        }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+            FceEvaluator eval = controller.calculateForPerformanceTable(perform);
+            if (eval != null) {
+                logTrace("eval for Performance table is ok");
+                try {
+                    eval.awaitThreadToExit();
+                    logTrace("eval for Performance table is completed");
+                    if (eval.healthyExit()) {
+                        logTrace("eval for Performance table had healthy exit");
+                        if (replace)
+                            performBase.replaceExistingPerformance(perform);
+                        else
+                            performBase.noteBasePerformance(perform);
+                        retVal = true;
                     }
-                } else
-                    logInfo("eval for Performance table is null");
-//            }
-//            else
-//                showError(resp.getErrorMessage() + "\nField production/strips size data outside range\nPerformance not saved");
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            } else
+                logInfo("eval for Performance table is null");
         }
         return retVal;
     }
 
     synchronized void resetFieldDataBeingHandled() {
-        logTrace("fieldDataIsBeingHandled is made OFF");
+        logTrace("Trying to make fieldDataIsBeingHandled OFF");
         fieldDataIsBeingHandled.set(false);
+        logTrace("fieldDataIsBeingHandled is made OFF");
         l2DFHeating.enablePerfMenu(true);
     }
 
     synchronized void setFieldDataBeingHandled() {
+        logTrace("Trying to make fieldDataIsBeingHandled ON");
         fieldDataIsBeingHandled.set(true);
+        logTrace("fieldDataIsBeingHandled is made ON");
         l2DFHeating.enablePerfMenu(false);
 
     }
@@ -1108,10 +1106,6 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     }
 
     class FieldPerformanceHandler implements Runnable {
-//        FieldResults theFieldData;
-//        FieldPerformanceHandler(FieldResults theFieldData) {
-//            this.theFieldData = theFieldData;
-//        }
         public void run() {
             setFieldDataBeingHandled();
             boolean response = getYesNoResponseFromLevel1("Confirm that Strip Size Data is updated", 20);
@@ -1131,7 +1125,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                     }
                 }
                 if (theFieldResults.inError || theFieldResults.processOkForFieldResults().inError) {
-                    showErrorInLevel1("Taking Field Performance");
+                    showErrorInLevel1("Error in Taking Field Performance");
                 }
                 if (canContinue) {
 //                    if (setFieldProductionData()) {
@@ -1174,7 +1168,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     class PerformanceModificationHandler implements Runnable {
         public void run() {
             int count = 5;
-            boolean gotIt = false;
+            ErrorStatAndMsg gotIt = new ErrorStatAndMsg();
             while(--count > 0) {
                 if (!isProcessDataBeingUsed()) { // newStripIsBeingHandled.get() && !fieldDataIsBeingHandled.get()) {
                     fieldDataIsBeingHandled.set(true);
@@ -1188,8 +1182,8 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                     e.printStackTrace();
                 }
             }
-            if (!gotIt)
-                logInfo("Unable to read Modified Performance Data");
+            if (gotIt.inError)
+                showErrorInLevel1("Field Performance", gotIt.msg);
         }
     }
 

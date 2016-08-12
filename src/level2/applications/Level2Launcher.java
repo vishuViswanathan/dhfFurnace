@@ -350,7 +350,8 @@ public class Level2Launcher {
                 if (getAccessToLevel2(L2DFHeating.defaultLevel())) {
                     new WaitMsg(mainF, "Starting Level2Runtime. Please wait ...", new ActInBackground() {
                         public void doInBackground() {
-                            L2DFHeating l2 = new L2DFHeating("Furnace", true);
+//                            L2DFHeating l2 = new L2DFHeating("Furnace", true);
+                            L2DFHeating l2 = new L2Runtime("Furnace");
                             if (l2.l2SystemReady)
                                 quit();
                         }

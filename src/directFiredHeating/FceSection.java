@@ -1072,7 +1072,7 @@ public class FceSection {
         }
         return retVal;
     }
-                                                               ;
+
     public void setSectionID(int secNum) {
         this.secNum = secNum;
     }
@@ -2135,10 +2135,14 @@ public class FceSection {
                // required change in tempG
                 deltaTnow = exitTemp - nowEntryTemp;
                 // assume Alpha is unchanged
-                newTempG = (chSecMeanReqd + deltaTreqd / deltaTnow * (nowTempG - (exitTemp - deltaTnow / 2)) + nowTempG) / 2;
+//                newTempG = (chSecMeanReqd + deltaTreqd / deltaTnow * (nowTempG - (exitTemp - deltaTnow / 2)) + nowTempG) / 2;
+                double gasTChange =  (chSecMeanReqd + deltaTreqd / deltaTnow * (nowTempG - (exitTemp - deltaTnow / 2))) - nowTempG;
+                newTempG = gasTChange / 3 + nowTempG;
+//                newTempG = (chSecMeanReqd + deltaTreqd / deltaTnow * (nowTempG - (exitTemp - deltaTnow / 2)) + nowTempG) / 2;
                 // take Radiation relation
 
                 lastUnit.tempG = newTempG;
+
                 presetGasTemp = newTempG;
             }
         }
@@ -2251,10 +2255,7 @@ public class FceSection {
     boolean decide(String title, String msg) {
         int resp = JOptionPane.showConfirmDialog(controller.parent(), msg, title, JOptionPane.YES_NO_OPTION);
         controller.parent().toFront();
-        if (resp == JOptionPane.YES_OPTION)
-            return true;
-        else
-            return false;
+        return resp == JOptionPane.YES_OPTION;
     }
 
     void setTCLocation() {
