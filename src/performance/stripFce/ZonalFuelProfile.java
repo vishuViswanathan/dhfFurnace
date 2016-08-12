@@ -5,7 +5,9 @@ import directFiredHeating.DFHeating;
 import mvUtils.display.DataWithMsg;
 import mvUtils.display.ExcelStyles;
 import mvUtils.display.FramedPanel;
+import mvUtils.jnlp.JNLPFileHandler;
 import mvUtils.math.XYArray;
+import org.apache.poi.hssf.record.aggregates.WorksheetProtectionBlock;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
@@ -13,14 +15,12 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 
+import javax.jnlp.FileContents;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -493,44 +493,146 @@ public class ZonalFuelProfile {
         return topRow;
     }
 
+//    void saveFuelTrendToXLOLD() {
+//        FileOutputStream out = null;
+//        FileDialog fileDlg =
+//                new FileDialog(DFHeating.mainF, "Saving Fuel Trend Table to Excel",
+//                        FileDialog.SAVE);
+//        fileDlg.setFile("FuelTrend.xls");
+//        fileDlg.setVisible(true);
+//        String bareFile = fileDlg.getFile();
+//        if (bareFile != null) {
+//            int len = bareFile.length();
+//            if ((len < 4) || !(bareFile.substring(len - 4).equalsIgnoreCase(".xls"))) {
+//                controller.showMessage("Adding '.xls' to file name");
+//                bareFile = bareFile + ".xls";
+//            }
+//            String fileName = fileDlg.getDirectory() + bareFile;
+//            try {
+//                out = new FileOutputStream(fileName);
+//            } catch (FileNotFoundException e) {
+//                controller.showError("Some problem in file.\n" + e.getMessage());
+//                return;
+//            }
+////  create a new workbook
+//            Workbook wb = new HSSFWorkbook();
+//            int nSheet = 0;
+////  create a new sheet
+//            ExcelStyles styles = new ExcelStyles(wb);
+//            Sheet sh = prepareReportWB(wb, styles);
+//            xlFuelCharacteristicReport(sh, styles);
+//            try {
+//                wb.write(out);
+//                out.close();
+//            } catch (IOException e) {
+//                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+//                controller.showError("Some problem with file.\n" + e.getMessage());
+//            }
+//        }
+//        controller.parent().toFront();
+//    }
+
     void saveFuelTrendToXL() {
-        FileOutputStream out = null;
-        FileDialog fileDlg =
-                new FileDialog(DFHeating.mainF, "Saving Fuel Trend Table to Excel",
-                        FileDialog.SAVE);
-        fileDlg.setFile("FuelTrend.xls");
-        fileDlg.setVisible(true);
-        String bareFile = fileDlg.getFile();
-        if (bareFile != null) {
-            int len = bareFile.length();
-            if ((len < 4) || !(bareFile.substring(len - 4).equalsIgnoreCase(".xls"))) {
-                controller.showMessage("Adding '.xls' to file name");
-                bareFile = bareFile + ".xls";
-            }
-            String fileName = fileDlg.getDirectory() + bareFile;
-            try {
-                out = new FileOutputStream(fileName);
-            } catch (FileNotFoundException e) {
-                controller.showError("Some problem in file.\n" + e.getMessage());
-                return;
-            }
+        //  create a new workbook
 //  create a new workbook
-            Workbook wb = new HSSFWorkbook();
-            int nSheet = 0;
+        Workbook wb = new HSSFWorkbook();
+        int nSheet = 0;
 //  create a new sheet
-            ExcelStyles styles = new ExcelStyles(wb);
-            Sheet sh = prepareReportWB(wb, styles);
-            xlFuelCharacteristicReport(sh, styles);
+        ExcelStyles styles = new ExcelStyles(wb);
+        Sheet sh = prepareReportWB(wb, styles);
+        xlFuelCharacteristicReport(sh, styles);
+        saveFuelTrendToXL(wb);
+//        //  create a new file
+//        if (controller.asJNLP) {
+//            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+//            try {
+//                wb.write(bos);
+//                byte[] bytes = bos.toByteArray();
+//                if (!JNLPFileHandler.saveToFile(bytes, "xls", "FuelTrend.xls"))
+//                    controller.showError("Some problem in writing to Excel file!");
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//        else {
+//            FileOutputStream out = null;
+//            FileDialog fileDlg =
+//                    new FileDialog(DFHeating.mainF, "Saving Fuel Trend Table to Excel",
+//                            FileDialog.SAVE);
+//            fileDlg.setFile("FuelTrend.xls");
+//            fileDlg.setVisible(true);
+//            String bareFile = fileDlg.getFile();
+//            if (bareFile != null) {
+//                int len = bareFile.length();
+//                if ((len < 4) || !(bareFile.substring(len - 4).equalsIgnoreCase(".xls"))) {
+//                    controller.showMessage("Adding '.xls' to file name");
+//                    bareFile = bareFile + ".xls";
+//                }
+//                String fileName = fileDlg.getDirectory() + bareFile;
+//                try {
+//                    out = new FileOutputStream(fileName);
+//                } catch (FileNotFoundException e) {
+//                    controller.showError("Some problem in file.\n" + e.getMessage());
+//                    return;
+//                }
+//                try {
+//                    wb.write(out);
+//                    out.close();
+//                } catch (IOException e) {
+//                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+//                    controller.showError("Some problem with file.\n" + e.getMessage());
+//                }
+//            }
+//        }
+//        controller.parent().toFront();
+    }
+
+    void saveFuelTrendToXL(Workbook wB) {
+        //  create a new file
+        if (controller.asJNLP) {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try {
-                wb.write(out);
-                out.close();
+                wB.write(bos);
+                byte[] bytes = bos.toByteArray();
+                if (!JNLPFileHandler.saveToFile(bytes, "xls", "FuelTrend.xls"))
+                    controller.showError("Some problem in writing to Excel file!");
             } catch (IOException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                controller.showError("Some problem with file.\n" + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        else {
+            FileOutputStream out = null;
+            FileDialog fileDlg =
+                    new FileDialog(DFHeating.mainF, "Saving Fuel Trend Table to Excel",
+                            FileDialog.SAVE);
+            fileDlg.setFile("FuelTrend.xls");
+            fileDlg.setVisible(true);
+            String bareFile = fileDlg.getFile();
+            if (bareFile != null) {
+                int len = bareFile.length();
+                if ((len < 4) || !(bareFile.substring(len - 4).equalsIgnoreCase(".xls"))) {
+                    controller.showMessage("Adding '.xls' to file name");
+                    bareFile = bareFile + ".xls";
+                }
+                String fileName = fileDlg.getDirectory() + bareFile;
+                try {
+                    out = new FileOutputStream(fileName);
+                } catch (FileNotFoundException e) {
+                    controller.showError("Some problem in file.\n" + e.getMessage());
+                    return;
+                }
+                try {
+                    wB.write(out);
+                    out.close();
+                } catch (IOException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    controller.showError("Some problem with file.\n" + e.getMessage());
+                }
             }
         }
         controller.parent().toFront();
     }
+
 
     Sheet prepareReportWB(Workbook wb, ExcelStyles styles) {
          Sheet sheet = wb.createSheet("Fuel Trend");
@@ -547,50 +649,131 @@ public class ZonalFuelProfile {
      }
 
     void appendFuelTrendToXL() {
-        FileOutputStream out = null;
-        FileDialog fileDlg =
-                new FileDialog(controller.mainF, "Appending Fuel Trend Table to Excel",
-                        FileDialog.LOAD);
-        fileDlg.setFile("*.xls");
-        fileDlg.setVisible(true);
-        String bareFile = fileDlg.getFile();
-        if (bareFile != null) {
-            boolean bXL = (bareFile.length() > 4) && (bareFile.substring(bareFile.length() - 4).equalsIgnoreCase(".xls"));
-            if (bXL) {
-                String filePath = fileDlg.getDirectory() + bareFile;
-                if (!filePath.equals("nullnull")) {
-                    FileInputStream xlInput = null;
-                    HSSFWorkbook wB = null;
+        // read the existing file
+        InputStream xlInput = null;
+        HSSFWorkbook wB = null;
+        if (controller.asJNLP) {
+            try {
+                FileContents fc = JNLPFileHandler.getReadFile(null, new String[]{"xls"}, 0, 0);
+                if (fc != null) {
                     try {
-                        xlInput = new FileInputStream(filePath);
-                        /** Create a workbook using the File System**/
-                        wB = new HSSFWorkbook(xlInput);
-                    } catch (Exception e) {
-                        controller.showError("Some problem in Reading/saving Fuel Trend file\n" + e.getMessage());
+                        String fileName = fc.getName();
+                        boolean bXL = (fileName.length() > 4) && (fileName.substring(fileName.length() - 4).equalsIgnoreCase(".xls"));
+                        if (bXL)
+                            xlInput = fc.getInputStream();
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
 
-                    /** Get the first sheet from workbook**/
-                    HSSFSheet sh = wB.getSheet("Fuel Trend");
-                    if (sh != null) {
-                        ExcelStyles styles = new ExcelStyles(wB);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        else {
+            FileDialog fileDlg =
+                    new FileDialog(controller.mainF, "Appending Fuel Trend Table to Excel",
+                            FileDialog.LOAD);
+            fileDlg.setFile("*.xls");
+            fileDlg.setVisible(true);
+            String bareFile = fileDlg.getFile();
+            if (bareFile != null) {
+                boolean bXL = (bareFile.length() > 4) && (bareFile.substring(bareFile.length() - 4).equalsIgnoreCase(".xls"));
+                if (bXL) {
+                    String filePath = fileDlg.getDirectory() + bareFile;
+                    if (!filePath.equals("nullnull")) {
                         try {
-                            xlFuelCharacteristicReport(sh, styles);
-                            xlInput.close();
-                            FileOutputStream outFile = new FileOutputStream(filePath);
-                            wB.write(outFile);
-                            outFile.close();
+                            xlInput = new FileInputStream(filePath);
                         } catch (FileNotFoundException e) {
-                            controller.showError("Some problem in Reading/saving Fuel Trend file\n" + e.getMessage());
-                        } catch (IOException e) {
-                            controller.showError("Some problem in Reading/saving Fuel Trend file\n" + e.getMessage());
+                            controller.showError("Some problem in Reading Fuel Trend file\n" + e.getMessage());
                         }
                     }
                 }
-            } else
-                controller.showMessage("Choose *.xls file");
+            }
+        }
+        if (xlInput != null) {
+            try {
+                /** Create a workbook using the File System**/
+                wB = new HSSFWorkbook(xlInput);
+            } catch (Exception e) {
+                controller.showError("Some problem in Reading/saving Fuel Trend file\n" + e.getMessage());
+            }
+
+            /** Get the first sheet from workbook**/
+            HSSFSheet sh = wB.getSheet("Fuel Trend");
+            if (sh != null) {
+                ExcelStyles styles = new ExcelStyles(wB);
+                try {
+                    xlFuelCharacteristicReport(sh, styles);
+                    xlInput.close();
+                } catch (IOException e) {
+                    controller.showError("Some problem in Reading Fuel Trend file\n" + e.getMessage());
+                }
+            }
+            else {
+                controller.showError("The selected file does not contain any fuel Profile data");
+                wB = null;
+            }
+        }
+        if (wB != null) {
+            controller.showMessage("Existing fuel profile read in and appended");
+            saveFuelTrendToXL(wB);
+//            FileOutputStream outFile = new FileOutputStream(filePath);
+//                    wB.write(outFile);
+//                    outFile.close();
+//                } catch (FileNotFoundException e) {
+//                    controller.showError("Some problem in Reading/saving Fuel Trend file\n" + e.getMessage());
+//                } catch (IOException e) {
+//                    controller.showError("Some problem in Reading/saving Fuel Trend file\n" + e.getMessage());
+//                }
+//            }
         }
     }
 
+//    void appendFuelTrendToXLOLD() {
+//        FileOutputStream out = null;
+//        FileDialog fileDlg =
+//                new FileDialog(controller.mainF, "Appending Fuel Trend Table to Excel",
+//                        FileDialog.LOAD);
+//        fileDlg.setFile("*.xls");
+//        fileDlg.setVisible(true);
+//        String bareFile = fileDlg.getFile();
+//        if (bareFile != null) {
+//            boolean bXL = (bareFile.length() > 4) && (bareFile.substring(bareFile.length() - 4).equalsIgnoreCase(".xls"));
+//            if (bXL) {
+//                String filePath = fileDlg.getDirectory() + bareFile;
+//                if (!filePath.equals("nullnull")) {
+//                    FileInputStream xlInput = null;
+//                    HSSFWorkbook wB = null;
+//                    try {
+//                        xlInput = new FileInputStream(filePath);
+//                        /** Create a workbook using the File System**/
+//                        wB = new HSSFWorkbook(xlInput);
+//                    } catch (Exception e) {
+//                        controller.showError("Some problem in Reading/saving Fuel Trend file\n" + e.getMessage());
+//                    }
+//
+//                    /** Get the first sheet from workbook**/
+//                    HSSFSheet sh = wB.getSheet("Fuel Trend");
+//                    if (sh != null) {
+//                        ExcelStyles styles = new ExcelStyles(wB);
+//                        try {
+//                            xlFuelCharacteristicReport(sh, styles);
+//                            xlInput.close();
+//                            FileOutputStream outFile = new FileOutputStream(filePath);
+//                            wB.write(outFile);
+//                            outFile.close();
+//                        } catch (FileNotFoundException e) {
+//                            controller.showError("Some problem in Reading/saving Fuel Trend file\n" + e.getMessage());
+//                        } catch (IOException e) {
+//                            controller.showError("Some problem in Reading/saving Fuel Trend file\n" + e.getMessage());
+//                        }
+//                    }
+//                }
+//            } else
+//                controller.showMessage("Choose *.xls file");
+//        }
+//    }
 }
 
 

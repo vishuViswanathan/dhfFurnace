@@ -41,12 +41,10 @@ public class Level2Configurator extends DFHeating {
         bL2Configurator = true;
         enableSpecsSave = true;
         onProductionLine = false;
-        bAllowEditDFHProcess = true;
-        bAllowEditFurnaceSettings = true;
         bAllowProfileChange = true;
         bAllowManualCalculation = true;
         asApplication = true;
-        releaseDate = "20160706 15:00";
+        releaseDate = "20160712 15:00";
     }
 
     public boolean setItUp() {
@@ -75,7 +73,7 @@ public class Level2Configurator extends DFHeating {
             switchPage(DFHDisplayPageType.INPUTPAGE);
             displayIt();
 
-            showMessage("The furnace has to be of " + HeatingMode.TOPBOTSTRIP + " for " + DFHTuningParams.FurnaceFor.STRIP +
+            showMessage("Level2 Configurator - The furnace has to be of " + HeatingMode.TOPBOTSTRIP + " for " + DFHTuningParams.FurnaceFor.STRIP +
                     "\n\nIt is the responsibility of the user to ensure data integrity among:" +
                     "\n      1) Profile including Fuel type " +
                     "\n      2) IP address of OPC server  '" + mL2Configuration.getText() + "'" +
@@ -377,9 +375,9 @@ public class Level2Configurator extends DFHeating {
         mL2FileMenu.add(mISaveFurnace);
         mL2FileMenu.add(mIUpdateFurnace);
         mL2FileMenu.addSeparator();
-        mL2FileMenu.add(saveFuelSpecs);
+        mL2FileMenu.add(mISaveFuelSpecs);
 
-        mL2FileMenu.add(saveSteelSpecs);
+        mL2FileMenu.add(mISaveSteelSpecs);
         mL2FileMenu.add(mIExit);
         return mL2FileMenu;
     }

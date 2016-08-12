@@ -95,29 +95,31 @@ public abstract class StripHeating extends DFHeating {
         return (profileCode.length() == profileCodeFormat.format(0).length());
     }
 
-    protected ErrorStatAndMsg isChargeInFceOK() {    // TODO 20160622 considered that UI is already read
-        ErrorStatAndMsg retVal = super.isChargeInFceOK();
+    protected ErrorStatAndMsg checkWithDFHProcess(boolean getUserResponse) {
+        ErrorStatAndMsg retVal = new ErrorStatAndMsg();
         if ((furnaceFor() == DFHTuningParams.FurnaceFor.STRIP)) {
             OneStripDFHProcess oneProc = getDFHProcess();
             if (oneProc != null) {
-                boolean someDecisionRequired = false;
-                String toDecide = "<html><h4>Some parameters are set from Strip DFH Process <b>" + oneProc.processName + "</b>";
-                ChMaterial material = oneProc.getChMaterial(chThickness);
-                if (material != selChMaterial) {
-                    toDecide += "<blockQuote> # Charge Material selected is not matching for thickness <b>" + (chThickness * 1000) + "mm</b>.<p>" +
-                            "&emsp;Will be changed to <b>" + material + "</b> as per DFH Strip Process</blockQuote>";
-                    someDecisionRequired = true;
-                }
-                toDecide += "<blockQuote># Exit Temperature set as <b>" + oneProc.tempDFHExit + "</b></blockQuote>" +
-                        "<blockQuote># Exit Zone Temperature set as <b>" + oneProc.getMaxExitZoneTemp() + "</b></blockQuote>" +
-                        "<blockQuote># Minimum Exit Zone Temperature set as <b>" + oneProc.getMinExitZoneTemp() + "</b></blockQuote>";
-                toDecide += "</html>";
                 boolean proceed = true;
-                String title = "Strip DFH Process";
-                if (someDecisionRequired)
-                    proceed = decide(title, toDecide);
-                else
-                    showMessage(title, toDecide);
+                ChMaterial material = oneProc.getChMaterial(chThickness);
+                if (getUserResponse) {
+                    boolean someDecisionRequired = false;
+                    String toDecide = "<html><h4>Some parameters are set from Strip DFH Process <b>" + oneProc.processName + "</b>";
+                    if (material != selChMaterial) {
+                        toDecide += "<blockQuote> # Charge Material selected is not matching for thickness <b>" + (chThickness * 1000) + "mm</b>.<p>" +
+                                "&emsp;Will be changed to <b>" + material + "</b> as per DFH Strip Process</blockQuote>";
+                        someDecisionRequired = true;
+                    }
+                    toDecide += "<blockQuote># Exit Temperature set as <b>" + oneProc.tempDFHExit + "</b></blockQuote>" +
+                            "<blockQuote># Exit Zone Temperature set as <b>" + oneProc.getMaxExitZoneTemp() + "</b></blockQuote>" +
+                            "<blockQuote># Minimum Exit Zone Temperature set as <b>" + oneProc.getMinExitZoneTemp() + "</b></blockQuote>";
+                    toDecide += "</html>";
+                    String title = "Strip DFH Process";
+                    if (someDecisionRequired)
+                        proceed = decide(title, toDecide);
+                    else
+                        showMessage(title, toDecide);
+                }
                 if (proceed) {
                     setChMaterial(material);
                     setExitTemperaure(oneProc.tempDFHExit);
@@ -127,6 +129,51 @@ public abstract class StripHeating extends DFHeating {
             } else {
                 retVal.addErrorMsg("\n   Process not available in DFH Process List");
             }
+        }
+        return retVal;
+    }
+
+    protected boolean getUserResponse(OneStripDFHProcess oneProc, ChMaterial material)  {
+        boolean proceed = true;
+        boolean someDecisionRequired = false;
+        String toDecide = "<html><h4>Some parameters are set from Strip DFH Process <b>" + oneProc.processName + "</b>";
+        if (material != selChMaterial) {
+            toDecide += "<blockQuote> # Charge Material selected is not matching for thickness <b>" + (chThickness * 1000) + "mm</b>.<p>" +
+                    "&emsp;Will be changed to <b>" + material + "</b> as per DFH Strip Process</blockQuote>";
+            someDecisionRequired = true;
+        }
+        toDecide += "<blockQuote># Exit Temperature set as <b>" + oneProc.tempDFHExit + "</b></blockQuote>" +
+                "<blockQuote># Exit Zone Temperature set as <b>" + oneProc.getMaxExitZoneTemp() + "</b></blockQuote>" +
+                "<blockQuote># Minimum Exit Zone Temperature set as <b>" + oneProc.getMinExitZoneTemp() + "</b></blockQuote>";
+        toDecide += "</html>";
+        String title = "Strip DFH Process";
+        if (someDecisionRequired)
+            proceed = decide(title, toDecide);
+        else
+            showMessage(title, toDecide);
+        return proceed;
+    }
+
+    protected ErrorStatAndMsg isChargeInFceOK() {    // TODO 20160622 considered that UI is already read
+        ErrorStatAndMsg retVal = super.isChargeInFceOK();
+        if (!retVal.inError) {
+            if ((furnaceFor() == DFHTuningParams.FurnaceFor.STRIP)) {
+                OneStripDFHProcess oneProc = getDFHProcess();
+                if (oneProc != null) {
+                    ChMaterial material = oneProc.getChMaterial(chThickness);
+                    boolean proceed = getUserResponse(oneProc, material);
+                    if (proceed) {
+                        setChMaterial(material);
+                        setExitTemperaure(oneProc.tempDFHExit);
+                        setExitZoneTemperatures(oneProc.getMaxExitZoneTemp(), oneProc.getMinExitZoneTemp());
+                    } else
+                        retVal.addErrorMsg("\n   ABORTING");
+                } else {
+                    retVal.addErrorMsg("\n   Process not available in DFH Process List");
+                }
+            }
+            else
+                retVal.addErrorMsg("The furnace if not processing strip");
         }
         return retVal;
     }
@@ -286,18 +333,18 @@ public abstract class StripHeating extends DFHeating {
         mIUpdateFurnace.addActionListener(li);
     }
 
-    protected JMenu createFileMenu() {
-        fileMenu = new JMenu("File");
-        fileMenu.add(mIGetFceProfile);
-        fileMenu.addSeparator();
-        fileMenu.add(mILoadRecuSpecs);
-        fileMenu.addSeparator();
-        fileMenu.add(mISaveFceProfile);
-        fileMenu.add(mIUpdateFurnace);
-        fileMenu.addSeparator();
-        fileMenu.add(mIExit);
-        return fileMenu;
-    }
+//    protected JMenu createFileMenu() {
+//        fileMenu = new JMenu("File");
+//        fileMenu.add(mIGetFceProfile);
+//        fileMenu.addSeparator();
+//        fileMenu.add(mILoadRecuSpecs);
+//        fileMenu.addSeparator();
+//        fileMenu.add(mISaveFceProfile);
+//        fileMenu.add(mIUpdateFurnace);
+//        fileMenu.addSeparator();
+//        fileMenu.add(mIExit);
+//        return fileMenu;
+//    }
 
     protected JMenu createDefineFurnaceMenu() {
         inputMenu = new JMenu("DefineFurnace");

@@ -35,13 +35,12 @@ public class L2Configurator extends StripHeating {
         bL2Configurator = true;
         enableSpecsSave = true;
         onProductionLine = false;
-        bAllowEditDFHProcess = true;
-        bAllowEditFurnaceSettings = true;
         bAllowProfileChange = true;
         bAllowManualCalculation = true;
         asApplication = true;
         releaseDate = "20160727 17:20";
     }
+
     public boolean setItUp() {
         modifyJTextEdit();
         fuelList = new Vector<Fuel>();
@@ -96,6 +95,22 @@ public class L2Configurator extends StripHeating {
         mIAddInstallerAccess.addActionListener(li);
         mIDeleteInstallerAccess.addActionListener(li);
         mISaveAccessFile.addActionListener(li);
+    }
+
+    protected JMenu createFileMenu() {
+        fileMenu = new JMenu("File");
+        fileMenu.add(mIGetFceProfile);
+        fileMenu.addSeparator();
+        fileMenu.add(mILoadRecuSpecs);
+        fileMenu.addSeparator();
+        fileMenu.add(mISaveFceProfile);
+        fileMenu.add(mIUpdateFurnace);
+        fileMenu.addSeparator();
+        fileMenu.add(mISaveFuelSpecs);
+        fileMenu.add(mISaveSteelSpecs);
+        fileMenu.addSeparator();
+        fileMenu.add(mIExit);
+        return fileMenu;
     }
 
     JMenu createAccessMenu() {

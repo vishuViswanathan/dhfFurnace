@@ -1,11 +1,12 @@
 package level2.applications;
 
-import directFiredHeating.DFHeating;
 import directFiredHeating.accessControl.L2AccessControl;
 import mvUtils.display.DataWithMsg;
+import mvUtils.display.ErrorStatAndMsg;
 import mvUtils.display.StatusWithMessage;
 import mvUtils.file.FileChooserWithOptions;
 
+import javax.swing.*;
 import java.io.File;
 
 /**
@@ -52,11 +53,10 @@ public class Level2Installer extends L2DFHeating {
     public Level2Installer(String equipment) {
         super(equipment);
         onProductionLine = false;
-        bAllowEditDFHProcess = true;
-        bAllowEditFurnaceSettings = true;
+//        bAllowEditDFHProcess = true;
         bAllowProfileChange = true;
         bAllowManualCalculation = true;
-        bShowAllmenu = true;
+        bAllowUpdateWithFieldData = true;
 //        userActionAllowed = true;
         accessLevel = L2AccessControl.AccessLevel.INSTALLER;
     }
@@ -64,11 +64,10 @@ public class Level2Installer extends L2DFHeating {
     public Level2Installer(String equipment, boolean fromLauncher) {
         super(equipment);
         onProductionLine = false;
-        bAllowEditDFHProcess = true;
-        bAllowEditFurnaceSettings = true;
+//        bAllowEditDFHProcess = true;
         bAllowProfileChange = true;
         bAllowManualCalculation = true;
-        bShowAllmenu = true;
+        bAllowUpdateWithFieldData = true;
 //        userActionAllowed = true;
         accessLevel = L2AccessControl.AccessLevel.INSTALLER;
         StatusWithMessage status = getInstallerAccessFile();
@@ -87,21 +86,25 @@ public class Level2Installer extends L2DFHeating {
         return L2AccessControl.AccessLevel.INSTALLER;
     }
 
-    protected boolean getFieldPerformanceList(String basePath) {
-        boolean retVal = false;
+    protected ErrorStatAndMsg getFieldPerformanceList(String basePath) {
+        ErrorStatAndMsg retVal = new ErrorStatAndMsg();
         File file = getParticularFile(basePath, profileCode, "perfData");
         if (file != null) {
             if (decide("Field Performance Data", "<html>Fiel-updated Performance Data File is available" +
                     "<br />   Do you want load this, overwriting Data with the Furnace Profile</html>")) {
-                loadThePerformanceList(file);
-                markThisFileAsBak(file);
-                showMessage("Field Performance Data", "<html>Combined the Field Performance with the data with Furnace Profile." +
-                        "<br />The existing Field-updated Performance file is marked as *.bak</html>");
+                if (loadThePerformanceList(file)) {
+                    if (markThisFileAsBak(file))
+                        showMessage("Field Performance Data", "<html>Combined the Field Performance with the data with Furnace Profile." +
+                                "<br />The existing Field-updated Performance file is marked as *.bak</html>");
+                    else
+                        showError("Unable to rename the perfData file to *.bak");
+                }
+                else
+                    retVal.addErrorMsg("Some problem in reading Field Performance Data");
             }
         }
         return retVal;
     }
-
 
 
     StatusWithMessage getInstallerAccessFile() {
@@ -128,25 +131,35 @@ public class Level2Installer extends L2DFHeating {
         return retVal;
     }
 
-    static protected boolean  parseCmdLineArgs(String[] args) {
-        int i = 0;
-        boolean retVal = false;
-        if (DFHeating.parseCmdLineArgs(args)) {
-            PreparerCommandLineArgs cmdArg;
-            while ((args.length > i)
-                    && ((args[i].startsWith("-")))) {
-                cmdArg = PreparerCommandLineArgs.getEnum(args[i]);
-                switch (cmdArg) {
-                    case SHOWDEBUG:
-                        bl2ShowDebugMessages = true;
-                        break;
-                }
-                i++;
-            }
-            retVal = true;
-        }
-        return retVal;
-//        return true;
+    protected JMenu createFileMenu() {
+        fileMenu = new JMenu("File");
+        fileMenu.add(mIGetFceProfile);
+        fileMenu.add(mISaveFceProfile);
+        fileMenu.addSeparator();
+        fileMenu.add(mIUpdateFurnace);
+        fileMenu.addSeparator();
+        fileMenu.add(mIExit);
+        return fileMenu;
+    }
+
+    protected JMenu createAccessMenu() {
+        mAccessControl = new JMenu("Access Control");
+        mAccessControl.add(mExpertAccess);
+        mAccessControl.add(mUpdaterAccess);
+        mAccessControl.add(mRuntimeAccess);
+        return mAccessControl;
+    }
+
+    protected JMenuBar assembleMenuBar() {
+        JMenuBar mb = new JMenuBar();
+        mb.add(createFileMenu());
+        mb.add(createDefineFurnaceMenu());
+        mb.add(createShowResultsMenu());
+        mb.add(createPerformanceMenu());
+        mb.add(createL2ConfMenu());
+        mb.add(pbEdit);
+        mb.add(createAccessMenu());
+        return mb;
     }
 
     public static void main(String[] args) {

@@ -98,7 +98,8 @@ public class PerformanceGroup implements ActionListener{
                 bNoted = true;
                 if (foundAt < 2)
                     requiresInterpolCheck = true;
-                showMessage("Replaced earlier data" + ((requiresInterpolCheck) ? " with interpolation check" : ""));
+                if (!fromXML)
+                    showMessage("Replaced earlier data" + ((requiresInterpolCheck) ? " with interpolation check" : ""));
             }
         }
         else {

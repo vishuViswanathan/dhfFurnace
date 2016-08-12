@@ -343,7 +343,8 @@ public class Performance {
                 if (!allOk)
                     break;
             }
-            controller.enableDataEdit();
+//            controller.enableDataEdit();
+            controller.performanceTableDone();
         }
         return allOk;
     }

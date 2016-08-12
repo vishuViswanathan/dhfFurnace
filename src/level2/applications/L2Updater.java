@@ -1,6 +1,9 @@
 package level2.applications;
 
 import directFiredHeating.accessControl.L2AccessControl;
+import org.apache.log4j.Logger;
+
+import javax.swing.*;
 
 /**
  * User: M Viswanathan
@@ -12,46 +15,20 @@ public class L2Updater extends L2DFHeating{
 
     public L2Updater(String equipment) {
         super(equipment);
-        bAllowEditDFHProcess = false;
-        bAllowEditFurnaceSettings = false;
         bAllowManualCalculation = false;
         bAllowUpdateWithFieldData = true;
         bAllowL2Changes = false;
         accessLevel = L2AccessControl.AccessLevel.UPDATER;
-    }
-
-    public L2Updater(String equipment, boolean fromLauncher, boolean bOLD) {
-        super(equipment);
-        bAllowEditDFHProcess = false;
-        bAllowEditFurnaceSettings = false;
-        bAllowManualCalculation = false;
-        bAllowUpdateWithFieldData = true;
-        bAllowL2Changes = false;
-        accessLevel = L2AccessControl.AccessLevel.UPDATER;
-        if (setupUaClient()) {
-            setItUp();
-            if (l2SystemReady) {
-                informLevel2Ready();
-            } else {
-                showError("Level2 Updater could not be started. Aborting ...");
-                exitFromLevel2();
-            }
-        }
-        else  {
-            showMessage("Facing problem connecting to Level1. Aborting ...");
-            close();
-        }
     }
 
     public L2Updater(String equipment, boolean fromLauncher) {
         super(equipment);
-        bAllowEditDFHProcess = false;
-        bAllowEditFurnaceSettings = false;
         bAllowManualCalculation = false;
         bAllowUpdateWithFieldData = true;
         bAllowL2Changes = false;
         accessLevel = L2AccessControl.AccessLevel.UPDATER;
         if (setItUp()) {
+            log = Logger.getLogger("level2.UPDATER");
             if (l2SystemReady) {
                 informLevel2Ready();
             } else {
@@ -67,6 +44,59 @@ public class L2Updater extends L2DFHeating{
 
     public static L2AccessControl.AccessLevel defaultLevel() {
         return L2AccessControl.AccessLevel.UPDATER;
+    }
+
+    public void performanceTableDone() {
+        switchPage(L2DisplayPageType.PROCESS);
+    }
+
+
+    public void enableDataEdit() {
+    }
+
+    protected void enableDefineMenu(boolean ena) {
+    }
+
+    protected JMenuBar assembleMenuBar() {
+        JMenuBar mb = new JMenuBar();
+        mb.add(createFileMenu());
+        mb.add(createLiveDisplayMenu());
+        mb.add(mShowCalculation);
+        mb.add(createPerformanceMenu());
+        mb.add(createAccessMenu());
+        return mb;
+    }
+
+    protected JMenu createFileMenu() {
+        fileMenu = new JMenu("File");
+        fileMenu.add(mIExit);
+        return fileMenu;
+    }
+
+    JMenu createAccessMenu() {
+        mAccessControl = new JMenu("Access Control");
+        mAccessControl.add(mRuntimeAccess);
+        return mAccessControl;
+    }
+
+    protected JMenu createPerformanceMenu() {
+        perfMenu = new JMenu("Performance");
+        perfMenu.add(mIShowPerfBase);
+        perfMenu.addSeparator();
+        perfMenu.add(mISavePerformanceData);
+        perfMenu.add(mIReadPerformanceData);
+        return perfMenu;
+    }
+
+
+    protected void showPerfMenu(boolean show) {
+    }
+
+    synchronized public void enablePerfMenu(boolean ena) {
+    }
+
+    public boolean canClose() {
+        return true;
     }
 
     public static void main(String[] args) {

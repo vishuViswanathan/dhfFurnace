@@ -391,16 +391,16 @@ public class DFHFurnace {
         boolean skipUserEntry = false;
         if (tuningParams.bBaseOnZonalTemperature) {
             if (resultsReady) {
-                if (decide("Use just evaluated data",
-                        "Do you want to work with earlier wall temperatures?" +
-                        "\nChoose 'Yes' only if Furnace physical params hane not been changed")) {
+                if (decide("Calculation from FURNACE TEMPERATURE",
+                        "Do you want to work with wall temperatures of the last calculation?" +
+                        "\nChoose 'Yes' only if Furnace physical params have not been changed")) {
                     copyTempoFromLastResults();
                     skipUserEntry = true;
                 }
             }
             if (!skipUserEntry)
                 bRetVal = setWallTemperatures();
-            if (bRetVal) setOnlyWallRadiation();
+            setOnlyWallRadiation(bRetVal);
         }
 
         return bRetVal;
@@ -425,8 +425,8 @@ public class DFHFurnace {
             sec.resetResults();
     }
 
-    public void setOnlyWallRadiation() {
-        bBaseOnOnlyWallRadiation = true;
+    public void setOnlyWallRadiation(boolean onlyWallTemp) {
+        bBaseOnOnlyWallRadiation = onlyWallTemp;
     }
 
     public boolean doTheCalculation() {
@@ -609,8 +609,9 @@ public class DFHFurnace {
         inPerfTableMode = false;
         tuningParams.takeValuesFromUI();
         DFHResult.Type switchDisplayto = DFHResult.Type.HEATSUMMARY;
+        boolean noHeatBalance = bBaseOnOnlyWallRadiation;
         if (doTheCalculation() && bDisplayResults) {
-            if (bBaseOnOnlyWallRadiation) {
+            if (noHeatBalance) {
                 switchDisplayto = DFHResult.Type.TOPtempTRENDS;
                 topResultsP = getResultsPanel(false);
                 topSecwiseP = getSecwisePanel(false);
@@ -847,7 +848,7 @@ public class DFHFurnace {
 
     }
 
-    void clearPerfBase() {
+    public void clearPerfBase() {
         performBase = null;
         perfBaseReady = false;
         chTempProfAvailable = false;
