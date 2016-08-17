@@ -291,6 +291,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         UIManager.put("ComboBox.font", oldLabelFont.deriveFont(Font.PLAIN + Font.ITALIC));
     }
 
+    protected void startLog4j() {
+        log = Logger.getLogger(DFHeating.class);
+    }
+
     public void init() {
         modifyJTextEdit();
         fuelList = new Vector<Fuel>();
@@ -309,7 +313,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                 mainF.setTitle("DFH Furnace " + releaseDate);
         } else {
             if (!asJNLP && log == null) {
-                log = Logger.getLogger(DFHeating.class);
+                startLog4j();
+//                log = Logger.getLogger(DFHeating.class);
                 // Load Log4j configurations from external file
             }
             mainF.setTitle("DFH Furnace Application "+ releaseDate + testTitle);
@@ -1020,9 +1025,9 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         perfMenu = new JMenu("Performance");
         perfMenu.add(mICreatePerfBase);
         perfMenu.add(mIAddToPerfBase);
-        perfMenu.addSeparator();
-        perfMenu.add(mISetPerfTablelimits);
-        mISetPerfTablelimits.setVisible(false);
+//        perfMenu.addSeparator();
+//        perfMenu.add(mISetPerfTablelimits);
+//        mISetPerfTablelimits.setVisible(false);
         perfMenu.addSeparator();
         perfMenu.add(mIShowPerfBase);
         perfMenu.addSeparator();

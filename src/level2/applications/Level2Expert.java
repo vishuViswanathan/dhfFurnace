@@ -2,6 +2,7 @@ package level2.applications;
 
 import directFiredHeating.accessControl.L2AccessControl;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 
 import javax.swing.*;
 
@@ -27,7 +28,8 @@ public class Level2Expert extends L2DFHeating {
         bAllowL2Changes = true;
         accessLevel = L2AccessControl.AccessLevel.EXPERT;
         if (setItUp()) {
-            log = Logger.getLogger("level2.EXPERT");
+//            PropertyConfigurator.configure("log4jE.properties");
+//            log = Logger.getLogger("level2.EXPERT");
             if (l2SystemReady) {
                 informLevel2Ready();
             } else {
@@ -39,6 +41,11 @@ public class Level2Expert extends L2DFHeating {
             showMessage("Facing problem connecting to Level1. Aborting ...");
             close();
         }
+    }
+
+    protected void startLog4j() {
+        PropertyConfigurator.configure("log4jE.properties");
+        log = Logger.getLogger("level2.EXPERT");
     }
 
     public static L2AccessControl.AccessLevel defaultLevel() {

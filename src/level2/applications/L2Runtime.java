@@ -2,6 +2,7 @@ package level2.applications;
 
 import directFiredHeating.accessControl.L2AccessControl;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 
 import javax.swing.*;
 import java.util.Date;
@@ -20,7 +21,8 @@ public class L2Runtime extends L2DFHeating {
         bAllowUpdateWithFieldData = false;
         accessLevel = L2AccessControl.AccessLevel.RUNTIME;
         if (setItUp()) {
-            log = Logger.getLogger("level2.RUNTIME");
+//            PropertyConfigurator.configure("log4jR.properties");
+//            log = Logger.getLogger("level2.RUNTIME");
             if (l2SystemReady) {
                 informLevel2Ready();
             } else {
@@ -32,6 +34,12 @@ public class L2Runtime extends L2DFHeating {
             close();
         }
     }
+
+    protected void startLog4j() {
+        PropertyConfigurator.configure("log4jR.properties");
+        log = Logger.getLogger("level2.RUNTIME");
+    }
+
 
     public static L2AccessControl.AccessLevel defaultLevel() {
         return L2AccessControl.AccessLevel.RUNTIME;

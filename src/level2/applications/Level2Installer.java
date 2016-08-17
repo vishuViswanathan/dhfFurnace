@@ -5,6 +5,8 @@ import mvUtils.display.DataWithMsg;
 import mvUtils.display.ErrorStatAndMsg;
 import mvUtils.display.StatusWithMessage;
 import mvUtils.file.FileChooserWithOptions;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 
 import javax.swing.*;
 import java.io.File;
@@ -73,6 +75,8 @@ public class Level2Installer extends L2DFHeating {
         StatusWithMessage status = getInstallerAccessFile();
         if (status.getDataStatus() == StatusWithMessage.DataStat.OK) {
             setItUp();
+            PropertyConfigurator.configure("log4jI.properties");
+            log = Logger.getLogger("level2.INSTALLER");
             if (!l2SystemReady) {
                 showError("Level2 could not be started. Aborting ...");
                 System.exit(1);
@@ -140,6 +144,14 @@ public class Level2Installer extends L2DFHeating {
         fileMenu.addSeparator();
         fileMenu.add(mIExit);
         return fileMenu;
+    }
+
+    JMenu createAccessMenu() {
+        mAccessControl = new JMenu("Access Control");
+        mAccessControl.add(mExpertAccess);
+        mAccessControl.add(mUpdaterAccess);
+        mAccessControl.add(mRuntimeAccess);
+        return mAccessControl;
     }
 
     protected JMenuBar assembleMenuBar() {

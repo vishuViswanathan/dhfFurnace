@@ -153,6 +153,10 @@ public class L2DFHeating extends StripHeating {
         return l2SystemReady;
     }
 
+    protected void startLog4j() {
+        log = Logger.getLogger("level2.L2DFHeating");
+    }
+
     public boolean setItUp() {
         modifyJTextEdit();
         fuelList = new Vector<Fuel>();
@@ -161,7 +165,8 @@ public class L2DFHeating extends StripHeating {
         mainF = new JFrame();
         mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         if (!asJNLP && (log == null)) {
-            log = Logger.getLogger("level2.L2DFHeating"); //DFHeating.class);
+            startLog4j();
+//            log = Logger.getLogger("level2.L2DFHeating"); //DFHeating.class);
             // Load Log4j configurations from external file
         }
         try {

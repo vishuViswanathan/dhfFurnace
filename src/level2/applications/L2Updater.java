@@ -2,6 +2,7 @@ package level2.applications;
 
 import directFiredHeating.accessControl.L2AccessControl;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 
 import javax.swing.*;
 
@@ -28,7 +29,8 @@ public class L2Updater extends L2DFHeating{
         bAllowL2Changes = false;
         accessLevel = L2AccessControl.AccessLevel.UPDATER;
         if (setItUp()) {
-            log = Logger.getLogger("level2.UPDATER");
+//            PropertyConfigurator.configure("log4jE.properties");
+//            log = Logger.getLogger("level2.UPDATER");
             if (l2SystemReady) {
                 informLevel2Ready();
             } else {
@@ -40,6 +42,11 @@ public class L2Updater extends L2DFHeating{
             showMessage("Facing problem connecting to Level1. Aborting ...");
             close();
         }
+    }
+
+    protected void startLog4j() {
+        PropertyConfigurator.configure("log4jE.properties");
+        log = Logger.getLogger("level2.UPDATER");
     }
 
     public static L2AccessControl.AccessLevel defaultLevel() {

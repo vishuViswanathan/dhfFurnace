@@ -356,6 +356,20 @@ public abstract class StripHeating extends DFHeating {
         return inputMenu;
     }
 
+    protected JMenu createPerformanceMenu() {
+        perfMenu = new JMenu("Performance");
+        perfMenu.add(mICreatePerfBase);
+        perfMenu.add(mIAddToPerfBase);
+        perfMenu.addSeparator();
+        perfMenu.add(mISetPerfTablelimits);
+        mISetPerfTablelimits.setVisible(false);
+        perfMenu.addSeparator();
+        perfMenu.add(mIShowPerfBase);
+        perfMenu.addSeparator();
+        perfMenu.add(mIClearPerfBase);
+        return perfMenu;
+    }
+
     protected JMenu createL2ConfMenu() {
         mL2Configuration = new JMenu("L2 Config");
         if (!onProductionLine) {
