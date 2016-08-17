@@ -153,16 +153,4 @@ public class Level2Installer extends L2DFHeating {
         mb.add(createAccessMenu());
         return mb;
     }
-
-    public static void main(String[] args) {
-        final Level2Installer l2Preparer = new Level2Installer("Furnace");
-        if (l2Preparer.parseCmdLineArgs(args)) {
-            l2Preparer.setItUp();
-            if (!l2Preparer.l2SystemReady) {
-                l2Preparer.showError("Level2 could not be started. Aborting ...");
-                System.exit(1);
-            }
-        }
-    }
-
 }

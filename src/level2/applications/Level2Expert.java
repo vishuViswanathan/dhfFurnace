@@ -93,23 +93,4 @@ public class Level2Expert extends L2DFHeating {
     public boolean canClose() {
         return true;
     }
-
-    public static void main(String[] args) {
-        final Level2Expert l2Expert = new Level2Expert("Furnace");
-        if (l2Expert.parseCmdLineArgs(args)) {
-            if (l2Expert.setupUaClient()) {
-                l2Expert.setItUp();
-                if (l2Expert.l2SystemReady) {
-                    l2Expert.informLevel2Ready();
-                }
-                else {
-                    l2Expert.showError("Level2 could not be started. Aborting ...");
-                    l2Expert.exitFromLevel2();
-//                    System.exit(1);
-                }
-            }
-            else
-                l2Expert.showMessage("Facing problem connecting to Level1. Aborting ...");
-        }
-    }
 }

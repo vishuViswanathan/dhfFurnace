@@ -65,21 +65,4 @@ public class L2Runtime extends L2DFHeating {
     public boolean canClose() {
         return true;
     }
-
-//    public void l2Trace(String msg) {
-//        if (log != null)
-//            log.trace(accessLevel.toString() + " thru RT:" + msg);
-//    }
-//
-//    public void l2Info(String msg) {
-//        if (log != null)
-//            log.info(accessLevel.toString() + ":" + msg);
-//    }
-//
-//    public void l2Error(String msg) {
-//        if (log != null)
-//            log.error(accessLevel.toString() + ":" + msg);
-//    }
-
-
 }

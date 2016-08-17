@@ -99,21 +99,4 @@ public class L2Updater extends L2DFHeating{
         return true;
     }
 
-    public static void main(String[] args) {
-        final L2Updater l2Updater = new L2Updater("Furnace");
-        if (l2Updater.parseCmdLineArgs(args)) {
-            if (l2Updater.setupUaClient()) {
-                l2Updater.setItUp();
-                if (l2Updater.l2SystemReady) {
-                    l2Updater.informLevel2Ready();
-                }
-                else {
-                    l2Updater.showError("Level2 Updater could not be started. Aborting ...");
-                    l2Updater.exitFromLevel2();
-                }
-            }
-            else
-                l2Updater.showMessage("Facing problem connecting to Level1. Aborting ...");
-        }
-    }
-}
+ }

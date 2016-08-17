@@ -518,14 +518,4 @@ public class Level2Configurator extends DFHeating {
 //        return true;
     }
 
-    public static void main(String[] args) {
-        final Level2Configurator l2Preparer = new Level2Configurator();
-        if (parseCmdLineArgs(args)) {
-            l2Preparer.setItUp();
-            if (!l2Preparer.associatedDataLoaded) {
-                l2Preparer.showError(" Aborting ...");
-                System.exit(1);
-            }
-        }
-    }
 }
