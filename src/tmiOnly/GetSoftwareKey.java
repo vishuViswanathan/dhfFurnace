@@ -1,6 +1,11 @@
 package tmiOnly;
 
+import mvUtils.display.InputControl;
+import mvUtils.display.OneParameterDialog;
+import mvUtils.display.SimpleDialog;
 import protection.MachineCheck;
+
+import java.awt.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -10,6 +15,30 @@ import protection.MachineCheck;
  * To change this template use File | Settings | File Templates.
  */
 public class GetSoftwareKey {
+    public String getKey() {
+        OneParameterDialog dlg = new OneParameterDialog(new InputControl() {
+            public boolean canNotify() {
+                return false;
+            }
+
+            public void enableNotify(boolean ena) {
+
+            }
+
+            public Window parent() {
+                return null;
+            }
+        }, "Enter request code");
+        dlg.setValue("Enter request code:", null, 20);
+        dlg.setVisible(true);
+        String theKey = "ERROR";
+        if (dlg.isOk()) {
+            theKey = getKey(dlg.getTextVal());
+            showMessage("The software key", theKey);
+        }
+        return theKey;
+    }
+
     String getKey(String machineID) {
         if (machineID.length() > 12)
             return new MachineCheck().getKey(machineID);
@@ -19,6 +48,11 @@ public class GetSoftwareKey {
 
     boolean checkKey(String machineID, String key) {
         return new MachineCheck().checkKey(machineID, key);
+    }
+
+    public void showMessage(String title, String msg) {
+        SimpleDialog sd = new SimpleDialog();
+        SimpleDialog.showMessage(title, msg, true);
     }
 
 
@@ -33,6 +67,9 @@ public class GetSoftwareKey {
             System.out.print("Software key " + key +
                     ((ok) ? " matches" : " DOES NOT match ") + " machine ID " + machineID);
         }
+        else
+            System.out.print("Software key :" + new GetSoftwareKey().getKey());
+        System.exit(0);
     }
 }
 

@@ -445,7 +445,8 @@ public class Level2Launcher {
 
     public void showMessage(String title, String msg) {
         SimpleDialog.showMessage(mainF, title, msg);
-        mainF.toFront();
+        if (mainF != null)
+            mainF.toFront();
     }
 
     public void showError(String msg) {

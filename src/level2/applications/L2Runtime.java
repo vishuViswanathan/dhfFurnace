@@ -21,9 +21,10 @@ public class L2Runtime extends L2DFHeating {
         bAllowUpdateWithFieldData = false;
         accessLevel = L2AccessControl.AccessLevel.RUNTIME;
         if (setItUp()) {
-//            PropertyConfigurator.configure("log4jR.properties");
-//            log = Logger.getLogger("level2.RUNTIME");
             if (l2SystemReady) {
+                l2Furnace.startL2DisplayUpdater();
+                l2Furnace.startSpeedUpdater();
+                l2Furnace.enableDeleteInPerformanceData(false);
                 informLevel2Ready();
             } else {
                 showError("Level2 Runtime could not be started. Aborting ...");
@@ -39,7 +40,6 @@ public class L2Runtime extends L2DFHeating {
         PropertyConfigurator.configure("log4jR.properties");
         log = Logger.getLogger("level2.RUNTIME");
     }
-
 
     public static L2AccessControl.AccessLevel defaultLevel() {
         return L2AccessControl.AccessLevel.RUNTIME;

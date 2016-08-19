@@ -75,15 +75,30 @@ public class Level2Installer extends L2DFHeating {
         StatusWithMessage status = getInstallerAccessFile();
         if (status.getDataStatus() == StatusWithMessage.DataStat.OK) {
             setItUp();
-            PropertyConfigurator.configure("log4jI.properties");
-            log = Logger.getLogger("level2.INSTALLER");
-            if (!l2SystemReady) {
+            if (l2SystemReady) {
+                showMessage("It is the responsibility of the user to ensure data integrity among:" +
+                        "\n      1) Profile including Fuel type " +
+                        "\n      2) Fuel settings under '" + mL2Configuration.getText() + "'" +
+                        "\n      3) DHFProcess List data under '" + mL2Configuration.getText() + "'" +
+                        "\n      4) Performance Data under '" + perfMenu.getText() + "'" +
+                        "\n\nIt is suggested that the profile with Fuel is finalised before updating" +
+                        "\nthe other data." +
+                        "\n\nBefore exiting, the the above data to be save to respective files." +
+                        "\nThe Profile is to be saved first, followed by the others, since, the profile-save" +
+                        "\nassigns a profile ID, which is used as link in other data files");
+            }
+            else {
                 showError("Level2 could not be started. Aborting ...");
                 System.exit(1);
             }
         }
         else
             showError("Unable to get Installer Access :" + status.getErrorMessage());
+    }
+
+    protected void startLog4j() {
+        PropertyConfigurator.configure("log4jI.properties");
+        log = Logger.getLogger("level2.INSTALLER");
     }
 
     public static L2AccessControl.AccessLevel defaultLevel() {

@@ -29,9 +29,9 @@ public class L2Updater extends L2DFHeating{
         bAllowL2Changes = false;
         accessLevel = L2AccessControl.AccessLevel.UPDATER;
         if (setItUp()) {
-//            PropertyConfigurator.configure("log4jE.properties");
-//            log = Logger.getLogger("level2.UPDATER");
             if (l2SystemReady) {
+                l2Furnace.startL2DisplayUpdater();
+                l2Furnace.enableDeleteInPerformanceData(false);
                 informLevel2Ready();
             } else {
                 showError("Level2 Updater could not be started. Aborting ...");

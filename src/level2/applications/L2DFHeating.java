@@ -164,11 +164,9 @@ public class L2DFHeating extends StripHeating {
         setUIDefaults();
         mainF = new JFrame();
         mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        if (!asJNLP && (log == null)) {
+//        if (!asJNLP && (log == null)) {
             startLog4j();
-//            log = Logger.getLogger("level2.L2DFHeating"); //DFHeating.class);
-            // Load Log4j configurations from external file
-        }
+//        }
         try {
             accessControl = new L2AccessControl(accessDataFile, true);
             mainF.setTitle("DFH Furnace " + accessControl.getDescription(accessLevel) + " - " + releaseDate + testTitle);
@@ -221,25 +219,6 @@ public class L2DFHeating extends StripHeating {
                 if (l2SystemReady) {
                     lockFile = new File(lockPath);
                     displayIt();
-                    if (onProductionLine) {
-                        l2Furnace.startL2DisplayUpdater();
-                        if (accessLevel == L2AccessControl.AccessLevel.RUNTIME)
-                            l2Furnace.startSpeedUpdater();
-                    }
-                    if (accessLevel == L2AccessControl.AccessLevel.RUNTIME || accessLevel == L2AccessControl.AccessLevel.UPDATER)
-                        l2Furnace.enableDeleteInPerformanceData(false);
-                    if (accessLevel == L2AccessControl.AccessLevel.INSTALLER) {
-                        showMessage("It is the responsibility of the user to ensure data integrity among:" +
-                                "\n      1) Profile including Fuel type " +
-                                "\n      2) Fuel settings under '" + mL2Configuration.getText() + "'" +
-                                "\n      3) DHFProcess List data under '" + mL2Configuration.getText() + "'" +
-                                "\n      4) Performance Data under '" + perfMenu.getText() + "'" +
-                                "\n\nIt is suggested that the profile with Fuel is finalised before updating" +
-                                "\nthe other data." +
-                                "\n\nBefore exiting, the the above data to be save to respective files." +
-                                "\nThe Profile is to be saved first, followed by the others, since, the profile-save" +
-                                "\nassigns a profile ID, which is used as link in other data files");
-                    }
                 }
             }
             else
@@ -403,12 +382,12 @@ public class L2DFHeating extends StripHeating {
 
     boolean bEnablePerfMenu;
 
-    public void enableDataEdit() {
-        if (bAllowL2Changes) {
-            super.enableDataEdit();
-        }
-    }
-
+//    public void enableDataEdit() {
+//        if (bAllowL2Changes) {
+//            super.enableDataEdit();
+//        }
+//    }
+//
     protected void showPerfMenu(boolean show) {
         if (bEnablePerfMenu)
             perfMenu.setVisible(show);
@@ -809,7 +788,7 @@ public class L2DFHeating extends StripHeating {
     }
 
     public FceEvaluator calculateFce() {
-        userActionAllowed = (accessLevel == L2AccessControl.AccessLevel.EXPERT || accessLevel == L2AccessControl.AccessLevel.CONFIGURATOR);
+        userActionAllowed = (accessLevel == L2AccessControl.AccessLevel.EXPERT || accessLevel == L2AccessControl.AccessLevel.INSTALLER);
         return super.calculateFce();
     }
 

@@ -8,6 +8,7 @@ import directFiredHeating.accessControl.OfflineAccessControl;
 import directFiredHeating.process.StripDFHProcessList;
 import directFiredHeating.stripDFH.StripFurnace;
 import mvUtils.display.StatusWithMessage;
+import tmiOnly.GetSoftwareKey;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -38,7 +39,8 @@ public class L2Configurator extends StripHeating {
         bAllowProfileChange = true;
         bAllowManualCalculation = true;
         asApplication = true;
-        releaseDate = "20160812 20:40";
+        releaseDate = "20160819 15:45";
+        createLocalMenuItems();
     }
 
     public boolean setItUp() {
@@ -115,6 +117,8 @@ public class L2Configurator extends StripHeating {
 
     JMenu createAccessMenu() {
         mAccessControl = new JMenu("Access Control");
+        mAccessControl.add(mIGetSoftwareKey);
+        mAccessControl.addSeparator();
         mAccessControl.add(mILoadAccessFile);
         mAccessControl.addSeparator();
         mAccessControl.add(mIAddInstallerAccess);
@@ -122,6 +126,23 @@ public class L2Configurator extends StripHeating {
         mAccessControl.addSeparator();
         mAccessControl.add(mISaveAccessFile);
         return mAccessControl;
+    }
+
+    JMenuItem mIGetSoftwareKey;
+
+    void createLocalMenuItems() {
+        SoftKeyListener li = new SoftKeyListener();
+        mIGetSoftwareKey = new JMenuItem("Get Software Key");
+        mIGetSoftwareKey.addActionListener(li);
+    }
+
+    class SoftKeyListener implements ActionListener  {
+        public void actionPerformed(ActionEvent e) {
+            Object src = e.getSource();
+            if (src == mIGetSoftwareKey) {
+                (new GetSoftwareKey()).getKey();
+            }
+        }
     }
 
     protected JMenuBar assembleMenuBar() {

@@ -53,16 +53,19 @@ public class MachineCheck {
 
     public String getKey(String idStr) {
         int len = idStr.length();
-//        System.out.println("MachineCheck.getKey len = " + len + ", idStr = " + idStr);
         StringBuilder keyBase = new StringBuilder();
-        int[] modId = new int[len] ;
-        for (int p = 0; p < (len - 1); p+= 2) {
-            keyBase.append(String.format("%04d", ((int)1000 - Integer.parseInt(idStr.substring(p, p + 2), 16))));
-        }
-        // reverse it
         StringBuilder key = new StringBuilder();
-        for (int p = keyBase.length() - 1; p >= 0; p -= 2)
-            key.append(keyBase.substring(p, p + 1));
+        int[] modId = new int[len] ;
+        try {
+            for (int p = 0; p < (len - 1); p+= 2) {
+                keyBase.append(String.format("%04d", ((int)1000 - Integer.parseInt(idStr.substring(p, p + 2), 16))));
+            }
+            // reverse it
+            for (int p = keyBase.length() - 1; p >= 0; p -= 2)
+                key.append(keyBase.substring(p, p + 1));
+        } catch (NumberFormatException e) {
+            key.append("ERROR in processing input code");
+        }
         return key.toString();
     }
 

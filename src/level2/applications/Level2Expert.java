@@ -28,9 +28,8 @@ public class Level2Expert extends L2DFHeating {
         bAllowL2Changes = true;
         accessLevel = L2AccessControl.AccessLevel.EXPERT;
         if (setItUp()) {
-//            PropertyConfigurator.configure("log4jE.properties");
-//            log = Logger.getLogger("level2.EXPERT");
             if (l2SystemReady) {
+                l2Furnace.startL2DisplayUpdater();
                 informLevel2Ready();
             } else {
                 showError("Level2 could not be started. Aborting 002...");
