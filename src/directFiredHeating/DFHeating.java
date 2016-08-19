@@ -806,7 +806,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
         mILoadRecuSpecs = new JMenuItem("Load Recuperator Specs.");
         mILoadRecuSpecs.addActionListener(mAction);
-        mILoadRecuSpecs.setEnabled(false);
+        mILoadRecuSpecs.setEnabled(true);
 
         mISaveFceProfile = new JMenuItem("Save Furnace");
         mISaveFceProfile.addActionListener(mAction);
@@ -3127,8 +3127,9 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     void loadRecuperator() {
+        boolean loaded = false;
         if (asJNLP)
-            loadRecuperatorJNLP();
+            loaded = loadRecuperatorJNLP();
         else {
             FileDialog fileDlg =
                     new FileDialog(mainF, "Load Recuperator Specifications",
@@ -3149,7 +3150,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                             byte[] data = new byte[iLen + 10];
                             if (iStream.read(data) > 50) {
                                 if (furnace.setRecuSpecs(new String(data)))
-                                    showMessage("Recuperator loaded");
+                                    loaded = true;
+//                                    showMessage("Recuperator loaded.\n Remember to save Furnace profile for future use");
                             }
                         } else
                             showError("File size " + len + " for " + filePath);
@@ -3159,6 +3161,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                 }
             }
         }
+        if (loaded)
+            showMessage("Recuperator loaded.\n Remember to save Furnace profile for future use");
+        else
+            showError("Unable to load Recuperator Data");
      }
 
     boolean loadRecuperatorJNLP() {
@@ -3167,10 +3173,12 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             FileContents fc = JNLPFileHandler.getReadFile(null, new String[]{"recuDat"}, 50, 1000);
             if (fc != null) {
                 if (furnace.setRecuSpecs(new String(JNLPFileHandler.readFile(fc))))   {
-                    showMessage("Recuperator loaded");
+//                    showMessage("Recuperator loaded");
                     bRetVal = true;
                 }
             }
+            else
+                showError("Some problem in loading Recuperator.\n    May be the file is not the required file");
 
         } catch (IOException e) {
             showError("facing some problem in reading Recuperator data : " + e.getMessage());

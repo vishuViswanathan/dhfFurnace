@@ -2204,11 +2204,19 @@ public class DFHFurnace {
                 proceed = false;
         }
         if (proceed) {
-            HeatExchProps hExch = new HeatExchProps();
-            if (hExch.takeDataFromXML(xmlStr)) {
-                existingHeatExch = hExch;
-                bRecuFrozen = true;
-                retVal = true;
+            if (performBase != null && performBase.isValid()) {
+                if (!controller.decide("Performance Data", "The Performance data are with the  existing Recuperator" +
+                        "\nLoading a new Recuperator might affect the performance data" +
+                        "\n     Do you still want to proceed loading the new Recuperator?"))
+                    proceed = false;
+            }
+            if (proceed) {
+                HeatExchProps hExch = new HeatExchProps();
+                if (hExch.takeDataFromXML(xmlStr)) {
+                    existingHeatExch = hExch;
+                    bRecuFrozen = true;
+                    retVal = true;
+                }
             }
         }
         return retVal;
