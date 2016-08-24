@@ -51,7 +51,6 @@ public class GetSoftwareKey {
     }
 
     public void showMessage(String title, String msg) {
-        SimpleDialog sd = new SimpleDialog();
         SimpleDialog.showMessage(title, msg, true);
     }
 

@@ -294,7 +294,7 @@ public class DFHFurnace {
             dlg = new ZoneTemperatureDlg(controller.parent(), true);
             dlg.setLocation(400, 100);
             dlg.setVisible(true);
-            allOK &= dlg.allOK;
+            allOK = dlg.allOK;
         }
         if (allOK)
             setTempOForAllSlots();
@@ -2923,11 +2923,18 @@ public class DFHFurnace {
     FurnaceProfile passLine, profTop, profBot;
     MultiColData topTrendData, botTrendData;
     CombiMultiColData combiTrendData;
+    double dischEndExtension = 0.5;
 
     TrendsPanel getTrendGraphPanel(boolean bBot) {
+        dischEndExtension = (controller.furnaceFor == DFHTuningParams.FurnaceFor.STRIP) ? 0 : 0.5;
         MultiColData results;
         results = (bBot) ? getBotTResults() : getTopTResults();
-        results.setXLimits(0, (fceLength + ((bTopBot && bAddTopSoak) ? addedTopSoak.sectionLength() : 0)));
+        results.setXLimits(0, (fceLength + ((bTopBot && bAddTopSoak) ? addedTopSoak.sectionLength() : 0)) + dischEndExtension);
+        // TO be removed
+        DoubleRange r = results.getCommonXrange();
+        debug("fceLength = " + fceLength + ": XLimits = " + r.min + ", " + r.max) ;
+
+
         results.setYLimits(0, 1400);
         TrendsPanel proGraph = new TrendsPanel(new Dimension(700, 500), GraphDisplay.CURSVALPANALATBOTTOM);
         passLine = new FurnaceProfile(results);
@@ -4087,17 +4094,17 @@ public class DFHFurnace {
         return bRetVal;
     }
 
-    public String resultsInCVS() {
-        return "ERROR: NOT READY YET\nNOT READY YET\nNOT READY YET\n";
-    }
-
-    public void getFurnaceData() {
-
-    }
-
-    void setDataDisplay() {
-
-    }
+//    public String resultsInCVS() {
+//        return "ERROR: NOT READY YET\nNOT READY YET\nNOT READY YET\n";
+//    }
+//
+//    public void getFurnaceData() {
+//
+//    }
+//
+//    void setDataDisplay() {
+//
+//    }
 
     void debug(String msg) {
         System.out.println("DFHFurnace: " + msg);
@@ -4647,9 +4654,9 @@ public class DFHFurnace {
             totProf = new DoublePoint[2];
             totProf[0] = new DoublePoint(0, baseY);
             if (bTopBot && bAddTopSoak)
-                totProf[1] = new DoublePoint(fceLength + addedTopSoak.sectionLength() + 0.5, baseY);
+                totProf[1] = new DoublePoint(fceLength + addedTopSoak.sectionLength() + dischEndExtension, baseY);
             else
-                totProf[1] = new DoublePoint(fceLength + 0.5, baseY);
+                totProf[1] = new DoublePoint(fceLength + dischEndExtension, baseY);
         }
 
         void createTrace(Color color) {
@@ -4664,7 +4671,7 @@ public class DFHFurnace {
             DoublePoint[] dp = new DoublePoint[1];
             traceProf = new VariableDataTrace(th, vProf.toArray(dp), color);
             if (bBot) {
-                double addLen = (bAddTopSoak) ? 0 : 0.5;
+                double addLen = (bAddTopSoak) ? 0 : dischEndExtension;
                 if (topOnlyDEnd) {
                     vProf.add(new DoublePoint(bottLength, baseY));
                     vProf.add(new DoublePoint(fceLength + addLen, baseY));
@@ -4674,11 +4681,11 @@ public class DFHFurnace {
             } else {
                 if (bAddTopSoak) {
                     double totLen = fceLength + addedTopSoak.sectionLength();
-                    vProf.add(new DoublePoint(totLen + 0.5, addedTopSoak.getEndHeight() * scale + baseY));
-                    vProf.add(new DoublePoint(totLen + 0.5, baseY));
+                    vProf.add(new DoublePoint(totLen + dischEndExtension, addedTopSoak.getEndHeight() * scale + baseY));
+                    vProf.add(new DoublePoint(totLen + dischEndExtension, baseY));
                 } else {
-                    vProf.add(new DoublePoint(fceLength + 0.5, vSec.get(nActive - 1).getEndHeight() * scale + baseY));
-                    vProf.add(new DoublePoint(fceLength + 0.5, baseY));
+                    vProf.add(new DoublePoint(fceLength + dischEndExtension, vSec.get(nActive - 1).getEndHeight() * scale + baseY));
+                    vProf.add(new DoublePoint(fceLength + dischEndExtension, baseY));
                 }
             }
             totProf = vProf.toArray(dp);

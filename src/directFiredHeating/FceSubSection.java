@@ -373,7 +373,7 @@ public class FceSubSection {
                 jb = secLossAssignment.get(k);
                 vp = XMLmv.getTag(xmlStr, "l" + ("" + k).trim(), 0);
                 if (vp.val.length() == 1) {
-                    jb.setSelected((vp.val.equals("1") ? true : false));
+                    jb.setSelected(vp.val.equals("1"));
                     jb.setFraction(1.0);
                 }
                 else
@@ -1033,7 +1033,7 @@ public class FceSubSection {
         void takeDataFromXML(String xmlStr) {
             ValAndPos vp;
             vp = XMLmv.getTag(xmlStr, "s", 0);
-            setSelected((vp.val.equals("1") ? true : false));
+            setSelected(vp.val.equals("1"));
             try {
                 vp = XMLmv.getTag(xmlStr, "f", 0);
                 double f = Double.valueOf(vp.val);

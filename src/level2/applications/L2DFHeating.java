@@ -9,11 +9,9 @@ import directFiredHeating.accessControl.L2AccessControl;
 import level2.fieldResults.FieldResults;
 import level2.stripDFH.L2DFHFurnace;
 import directFiredHeating.process.OneStripDFHProcess;
-import level2.common.ReadyNotedBothL2;
 import directFiredHeating.process.StripDFHProcessList;
-import level2.common.Tag;
-import level2.stripDFH.L2DFHZone;
 import mvUtils.display.*;
+import mvUtils.file.AccessControl;
 import mvUtils.file.FileChooserWithOptions;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
@@ -61,7 +59,7 @@ public class L2DFHeating extends StripHeating {
     static String uaServerURI;
     public L2DFHFurnace l2Furnace;
     public String equipment;
-    L2AccessControl accessControl;
+    L2AccessControl l2AccessControl;
 
     public L2DFHeating(String equipment) {
         super();
@@ -86,7 +84,7 @@ public class L2DFHeating extends StripHeating {
     }
 
     String getStatusFileName(L2AccessControl.AccessLevel level)  {
-        return fceDataLocation + accessControl.getDescription(level) + " is ON";
+        return fceDataLocation + l2AccessControl.getDescription(level) + " is ON";
     }
 
     DataWithMsg markIAmON()  {
@@ -98,7 +96,7 @@ public class L2DFHeating extends StripHeating {
                 try {
                     f.createNewFile();
                     BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(f));
-                    String data = accessControl.getDescription(accessLevel) +
+                    String data = l2AccessControl.getDescription(accessLevel) +
                                 " started on " + dateFormat.format(new Date()) + "\n";
                     oStream.write(data.getBytes());
                     oStream.close();
@@ -168,8 +166,8 @@ public class L2DFHeating extends StripHeating {
             startLog4j();
 //        }
         try {
-            accessControl = new L2AccessControl(accessDataFile, true);
-            mainF.setTitle("DFH Furnace " + accessControl.getDescription(accessLevel) + " - " + releaseDate + testTitle);
+            l2AccessControl = new L2AccessControl(AccessControl.PasswordIntensity.LOW, accessDataFile, true);
+            mainF.setTitle("DFH Furnace " + l2AccessControl.getDescription(accessLevel) + " - " + releaseDate + testTitle);
 
             tuningParams = new DFHTuningParams(this, onProductionLine, 1, 5, 30, 1.12, 1, false, false);
 //        debug("Creating new Level2furnace");
@@ -330,7 +328,7 @@ public class L2DFHeating extends StripHeating {
         mIShowL2Data = new JMenuItem("Level2 Data");
         mIShowL2Data.addActionListener(li);
 
-        String s = accessControl.getDescription(L2AccessControl.AccessLevel.RUNTIME);
+        String s = l2AccessControl.getDescription(L2AccessControl.AccessLevel.RUNTIME);
         mRuntimeAccess = new JMenu("for " + s);
         mIAddRuntimeAccess = new JMenuItem("Add access");
         mIDeleteRuntimeAccess = new JMenuItem("Delete access");
@@ -339,7 +337,7 @@ public class L2DFHeating extends StripHeating {
         mRuntimeAccess.add(mIAddRuntimeAccess);
         mRuntimeAccess.add(mIDeleteRuntimeAccess);
 
-        s = accessControl.getDescription(L2AccessControl.AccessLevel.UPDATER);
+        s = l2AccessControl.getDescription(L2AccessControl.AccessLevel.UPDATER);
         mUpdaterAccess = new JMenu("for " + s);
         mIAddUpdaterAccess = new JMenuItem("Add access");
         mIDeleteUpdaterAccess = new JMenuItem("Delete access");
@@ -348,7 +346,7 @@ public class L2DFHeating extends StripHeating {
         mUpdaterAccess.add(mIAddUpdaterAccess);
         mUpdaterAccess.add(mIDeleteUpdaterAccess);
 
-        s = accessControl.getDescription(L2AccessControl.AccessLevel.EXPERT);
+        s = l2AccessControl.getDescription(L2AccessControl.AccessLevel.EXPERT);
         mExpertAccess = new JMenu("for " + s);
         mIAddExpertAccess = new JMenuItem("Add access");
         mIDeleteExpertAccess = new JMenuItem("Delete access");
@@ -653,33 +651,33 @@ public class L2DFHeating extends StripHeating {
 
     void addAccess(L2AccessControl.AccessLevel forLevel) {
         if (authenticate()) {
-            StatusWithMessage stm = accessControl.addNewUser(forLevel);
+            StatusWithMessage stm = l2AccessControl.addNewUser(forLevel);
             if (stm.getDataStatus() == StatusWithMessage.DataStat.OK)
-                showMessage("User added for " + accessControl.getDescription(forLevel));
+                showMessage("User added for " + l2AccessControl.getDescription(forLevel));
             else
                 showError(stm.getErrorMessage() + ": No user was added :");
         }
         else
             showError("You are not authorised to Add User for " +
-                    accessControl.getDescription(forLevel));
+                    l2AccessControl.getDescription(forLevel));
     }
 
     void deleteAccess(L2AccessControl.AccessLevel forLevel) {
         if (authenticate()) {
-            StatusWithMessage stm = accessControl.deleteUser(forLevel);
+            StatusWithMessage stm = l2AccessControl.deleteUser(forLevel);
             if (stm.getDataStatus() == StatusWithMessage.DataStat.OK)
-                showMessage("One User deleted for " + accessControl.getDescription(forLevel));
+                showMessage("One User deleted for " + l2AccessControl.getDescription(forLevel));
             else
                 showError(stm.getErrorMessage() + ": No user was deleted ");
         }
         else
             showError("You are not authorised to Delete User for " +
-                accessControl.getDescription(forLevel));
+                l2AccessControl.getDescription(forLevel));
     }
 
     protected boolean authenticate() {
         boolean retVal = false;
-        StatusWithMessage stm = accessControl.authenticate(accessLevel, "Re-confirm authority");
+        StatusWithMessage stm = l2AccessControl.authenticate(accessLevel, "Re-confirm authority");
         if (stm.getDataStatus() == StatusWithMessage.DataStat.OK)
             retVal = true;
         return retVal;
@@ -1254,7 +1252,7 @@ public class L2DFHeating extends StripHeating {
 
     public void checkAndClose(boolean check) {
         if (!check || decide("Quitting Level2", "Do you really want to Exit this " +
-                accessControl.getDescription(accessLevel) + "?", false))
+                l2AccessControl.getDescription(accessLevel) + "?", false))
             exitFromLevel2();
     }
 

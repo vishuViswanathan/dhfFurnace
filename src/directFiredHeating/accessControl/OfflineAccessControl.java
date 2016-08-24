@@ -1,6 +1,7 @@
 package directFiredHeating.accessControl;
 
 import mvUtils.display.StatusWithMessage;
+import mvUtils.file.AccessControl;
 
 import java.awt.*;
 
@@ -13,8 +14,8 @@ import java.awt.*;
 public class OfflineAccessControl extends L2AccessControl {
     boolean asJNLP = false;
     Frame mainF;
-    public OfflineAccessControl(boolean asJNLP, Frame mainF) {
-        super();
+    public OfflineAccessControl(AccessControl.PasswordIntensity intensity,  boolean asJNLP, Frame mainF) {
+        super(intensity);
         this.mainF = mainF;
         this.asJNLP = asJNLP;
         if (asJNLP)
@@ -22,6 +23,9 @@ public class OfflineAccessControl extends L2AccessControl {
         accessControl.setsuggestedExtension(L2AccessControl.installerAccessFileExtension);
     }
 
+    public OfflineAccessControl(boolean asJNLP, Frame mainF) {
+        this(AccessControl.PasswordIntensity.HIGH, asJNLP, mainF);
+    }
     /**
      * This procedure ensured users selection of file both asJNLP and otherwise
      * @return

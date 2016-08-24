@@ -1,34 +1,22 @@
 package directFiredHeating.applications;
 
 import basic.ChMaterial;
-import basic.Fuel;
 import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
-import directFiredHeating.accessControl.L2AccessControl;
-import directFiredHeating.accessControl.OfflineAccessControl;
 import directFiredHeating.process.OneStripDFHProcess;
-import directFiredHeating.process.StripDFHProcessList;
 import directFiredHeating.stripDFH.SampleStripFurnace;
-import directFiredHeating.stripDFH.StripFurnace;
-import jsp.JSPFuel;
-import jsp.JSPchMaterial;
 import mvUtils.display.ErrorStatAndMsg;
 import mvUtils.display.MultiPairColPanel;
 import mvUtils.display.StatusWithMessage;
-import mvUtils.jnlp.JNLPFileHandler;
-import mvUtils.math.XYArray;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 
 import javax.swing.*;
-import javax.swing.event.MenuEvent;
-import javax.swing.event.MenuListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.text.DecimalFormat;
-import java.util.Vector;
 
 
 /**
@@ -44,7 +32,6 @@ public abstract class StripHeating extends DFHeating {
     String profileCodeTag = "profileCode";
     DecimalFormat profileCodeFormat = new DecimalFormat("000000");
     boolean associatedDataLoaded = false;
-    static public L2AccessControl.AccessLevel accessLevel = L2AccessControl.AccessLevel.NONE;
 
     protected void setTestData() {
         super.setTestData();
@@ -95,44 +82,6 @@ public abstract class StripHeating extends DFHeating {
         return (profileCode.length() == profileCodeFormat.format(0).length());
     }
 
-    protected ErrorStatAndMsg checkWithDFHProcess(boolean getUserResponse) {
-        ErrorStatAndMsg retVal = new ErrorStatAndMsg();
-        if ((furnaceFor() == DFHTuningParams.FurnaceFor.STRIP)) {
-            OneStripDFHProcess oneProc = getDFHProcess();
-            if (oneProc != null) {
-                boolean proceed = true;
-                ChMaterial material = oneProc.getChMaterial(chThickness);
-                if (getUserResponse) {
-                    boolean someDecisionRequired = false;
-                    String toDecide = "<html><h4>Some parameters are set from Strip DFH Process <b>" + oneProc.processName + "</b>";
-                    if (material != selChMaterial) {
-                        toDecide += "<blockQuote> # Charge Material selected is not matching for thickness <b>" + (chThickness * 1000) + "mm</b>.<p>" +
-                                "&emsp;Will be changed to <b>" + material + "</b> as per DFH Strip Process</blockQuote>";
-                        someDecisionRequired = true;
-                    }
-                    toDecide += "<blockQuote># Exit Temperature set as <b>" + oneProc.tempDFHExit + "</b></blockQuote>" +
-                            "<blockQuote># Exit Zone Temperature set as <b>" + oneProc.getMaxExitZoneTemp() + "</b></blockQuote>" +
-                            "<blockQuote># Minimum Exit Zone Temperature set as <b>" + oneProc.getMinExitZoneTemp() + "</b></blockQuote>";
-                    toDecide += "</html>";
-                    String title = "Strip DFH Process";
-                    if (someDecisionRequired)
-                        proceed = decide(title, toDecide);
-                    else
-                        showMessage(title, toDecide);
-                }
-                if (proceed) {
-                    setChMaterial(material);
-                    setExitTemperaure(oneProc.tempDFHExit);
-                    setExitZoneTemperatures(oneProc.getMaxExitZoneTemp(), oneProc.getMinExitZoneTemp());
-                } else
-                    retVal.addErrorMsg("\n   ABORTING");
-            } else {
-                retVal.addErrorMsg("\n   Process not available in DFH Process List");
-            }
-        }
-        return retVal;
-    }
-
     protected boolean getUserResponse(OneStripDFHProcess oneProc, ChMaterial material)  {
         boolean proceed = true;
         boolean someDecisionRequired = false;
@@ -154,7 +103,7 @@ public abstract class StripHeating extends DFHeating {
         return proceed;
     }
 
-    protected ErrorStatAndMsg isChargeInFceOK() {    // TODO 20160622 considered that UI is already read
+    protected ErrorStatAndMsg isChargeInFceOK() {
         ErrorStatAndMsg retVal = super.isChargeInFceOK();
         if (!retVal.inError) {
             if ((furnaceFor() == DFHTuningParams.FurnaceFor.STRIP)) {
@@ -242,21 +191,16 @@ public abstract class StripHeating extends DFHeating {
                         bareFile = bareFile + ".dfhDat";
                     }
                     String fileName = fileDlg.getDirectory() + bareFile;
-//            debug("Save Data file name :" + fileName);
-                    File f = new File(fileName);
-                    boolean goAhead = true;
-                    if (goAhead) {
-                        try {
-                            BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(fileName));
-                            oStream.write(inputDataXML(withPerformance).getBytes());
-                            oStream.close();
-                            if (withPerformance)
-                                furnace.performanceIsSaved();
-                        } catch (FileNotFoundException e) {
-                            showError("File " + fileName + " NOT found!");
-                        } catch (IOException e) {
-                            showError("Some IO Error in writing to file " + fileName + "!");
-                        }
+                    try {
+                        BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(fileName));
+                        oStream.write(inputDataXML(withPerformance).getBytes());
+                        oStream.close();
+                        if (withPerformance)
+                            furnace.performanceIsSaved();
+                    } catch (FileNotFoundException e) {
+                        showError("File " + fileName + " NOT found!");
+                    } catch (IOException e) {
+                        showError("Some IO Error in writing to file " + fileName + "!");
                     }
                 }
                 parent().toFront();
@@ -333,19 +277,6 @@ public abstract class StripHeating extends DFHeating {
         mIUpdateFurnace.addActionListener(li);
     }
 
-//    protected JMenu createFileMenu() {
-//        fileMenu = new JMenu("File");
-//        fileMenu.add(mIGetFceProfile);
-//        fileMenu.addSeparator();
-//        fileMenu.add(mILoadRecuSpecs);
-//        fileMenu.addSeparator();
-//        fileMenu.add(mISaveFceProfile);
-//        fileMenu.add(mIUpdateFurnace);
-//        fileMenu.addSeparator();
-//        fileMenu.add(mIExit);
-//        return fileMenu;
-//    }
-
     protected JMenu createDefineFurnaceMenu() {
         inputMenu = new JMenu("DefineFurnace");
         inputMenu.add(mIInputData);
@@ -397,7 +328,7 @@ public abstract class StripHeating extends DFHeating {
         return mb;
     }
 
-    protected boolean updateFurnace() {   // TODO to be overloaded in L2DFHeating
+    protected boolean updateFurnace() {
         saveFurnaceWithNowProfileCode();
         return true;
     }
@@ -407,10 +338,6 @@ public abstract class StripHeating extends DFHeating {
             Object caller = e.getSource();
             if (caller == mIUpdateFurnace)
                 updateFurnace();
-//            else if (caller == mIShowProcess)              // TODO tobe handled in L2DHeating
-//                switchPage(L2DisplayPageType.PROCESS);
-//            else if (caller == mIShowL2Data)
-//                switchPage(L2DisplayPageType.LEVEL2);
             else if (caller == mIViewDFHStripProcess)
                 viewStripDFHProcess();
             else if (caller == mIEditDFHStripProcess)
@@ -419,24 +346,6 @@ public abstract class StripHeating extends DFHeating {
                 createFceSetting();
             else if (caller == mIOPCServerIP)
                 setOPCIP();
-//            else if (caller == mISavePerformanceData)        // TOD tobe handled by L2DFHeating
-//                updatePerformanceDataFile();
-//            else if (caller == mIReadPerformanceData) {
-//                loadSpecificPerformanceList();
-//                updateDisplay(DFHDisplayPageType.PERFOMANCELIST);
-//            }
-//            else if (caller == mIAddExpertAccess)
-//                addAccess(L2AccessControl.AccessLevel.EXPERT);
-//            else if (caller == mIDeleteExpertAccess)
-//                deleteAccess(L2AccessControl.AccessLevel.EXPERT);
-//            else if (caller == mIAddUpdaterAccess)
-//                addAccess(L2AccessControl.AccessLevel.UPDATER);
-//            else if (caller == mIDeleteUpdaterAccess)
-//                deleteAccess(L2AccessControl.AccessLevel.UPDATER);
-//            else if (caller == mIAddRuntimeAccess)
-//                addAccess(L2AccessControl.AccessLevel.RUNTIME);
-//            else if (caller == mIDeleteRuntimeAccess)
-//                deleteAccess(L2AccessControl.AccessLevel.RUNTIME);
         }
     }
 

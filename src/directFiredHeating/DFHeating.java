@@ -13,6 +13,7 @@ import mvUtils.mvXML.XMLgroupStat;
 import mvUtils.mvXML.XMLmv;
 import mvUtils.math.XYArray;
 import netscape.javascript.JSObject;
+import netscape.javascript.JSObject;
 import org.apache.log4j.Logger;
 import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
@@ -721,18 +722,9 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                 case TOPBOTSTRIP:
                     bTopBot = false;
                     changeTopBot(false);
-//                    String msg1 = "";
-//                    String msg2 = "Enter Furnace Profile for Combined Top And Bottom.\nie. TOTAL Height from Floor to Roof";
                     if (cbFceFor.getSelectedItem() != DFHTuningParams.FurnaceFor.STRIP) {
-//                        msg1 = "Changing 'Furnace For' to Strip Heating\n\n";
-//                        if (!onProductionLine)
-//                            showMessage(msg1 + msg2);
                         cbFceFor.setSelectedItem(DFHTuningParams.FurnaceFor.STRIP);
                     }
-//                    else {
-//                        if (!onProductionLine)
-//                            showMessage(msg2);
-//                    }
                     break;
             }
             furnace.changeFiringMode(bTopBot, bAddTopSoak);
@@ -2980,7 +2972,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected void saveFceToFileJNLP(boolean withPerformance) {
         takeValuesFromUI();
         if (!JNLPFileHandler.saveToFile(inputDataXML(withPerformance), profileFileExtension, "furnaceProfile." + profileFileExtension))
-            showError("Some IO Error in writing to file!");
+            showError("Could not save to file!");
         parent().toFront();
     }
 
@@ -3087,7 +3079,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             if (JNLPFileHandler.saveToFile(xmlStr, "recuDat", "recuperator.recuDat"))
                 retVal = true;
             else
-                showError("Some IO Error in writing to file!");
+                showError("Could not save to file!");
         }
         else {
             String title = "Save Recuperator  Data";
@@ -3414,7 +3406,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         if (profStr.length() > 100) {
             if (asJNLP) {
                 if (!JNLPFileHandler.saveToFile(profStr, "csv", "Temperature Profile for TFM.csv"))
-                    showError("Some IO Error in writing to file!");
+                    showError("Could not save to file!");
             }
             else {
                 FileDialog fileDlg =
@@ -3768,7 +3760,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             if (!JNLPFileHandler.saveToFile(
                     "# Fuel specifications saved on " + dateFormat.format(new Date()) + "\n\n" + xmlStr,
                     "dfhSpecs", "FuelSpecifications.dfhSpecs"))
-                showError("Some IO Error in writing to file!");
+                showError("Could not save to file!");
             parent().toFront();
         }
     }
@@ -3902,7 +3894,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             if (!JNLPFileHandler.saveToFile(
                     "# Charge Material specifications saved on " + dateFormat.format(new Date()) + "\n\n" + xmlStr,
                     "dfhSpecs", "ChMaterialSpecifications.dfhSpecs"))
-                showError("Some IO Error in writing to file!");
+                showError("Could not save to file!");
             parent().toFront();
         }
     }

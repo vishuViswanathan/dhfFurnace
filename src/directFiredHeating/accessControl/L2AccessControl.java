@@ -29,12 +29,20 @@ public class L2AccessControl {
 
     AccessControl accessControl;
 
+    public L2AccessControl(AccessControl.PasswordIntensity intensity) {
+        accessControl = new AccessControl(intensity);
+    }
+
     public L2AccessControl() {
-        accessControl = new AccessControl();
+        this(AccessControl.PasswordIntensity.HIGH);
+    }
+
+    public L2AccessControl(AccessControl.PasswordIntensity intensity, String filePath, boolean onlyIfExists) throws Exception {
+        accessControl = new AccessControlInFile(intensity, filePath, onlyIfExists);
     }
 
     public L2AccessControl(String filePath, boolean onlyIfExists) throws Exception {
-        accessControl = new AccessControlInFile(filePath, onlyIfExists);
+        this(AccessControl.PasswordIntensity.HIGH, filePath, onlyIfExists);
     }
 
     public StatusWithMessage authenticate(AccessLevel forLevel) {

@@ -21,7 +21,6 @@ public class MachineCheck {
         try {
             InetAddress ip = InetAddress.getLocalHost();
 //            debug("Current IP address : " + ip.getHostAddress());
-
             NetworkInterface network = NetworkInterface.getByInetAddress(ip);
 
             byte[] mac = network.getHardwareAddress();
@@ -55,10 +54,9 @@ public class MachineCheck {
         int len = idStr.length();
         StringBuilder keyBase = new StringBuilder();
         StringBuilder key = new StringBuilder();
-        int[] modId = new int[len] ;
         try {
             for (int p = 0; p < (len - 1); p+= 2) {
-                keyBase.append(String.format("%04d", ((int)1000 - Integer.parseInt(idStr.substring(p, p + 2), 16))));
+                keyBase.append(String.format("%04d", (1000 - Integer.parseInt(idStr.substring(p, p + 2), 16))));
             }
             // reverse it
             for (int p = keyBase.length() - 1; p >= 0; p -= 2)
@@ -80,10 +78,6 @@ public class MachineCheck {
         else
             retVal.setErrorMessage("It appears that the Network is not connected");
         return retVal;
-    }
-
-    public boolean checkKeyOLD(String key) {
-        return key.equals(getKey(getMachineID()));
     }
 
     public boolean checkKey(String machineID, String key) {

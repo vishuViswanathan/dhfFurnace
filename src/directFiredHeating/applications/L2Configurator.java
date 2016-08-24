@@ -181,7 +181,6 @@ public class L2Configurator extends StripHeating {
     }
 
     static protected boolean  parseCmdLineArgs(String[] args) {
-        int i = 0;
         boolean retVal = false;
         if (StripHeating.parseCmdLineArgs(args)) {
             retVal = true;
