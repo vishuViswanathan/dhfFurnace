@@ -20,7 +20,7 @@ public class OfflineAccessControl extends L2AccessControl {
         this.asJNLP = asJNLP;
         if (asJNLP)
             accessControl.setAsJNLP();
-        accessControl.setsuggestedExtension(L2AccessControl.installerAccessFileExtension);
+        accessControl.setSuggestedExtension(L2AccessControl.installerAccessFileExtension);
     }
 
     public OfflineAccessControl(boolean asJNLP, Frame mainF) {

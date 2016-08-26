@@ -13,7 +13,7 @@ import java.util.HashMap;
  * To change this template use File | Settings | File Templates.
  */
 public class L2AccessControl {
-    public enum AccessLevel {NONE, RUNTIME, UPDATER, EXPERT, INSTALLER, CONFIGURATOR};
+    public enum AccessLevel {NONE, RUNTIME, UPDATER, EXPERT, INSTALLER, CONFIGURATOR}
 
     static public String l2AccessfileExtension = "l2Acc";
     static public String installerAccessFileExtension = "instAcc";
@@ -55,16 +55,18 @@ public class L2AccessControl {
         return accessControl.getAndCheckPassword(nd.name, title);
     }
 
+/*
     /**
      * creates a new access Control file with one access entry for 'forLevel'
      * @param forLevel
      * @return
-     */
+
     public static StatusWithMessage initiateAccessFile(AccessLevel forLevel) {
         StatusWithMessage retVal = new StatusWithMessage();
         retVal.setErrorMessage("Not Ready for Access Control yet");
         return retVal;
     }
+*/
 
     public StatusWithMessage addNewUser(AccessLevel forLevel) {
         AccessNameAndDescription nd = accessMap.get(forLevel);
