@@ -206,6 +206,10 @@ public class StripDFHProcessList {
         return cbProcess;
     }
 
+    void showError(String title, String msg) {
+        SimpleDialog.showError(title, msg);
+    }
+
     class AddProcessDlg extends JDialog implements DataHandler{
         boolean bListBeingChanged = false;
         JComboBox jcbExisting;
@@ -300,19 +304,23 @@ public class StripDFHProcessList {
 
         public boolean saveData() {
             boolean itsNew = true;
-            selectedP.noteDataFromUI();
-            for (OneStripDFHProcess p:list)
-                if (p == selectedP) {
-                    itsNew = false;
-                    break;
+            ErrorStatAndMsg dataStat = selectedP.noteDataFromUI();
+            if (!dataStat.inError) {
+                for (OneStripDFHProcess p : list)
+                    if (p == selectedP) {
+                        itsNew = false;
+                        break;
+                    }
+                if (itsNew) {
+                    list.add(selectedP);
+                    populateJcbExisting();
+                    jcbExisting.setSelectedItem(selectedP.processName);
+                    response = EditResponse.Response.SAVE;
                 }
-            if (itsNew) {
-                list.add(selectedP);
-                populateJcbExisting();
-                jcbExisting.setSelectedItem(selectedP.processName);
-                response = EditResponse.Response.SAVE;
+                edited = true;
             }
-            edited = true;
+            else
+                showError("Data Entry", dataStat.msg);
             return edited;
         }
 

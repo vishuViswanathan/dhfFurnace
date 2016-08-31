@@ -48,34 +48,6 @@ public class ChMaterial {
     public ChMaterial(String xmlStr) throws Exception {
         if (!takeDataFromXML(xmlStr))
              throw new Exception("ERROR: In Charge Material Specifications from xml :" + xmlStr);
-//        ValAndPos vp;
-//        boolean inError = true;
-//        vp = XMLmv.getTag(xmlStr, "Name", 0);
-//        name = vp.val;
-//        if (name.length() > 2) {
-//            vp = XMLmv.getTag(xmlStr, "matID", 0);
-//            matID = vp.val;
-//            vp = XMLmv.getTag(xmlStr, "density", 0);
-//
-//            density = Double.valueOf(vp.val);
-//            try {
-//                vp = XMLmv.getTag(xmlStr, "tK", 0);
-//                tK = new XYArray(vp.val);
-//                if (tK.nElements() < 2) {
-//                    if (tK.getXat(0) == 0)
-//                        tK0 = tK.getYat(0);
-//                }
-//                vp = XMLmv.getTag(xmlStr, "heatC", 0);
-//                heatC = new XYArray(vp.val);
-//                vp = XMLmv.getTag(xmlStr, "e", 0);
-//                e = new XYArray(vp.val);
-//                inError = false;
-//            } catch (Exception e1) {
-//                inError = true;
-//            }
-//        }
-//        if (inError)
-//             throw new Exception("ERROR: In Charge Material Specifications from xml :" + xmlStr);
     }
 
     public boolean takeDataFromXML(String xmlStr) {

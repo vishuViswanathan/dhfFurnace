@@ -164,7 +164,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     Hashtable<DFHResult.Type, ResultPanel> resultPanels, printPanels;
     public DFHTuningParams.FurnaceFor furnaceFor = DFHTuningParams.FurnaceFor.BILLETS;
     protected DFHTuningParams tuningParams;
-    JTextField tfReference, tfFceTitle, tfCustomer;
+    protected JTextField tfReference, tfFceTitle, tfCustomer;
     NumberTextField ntfWidth;
     protected JComboBox cbFceFor;
     protected JComboBox<HeatingMode> cbHeatingMode;
@@ -183,7 +183,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     boolean bAllowSecFuel = false;
     Component lastPageShown = null;
     JPanel fuelMixP;
-    GridBagConstraints gbcChDatLoc;
+    protected GridBagConstraints gbcChDatLoc;
     protected JMenu fileMenu;
     protected JMenu inputMenu;
     protected JMenu resultsMenu;
@@ -212,7 +212,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     JScrollPane detScroll;
     NumberLabel lbTopLen;
     NumberLabel lbBotLen;
-    FramedPanel titleAndFceCommon;
+    protected FramedPanel titleAndFceCommon;
     MultiPairColPanel mpTitlePanel;
     MultiPairColPanel mpFceCommDataPanel;
     protected double chWidth = 1.2, chThickness = 0.2, chLength = 9, chDiameter = 0.2;
@@ -222,7 +222,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected NumberTextField tfChWidth, tfChThickness, tfChLength, tfChDiameter;
     protected JSPComboBox cbChMaterial;
     MultiPairColPanel mpChargeData;
-    JLabel labChWidth, labChLength;
+    protected JLabel labChLength;
+    JLabel labChWidth;
     protected double bottShadow, chPitch = 1.3, tph = 200;
     protected double entryTemp = 30, exitTemp = 1200, deltaTemp = 25;
     protected double exitZoneFceTemp = 1050; // for strip heating
@@ -234,13 +235,13 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected NumberTextField tfExitZoneFceTemp;
     protected NumberTextField tfMinExitZoneFceTemp;
     LengthChangeListener lengthListener = new LengthChangeListener();
-    MultiPairColPanel mpChInFce;
+    protected MultiPairColPanel mpChInFce;
     NumberTextField tfTotTime, tfSpTime, tfSpeed;
     public double calculStep = 1.0;
     public double ambTemp = 30, airTemp = 500, fuelTemp = 30;
     protected NumberTextField tfCalculStep, tfAmbTemp, tfAirTemp, tfFuelTemp;
-    JButton pbCalculate;
-    MultiPairColPanel mpCalcul;
+    protected JButton pbCalculate;
+    protected MultiPairColPanel mpCalcul;
     double deltaTflue = 50, deltaTAirFromRecu = 50, maxFlueAtRecu = 800;
     double deltaTFuelFromRecu = 30;
     NumberTextField ntDeltaTFlue;  // temp drop in flue between furnace and recu
@@ -286,6 +287,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
     protected void setUIDefaults() {
         UIManager.put("ComboBox.disabledForeground", Color.black);
+        UIManager.put("Label.disabledForeground", Color.black);
         Font oldLabelFont = UIManager.getFont("Label.font");
         UIManager.put("Label.font", oldLabelFont.deriveFont(Font.PLAIN));
         oldLabelFont = UIManager.getFont("ComboBox.font");
@@ -382,13 +384,16 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
              mainAppPanel.setPreferredSize(new Dimension(1000, 650));
              mainF.addWindowListener(new WinListener());
              createAllMenuItems();
+             createAllUIItems();
              addMenuBar();
              inpPage = inputPage();
              opPage = OperationPage();
              slate.setViewportView(inpPage);
              mainAppPanel.add(slate, BorderLayout.CENTER);
              switchPage(DFHDisplayPageType.INPUTPAGE);
+             cbHeatingMode.setSelectedItem(HeatingMode.TOPONLY);
              cbFceFor.setSelectedItem(furnaceFor);
+             cbFuel.setSelectedItem(commFuel);
          }
     }
 
@@ -396,11 +401,16 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected void disableSomeUIs() {
     }
 
+    protected void enableTitleEdit(boolean ena)  {
+        titleAndFceCommon.setEnabled(ena);
+    }
+
     void enableDataEntry(boolean ena) {
         ena &= bAllowManualCalculation;
         if (ena)
             furnace.resetSections();
-        titleAndFceCommon.setEnabled(ena && bAllowProfileChange);
+//        if (titleAndFceCommon != null)  titleAndFceCommon.setEnabled(ena && bAllowProfileChange);
+        enableTitleEdit(ena && bAllowProfileChange);
 
         cbChType.setEnabled((furnaceFor != DFHTuningParams.FurnaceFor.STRIP) && ena && bAllowProfileChange);
         tfChLength.setEditable(ena);
@@ -595,9 +605,15 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected void setChMaterial(ChMaterial material) {
         selChMaterial = material;
         cbChMaterial.setSelectedItem(selChMaterial);
+        selChMaterial = (ChMaterial)cbChMaterial.getSelectedItem(); // to make it collect all data on JNLP if required
     }
 
-    protected void setExitTemperaure(double temperature) {
+    protected void setEntryTemperature(double temperature) {
+        entryTemp = temperature;
+        tfEntryTemp.setData(entryTemp);
+    }
+
+    protected void setExitTemperature(double temperature) {
         exitTemp = temperature;
         tfExitTemp.setData(exitTemp);
     }
@@ -735,7 +751,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
     MultiPairColPanel userTunePanel;
 
-    JPanel OperationPage() {
+    protected JPanel OperationPage() {
         JPanel jp = new JPanel(new GridBagLayout());
         jp.setBackground(new JPanel().getBackground());
         GridBagConstraints gbcOP = new GridBagConstraints();
@@ -756,9 +772,14 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
         gbcOP.gridx++;
         gbcOP.anchor = GridBagConstraints.WEST;
-        jp.add(chargeInFurnacePanel(), gbcOP);
+//        jp.add(chargeInFurnacePanel(), gbcOP);
+        mpChInFce = chargeInFurnacePanel();
+        jp.add(mpChInFce, gbcOP);
+
         gbcOP.gridx++;
-        jp.add(recuDataPanel(), gbcOP);
+//        jp.add(recuDataPanel(), gbcOP);
+        mpRecuData = recuDataPanel();
+        jp.add(mpRecuData, gbcOP);
         gbcOP.gridy++;
         gbcOP.gridx = 0;
         userTunePanel = tuningParams.userTunePan();
@@ -766,12 +787,14 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         jp.add(userTunePanel, gbcOP);
         gbcOP.gridx++;
         gbcOP.gridx++;
-        jp.add(calCulDataPanel(), gbcOP);
+//        jp.add(calCulDataPanel(), gbcOP);
+        mpCalcul = calCulDataPanel();
+        jp.add(mpCalcul, gbcOP);
         gbcOP.gridx = 0;
         return jp;
     }
 
-    void addFceCommAndDataPanel(JPanel jp) {
+    protected void addFceCommAndDataPanel(JPanel jp) {
         GridBagConstraints gbcOP = new GridBagConstraints();
         gbcOP.gridx = 0;
         gbcOP.gridy = 0;
@@ -932,6 +955,145 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         printPanels.put(DFHResult.Type.BOTtempTRENDS, new ResultPanel(DFHResult.Type.BOTtempTRENDS, printMenuActions));
         printPanels.put(DFHResult.Type.ALLtempTRENDS, new ResultPanel(DFHResult.Type.ALLtempTRENDS, printMenuActions));
         printPanels.put(DFHResult.Type.FUELMIX, new ResultPanel(DFHResult.Type.FUELMIX, printMenuActions));
+    }
+
+    void createAllUIItems() {
+        tfReference = new XLTextField(reference, 40);
+        tfFceTitle = new XLTextField(fceTtitle, 40);
+        tfCustomer = new XLTextField(customer, 40);
+        tfProcessName = new XLTextField(processName, 10);
+        cbFceFor = new XLComboBox(DFHTuningParams.FurnaceFor.values());
+        cbFceFor.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                setFcefor(!fceFor1stSwitch);
+                if (!fceFor1stSwitch)
+                    showMessage("You have switched 'Furnace For'\nRecheck data for charge width, charge pitch if applicable ");
+                fceFor1stSwitch = false;
+            }
+        });
+        cbFceFor.setPreferredSize(new Dimension(200, 20));
+
+        cbHeatingMode = new XLComboBox(HeatingMode.values());
+        cbHeatingMode.addActionListener(new HeatingModeListener());
+        cbHeatingMode.setPreferredSize(new Dimension(200, 20));
+//        cbHeatingMode.setSelectedItem(HeatingMode.TOPONLY);
+        ntfWidth = new NumberTextField(this, width * 1000, 10, false, 500, 40000, "#,###", "Furnace Width (mm) ");
+        cbFuel = new JSPComboBox<Fuel>(jspConnection, fuelList);
+        cbFuel.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Fuel f = (Fuel) cbFuel.getSelectedItem();
+                if (f != null && f.bMixedFuel) {
+                    tfFuelTemp.setEnabled(false);
+                    if (cBFuelHeatByRecu.isSelected())
+                        cBFuelHeatByRecu.doClick();
+                    cBFuelHeatByRecu.setEnabled(false);
+                } else {
+                    tfFuelTemp.setEnabled(true);
+                    cBFuelHeatByRecu.setEnabled(true);
+                }
+            }
+        });
+//        cbFuel.setSelectedItem(commFuel);
+        cbFuel.setRenderer(new BasicComboBoxRenderer() {
+            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                if (isSelected) {
+                    setBackground(list.getSelectionBackground());
+                    setForeground(list.getSelectionForeground());
+                    if (-1 < index) {
+                        Fuel f = (Fuel) value;
+                        list.setToolTipText(value.toString() + " [" + f.calVal + "kcal/" + f.units + "]");
+                    }
+                } else {
+                    setForeground(list.getForeground());
+                    setBackground(list.getBackground());
+                }
+
+                setFont(list.getFont());
+                setText((value == null) ? "" : value.toString());
+                setText((value == null) ? "" : value.toString());
+                return this;  //To change body of implemented methods use File | Settings | File Templates.
+            }
+        });
+        cbFuel.setPreferredSize(new Dimension(200, 20));
+        tfExcessAir = new NumberTextField(this, excessAir * 100, 5, false, 0, 100, "###", "Excess Air (%) ");
+
+        cbChType = new XLComboBox(Charge.ChType.values());
+        cbChType.setSelectedItem(Charge.ChType.SOLID_RECTANGLE);
+        addInputToListener(cbChType);
+        tfChDiameter = new NumberTextField(this, chDiameter * 1000, 5, false, 10, 2000, "#,###", "Dia of cross section (mm)");
+        addInputToListener(tfChDiameter);
+        tfChWidth = new NumberTextField(this, chWidth * 1000, 5, false, 50, 25000, "#,###", "Width (Along Furnace) (mm)");
+        addInputToListener(tfChWidth);
+        labChWidth = new JLabel("Billet/Slab Width (mm)");
+        tfChThickness = new NumberTextField(this, chThickness * 1000, 5, false, 0.05, 10000, "#,###.###", "Thickness (mm)");
+        addInputToListener(tfChThickness);
+        tfChLength = new NumberTextField(this, chLength * 1000, 5, false, 500, 25000, "#,###", "Length (Across Furnace) (mm)");
+        addInputToListener(tfChLength);
+        labChLength = new JLabel("Billet/Slab Length (mm)");
+        cbChMaterial = new JSPComboBox<ChMaterial>(jspConnection, vChMaterial);
+        cbChMaterial.setPreferredSize(new Dimension(200, 18));
+        cbChMaterial.setSelectedItem(selChMaterial);
+        addInputToListener(cbChMaterial);
+        setChargeSizeChoice();
+
+        tfBottShadow = new NumberTextField(this, bottShadow * 100, 5, false, 0, 100, "###", "Shadow on Bottom Surface (%)");
+        tfChPitch = new NumberTextField(this, chPitch * 1000, 5, false, 0, 10000, "#,###", "Charge Pitch (mm)");
+        tfChRows = new NumberTextField(this, nChargeRows, 5, false, 1, 5, "#,###", "Charge Rows");
+        tfProduction = new NumberTextField(this, tph, 5, false, 0, 500, "#,###.00", "Production (t/h)");
+        tfEntryTemp = new NumberTextField(this, entryTemp, 5, false, 0, 1500, "#,###", "Charge Entry Temperature (C)");
+        tfExitTemp = new NumberTextField(this, exitTemp, 5, false, 0, 1500, "#,###", "Charge Exit Temperature (C)");
+        tfDeltaTemp = new NumberTextField(this, deltaTemp, 5, false, 0.001, 500, "#,###.000", "Temperature Dis-uniformity (C)");
+        tfExitZoneFceTemp = new NumberTextField(this, exitZoneFceTemp, 5, false, 500, 1400, "#,###", "Exit zone Furnace Temperature (C)");
+        tfMinExitZoneFceTemp = new NumberTextField(this, minExitZoneFceTemp, 5, false, 500, 1400, "#,###", "Minimum Exit zone Furnace Temperature (C)");
+        tfTotTime = new NumberTextField(this, 0, 5, false, 0, 500, "##0.000", "Total Heating time (h)");
+        tfTotTime.setEnabled(false);
+        tfSpTime = new NumberTextField(this, 0, 5, false, 0, 500, "##0.000", "Specific Heating time (min/mm)");
+        tfSpTime.setEnabled(false);
+        tfSpeed = new NumberTextField(this, 0, 5, false, 0, 500, "#,##0.000", "Charge Speed (m/min)");
+        tfSpeed.setEnabled(false);
+        setTimeValues(0, 0, 0);
+
+        tfAmbTemp = new NumberTextField(this, ambTemp, 5, false, 0, 500, "#,###", "Ambient Temperature (C)");
+        tfAirTemp = new NumberTextField(this, airTemp, 5, false, 0, 3000, "#,###", "Air Preheat (C)");
+        tfFuelTemp = new NumberTextField(this, fuelTemp, 5, false, 0, 3000, "#,###", "Fuel Preheat (C)");
+        tfCalculStep = new NumberTextField(this, calculStep * 1000, 5, false, 200, 5000, "#,###", "Calculation Step (mm)");
+        pbCalculate = new JButton("Calculate");
+        pbCalculate.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                calculateFce();
+            }
+        });
+
+        ntDeltaTFlue = new NumberTextField(this, deltaTflue, 5, false, 0, 100, "#,###", "Flue DeltaT Fce-Recu (C)");
+        ntMaxFlueTatRecu = new NumberTextField(this, maxFlueAtRecu, 5, false, 0, 1200, "#,###", "Max. Flue temp at 1st Recu (C)");
+        ntdeltaTAirFromRecu = new NumberTextField(this, deltaTAirFromRecu, 5, false, 0, 100, "#,###", "Air DeltaT Recu-burner (C)");
+        ntdeltaTAirFromRecu.setEnabled(bAirHeatedByRecu);
+        ntDeltaTFuelFromRecu = new NumberTextField(this, deltaTFuelFromRecu, 5, false, 0, 100, "#,###", "Fuel DeltaT Recu-burner (C)");
+        ntDeltaTFuelFromRecu.setEnabled(bFuelHeatedByRecu);
+        cBAirHeatByRecu = new JCheckBox();
+        cBAirHeatByRecu.setSelected(bAirHeatedByRecu);
+        cBAirAfterFuel = new JCheckBox();
+        cBAirAfterFuel.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                bAirAfterFuel = cBAirAfterFuel.isSelected();
+            }
+        });
+        cBAirAfterFuel.setEnabled(false);
+        cBAirHeatByRecu.addActionListener(new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                bAirHeatedByRecu = cBAirHeatByRecu.isSelected();
+                ntdeltaTAirFromRecu.setEnabled(bAirHeatedByRecu);
+                enableRecuSequence();
+            }
+        });
+        cBFuelHeatByRecu = new JCheckBox();
+        cBFuelHeatByRecu.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                bFuelHeatedByRecu = cBFuelHeatByRecu.isSelected();
+                ntDeltaTFuelFromRecu.setEnabled(bFuelHeatedByRecu);
+                enableRecuSequence();
+            }
+        });
     }
 
     protected void enablePrintResultsMenu(boolean ena) {
@@ -1284,7 +1446,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return panel;
     }
 
-    FramedPanel titleAndFceCommon() {
+    protected FramedPanel titleAndFceCommon() {
         if (titleAndFceCommon == null) {
             FramedPanel panel = new FramedPanel(new GridBagLayout());
             GridBagConstraints gbcTp = new GridBagConstraints();
@@ -1292,7 +1454,9 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             gbcTp.gridy = 0;
             panel.add(getTitlePanel(), gbcTp);
             gbcTp.gridx++;
-            panel.add(fceCommDataPanel(), gbcTp);
+//            panel.add(fceCommDataPanel(), gbcTp);
+            mpFceCommDataPanel =  fceCommDataPanel();
+            panel.add(mpFceCommDataPanel, gbcTp);
             titleAndFceCommon = panel;
         }
         cbFuel.updateUI();
@@ -1301,7 +1465,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
     MultiPairColPanel titlePanel;
 
-    FramedPanel getTitlePanel() {
+    FramedPanel getTitlePanelOLD() {  // TODO to be removed
         titlePanel = new MultiPairColPanel("");
         tfReference = new XLTextField(reference, 40);
         titlePanel.addItemPair("Reference ", tfReference);
@@ -1325,9 +1489,18 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return titlePanel;
     }
 
+    FramedPanel getTitlePanel() {
+        titlePanel = new MultiPairColPanel("");
+        titlePanel.addItemPair("Reference ", tfReference);
+        titlePanel.addItemPair("Title ", tfFceTitle);
+        titlePanel.addItemPair("Customer ", tfCustomer);
+        titlePanel.addItemPair("Furnace For ", cbFceFor);
+        mpTitlePanel = titlePanel;
+        return titlePanel;
+    }
     MultiPairColPanel commonDataP;
 
-    FramedPanel fceCommDataPanel() {
+    FramedPanel fceCommDataPanelOLD() {       // TODO to be removed
         commonDataP = new MultiPairColPanel("");
         cbHeatingMode = new XLComboBox(HeatingMode.values());
         cbHeatingMode.addActionListener(new HeatingModeListener());
@@ -1380,6 +1553,16 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return commonDataP;
     }
 
+    MultiPairColPanel fceCommDataPanel() {
+        commonDataP = new MultiPairColPanel("");
+        commonDataP.addItemPair("Heating Mode ", cbHeatingMode);
+        commonDataP.addItemPair(ntfWidth);
+        commonDataP.addItemPair("Common Fuel ", cbFuel);
+        commonDataP.addItemPair(tfExcessAir);
+        mpFceCommDataPanel = commonDataP;
+        return commonDataP;
+    }
+
     public void noteFiringModeChange(boolean bTopBot) {
         if (bTopBot) {
             lbBotLen.setEnabled(true);
@@ -1395,11 +1578,13 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
     JPanel chSizePanel = new JPanel();
 
-    JPanel processAndCharge() {
+    protected JPanel processAndCharge() {
         JPanel jp = new JPanel(new BorderLayout());
-        tfProcessName = new XLTextField(processName, 10);
+//        tfProcessName = new XLTextField(processName, 10);
         jp.add(processPanel(), BorderLayout.NORTH);
-        jp.add(chargeDataPanel(), BorderLayout.SOUTH);
+//        jp.add(chargeDataPanel(), BorderLayout.SOUTH);
+        mpChargeData = chargeDataPanel();
+        jp.add(mpChargeData, BorderLayout.SOUTH);
         return jp;
     }
 
@@ -1410,7 +1595,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return jp;
     }
 
-    JPanel chargeDataPanel() {
+    JPanel chargeDataPanelOLD() {     // TODO to be removed
         MultiPairColPanel jp = new MultiPairColPanel("Charge Details");
         cbChType = new XLComboBox(Charge.ChType.values());
         cbChType.setSelectedItem(Charge.ChType.SOLID_RECTANGLE);
@@ -1437,6 +1622,17 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         jp.addItemPair("Charge Material", cbChMaterial);
         setChargeSizeChoice();
         mpChargeData = jp;
+        return jp;
+    }
+
+    protected MultiPairColPanel chargeDataPanel() {
+        MultiPairColPanel jp = new MultiPairColPanel("Charge Details");
+        jp.addItemPair("Charge Cross Section", cbChType);
+        jp.addItemPair(tfChDiameter);
+        jp.addItemPair(labChWidth, tfChWidth);
+        jp.addItemPair(tfChThickness.getName(), tfChThickness);
+        jp.addItemPair(labChLength, tfChLength);
+        jp.addItemPair("Charge Material", cbChMaterial);
         return jp;
     }
 
@@ -1479,7 +1675,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return lengthListener;
     }
 
-    JPanel chargeInFurnacePanel() {
+    JPanel chargeInFurnacePanelOLD() {         // TODO to be removed
         MultiPairColPanel jp = new MultiPairColPanel("Charge In Furnace");
         tfBottShadow = new NumberTextField(this, bottShadow * 100, 5, false, 0, 100, "###", "Shadow on Bottom Surface (%)");
         jp.addItemPair(tfBottShadow.getLabel(), tfBottShadow);
@@ -1513,6 +1709,24 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return jp;
     }
 
+    protected MultiPairColPanel chargeInFurnacePanel() {
+        MultiPairColPanel jp = new MultiPairColPanel("Charge In Furnace");
+        jp.addItemPair(tfBottShadow.getLabel(), tfBottShadow);
+        jp.addItemPair(tfChPitch);
+        jp.addItemPair(tfChRows);
+        jp.addItemPair(tfProduction);
+        jp.addItemPair(tfEntryTemp);
+        jp.addItemPair(tfExitTemp);
+        jp.addItemPair(tfDeltaTemp);
+        jp.addItemPair(tfExitZoneFceTemp);
+        jp.addItemPair(tfMinExitZoneFceTemp);
+        jp.addItemPair(tfTotTime);
+        jp.addItemPair(tfSpTime);
+        jp.addItemPair(tfSpeed);
+        return jp;
+    }
+
+
     void setTimeValues(double totTime, double spTime, double speed) {
         if (totTime > 0) {
             tfTotTime.setData(totTime);
@@ -1525,7 +1739,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         }
     }
 
-    JPanel calCulDataPanel() {
+    protected JPanel calCulDataPanelOLD() {    // TODO to be removed
         MultiPairColPanel jp = new MultiPairColPanel("Calculate");
         tfAmbTemp = new NumberTextField(this, ambTemp, 5, false, 0, 500, "#,###", "Ambient Temperature (C)");
         jp.addItemPair(tfAmbTemp);
@@ -1546,6 +1760,16 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return jp;
     }
 
+    protected MultiPairColPanel calCulDataPanel() {
+        MultiPairColPanel jp = new MultiPairColPanel("Calculate");
+        jp.addItemPair(tfAmbTemp);
+        jp.addItemPair(tfAirTemp);
+        jp.addItemPair(tfFuelTemp);
+        jp.addItemPair(tfCalculStep);
+        jp.addItemPair("", pbCalculate);
+        return jp;
+    }
+
     void enaCommonFuelTemp() {
         if (furnace.anyCommonFuel())
             tfFuelTemp.setEnabled(true);
@@ -1553,7 +1777,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             tfFuelTemp.setEnabled(false);
     }
 
-    JPanel recuDataPanel() {
+    JPanel recuDataPanelOLD() {  // TODO to be removed
         MultiPairColPanel jp = new MultiPairColPanel("Recuperator Data");
         ntDeltaTFlue = new NumberTextField(this, deltaTflue, 5, false, 0, 100, "#,###", "Flue DeltaT Fce-Recu (C)");
         jp.addItemPair(ntDeltaTFlue);
@@ -1593,6 +1817,18 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         jp.addItemPair(ntDeltaTFuelFromRecu);
         jp.addItemPair("Air Recu is after Fuel Recu", cBAirAfterFuel);
         mpRecuData = jp;
+        return jp;
+    }
+
+    MultiPairColPanel recuDataPanel() {
+        MultiPairColPanel jp = new MultiPairColPanel("Recuperator Data");
+        jp.addItemPair(ntDeltaTFlue);
+        jp.addItemPair(ntMaxFlueTatRecu);
+        jp.addItemPair("Common Air Heated in Recu", cBAirHeatByRecu);
+        jp.addItemPair(ntdeltaTAirFromRecu);
+        jp.addItemPair("Common Fuel Heated in Recu", cBFuelHeatByRecu);
+        jp.addItemPair(ntDeltaTFuelFromRecu);
+        jp.addItemPair("Air Recu is after Fuel Recu", cBAirAfterFuel);
         return jp;
     }
 
@@ -2052,10 +2288,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             ok = false;
             msg += "\n   " + tfChWidth.getName();
         }
-        if (cbChMaterial.getSelectedIndex() < 0) {
-            ok = false;
-            msg += "\n   Material of Charge";
-        }
+//        if (cbChMaterial.getSelectedIndex() < 0) {
+//            ok = false;
+//            msg += "\n   Material of Charge";
+//        }
         return new ErrorStatAndMsg(!ok, msg);
     }
 
@@ -2072,6 +2308,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected ErrorStatAndMsg isChargeInFceOK() {
         boolean ok = true;
         String msg = "";
+        if (cbChMaterial.getSelectedIndex() < 0) {
+            ok = false;
+            msg += "\n   Material of Charge";
+        }
         if (tfBottShadow.isInError()) {
             ok = false;
             msg += "\n   " + tfBottShadow.getName();

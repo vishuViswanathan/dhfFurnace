@@ -83,9 +83,7 @@ public class Level2Installer extends L2DFHeating {
                         "\n      4) Performance Data under '" + perfMenu.getText() + "'" +
                         "\n\nIt is suggested that the profile with Fuel is finalised before updating" +
                         "\nthe other data." +
-                        "\n\nBefore exiting, the the above data to be save to respective files." +
-                        "\nThe Profile is to be saved first, followed by the others, since, the profile-save" +
-                        "\nassigns a profile ID, which is used as link in other data files");
+                        "\n\nIf any changes are made, then before exiting, make sure to save/update profile.");
             }
             else {
                 showError("Level2 could not be started. Aborting ...");
@@ -168,6 +166,18 @@ public class Level2Installer extends L2DFHeating {
         mAccessControl.add(mRuntimeAccess);
         return mAccessControl;
     }
+
+    protected JMenu createPerformanceMenu() {
+        perfMenu = new JMenu("Performance");
+        perfMenu.add(mIAddToPerfBase);
+        perfMenu.addSeparator();
+        perfMenu.add(mIShowPerfBase);
+        perfMenu.addSeparator();
+//        perfMenu.add(mISavePerformanceData);
+        perfMenu.add(mIReadPerformanceData);
+        return perfMenu;
+    }
+
 
     protected JMenuBar assembleMenuBar() {
         JMenuBar mb = new JMenuBar();

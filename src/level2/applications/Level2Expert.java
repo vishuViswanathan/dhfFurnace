@@ -85,13 +85,13 @@ public class Level2Expert extends L2DFHeating {
         perfMenu.add(mIShowPerfBase);
         perfMenu.addSeparator();
         perfMenu.add(mISavePerformanceData);
-        perfMenu.add(mIReadPerformanceData);
+//        perfMenu.add(mIReadPerformanceData);
         return perfMenu;
     }
 
     protected JMenu createDefineFurnaceMenu() {
-        inputMenu = new JMenu("DefineFurnace");
-        inputMenu.add(mIInputData);
+        inputMenu = new JMenu("Operation Data");
+//        inputMenu.add(mIInputData);
         inputMenu.add(mIOpData);
         return inputMenu;
     }

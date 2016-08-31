@@ -91,7 +91,7 @@ public class L2Updater extends L2DFHeating{
         perfMenu.add(mIShowPerfBase);
         perfMenu.addSeparator();
         perfMenu.add(mISavePerformanceData);
-        perfMenu.add(mIReadPerformanceData);
+//        perfMenu.add(mIReadPerformanceData);
         return perfMenu;
     }
 

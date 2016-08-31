@@ -235,12 +235,6 @@ public class L2DFHeating extends StripHeating {
         return l2SystemReady;
     }
 
-    protected JPanel processPanel() {
-        MultiPairColPanel jp = new MultiPairColPanel("Process");
-        jp.addItemPair("Process Name", dfhProcessList.getListUI());
-        return jp;
-    }
-
     protected String getProcessName() {
         processName = dfhProcessList.getSelectedProcessName();
         return processName;
@@ -380,12 +374,6 @@ public class L2DFHeating extends StripHeating {
 
     boolean bEnablePerfMenu;
 
-//    public void enableDataEdit() {
-//        if (bAllowL2Changes) {
-//            super.enableDataEdit();
-//        }
-//    }
-//
     protected void showPerfMenu(boolean show) {
         if (bEnablePerfMenu)
             perfMenu.setVisible(show);
@@ -395,6 +383,110 @@ public class L2DFHeating extends StripHeating {
         if (bAllowUpdateWithFieldData) {
             super.enablePerfMenu(ena);
         }
+    }
+
+    protected MultiPairColPanel chargeDataPanel() {
+        MultiPairColPanel jp = new MultiPairColPanel("Charge Details");
+        jp.addItemPair(tfChThickness.getName(), tfChThickness);
+        jp.addItemPair(labChLength, tfChLength);
+//        jp.addItemPair("Charge Material", cbChMaterial);
+        return jp;
+    }
+
+    protected MultiPairColPanel chargeInFurnacePanel() {
+        MultiPairColPanel jp = new MultiPairColPanel("Charge In Furnace");
+        jp.addItemPair(tfProduction);
+        jp.addItemPair(tfEntryTemp);
+        return jp;
+    }
+
+    protected MultiPairColPanel calCulDataPanel() {
+        MultiPairColPanel jp = new MultiPairColPanel("");
+        jp.addItemPair("", pbCalculate);
+        mpCalcul = jp;
+        return jp;
+    }
+
+    protected JPanel processPanel() {
+        MultiPairColPanel jp = new MultiPairColPanel("Process");
+        jp.addItemPair("Process Name", dfhProcessList.getListUI());
+        return jp;
+    }
+
+    protected FramedPanel titleAndFceCommon() {
+        if (titleAndFceCommon == null) {
+            MultiPairColPanel mp = new MultiPairColPanel("");
+            mp.addItemPair("Reference ", tfReference);
+            mp.addItemPair("Title ", tfFceTitle);
+            mp.addItemPair("Customer ", tfCustomer);
+            mp.setEnabled(false);
+            titleAndFceCommon = mp;
+        }
+        return titleAndFceCommon;
+    }
+
+    protected void enableTitleEdit(boolean ena)  {
+        titleAndFceCommon.setEnabled(false);
+    }
+
+    protected JPanel OperationPage() {
+        JPanel jp = new JPanel(new GridBagLayout());
+        jp.setBackground(new JPanel().getBackground());
+        GridBagConstraints gbcOP = new GridBagConstraints();
+
+        gbcOP.anchor = GridBagConstraints.CENTER;
+        gbcOP.gridx = 0;
+        gbcOP.gridy = 0;
+        gbcOP.insets = new Insets(0, 0, 0, 0);
+        gbcOP.gridwidth = 1;
+        gbcOP.gridy++;
+        gbcOP.anchor = GridBagConstraints.EAST;
+        jp.add(processPanel(), gbcOP);
+        gbcOP.gridy++;
+        jp.add(chargeDataPanel(), gbcOP);
+        gbcOP.gridx = 1;
+        gbcOP.gridy = 1;
+        mpChInFce = chargeInFurnacePanel();
+        jp.add(mpChInFce, gbcOP);
+        gbcOP.gridy++;
+        gbcOP.anchor = GridBagConstraints.SOUTHWEST;
+        jp.add(calCulDataPanel(), gbcOP);
+        return jp;
+    }
+
+    protected JPanel OperationPageXX() {      // TODO to ber removed
+        JPanel jp = new JPanel(new GridBagLayout());
+        jp.setBackground(new JPanel().getBackground());
+        GridBagConstraints gbcOP = new GridBagConstraints();
+
+        gbcOP.anchor = GridBagConstraints.CENTER;
+        gbcOP.gridx = 0;
+        gbcOP.gridy = 0;
+        gbcOP.insets = new Insets(0, 0, 0, 0);
+        gbcOP.gridwidth = 1;
+        gbcOP.gridy++;
+        gbcOP.anchor = GridBagConstraints.EAST;
+
+        jp.add(processAndCharge(), gbcOP);
+        gbcChDatLoc = new GridBagConstraints();
+        gbcChDatLoc.gridx = gbcOP.gridx;
+        gbcChDatLoc.gridy = gbcOP.gridy;
+        gbcChDatLoc.anchor = gbcOP.anchor;
+
+        gbcOP.gridx++;
+        gbcOP.anchor = GridBagConstraints.WEST;
+//        jp.add(chargeInFurnacePanel(), gbcOP);
+        mpChInFce = chargeInFurnacePanel();
+        jp.add(mpChInFce, gbcOP);
+
+        gbcOP.gridx++;
+        gbcOP.gridy++;
+        gbcOP.gridx = 0;
+        gbcOP.gridx++;
+        gbcOP.gridx++;
+        jp.add(calCulDataPanel(), gbcOP);
+        gbcOP.gridx = 0;
+        return jp;
     }
 
     String stripDFHProcessListInXML() {
@@ -763,6 +855,8 @@ public class L2DFHeating extends StripHeating {
                 switchPage(DFHDisplayPageType.INPUTPAGE);
             }
         }
+        else
+            retVal.addErrorMessage(oneFile.errorMessage);
         return retVal;
     }
 
@@ -1007,7 +1101,7 @@ public class L2DFHeating extends StripHeating {
         return retVal;
     }
 
-    protected boolean getFurnaceSettings() {
+    protected boolean getFurnaceSettings() {    // TODO NOT used
         return getFurnaceSettings(fceDataLocation);
     }
 

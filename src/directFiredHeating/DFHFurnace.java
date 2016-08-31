@@ -2930,11 +2930,6 @@ public class DFHFurnace {
         MultiColData results;
         results = (bBot) ? getBotTResults() : getTopTResults();
         results.setXLimits(0, (fceLength + ((bTopBot && bAddTopSoak) ? addedTopSoak.sectionLength() : 0)) + dischEndExtension);
-        // TO be removed
-        DoubleRange r = results.getCommonXrange();
-        debug("fceLength = " + fceLength + ": XLimits = " + r.min + ", " + r.max) ;
-
-
         results.setYLimits(0, 1400);
         TrendsPanel proGraph = new TrendsPanel(new Dimension(700, 500), GraphDisplay.CURSVALPANALATBOTTOM);
         passLine = new FurnaceProfile(results);

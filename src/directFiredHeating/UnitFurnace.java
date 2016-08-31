@@ -483,9 +483,9 @@ public class UnitFurnace {
         return alpha;
     }
 
-    double fcTalpha(double tg) {
-        return fcTalpha(tg, tempWO);
-    }
+//    double fcTalpha(double tg) {
+//        return fcTalpha(tg, tempWO);
+//    }
 
 
     double fcTalpha(double tg, double two) {
@@ -511,7 +511,8 @@ public class UnitFurnace {
             while (!done && furnace.canRun()) {
                 loopCount--;
                 if (loopCount <= 0) {
-                    errMsg("TOO many iterations! in Finding Alpha (fcT_alpha). Aborting after many trials");
+                    errMsg("TOO many iterations! in Finding Alpha (fcTalpha)." +
+                            "\n gasTemp =" + tg + ", Charge Surface Temp = " + two + "\nAborting after many trials");
                     furnace.abortIt();
                     break;
                 }
@@ -628,7 +629,9 @@ public class UnitFurnace {
         while (!done && furnace.canRun()) {
             loopCount--;
             if (loopCount <= 0) {
-                errMsg("TOO many iterations! in Finding Alpha (fcT_alpha). Aborting after many trials");
+//                errMsg("TOO many iterations! in Finding Alpha (gasTFromFceTandChT). Aborting after many trials");
+                errMsg("TOO many iterations! in Finding Alpha (gasTFromFceTandChT)." +
+                        "\n Fce Temp =" + tempO1 + ", Charge Surface Temp = " + two + "\nAborting after many trials");
                 furnace.abortIt();
                 break;
             }
@@ -756,7 +759,7 @@ public class UnitFurnace {
         tWMassume = tempWmean - tRate * delTime;
         done = false;
         boolean inReverse = true;
-         while (!done  && furnace.canRun()) {
+        while (!done  && furnace.canRun()) {
             chHeat = production.production * gRatio *
                     (ch.getHeatFromTemp(tWMassume) - ch.getHeatFromTemp(tempWmean));
             totheat = chHeat - totLosses(); // losses;
@@ -768,7 +771,7 @@ public class UnitFurnace {
 
             prevSlot.eW = ch.getEmiss(tWMassume);
             two = prevSlot.chargeSurfTemp(tempGB, tWMassume);
-             if (furnace.canRun()) {
+            if (furnace.canRun()) {
                 lmDiff = SPECIAL.lmtd((tempGB - two), (tempG - tempWO));
                 twoAvg = (two + tempWO) / 2;
                 tgAvg = twoAvg + lmDiff;

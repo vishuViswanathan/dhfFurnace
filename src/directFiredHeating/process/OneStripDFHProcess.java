@@ -29,6 +29,7 @@ public class OneStripDFHProcess {
     public String description = "...Process Details";
     ChMaterial chMaterialThin;
     ChMaterial chMaterialThick;
+    public double tempDFHEntry = 30;
     public double tempDFHExit = 620;
     double maxExitZoneTemp = 1050;
     double minExitZoneTemp = 900;
@@ -192,6 +193,10 @@ public class OneStripDFHProcess {
                         errMeg += "ChMaterialThick not found";
                         break aBlock;
                     }
+                    vp = XMLmv.getTag(xmlStr, "tempDFHEntry", 0);
+                    if (vp.val.length() > 0)
+                        tempDFHEntry = Double.valueOf(vp.val);
+
                     vp = XMLmv.getTag(xmlStr, "tempDFHExit", 0);
                     tempDFHExit = Double.valueOf(vp.val);
 
@@ -272,6 +277,7 @@ public class OneStripDFHProcess {
         xmlStr.append(XMLmv.putTag("description", description));
         xmlStr.append(XMLmv.putTag("chMaterialThin", "" + chMaterialThin));
         xmlStr.append(XMLmv.putTag("chMaterialThick", "" + chMaterialThick));
+        xmlStr.append(XMLmv.putTag("tempDFHEntry", "" + tempDFHEntry));
         xmlStr.append(XMLmv.putTag("tempDFHExit", "" + tempDFHExit));
         xmlStr.append(XMLmv.putTag("maxExitZoneTemp", "" + maxExitZoneTemp));
         xmlStr.append(XMLmv.putTag("minExitZoneTemp", "" + minExitZoneTemp));
@@ -286,11 +292,13 @@ public class OneStripDFHProcess {
         return xmlStr;
     }
 
-    JTextField tfProcessName;
-    JTextField tfDescription;
+    XLTextField tfProcessName;
+    XLTextField tfDescription;
     JComboBox cbChMaterialThin;
     NumberTextField ntThinUpperLimit;
     JComboBox cbChMaterialThick;
+    Vector<NumberTextField> dataFieldList;
+    NumberTextField ntTempDFHEntry;
     NumberTextField ntTempDFHExit;
     NumberTextField ntMinExitZoneTemp;
     NumberTextField ntMaxExitZoneTemp;
@@ -339,6 +347,7 @@ public class OneStripDFHProcess {
                         if (unitOutputNow <= maxUnitOutputAllowed) {
                             ErrorStatAndMsg tempStat = checkExitTemperature(production.exitTemp);
                             if (!tempStat.inError) {
+                                production.entryTemp = tempDFHEntry;
                                 production.exitTemp = tempDFHExit;
                                 if (production.exitZoneFceTemp > minExitZoneTemp) {
                                     retVal.inError = false;
@@ -362,39 +371,54 @@ public class OneStripDFHProcess {
 
     public DataListEditorPanel getEditPanel(Vector<ChMaterial> vChMaterial, InputControl inpC, DataHandler dataHandler,
                                             boolean editable, boolean startEditable) {
-        tfProcessName = new JTextField(processName, 10);
+        dataFieldList = new Vector<NumberTextField>();
+        NumberTextField ntf;
+        tfProcessName = new XLTextField(processName, 10);
         tfProcessName.setName("Process Name");
-        tfDescription = new JTextField(description, 30);
+        tfDescription = new XLTextField(description, 30);
         tfDescription.setName("Process Description");
         cbChMaterialThin = new JComboBox(vChMaterial);
         cbChMaterialThin.setName("Select Material to be taken for Thin strips");
         cbChMaterialThin.setSelectedItem(chMaterialThin);
-        ntThinUpperLimit = new NumberTextField(inpC, thinUpperLimit * 1000, 6, false, 0.05, 0.9,
+        ntf = ntThinUpperLimit = new NumberTextField(inpC, thinUpperLimit * 1000, 6, false, 0.05, 0.9,
                 "0.00", "Upper thickness Limit for Thin material (mm)");
+        dataFieldList.add(ntf);
         cbChMaterialThick = new JComboBox(vChMaterial);
         cbChMaterialThick.setName("Select Material to be taken for Thick strips");
         cbChMaterialThick.setSelectedItem(chMaterialThick);
-        ntTempDFHExit = new NumberTextField(inpC, tempDFHExit, 6, false, 400, 1000,
+        ntf = ntTempDFHEntry = new NumberTextField(inpC, tempDFHEntry, 6, false, 0, 300,
+                "#,##0", "Strip Temperature at DFH Entry (deg C)");
+        dataFieldList.add(ntf);
+        ntf = ntTempDFHExit = new NumberTextField(inpC, tempDFHExit, 6, false, 400, 1000,
                 "#,##0", "Strip Temperature at DFH Exit (deg C)");
-        ntMaxExitZoneTemp = new NumberTextField(inpC, maxExitZoneTemp, 6, false, 800, 1200,
+        dataFieldList.add(ntf);
+        ntf = ntMaxExitZoneTemp = new NumberTextField(inpC, maxExitZoneTemp, 6, false, 800, 1200,
                 "#,##0", "Maximum DFH Exit Zone Temperature (deg C)");
-        ntMinExitZoneTemp = new NumberTextField(inpC, minExitZoneTemp, 6, false, 800, 1200,
+        dataFieldList.add(ntf);
+        ntf = ntMinExitZoneTemp = new NumberTextField(inpC, minExitZoneTemp, 6, false, 800, 1200,
                 "#,##0", "Minimum DFH Exit Zone Temperature (deg C)");
-        ntMaxUnitOutput = new NumberTextField(inpC, maxUnitOutput / 1000, 6, false, 0.2, 1000.0,
+        dataFieldList.add(ntf);
+        ntf = ntMaxUnitOutput = new NumberTextField(inpC, maxUnitOutput / 1000, 6, false, 0.2, 1000.0,
                 "#,##0.00", "Maximum output for 1m wide strip (t/h)");
-        ntMinUnitOutput = new NumberTextField(inpC, minUnitOutput / 1000, 6, false, 0.2, 1000.0,
+        dataFieldList.add(ntf);
+        ntf = ntMinUnitOutput = new NumberTextField(inpC, minUnitOutput / 1000, 6, false, 0.2, 1000.0,
                 "#,##0.00", "Minimim output for 1m wide strip (t/h)");
-        ntMaxSpeed = new NumberTextField(inpC, maxSpeed / 60, 6, false, 50, 1000.0,
+        dataFieldList.add(ntf);
+        ntf = ntMaxSpeed = new NumberTextField(inpC, maxSpeed / 60, 6, false, 50, 1000.0,
                 "##0.00", "Maximum Process speed (m/min)");
+        dataFieldList.add(ntf);
         ntMaxSpeed.setToolTipText("<html>Ensure speed is sufficient for <p> " + ntMinUnitOutput.getName() + "</html>");
-        ntMaxThickness = new NumberTextField(inpC, maxThickness * 1000, 6, false, 0.0, 100.0,
+        ntf = ntMaxThickness = new NumberTextField(inpC, maxThickness * 1000, 6, false, 0.0, 100.0,
                 "##0.00", "Maximum Strip Thickness (mm)");
+        dataFieldList.add(ntf);
         ntMinThickness = new NumberTextField(inpC, minThickness * 1000, 6, false, 0.0, 100.0,
                 "##0.00", "Minimum Strip Thickness (mm)");
-        ntMaxWidth = new NumberTextField(inpC, maxWidth * 1000, 6, false, 200, 5000,
+        ntf = ntMaxWidth = new NumberTextField(inpC, maxWidth * 1000, 6, false, 200, 5000,
                 "#,##0", "Maximum Strip Width (mm)");
-        ntMinWidth = new NumberTextField(inpC, minWidth * 1000, 6, false, 200, 5000,
+        dataFieldList.add(ntf);
+        ntf = ntMinWidth = new NumberTextField(inpC, minWidth * 1000, 6, false, 200, 5000,
                 "#,##0", "Minimum Strip Width (mm)");
+        dataFieldList.add(ntf);
 
         DataListEditorPanel editorPanel = new DataListEditorPanel("Strip Process Data", dataHandler, editable, editable);
         // if editable, it is also deletable
@@ -405,6 +429,7 @@ public class OneStripDFHProcess {
         editorPanel.addItemPair(ntThinUpperLimit);
         editorPanel.addItemPair(cbChMaterialThick);
         editorPanel.addBlank();
+        editorPanel.addItemPair(ntTempDFHEntry);
         editorPanel.addItemPair(ntTempDFHExit);
         editorPanel.addBlank();
         editorPanel.addItemPair(ntMaxExitZoneTemp);
@@ -434,60 +459,89 @@ public class OneStripDFHProcess {
         if (!status.inError) {
             StringBuilder msg = new StringBuilder();
             // check data in range
-            if (ntMaxUnitOutput.isInError() || ntMinUnitOutput.isInError() || ntMaxThickness.isInError() ||
-                    ntMaxThickness.isInError() || ntMaxSpeed.isInError() || ntMaxWidth.isInError() ||
-                    ntMaxWidth.isInError() || ntMinExitZoneTemp.isInError() || ntMaxExitZoneTemp.isInError() ||
-                    ntThinUpperLimit.isInError()) {
-                inError = true;
-                msg.append("Some Data is/are out of range");
-            } else {
+            if (allDataFieldsLegal()) {
+//            if (ntMaxUnitOutput.isInError() || ntMinUnitOutput.isInError() || ntMaxThickness.isInError() ||
+//                    ntMaxThickness.isInError() || ntMaxSpeed.isInError() || ntMaxWidth.isInError() ||
+//                    ntMaxWidth.isInError() || ntMinExitZoneTemp.isInError() || ntMaxExitZoneTemp.isInError() ||
+//                    ntThinUpperLimit.isInError()) {
+//                inError = true;
+//                msg.append("Some Data is/are out of range");
+//            } else {
+                double tempDFHExitX = ntTempDFHExit.getData();
                 double maxExitZoneTempX = ntMaxExitZoneTemp.getData();
                 double minExitZoneTempX = ntMinExitZoneTemp.getData();
-                double maxUnitOutputX = ntMaxUnitOutput.getData();
-                double minUnitOutputX = ntMinUnitOutput.getData();
-                double maxThicknessX = ntMaxThickness.getData();
-                double minThicknessX = ntMaxThickness.getData();
-//                double maxSpeedX = ntMaxSpeed.getData();
-                double maxWidthX = ntMaxWidth.getData();
-                double minWidthX = ntMaxWidth.getData();
-                if (maxExitZoneTempX <= minExitZoneTempX) {
-                    msg.append(ntMaxExitZoneTemp.getName() + " must be > " + ntMinExitZoneTemp.getName() + "\n");
-                    status.inError = true;
-                }
-                if (maxUnitOutputX < minUnitOutputX) {
-                    msg.append(ntMaxUnitOutput.getName() + " must be >= " + ntMinUnitOutput.getName() + "\n");
-                    status.inError = true;
-                }
-                if (maxThicknessX < minThicknessX) {
-                    msg.append(ntMaxThickness.getName() + " must be >= " + ntMinThickness.getName() + "\n");
-                    status.inError = true;
-                }
-                if (maxWidthX < minWidthX) {
-                    msg.append(ntMaxWidth.getName() + " must be >= " + ntMinWidth.getName() + "\n");
-                    status.inError = true;
-                }
+                double maxUnitOutputX = ntMaxUnitOutput.getData() * 1000;
+                double minUnitOutputX = ntMinUnitOutput.getData() * 1000;
+                double maxThicknessX = ntMaxThickness.getData() / 1000;
+                double minThicknessX = ntMinThickness.getData() / 1000;
+                double maxSpeedX = ntMaxSpeed.getData() * 60;
+                double maxWidthX = ntMaxWidth.getData() / 1000;
+                double minWidthX = ntMaxWidth.getData()/ 1000;
+                double thinUpperLimitX = ntThinUpperLimit.getData() / 1000;
+                ChMaterial chMaterialThinX = (ChMaterial) cbChMaterialThin.getSelectedItem();
+                if (maxExitZoneTempX <= minExitZoneTempX)
+                    status.addErrorMsg("Max. Exit ZoneTemperature must be > Min. Exit Zone Temperature\n");
+                if (tempDFHExitX >= minExitZoneTempX )
+                    status.addErrorMsg("Min. Exit Zone Temperature must be > Strip Exit Temperature\n");
+                if (maxUnitOutputX < minUnitOutputX)
+                    status.addErrorMsg(" Max. Unit Output must be >  Min. Unit Output\n");
+                if (maxThicknessX < minThicknessX)
+                    status.addErrorMsg("Max. Thickness must be > Min. Thickness\n");
+                if (maxWidthX < minWidthX)
+                    status.addErrorMsg("Max. Width must be > Min. Width\n");
+                if (minThicknessX > thinUpperLimitX || maxThicknessX < thinUpperLimitX)
+                    status.addErrorMsg("Mismatch in Strip Thickness data\n");
+                if (minUnitOutputX / (minThicknessX * chMaterialThinX.density) > maxSpeedX)
+                    status.addErrorMsg("Maximum strip speed is NOT sufficient to handle thinnest strip");
             }
-            if (status.inError)
-                status.msg = msg.toString();
+            else {
+                status.addErrorMsg("Some Data is/are out of range");
+            }
+            inError = status.inError;
         }
         return status;
     }
 
-    public void noteDataFromUI() {
+    boolean allDataFieldsLegal() {
+        boolean retVal = true;
+        for (NumberTextField ntf: dataFieldList)
+            if (ntf.inError) {
+                retVal = false;
+                break;
+            }
+        return retVal;
+    }
+
+    public ErrorStatAndMsg noteDataFromUI() {
+        ErrorStatAndMsg retVal = new ErrorStatAndMsg();
         processName = tfProcessName.getText().trim();
         description = tfDescription.getText().trim();
         chMaterialThin = (ChMaterial) cbChMaterialThin.getSelectedItem();
-        tempDFHExit = ntTempDFHExit.getData();
-        maxExitZoneTemp = ntMaxExitZoneTemp.getData();
-        minExitZoneTemp = ntMinExitZoneTemp.getData();
         chMaterialThick = (ChMaterial) cbChMaterialThick.getSelectedItem();
-        thinUpperLimit = ntThinUpperLimit.getData() / 1000;
-        maxUnitOutput = ntMaxUnitOutput.getData() * 1000;
-        minUnitOutput = ntMinUnitOutput.getData() * 1000;
-        maxThickness = ntMaxThickness.getData() / 1000;
-        minThickness = ntMinThickness.getData() / 1000;
-        maxSpeed = ntMaxSpeed.getData() * 60;
-        maxWidth = ntMaxWidth.getData() / 1000;
-        minWidth = ntMinWidth.getData() / 1000;
+        if (allDataFieldsLegal()) {
+            tempDFHEntry = ntTempDFHEntry.getData();
+            tempDFHExit = ntTempDFHExit.getData();
+            maxExitZoneTemp = ntMaxExitZoneTemp.getData();
+            minExitZoneTemp = ntMinExitZoneTemp.getData();
+            thinUpperLimit = ntThinUpperLimit.getData() / 1000;
+            maxUnitOutput = ntMaxUnitOutput.getData() * 1000;
+            minUnitOutput = ntMinUnitOutput.getData() * 1000;
+            maxThickness = ntMaxThickness.getData() / 1000;
+            minThickness = ntMinThickness.getData() / 1000;
+            maxSpeed = ntMaxSpeed.getData() * 60;
+            maxWidth = ntMaxWidth.getData() / 1000;
+            minWidth = ntMinWidth.getData() / 1000;
+//            if (maxExitZoneTemp <= minExitZoneTemp)
+//                retVal.addErrorMsg("Error in Maximum/Minimum Exit Zone Temperatures");
+//            if (minExitZoneTemp <= tempDFHExit)
+//                retVal.addErrorMsg("Error in Zone/Strip Exit Temperature");
+//            if (minUnitOutput / (minThickness * chMaterialThin.density) > maxSpeed)
+//                retVal.addErrorMsg("Maximum strip speed is NOT sufficient to handle thinnest strip");
+//            if (minThickness > thinUpperLimit || maxThickness < thinUpperLimit)
+//                retVal.addErrorMsg("Mismatch in Strip Thickness data");
+        }
+        else
+            retVal.addErrorMsg("Some Fields have un-acceptable Data");
+        return retVal;
     }
 }

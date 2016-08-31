@@ -104,7 +104,11 @@ public abstract class StripHeating extends DFHeating {
     }
 
     protected ErrorStatAndMsg isChargeInFceOK() {
-        ErrorStatAndMsg retVal = super.isChargeInFceOK();
+//        ErrorStatAndMsg retVal = super.isChargeInFceOK();
+        ErrorStatAndMsg retVal = new ErrorStatAndMsg();
+        if (tfProduction.isInError()) {
+           retVal.addErrorMsg("\n   " + tfProduction.getName());
+        }
         if (!retVal.inError) {
             if ((furnaceFor() == DFHTuningParams.FurnaceFor.STRIP)) {
                 OneStripDFHProcess oneProc = getDFHProcess();
@@ -113,7 +117,8 @@ public abstract class StripHeating extends DFHeating {
                     boolean proceed = getUserResponse(oneProc, material);
                     if (proceed) {
                         setChMaterial(material);
-                        setExitTemperaure(oneProc.tempDFHExit);
+                        setEntryTemperature(oneProc.tempDFHEntry);
+                        setExitTemperature(oneProc.tempDFHExit);
                         setExitZoneTemperatures(oneProc.getMaxExitZoneTemp(), oneProc.getMinExitZoneTemp());
                     } else
                         retVal.addErrorMsg("\n   ABORTING");
@@ -281,9 +286,8 @@ public abstract class StripHeating extends DFHeating {
         inputMenu = new JMenu("DefineFurnace");
         inputMenu.add(mIInputData);
         inputMenu.add(mIOpData);
-
-        inputMenu.addSeparator();
-        inputMenu.add(mITuningParams);
+//        inputMenu.addSeparator();
+//        inputMenu.add(mITuningParams);
         return inputMenu;
     }
 

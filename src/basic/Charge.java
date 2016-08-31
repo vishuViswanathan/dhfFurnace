@@ -53,13 +53,7 @@ public class Charge {
 
     public Charge(ChMaterial chMaterial, double length,
                   double width, double height, double diameter, ChType type) {
-//        this.chMaterial = chMaterial;
         setData(chMaterial, length, width, height, diameter, type);
-//        this.chMaterial = chMaterial;
-//        this.width = width;
-//        this.height = height;
-//        this.length = length;
-//        evalChUnitWt();
     }
 
     public Charge(ChMaterial chMaterial, double length,
@@ -103,12 +97,6 @@ public class Charge {
     public void setSize(double length,
                           double width, double height)  {
         setSize(length, width, height, 0.2);
-//        this.width = width;
-//        this.height = height;
-//        this.length = length;
-//        if (type == ChType.CYLINDRICAL)
-//            this.diameter = 0.2;
-//        evalChUnitWt();
     }
 
     public void setSize(double length,
@@ -122,7 +110,6 @@ public class Charge {
 
     void evalChUnitWt() {
         unitWt = getWeight(length);
-        // was     unitWt = length * width * height * chMaterial.getDensity(); before 20140611
     }
 
     public double getUnitWt() {
@@ -161,7 +148,6 @@ public class Charge {
                 wt = len * width * height * chMaterial.getDensity();
                 break;
         }
-
         return wt; // was before 20140611 chMaterial.getDensity() * width * height * len;
     }
 
