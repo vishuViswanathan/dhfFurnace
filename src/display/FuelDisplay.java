@@ -2,8 +2,8 @@ package display;
 
 import basic.FlueComposition;
 import basic.Fuel;
-import jsp.JSPComboBox;
-import jsp.JSPConnection;
+import mvUtils.jsp.JSPComboBox;
+import mvUtils.jsp.JSPConnection;
 import mvUtils.display.*;
 import mvUtils.display.FramedPanel;
 

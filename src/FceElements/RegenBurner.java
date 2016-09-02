@@ -1,8 +1,8 @@
 package FceElements;
 
 import basic.*;
-import jsp.JSPComboBox;
-import jsp.JSPConnection;
+import mvUtils.jsp.JSPComboBox;
+import mvUtils.jsp.JSPConnection;
 import mvUtils.display.InputControl;
 import mvUtils.display.MultiPairColPanel;
 import mvUtils.display.NumberLabel;

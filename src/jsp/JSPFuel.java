@@ -1,7 +1,10 @@
 package jsp;
 
 import basic.Fuel;
+import mvUtils.jsp.*;
 import mvUtils.display.ErrorStatAndMsg;
+import mvUtils.jsp.JSPConnection;
+import mvUtils.jsp.JSPObject;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 
@@ -58,7 +61,7 @@ public class JSPFuel extends Fuel implements JSPObject {
         return dataCollected;
     }
 
-    public boolean collectData(JSPConnection jspConnection) {
+    public boolean collectData(mvUtils.jsp.JSPConnection jspConnection) {
         if (!dataCollected) {
             ErrorStatAndMsg jspResponse = jspConnection.getData("../jsp/selectedFuel.jsp", "fuelID", ("" + getId()).trim());
             if (!jspResponse.inError) {

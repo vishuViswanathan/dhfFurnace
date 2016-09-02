@@ -1,7 +1,7 @@
 package basic;
 
 import display.*;
-import jsp.JSPConnection;
+import mvUtils.jsp.JSPConnection;
 import mvUtils.display.*;
 import mvUtils.display.TimedMessage;
 import mvUtils.mvXML.XMLmv;

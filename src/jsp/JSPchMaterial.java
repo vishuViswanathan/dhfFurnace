@@ -2,6 +2,9 @@ package jsp;
 
 import basic.ChMaterial;
 import mvUtils.display.ErrorStatAndMsg;
+import mvUtils.jsp.*;
+import mvUtils.jsp.JSPConnection;
+import mvUtils.jsp.JSPObject;
 import mvUtils.math.XYArray;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
@@ -28,7 +31,7 @@ public class JSPchMaterial extends ChMaterial implements JSPObject {
         this.matID = vp.val;
     }
 
-    public static Vector<JSPchMaterial> getMetalList(JSPConnection jspConnection) {
+    public static Vector<JSPchMaterial> getMetalList(mvUtils.jsp.JSPConnection jspConnection) {
          Vector<JSPchMaterial> metalList = new Vector<JSPchMaterial>();
          ErrorStatAndMsg jspResponse = jspConnection.getData("../jsp/metalList.jsp");
          if (!jspResponse.inError) {

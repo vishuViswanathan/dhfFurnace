@@ -3,7 +3,7 @@ package directFiredHeating;
 import appReporting.Reporter;
 import basic.*;
 import display.*;
-import jsp.JSPComboBox;
+import mvUtils.jsp.JSPComboBox;
 import mvUtils.display.*;
 import mvUtils.math.DoublePoint;
 import mvUtils.math.MultiColData;
