@@ -605,7 +605,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected void setChMaterial(ChMaterial material) {
         selChMaterial = material;
         cbChMaterial.setSelectedItem(selChMaterial);
-        selChMaterial = (ChMaterial)cbChMaterial.getSelectedItem(); // to make it collect all data on JNLP if required
+//        selChMaterial = (ChMaterial)cbChMaterial.getSelectedItem(); // to make it collect all data on JNLP if required
     }
 
     protected void setEntryTemperature(double temperature) {

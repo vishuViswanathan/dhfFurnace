@@ -32,6 +32,11 @@ public class JSPComboBox<E> extends JComboBox<E> implements XLcellData{
         return o;
     }
 
+    public void setSelectedItem(Object anObject) {
+        super.setSelectedItem(anObject);
+        getSelectedItem();
+    }
+
     public Vector<String> collectedItems() {
         Vector<String> collected = new Vector<String>();
         for (int i = 0; i < getItemCount(); i++) {
