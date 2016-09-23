@@ -39,7 +39,7 @@ public class L2Configurator extends StripHeating {
         bAllowProfileChange = true;
         bAllowManualCalculation = true;
         asApplication = true;
-        releaseDate = "20160902 11:59";
+        releaseDate = "20160909 12:08";
         createLocalMenuItems();
     }
 
@@ -62,9 +62,10 @@ public class L2Configurator extends StripHeating {
             createUIs(false); // without the default menuBar
             mISetPerfTablelimits.setVisible(true);
             disableSomeUIs();
-            setDefaultSelections();
 //            addMenuBar(createL2MenuBar(true, true));
             associatedDataLoaded = true;
+            loadFuelAndChMaterialData();
+            setDefaultSelections();
             setTestData();
             switchPage(DFHDisplayPageType.INPUTPAGE);
             displayIt();
@@ -100,7 +101,8 @@ public class L2Configurator extends StripHeating {
     }
 
     protected JMenu createFileMenu() {
-        fileMenu = new JMenu("File");
+        defineFileMenu();
+//        fileMenu = new JMenu("File");
         fileMenu.add(mIGetFceProfile);
         fileMenu.addSeparator();
         fileMenu.add(mILoadRecuSpecs);

@@ -65,7 +65,8 @@ public class L2Runtime extends L2DFHeating {
     }
 
     protected JMenu createFileMenu() {
-        fileMenu = new JMenu("File");
+        defineFileMenu();
+//        fileMenu = new JMenu("File");
         fileMenu.add(mIExit);
         return fileMenu;
     }

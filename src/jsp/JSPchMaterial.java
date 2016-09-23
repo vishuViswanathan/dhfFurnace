@@ -2,10 +2,8 @@ package jsp;
 
 import basic.ChMaterial;
 import mvUtils.display.ErrorStatAndMsg;
-import mvUtils.jsp.*;
 import mvUtils.jsp.JSPConnection;
 import mvUtils.jsp.JSPObject;
-import mvUtils.math.XYArray;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 

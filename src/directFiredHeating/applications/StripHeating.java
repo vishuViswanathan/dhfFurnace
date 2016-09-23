@@ -34,7 +34,7 @@ public abstract class StripHeating extends DFHeating {
     boolean associatedDataLoaded = false;
 
     protected void setTestData() {
-        super.setTestData();
+//        super.setTestData();
         StatusWithMessage status = takeProfileDataFromXML(SampleStripFurnace.xmlStr);
         if (status.getDataStatus() == StatusWithMessage.DataStat.WithErrorMsg)
             showError(status.getErrorMessage());
@@ -283,16 +283,16 @@ public abstract class StripHeating extends DFHeating {
     }
 
     protected JMenu createDefineFurnaceMenu() {
-        inputMenu = new JMenu("DefineFurnace");
-        inputMenu.add(mIInputData);
-        inputMenu.add(mIOpData);
-//        inputMenu.addSeparator();
-//        inputMenu.add(mITuningParams);
-        return inputMenu;
+        defineDefineFurnaceMenu();
+//        defineFurnaceMenu = new JMenu("DefineFurnace");
+        defineFurnaceMenu.add(mIInputData);
+        defineFurnaceMenu.add(mIOpData);
+        return defineFurnaceMenu;
     }
 
     protected JMenu createPerformanceMenu() {
-        perfMenu = new JMenu("Performance");
+        definePerformanceMenu();
+//        perfMenu = new JMenu("Performance");
         perfMenu.add(mICreatePerfBase);
         perfMenu.add(mIAddToPerfBase);
         perfMenu.addSeparator();

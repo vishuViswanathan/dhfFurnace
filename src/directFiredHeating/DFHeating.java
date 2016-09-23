@@ -2,6 +2,7 @@ package directFiredHeating;
 
 import FceElements.RegenBurner;
 import basic.*;
+import directFiredHeating.billetWH.SampleWHFurnace;
 import directFiredHeating.process.OneStripDFHProcess;
 import directFiredHeating.process.StripDFHProcessList;
 import jsp.*;
@@ -13,7 +14,6 @@ import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLgroupStat;
 import mvUtils.mvXML.XMLmv;
 import mvUtils.math.XYArray;
-import netscape.javascript.JSObject;
 import netscape.javascript.JSObject;
 import org.apache.log4j.Logger;
 import org.apache.poi.hssf.usermodel.*;
@@ -147,7 +147,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = "JNLP 20160902";
+    protected String releaseDate = "JNLP 20160909";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -186,7 +186,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     JPanel fuelMixP;
     protected GridBagConstraints gbcChDatLoc;
     protected JMenu fileMenu;
-    protected JMenu inputMenu;
+    protected JMenu defineFurnaceMenu;
     protected JMenu resultsMenu;
     JMenu printMenu;
 //    JMenu statMenu;
@@ -225,7 +225,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     MultiPairColPanel mpChargeData;
     protected JLabel labChLength;
     JLabel labChWidth;
-    protected double bottShadow, chPitch = 1.3, tph = 200;
+    protected double bottShadow, chPitch = 1.3, tph = 100;
     protected double entryTemp = 30, exitTemp = 1200, deltaTemp = 25;
     protected double exitZoneFceTemp = 1050; // for strip heating
     protected double minExitZoneFceTemp = 900; // for strip heating
@@ -332,6 +332,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         debug("tuning params set");
         if (onTest || asApplication) {
             createUIs();
+            loadFuelAndChMaterialData();
             setTestData();
             switchPage(DFHDisplayPageType.INPUTPAGE);
             displayIt();
@@ -347,6 +348,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             o = win.eval("enableSpecsSave()");
             enableSpecsSave = (o != null) && o.equals("1");
             debug("before creating UI");
+            loadFuelAndChMaterialData();
             createUIs();
             debug("Created UI");
 //            testFunctions();
@@ -425,6 +427,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         tfEntryTemp.setEditable(ena);
         tfExitTemp.setEditable(ena);
         tfDeltaTemp.setEditable(ena);
+        tfMinExitZoneFceTemp.setEditable(ena);
+        tfExitZoneFceTemp.setEditable(ena);
         tfAmbTemp.setEditable(ena  && bAllowProfileChange);
         tfAirTemp.setEditable(ena);
         tfCalculStep.setEditable(ena && bAllowProfileChange);
@@ -458,31 +462,15 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     protected void setTestData() {
-        addLossType("1001", "Wall Losses", "" + 1.55, "WALL", "LINEAR");
-        addLossType("1002", "Roof Losses", "" + 2, "WALL", "LINEAR");
-        addLossType("1003", "Skid Losses", "" + 130, "LENGTH", "LINEAR");
-        addLossType("1004", "Charging End Loss", "" + 30000, "FIXED", "NONE");
-        addLossType("1005", "Discharge End Loss", "" + 60000, "FIXED", "NONE");
+        StatusWithMessage status = takeProfileDataFromXML(SampleWHFurnace.xmlStr);
+        if (status.getDataStatus() == StatusWithMessage.DataStat.WithErrorMsg)
+            showError(status.getErrorMessage());
+        setDefaultSelections();
+        adjustForLengthChange();
+        furnace.clearAssociatedData();
+    }
 
-        cbHeatingMode.setSelectedItem("TOP AND BOTTOM FIRED");
-        furnace.changeSubSecData(false, 0, 0, 2.0, 0.9, 0.9, 0);
-        furnace.assignLoss(0, 0, false, 1005);
-        furnace.changeSubSecData(false, 0, 1, 5.0, 1.2, 1.2, 0);
-        furnace.changeSubSecData(false, 1, 0, 8.0, 1.2, 1.2, 0);
-        furnace.setSectionType(false, 1, false);
-        furnace.changeSubSecData(false, 2, 0, 6.5, 1.0, 1.0, 0);
-        furnace.setSectionType(false, 2, false);
-        furnace.changeSubSecData(false, 3, 0, 7, 1.0, 1.0, 0);
-        furnace.setSectionType(false, 3, false);
-
-        furnace.changeSubSecData(true, 0, 0, 2.0, 1.2, 1.2, 0);
-        furnace.changeSubSecData(true, 0, 1, 5.0, 2.2, 2.2, 0);
-        furnace.changeSubSecData(true, 1, 0, 6.5, 2, 2, 0);
-        furnace.setSectionType(true, 1, false);
-        furnace.changeSubSecData(true, 2, 0, 8, 2, 2, 0);
-        furnace.setSectionType(true, 2, false);
-        furnace.changeSubSecData(true, 3, 0, 7, 2, 2, 0);
-        furnace.setSectionType(true, 3, false);
+    protected void loadFuelAndChMaterialData() {
         if (asApplication) {
             if (asJNLP) {
                 if (jspConnection.allOK) {
@@ -507,7 +495,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         if (onTest || asApplication) {
             if (fuelList.size() == 0) {
                 addFuel("Pseudo Nat Gas #8500 [8,502 kcal/m3N]", "Nm3", "" + 8503, "" +
-                        9.47, "" + 10.47, "0, 0, 100, 39.47, 200, 84.82, 900, 553.347, 2000, 1583.07",
+                                9.47, "" + 10.47, "0, 0, 100, 39.47, 200, 84.82, 900, 553.347, 2000, 1583.07",
                         "" + 0.0951, "" + 0.1899, "" + 0,
                         "" + 0.7149, "" + 0);
             }
@@ -520,9 +508,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                 vChMaterial.add(mat);
             }
         }
-        setDefaultSelections();
-        adjustForLengthChange();
-        furnace.clearAssociatedData();
     }
 
     // for Applet version
@@ -810,6 +795,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected JMenuItem mIExit;
     protected JMenuItem mIInputData;
     protected JMenuItem mIOpData;
+    protected JMenuItem mIDefineRecuperator;
+    protected JMenuItem mIRecuPerformace;
     JMenuItem mICreateFuelMix;
     JMenuItem mIRegenBurnerStudy;
     protected JMenuItem mITuningParams;
@@ -818,6 +805,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         MenuActions mAction = new MenuActions();
         // File Menu Items
         mIGetFceProfile = new JMenuItem("Load Furnace");
+        mIGetFceProfile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, KeyEvent.CTRL_DOWN_MASK));
         mIGetFceProfile.addActionListener(mAction);
 
         mILoadRecuSpecs = new JMenuItem("Load Recuperator Specs.");
@@ -825,9 +813,11 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         mILoadRecuSpecs.setEnabled(true);
 
         mISaveFceProfile = new JMenuItem("Save Furnace");
+        mISaveFceProfile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK));
         mISaveFceProfile.addActionListener(mAction);
 
         mISaveToXL = new JMenuItem("Save Results and Furnace Data to Excel");
+        mISaveToXL.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, KeyEvent.CTRL_DOWN_MASK));
         mISaveToXL.addActionListener(mAction);
         mISaveToXL.setEnabled(false);
 
@@ -847,11 +837,19 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         mIExit.addActionListener(mAction);
 
         // input Menu Items
-        mIInputData = new JMenuItem("Input Data");
+        mIInputData = new JMenuItem("Profile Data");
+        mIInputData.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, KeyEvent.CTRL_DOWN_MASK));
         mIInputData.addActionListener(mAction);
 
         mIOpData = new JMenuItem("Operation Data");
+        mIOpData.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, KeyEvent.CTRL_DOWN_MASK));
         mIOpData.addActionListener(mAction);
+
+        mIDefineRecuperator = new JMenuItem("Define Common Air Recuperator");
+        mIDefineRecuperator.addActionListener(mAction);
+
+        mIRecuPerformace = new JMenuItem("Evauate Air Recuperator Performance");
+        mIRecuPerformace.addActionListener(mAction);
 
         mICreateFuelMix = new JMenuItem("Create Fuel Mix");
         mICreateFuelMix.addActionListener(mAction);
@@ -872,6 +870,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
         // Allow Edit
         pbEdit = new JButton("AllowDataEdit");
+        pbEdit.setMnemonic(KeyEvent.VK_E);
         pbEdit.getModel().setPressed(true);
         pbEdit.setEnabled(false);
         pbEdit.addActionListener(new ActionListener() {
@@ -1176,13 +1175,17 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
     }
 
-    protected JMenu createPerformanceMenu() {
+    protected JMenu definePerformanceMenu() {
         perfMenu = new JMenu("Performance");
+        perfMenu.setMnemonic(KeyEvent.VK_P);
+        return perfMenu;
+    }
+
+    protected JMenu createPerformanceMenu() {
+        definePerformanceMenu();
+//        perfMenu = new JMenu("Performance");
         perfMenu.add(mICreatePerfBase);
         perfMenu.add(mIAddToPerfBase);
-//        perfMenu.addSeparator();
-//        perfMenu.add(mISetPerfTablelimits);
-//        mISetPerfTablelimits.setVisible(false);
         perfMenu.addSeparator();
         perfMenu.add(mIShowPerfBase);
         perfMenu.addSeparator();
@@ -1193,33 +1196,52 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     protected void enableDefineMenu(boolean ena) {
-        inputMenu.setEnabled(ena);
+        defineFurnaceMenu.setEnabled(ena);
+    }
+
+    protected JMenu defineDefineFurnaceMenu() {
+        defineFurnaceMenu = new JMenu("DefineFurnace");
+        defineFurnaceMenu.setMnemonic(KeyEvent.VK_D);
+        return defineFurnaceMenu;
     }
 
     protected JMenu createDefineFurnaceMenu() {
-        inputMenu = new JMenu("DefineFurnace");
-        inputMenu.add(mIInputData);
-        inputMenu.add(mIOpData);
+        defineDefineFurnaceMenu();
+//        defineFurnaceMenu = new JMenu("DefineFurnace");
+        defineFurnaceMenu.add(mIInputData);
+        defineFurnaceMenu.add(mIOpData);
 
-        inputMenu.addSeparator();
-        inputMenu.add(mICreateFuelMix);
-        inputMenu.add(mIRegenBurnerStudy);
+        defineFurnaceMenu.addSeparator();
+        defineFurnaceMenu.add(mIDefineRecuperator);
+        defineFurnaceMenu.add(mIRecuPerformace);
 
-        inputMenu.addSeparator();
-        inputMenu.add(mITuningParams);
+        defineFurnaceMenu.addSeparator();
+        defineFurnaceMenu.add(mICreateFuelMix);
+        defineFurnaceMenu.add(mIRegenBurnerStudy);
 
-        inputMenu.addSeparator();
-        inputMenu.add(mIBeamParamTFM);
-        inputMenu.add(mILossParamTFM);
-        return inputMenu;
+        defineFurnaceMenu.addSeparator();
+        defineFurnaceMenu.add(mITuningParams);
+
+        defineFurnaceMenu.addSeparator();
+        defineFurnaceMenu.add(mIBeamParamTFM);
+        defineFurnaceMenu.add(mILossParamTFM);
+        return defineFurnaceMenu;
     }
 
     protected void enableFileMenu(boolean ena) {
         fileMenu.setEnabled(ena);
     }
 
-    protected JMenu createFileMenu() {
+    protected JMenu defineFileMenu() {
         fileMenu = new JMenu("File");
+        fileMenu.setMnemonic(KeyEvent.VK_F);
+        return fileMenu;
+    }
+
+    protected JMenu createFileMenu() {
+        defineFileMenu();
+//        fileMenu = new JMenu("File");
+//        fileMenu.setMnemonic(KeyEvent.VK_F);
         fileMenu.add(mIGetFceProfile);
         fileMenu.add(mILoadRecuSpecs);
         fileMenu.addSeparator();
@@ -1591,38 +1613,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
     protected JPanel processPanel() {
         MultiPairColPanel jp = new MultiPairColPanel("Process");
-//        tfProcessName = new XLTextField(processName, 10);
         jp.addItemPair("Process Name", tfProcessName);
-        return jp;
-    }
-
-    JPanel chargeDataPanelOLD() {     // TODO to be removed
-        MultiPairColPanel jp = new MultiPairColPanel("Charge Details");
-        cbChType = new XLComboBox(Charge.ChType.values());
-        cbChType.setSelectedItem(Charge.ChType.SOLID_RECTANGLE);
-        addInputToListener(cbChType);
-        jp.addItemPair("Charge Cross Section", cbChType);
-        tfChDiameter = new NumberTextField(this, chDiameter * 1000, 5, false, 10, 2000, "#,###", "Dia of cross section (mm)");
-        addInputToListener(tfChDiameter);
-        jp.addItemPair(tfChDiameter);
-        tfChWidth = new NumberTextField(this, chWidth * 1000, 5, false, 50, 25000, "#,###", "Width (Along Furnace) (mm)");
-        addInputToListener(tfChWidth);
-        labChWidth = new JLabel("Billet/Slab Width (mm)");
-        jp.addItemPair(labChWidth, tfChWidth);
-        tfChThickness = new NumberTextField(this, chThickness * 1000, 5, false, 0.05, 10000, "#,###.###", "Thickness (mm)");
-        addInputToListener(tfChThickness);
-        jp.addItemPair(tfChThickness.getName(), tfChThickness);
-        tfChLength = new NumberTextField(this, chLength * 1000, 5, false, 500, 25000, "#,###", "Length (Across Furnace) (mm)");
-        addInputToListener(tfChLength);
-        labChLength = new JLabel("Billet/Slab Length (mm)");
-        jp.addItemPair(labChLength, tfChLength);
-        cbChMaterial = new JSPComboBox<ChMaterial>(jspConnection, vChMaterial);
-        cbChMaterial.setPreferredSize(new Dimension(200, 18));
-        cbChMaterial.setSelectedItem(selChMaterial);
-        addInputToListener(cbChMaterial);
-        jp.addItemPair("Charge Material", cbChMaterial);
-        setChargeSizeChoice();
-        mpChargeData = jp;
         return jp;
     }
 
@@ -4221,7 +4212,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return retVal;
     }
 
-
     public void edited() {   // TODO 20160509 to track profile edit, to be setup
         bProfileEdited = true;
     }
@@ -4381,6 +4371,15 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                 }
                 if (src == mIOpData) {
                     switchPage(DFHDisplayPageType.OPPAGE);
+                    break menuBlk;
+                }
+
+                if (src == mIDefineRecuperator) {
+                    furnace.defineAirRecuperator();
+                    break menuBlk;
+                }
+                if (src == mIRecuPerformace) {
+                    furnace.getAirRecuPerformance();
                     break menuBlk;
                 }
                 if (src == mITuningParams) {

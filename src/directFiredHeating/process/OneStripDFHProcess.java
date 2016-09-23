@@ -5,13 +5,12 @@ import basic.ProductionData;
 import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
 import mvUtils.display.*;
+import mvUtils.jsp.JSPComboBox;
 import mvUtils.math.BooleanWithStatus;
 import mvUtils.math.DoubleWithStatus;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
-import performance.stripFce.Performance;
 
-import javax.swing.*;
 import java.text.DecimalFormat;
 import java.util.Vector;
 
@@ -294,9 +293,9 @@ public class OneStripDFHProcess {
 
     XLTextField tfProcessName;
     XLTextField tfDescription;
-    JComboBox cbChMaterialThin;
+    JSPComboBox cbChMaterialThin;
     NumberTextField ntThinUpperLimit;
-    JComboBox cbChMaterialThick;
+    JSPComboBox cbChMaterialThick;
     Vector<NumberTextField> dataFieldList;
     NumberTextField ntTempDFHEntry;
     NumberTextField ntTempDFHExit;
@@ -377,13 +376,13 @@ public class OneStripDFHProcess {
         tfProcessName.setName("Process Name");
         tfDescription = new XLTextField(description, 30);
         tfDescription.setName("Process Description");
-        cbChMaterialThin = new JComboBox(vChMaterial);
+        cbChMaterialThin = new JSPComboBox<ChMaterial>(dfHeating.jspConnection, vChMaterial);
         cbChMaterialThin.setName("Select Material to be taken for Thin strips");
         cbChMaterialThin.setSelectedItem(chMaterialThin);
         ntf = ntThinUpperLimit = new NumberTextField(inpC, thinUpperLimit * 1000, 6, false, 0.05, 0.9,
                 "0.00", "Upper thickness Limit for Thin material (mm)");
         dataFieldList.add(ntf);
-        cbChMaterialThick = new JComboBox(vChMaterial);
+        cbChMaterialThick = new JSPComboBox<ChMaterial>(dfHeating.jspConnection, vChMaterial);
         cbChMaterialThick.setName("Select Material to be taken for Thick strips");
         cbChMaterialThick.setSelectedItem(chMaterialThick);
         ntf = ntTempDFHEntry = new NumberTextField(inpC, tempDFHEntry, 6, false, 0, 300,

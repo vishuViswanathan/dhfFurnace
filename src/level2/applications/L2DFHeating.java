@@ -26,6 +26,7 @@ import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -350,8 +351,10 @@ public class L2DFHeating extends StripHeating {
         mExpertAccess.add(mIDeleteExpertAccess);
     }
 
+
     protected JMenu createPerformanceMenu() {
-        perfMenu = new JMenu("Performance");
+        definePerformanceMenu();
+//        perfMenu = new JMenu("Performance");
         perfMenu.add(mIAddToPerfBase);
         perfMenu.addSeparator();
         perfMenu.add(mIShowPerfBase);

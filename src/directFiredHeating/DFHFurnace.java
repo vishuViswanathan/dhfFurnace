@@ -2181,6 +2181,19 @@ public class DFHFurnace {
         return retVal;
     }
 
+    boolean freezeExistingHeatExch() {
+        bRecuFrozen = false;
+        if (existingHeatExch.canPerform) {
+            if (jbFreezeAirRecu != null) {
+                jbFreezeAirRecu.setEnabled(false);
+                recuCounterFlow.setEnabled(false);
+            }
+            bRecuFrozen = true;
+            showMessage("Air Recuperator characteristics frozen");
+         }
+        return bRecuFrozen;
+    }
+
     boolean saveRecuToFile() {
         boolean retVal = false;
         HeatExchProps heProps;
@@ -4052,6 +4065,34 @@ public class DFHFurnace {
                 bRecuFrozen = false;
             }
         }
+    }
+
+    public boolean getAirRecuPerformance() {
+        boolean retVal = false;
+        if (existingHeatExch != null && existingHeatExch.canPerform) {
+            existingHeatExch.getPerformance(controller, "Evaluate Air Recuperator Performance", "Flue", "Air");
+            retVal = true;
+        }
+        return retVal;
+    }
+
+    public boolean defineAirRecuperator() {
+        boolean modified = false;
+        HeatExchProps newRecu = existingHeatExch;
+        if (newRecu == null)
+            newRecu = new HeatExchProps();
+        EditResponse.Response response = newRecu.defineHeatExchanger(controller, "Define Common Air Recuperator", "Flue", "Air");
+        switch(response) {
+            case DELETE:
+                newRecu();
+                break;
+            case SAVE:
+                existingHeatExch = newRecu;
+                freezeExistingHeatExch();
+                modified = true;
+                break;
+        }
+        return modified;
     }
 
     void clearSectionData() {

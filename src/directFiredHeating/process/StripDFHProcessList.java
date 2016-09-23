@@ -243,16 +243,15 @@ public class StripDFHProcessList {
             JPanel outerP = new JPanel(new BorderLayout());
             jcbExisting = new JComboBox();
             populateJcbExisting();
-//            for (OneStripDFHProcess p: list)
-//                jcbExisting.addItem(p.processName);
-//            jcbExisting.addItem(enterNew);
             jcbExisting.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     if (!bListBeingChanged)
                         getSelectedProcess();
                 }
             });
-            outerP.add(jcbExisting, BorderLayout.NORTH);
+            JPanel p = new JPanel();
+            p.add(jcbExisting);
+            outerP.add(p, BorderLayout.NORTH);
             detailsP = new JPanel();
 //            detailsP.setPreferredSize(new Dimension(400, 300));
             jcbExisting.setSelectedItem(0);

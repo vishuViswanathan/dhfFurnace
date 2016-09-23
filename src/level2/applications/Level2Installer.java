@@ -107,7 +107,7 @@ public class Level2Installer extends L2DFHeating {
         ErrorStatAndMsg retVal = new ErrorStatAndMsg();
         File file = getParticularFile(basePath, profileCode, "perfData");
         if (file != null) {
-            if (decide("Field Performance Data", "<html>Fiel-updated Performance Data File is available" +
+            if (decide("Field Performance Data", "<html>Field-updated Performance Data File is available" +
                     "<br />   Do you want load this, overwriting Data with the Furnace Profile</html>")) {
                 if (loadThePerformanceList(file)) {
                     if (markThisFileAsBak(file))
@@ -149,7 +149,8 @@ public class Level2Installer extends L2DFHeating {
     }
 
     protected JMenu createFileMenu() {
-        fileMenu = new JMenu("File");
+        defineFileMenu();
+//        fileMenu = new JMenu("File");
         fileMenu.add(mIGetFceProfile);
         fileMenu.add(mISaveFceProfile);
         fileMenu.addSeparator();
@@ -168,12 +169,12 @@ public class Level2Installer extends L2DFHeating {
     }
 
     protected JMenu createPerformanceMenu() {
-        perfMenu = new JMenu("Performance");
+        definePerformanceMenu();
+//       perfMenu = new JMenu("Performance");
         perfMenu.add(mIAddToPerfBase);
         perfMenu.addSeparator();
         perfMenu.add(mIShowPerfBase);
         perfMenu.addSeparator();
-//        perfMenu.add(mISavePerformanceData);
         perfMenu.add(mIReadPerformanceData);
         return perfMenu;
     }

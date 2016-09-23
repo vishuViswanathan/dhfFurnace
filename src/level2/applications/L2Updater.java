@@ -75,7 +75,8 @@ public class L2Updater extends L2DFHeating{
     }
 
     protected JMenu createFileMenu() {
-        fileMenu = new JMenu("File");
+        defineFileMenu();
+//        fileMenu = new JMenu("File");
         fileMenu.add(mIExit);
         return fileMenu;
     }
@@ -87,11 +88,11 @@ public class L2Updater extends L2DFHeating{
     }
 
     protected JMenu createPerformanceMenu() {
-        perfMenu = new JMenu("Performance");
+        definePerformanceMenu();
+//        perfMenu = new JMenu("Performance");
         perfMenu.add(mIShowPerfBase);
         perfMenu.addSeparator();
         perfMenu.add(mISavePerformanceData);
-//        perfMenu.add(mIReadPerformanceData);
         return perfMenu;
     }
 

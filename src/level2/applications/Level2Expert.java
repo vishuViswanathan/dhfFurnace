@@ -66,7 +66,8 @@ public class Level2Expert extends L2DFHeating {
     }
 
     protected JMenu createFileMenu() {
-        fileMenu = new JMenu("File");
+        defineFileMenu();
+//        fileMenu = new JMenu("File");
         fileMenu.add(mIUpdateFurnace);
         fileMenu.addSeparator();
         fileMenu.add(mIExit);
@@ -81,19 +82,19 @@ public class Level2Expert extends L2DFHeating {
     }
 
     protected JMenu createPerformanceMenu() {
-        perfMenu = new JMenu("Performance");
+        definePerformanceMenu();
+//        perfMenu = new JMenu("Performance");
         perfMenu.add(mIShowPerfBase);
         perfMenu.addSeparator();
         perfMenu.add(mISavePerformanceData);
-//        perfMenu.add(mIReadPerformanceData);
         return perfMenu;
     }
 
     protected JMenu createDefineFurnaceMenu() {
-        inputMenu = new JMenu("Operation Data");
-//        inputMenu.add(mIInputData);
-        inputMenu.add(mIOpData);
-        return inputMenu;
+        defineDefineFurnaceMenu();
+//        defineFurnaceMenu = new JMenu("Operation Data");
+        defineFurnaceMenu.add(mIOpData);
+        return defineFurnaceMenu;
     }
 
     public boolean canClose() {
