@@ -452,9 +452,9 @@ public class DFHTuningParams {
     JPanel mainTuningPanel = new FramedPanel(new GridBagLayout());
 
     JPanel getTuningPanel() {
-//        JPanel mainTuningPanel = new FramedPanel(new GridBagLayout());
+        JPanel mainTuningPanel = new FramedPanel(new GridBagLayout());
         mainTuningPanel.setBackground(new JPanel().getBackground());
-//        GridBagConstraints mainGbc = new GridBagConstraints();
+        GridBagConstraints mainGbc = new GridBagConstraints();
         mainGbc.gridx = 0;
         mainGbc.gridy = 0;
         mainGbc.gridwidth = 2;
