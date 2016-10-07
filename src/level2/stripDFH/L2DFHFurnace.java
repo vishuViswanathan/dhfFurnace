@@ -51,6 +51,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     ReadyNotedParam l2InfoMessages;
     ReadyNotedParam l2ErrorMessages;
     ReadyNotedParam fieldDataParams;
+    ReadyNotedParam processListParams;
     ReadyNotedParam fuelCharParams;
     ReadyNotedBothL2 performanceStat;
     ReadyNotedBothL2 processDataStat;
@@ -72,9 +73,12 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     Tag tagUpdaterReady;
     Tag tagExpertReady;
     Tag tagFieldDataReady;
+    Tag tagProcessListReady;
+    Tag tagProcessCount;
     TMSubscription basicSub;
     TMSubscription messageSub;
     TMSubscription fieldDataSub;
+    TMSubscription processListSub;
     TMSubscription fuelCharSub;
     TMSubscription updaterChangeSub;
     boolean messagesON = false;
@@ -284,6 +288,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         boolean retVal = false;
         fuelCharSub = source.createTMSubscription("DFH Common Data", new SubAliveListener(), new FuelCharListener());
         fieldDataSub = source.createTMSubscription("Field Data", new SubAliveListener(), new FieldDataListener());
+        processListSub = source.createTMSubscription("Process List", new SubAliveListener(), new ProcessListListener());
         commonDFHZ = new L2ParamGroup(this, "DFHCommon", fieldDataSub);
         try {
             Tag[] commonDFHTags1 = {
@@ -304,6 +309,16 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             readyNotedParamList.add(fieldDataParams);
             commonDFHZ.addOneParameter(L2ParamGroup.Parameter.FieldData, fieldDataParams);
             noteMonitoredTags(commonDFHTags3);
+
+            Tag[] commonDFHTags4 = {
+                    (tagProcessListReady = new Tag(L2ParamGroup.Parameter.Processes, Tag.TagName.Ready, true, false)),
+                    (tagProcessCount = new Tag(L2ParamGroup.Parameter.Processes, Tag.TagName.Count, true, false)),
+                    (new Tag(L2ParamGroup.Parameter.Processes, Tag.TagName.Noted, false, true))};
+            processListParams = new ReadyNotedParam(source, equipment, "DFHCommon.Processes", commonDFHTags4, processListSub);
+            readyNotedParamList.add(processListParams);
+            commonDFHZ.addOneParameter(L2ParamGroup.Parameter.Processes, processListParams);
+            noteMonitoredTags(commonDFHTags4);
+
             retVal = true;
         } catch (TagCreationException e) {
             showError("CommonDFH connection to Level1 :" + e.getMessage());
@@ -432,6 +447,18 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             retVal = false;
         }
         return retVal;
+    }
+
+    public void processListToLevel1Updated(int count) {
+        tagProcessCount.setValue(count);
+        tagProcessListReady.setValue(true);
+    }
+
+    public void clearProcessList() {
+        logInfo("Process List cleared");
+        processListToLevel1Updated(0);
+//        tagProcessCount.setValue(0.0);
+//        tagProcessListReady.setValue(true);
     }
 
     void updateUIDisplay() {
@@ -605,26 +632,26 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     }
 
     public Performance getBasePerformance(OneStripDFHProcess stripDFHProc, double stripThick) {
-        return performBase.getRefPerformance(stripDFHProc.processName, stripDFHProc.getChMaterial(stripDFHProc.processName, stripThick),
+        return performBase.getRefPerformance(stripDFHProc.getFullProcessID(), stripDFHProc.getChMaterial(stripDFHProc.baseProcessName, stripThick),
                 l2DFHeating.getSelectedFuel().name, stripDFHProc.tempDFHExit);
     }
 
-    public Performance getBasePerformance(String forProcess, double stripThick) {
-        Performance prf = null;
-        OneStripDFHProcess stripDFHProc = l2DFHeating.getStripDFHProcess(forProcess);
-        if (stripDFHProc != null)
-//            prf = performBase.getRefPerformance(stripDFHProc.getChMaterial(forProcess, stripThick),
-//                    stripDFHProc.tempDFHExit, exitTempAllowance);
-            prf = performBase.getRefPerformance(stripDFHProc.processName, stripDFHProc.getChMaterial(forProcess, stripThick),
-                l2DFHeating.getSelectedFuel().name, stripDFHProc.tempDFHExit);
-        else
-            logInfo("strip process " + forProcess + " is not available in the database");
-        return prf;
-    }
+//    public Performance getBasePerformance(String forProcess, double stripThick) {
+//        Performance prf = null;
+//        OneStripDFHProcess stripDFHProc = l2DFHeating.getStripDFHProcess(forProcess);
+//        if (stripDFHProc != null)
+////            prf = performBase.getRefPerformance(stripDFHProc.getChMaterial(forProcess, stripThick),
+////                    stripDFHProc.tempDFHExit, exitTempAllowance);
+//            prf = performBase.getRefPerformance(stripDFHProc.baseProcessName, stripDFHProc.getChMaterial(forProcess, stripThick),
+//                l2DFHeating.getSelectedFuel().name, stripDFHProc.tempDFHExit);
+//        else
+//            logInfo("strip process " + forProcess + " is not available in the database");
+//        return prf;
+//    }
 
     public boolean isRefPerformanceAvailable(OneStripDFHProcess dfhProc, double stripThick) {
         return (performBase != null) &&
-                performBase.isRefPerformanceAvailable(dfhProc.processName,
+                performBase.isRefPerformanceAvailable(dfhProc.getFullProcessID(),
                         dfhProc.getChMaterial(stripThick).name, dfhProc.tempDFHExit);
     }
 
@@ -1113,18 +1140,19 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             if ((response) && (l2YesNoQuery.getValue(Tag.TagName.Response).booleanValue)) {
                 boolean canContinue = true;
                 FieldResults theFieldResults = new FieldResults(L2DFHFurnace.this, true);
+                ErrorStatAndMsg dataOkForFieldResults = new ErrorStatAndMsg();
                 if (theFieldResults.inError) {
                     canContinue = false;
                     logError("Getting Field Results: " + theFieldResults.errMsg);
                 }
                 else  {
-                    ErrorStatAndMsg dataOkStat =  theFieldResults.processOkForFieldResults();
-                    if (dataOkStat.inError) {
+                    dataOkForFieldResults =  theFieldResults.processOkForFieldResults();
+                    if (dataOkForFieldResults.inError) {
                         canContinue = false;
-                        logError("Checking Field Data: " + dataOkStat.msg);
+                        logError("Checking Field Data: " + dataOkForFieldResults.msg);
                     }
                 }
-                if (theFieldResults.inError || theFieldResults.processOkForFieldResults().inError) {
+                if (theFieldResults.inError || dataOkForFieldResults.inError) {
                     showErrorInLevel1("Error in Taking Field Performance");
                 }
                 if (canContinue) {
@@ -1236,6 +1264,18 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                 if (fieldDataParams.isNewData(theTag))   // the data will be already read if new data
                     if (theTag == tagFieldDataReady)
                         handleFieldData();
+            }
+        }
+    }
+
+    class ProcessListListener extends L2SubscriptionListener {
+        @Override
+        public void onDataChange(Subscription subscription, MonitoredDataItem monitoredDataItem, DataValue dataValue) {
+            L2AccessControl.AccessLevel accessLevel = l2DFHeating.accessLevel;
+            if (l2DFHeating.isL2SystemReady() &&
+                    (accessLevel == L2AccessControl.AccessLevel.RUNTIME) ) {
+                Tag theTag = monitoredTags.get(monitoredDataItem);
+                processListParams.isNewData(theTag);
             }
         }
     }

@@ -38,6 +38,8 @@ public class L2ParamGroup {
         InfoMsg("InfoMsg"),
         YesNoQuery("YesNoQuery"),
         DataQuery("dataQuery"),
+        Processes("Processes"),
+        Details("Details"),
         L2Stat("Level2Stat");
         private final String elementName;
 

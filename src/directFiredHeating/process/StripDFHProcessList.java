@@ -5,6 +5,8 @@ import directFiredHeating.DFHeating;
 import mvUtils.display.*;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
+import performance.stripFce.Performance;
+import performance.stripFce.StripProcessAndSize;
 
 import javax.swing.*;
 import java.awt.*;
@@ -22,35 +24,40 @@ public class StripDFHProcessList {
     DFHeating dfHeating;
     Vector<ChMaterial> vChMaterial;
     InputControl inpC;
-    Vector<OneStripDFHProcess> list;
+    protected Vector<OneStripDFHProcess> list;
     StripDFHProcessList me;
-    JComboBox<OneStripDFHProcess> cbProcess;
+    protected JComboBox<OneStripDFHProcess> cbProcess;
+    protected int maxListLen = 5;
 
     public StripDFHProcessList(DFHeating dfHeating) {
         this.vChMaterial = dfHeating.vChMaterial;
         this.dfHeating = dfHeating;
         this.inpC = dfHeating;
-        list = new Vector<OneStripDFHProcess>();
-        cbProcess = new JComboBox<OneStripDFHProcess>(list);
+        list = new Vector<>();
+        cbProcess = new JComboBox<>(list);
         cbProcess.setPreferredSize(new Dimension(300, 20));
+    }
+
+    public OneStripDFHProcess getSelectedProcess() {
+        return (OneStripDFHProcess)cbProcess.getSelectedItem();
     }
 
     public String getSelectedProcessName() {
         String retVal = "";
         OneStripDFHProcess p = (OneStripDFHProcess)cbProcess.getSelectedItem();
         if (p != null)
-            retVal = p.processName;
+            retVal = p.getFullProcessID();
         return retVal;
     }
 
-    public boolean setSelectedProcess(String processName) {
-        OneStripDFHProcess process = getDFHProcess(processName);
-        boolean retVal = false;
-        if (process != null) {
-            retVal = setSelectedProcess(process);
-        }
-        return retVal;
-    }
+//    public boolean setSelectedProcess(String processName) {
+//        OneStripDFHProcess process = getDFHProcess(processName);
+//        boolean retVal = false;
+//        if (process != null) {
+//            retVal = setSelectedProcess(process);
+//        }
+//        return retVal;
+//    }
 
     public boolean setSelectedProcess(OneStripDFHProcess process) {
         cbProcess.setSelectedItem(process);
@@ -99,10 +106,44 @@ public class StripDFHProcessList {
         }
     }
 
-    public OneStripDFHProcess getDFHProcess(String processName) {
+    public OneStripDFHProcess getDFHProcess(String fullProcessID) {
         OneStripDFHProcess oneProcess = null;
         for (OneStripDFHProcess proc: list) {
-            if (proc.processName.equalsIgnoreCase(processName)) {
+            if (proc.getFullProcessID().equalsIgnoreCase(fullProcessID)) {
+                oneProcess = proc;
+                break;
+            }
+        }
+        return oneProcess;
+    }
+
+    public OneStripDFHProcess getDFHProcess(StripProcessAndSize theStrip) {
+        OneStripDFHProcess oneProcess = null;
+        for (OneStripDFHProcess proc: list) {
+            if (proc.doesProcessMatch(theStrip)) {
+                oneProcess = proc;
+                break;
+            }
+        }
+        return oneProcess;
+    }
+
+    public OneStripDFHProcess getDFHProcess(String baseProcessNameX, double tempDFHExitX,
+                                             double stripWidth, double stripThick) {
+        OneStripDFHProcess oneProcess = null;
+        for (OneStripDFHProcess proc: list) {
+            if (proc.doesProcessMatch(baseProcessNameX, tempDFHExitX, stripWidth, stripThick)) {
+                oneProcess = proc;
+                break;
+            }
+        }
+        return oneProcess;
+    }
+
+    public OneStripDFHProcess getDFHProcess(Performance p) {
+        OneStripDFHProcess oneProcess = null;
+        for (OneStripDFHProcess proc:list) {
+            if (!proc.performanceOkForProcess(p).inError) {
                 oneProcess = proc;
                 break;
             }
@@ -116,11 +157,6 @@ public class StripDFHProcessList {
         ValAndPos vp;
         oneBlk:
         {
-//            vp = XMLmv.getTag(xmlStr, "exitTempAllowance", 0);
-//            if (vp.val.length() > 0 )
-//                l2Furnace.setExitTempAllowance(Double.valueOf(vp.val));
-//            else
-//                l2Furnace.setExitTempAllowance(5);
             vp = XMLmv.getTag(xmlStr, "pNum", 0);
             try {
                 int pNum = Integer.valueOf(vp.val);
@@ -132,8 +168,14 @@ public class StripDFHProcessList {
                         retVal = false;
                         break oneBlk;
                     }
-                    else
-                        list.add(oneProc);
+                    else {
+                        ErrorStatAndMsg stat = checkDuplication(oneProc);
+                        if (stat.inError)
+                            dfHeating.showError("Skipping process '" + oneProc.getFullProcessID() + "' in Reading Proces List\n" +
+                                    stat.msg);
+                        else
+                            list.add(oneProc);
+                    }
                 }
                 retVal = true;
             } catch (NumberFormatException e) {
@@ -156,7 +198,7 @@ public class StripDFHProcessList {
     public boolean addOneDFHProcess(OneStripDFHProcess oneProcess) {
         boolean newOne = true;
         for (OneStripDFHProcess proc: list) {
-            if (proc.processName.equalsIgnoreCase(oneProcess.processName)) {
+            if (proc.baseProcessName.equalsIgnoreCase(oneProcess.baseProcessName)) {
                 newOne = false;
                 break;
             }
@@ -166,41 +208,64 @@ public class StripDFHProcessList {
         return newOne;
     }
 
-    public boolean replaceOneDFHProcess(OneStripDFHProcess oneProcess)  {
-        deleteDFHProcess(oneProcess.processName);
-        list.add(oneProcess);
-        return true;
-    }
+//    public boolean replaceOneDFHProcess(OneStripDFHProcess oneProcess)  {
+//        deleteDFHProcess(oneProcess.baseProcessName);
+//        list.add(oneProcess);
+//        return true;
+//    }
 
-    public boolean deleteDFHProcess(String processName) {
-        boolean retVal = false;
-        processName = processName.toUpperCase();
-        for (OneStripDFHProcess proc: list)  {
-            if (proc.processName.equals(processName)) {
-                list.remove(proc);
-                retVal = true;
+//    public boolean deleteDFHProcess(String processName) {
+//        boolean retVal = false;
+//        processName = processName.toUpperCase();
+//        for (OneStripDFHProcess proc: list)  {
+//            if (proc.baseProcessName.equals(processName)) {
+//                list.remove(proc);
+//                retVal = true;
+//                break;
+//            }
+//        }
+//        return retVal;
+//    }
+
+    ErrorStatAndMsg checkDuplication(OneStripDFHProcess skipThis, String baseProcessNameX, double  exitTempX, double minWidthX, double maxWidthX,
+                                     double minThicknessX, double maxThicknessX) {
+        ErrorStatAndMsg status = new ErrorStatAndMsg();
+        for (OneStripDFHProcess p: list) {
+            if (p != skipThis)
+                status = p.doesItOverlap(baseProcessNameX, exitTempX, minWidthX, maxWidthX,
+                        minThicknessX, maxThicknessX);
+            if (status.inError)
                 break;
-            }
-        }
-        return retVal;
-    }
-
-    ErrorStatAndMsg checkDuplication(OneStripDFHProcess oneProcess, String processName) {
-        ErrorStatAndMsg status = new ErrorStatAndMsg(false, "ERROR: ");
-        if (processName.length() < 2 || processName.substring(0, 1).equals(".")) {
-            status.inError = true;
-            status.msg += "Enter proper process Name";
-        }
-        else {
-            for (OneStripDFHProcess p : list)
-                if ((p != oneProcess) && (p.processName.equalsIgnoreCase(processName))) {
-                    status.inError = true;
-                    status.msg += "This Process " + processName + " already Exists";
-                    break;
-                }
         }
         return status;
     }
+
+    ErrorStatAndMsg checkDuplication(OneStripDFHProcess withThis) {
+        ErrorStatAndMsg status = new ErrorStatAndMsg();
+        for (OneStripDFHProcess p: list) {
+            status = p.doesItOverlap(withThis);
+            if (status.inError)
+                break;
+        }
+        return status;
+    }
+
+//    ErrorStatAndMsg checkDuplication(OneStripDFHProcess oneProcess, String processName) {
+//        ErrorStatAndMsg status = new ErrorStatAndMsg(false, "ERROR: ");
+//        if (processName.length() < 2 || processName.substring(0, 1).equals(".")) {
+//            status.inError = true;
+//            status.msg += "Enter proper process Name";
+//        }
+//        else {
+//            for (OneStripDFHProcess p : list)
+//                if ((p != oneProcess) && (p.baseProcessName.equalsIgnoreCase(processName))) {
+//                    status.inError = true;
+//                    status.msg += "This Process " + processName + " already Exists";
+//                    break;
+//                }
+//        }
+//        return status;
+//    }
 
     public JComponent getListUI() {
         return cbProcess;
@@ -269,14 +334,14 @@ public class StripDFHProcessList {
             bListBeingChanged = true;
             jcbExisting.removeAllItems();
             for (OneStripDFHProcess p: list)
-                jcbExisting.addItem(p.processName);
+                jcbExisting.addItem(p.getFullProcessID());
             if (editable)
                 jcbExisting.addItem(enterNew);
             bListBeingChanged = false;
         }
 
         void setSelectedP(OneStripDFHProcess selectedP) {
-            jcbExisting.setSelectedItem(selectedP.processName);
+            jcbExisting.setSelectedItem(selectedP.baseProcessName);
         }
 
         OneStripDFHProcess getLastSelectedP() {
@@ -312,10 +377,10 @@ public class StripDFHProcessList {
                     }
                 if (itsNew) {
                     list.add(selectedP);
-                    populateJcbExisting();
-                    jcbExisting.setSelectedItem(selectedP.processName);
-                    response = EditResponse.Response.SAVE;
                 }
+                populateJcbExisting();
+                jcbExisting.setSelectedItem(selectedP.baseProcessName);
+                response = EditResponse.Response.SAVE;
                 edited = true;
             }
             else
@@ -326,7 +391,7 @@ public class StripDFHProcessList {
         public void deleteData() {
             list.remove(selectedP);
             populateJcbExisting();
-            jcbExisting.setSelectedItem(selectedP.processName);
+            jcbExisting.setSelectedItem(selectedP.baseProcessName);
             response = EditResponse.Response.DELETE;
             edited = true;
             setVisible(false);

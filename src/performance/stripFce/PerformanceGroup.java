@@ -355,25 +355,15 @@ public class PerformanceGroup implements ActionListener{
 
 //        colModel.getSelectionModel().addListSelectionListener(new ColumnListener());
 
-        colModel.getColumn(0).setPreferredWidth(20);
-        colModel.getColumn(1).setPreferredWidth(80);
-        colModel.getColumn(2).setPreferredWidth(150);
-        colModel.getColumn(3).setPreferredWidth(80);
-        colModel.getColumn(4).setPreferredWidth(30);
+        colModel.getColumn(0).setPreferredWidth(10);
+        colModel.getColumn(1).setPreferredWidth(200);
+        colModel.getColumn(2).setPreferredWidth(120);
+        colModel.getColumn(3).setPreferredWidth(60);
+        colModel.getColumn(4).setPreferredWidth(20);
         colModel.getColumn(4).setCellRenderer(rightRenderer);
         colModel.getColumn(5).setPreferredWidth(30);
         colModel.getColumn(5).setCellRenderer(rightRenderer);
         colModel.getColumn(6).setPreferredWidth(150);
-//        colModel.getColumn(1).setPreferredWidth(200);
-//        colModel.getColumn(2).setPreferredWidth(80);
-//        colModel.getColumn(3).setPreferredWidth(50);
-//        colModel.getColumn(3).setCellRenderer(rightRenderer);
-//        colModel.getColumn(4).setPreferredWidth(50);
-//        colModel.getColumn(4).setCellRenderer(rightRenderer);
-//        colModel.getColumn(5).setPreferredWidth(150);
-
-//        colModel.getColumn(6).setPreferredWidth(50);
-//        table.setFillsViewportHeight(true);
 
         listPanel.add(new JLabel("Performance Base List"));
         JScrollPane sP = new JScrollPane(listTable);
@@ -465,12 +455,6 @@ public class PerformanceGroup implements ActionListener{
                 data[r][c++] = outputFmt.format(p.output / 1000);
                 data[r][c++] = p.fuelName;
                 data[r][c] = p.dateStr();
-//                data[r][1] = p.chMaterial;
-//                data[r][2] = p.stripSize();
-//                data[r][3] = tempFmt.format(p.exitTemp());
-//                data[r][4] = outputFmt.format(p.output / 1000);
-//                data[r][5] = p.fuelName;
-//                data[r][6] = p.dateStr();
             }
 
         }

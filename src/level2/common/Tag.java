@@ -62,8 +62,15 @@ public class Tag {
         Y8("y8"),
         Y9("y9"),
         Y10("y10"),
+        Count("count"),
+        ExitTemp("exitTemp"),
+        Wmin("Wmin"),
+        Wmax("Wmax"),
+        THmin("THmin"),
+        THmax("THmax"),
         // Strings
-        Process("process"),
+//        Process("process"),
+        BaseProcess("baseProcess"),
         Msg("msg");
 
 
@@ -273,7 +280,7 @@ public class Tag {
             case Response:
                 type = ProcessData.DataType.BOOLEAN;
                 break;
-            case Process:
+            case BaseProcess:
             case Msg:
                 type = ProcessData.DataType.STRING;
                 break;
@@ -312,7 +319,7 @@ public class Tag {
             case Response:
                 ((JTextField)displayComponent).setText(booleanStat.statusString());
                 break;
-            case Process:
+            case BaseProcess:
                 ((JTextField)displayComponent).setText(getValue().stringValue);
                 break;
             case Msg:

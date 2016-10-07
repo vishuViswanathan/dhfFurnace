@@ -20,6 +20,7 @@ import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.ss.usermodel.*;
 import performance.stripFce.Performance;
+import performance.stripFce.StripProcessAndSize;
 
 import javax.jnlp.FileContents;
 import javax.print.attribute.HashPrintRequestAttributeSet;
@@ -1938,7 +1939,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         rowHead.updateUI();
     }
 
-    public OneStripDFHProcess getDFHProcess() {
+    protected OneStripDFHProcess getDFHProcess() {
         return getStripDFHProcess(getProcessName());
     }
 
@@ -1946,6 +1947,14 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return dfhProcessList.getDFHProcess(forProc.trim().toUpperCase());
     }
 
+    public OneStripDFHProcess getStripDFHProcess(StripProcessAndSize theStrip) {
+        return dfhProcessList.getDFHProcess(theStrip);
+    }
+
+    public OneStripDFHProcess getStripDFHProcess(String baseProcessNameX, double tempDFHExitX,
+                                            double stripWidth, double stripThick) {
+        return dfhProcessList.getDFHProcess(baseProcessNameX, tempDFHExitX, stripWidth, stripThick);
+    }
 
     public boolean canNotify() {
         return canNotify;
@@ -2713,7 +2722,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     public StatusWithMessage takeProfileDataFromXML(String xmlStr, boolean selective,
-                                                    HeatingMode heatingMode, DFHTuningParams.FurnaceFor process) {
+                                                    HeatingMode heatingMode, DFHTuningParams.FurnaceFor particularFceFor) {
         StatusWithMessage retVal = new StatusWithMessage();
         enableResultsMenu(false);
         String errMsg = "";
@@ -2753,9 +2762,9 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                     vp = XMLmv.getTag(acTData, "cbFceFor", 0);
 //                    debug("before FurnaceFor.getEnum, cbFceFor = " + vp.val);
                     DFHTuningParams.FurnaceFor fceFor = DFHTuningParams.FurnaceFor.getEnum(vp.val);
-                    if (selective && (process != null) && (fceFor != process)) {
+                    if (selective && (particularFceFor != null) && (fceFor != particularFceFor)) {
                         allOK = false;
-                        errMsg = "Furnace is not for the required Process, " + process;
+                        errMsg = "Furnace is not for the required Process, " + particularFceFor;
                         break aBlock;
                     }
                     if (fceFor != null) {

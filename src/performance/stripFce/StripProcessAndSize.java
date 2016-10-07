@@ -7,23 +7,25 @@ package performance.stripFce;
  * To change this template use File | Settings | File Templates.
  */
 public class StripProcessAndSize {
-    public String process;
+    public String processBaseName;
+    public double exitTemp;
     public double width;
     public double thickness;
     public Performance refP;
 
-    public StripProcessAndSize(String process, double width, double thickness) {
-        set(process, width, thickness);
+    public StripProcessAndSize(String process, double exitTemp, double width, double thickness) {
+        set(process, exitTemp, width, thickness);
     }
 
-    public StripProcessAndSize set(String process, double width, double thickness) {
-        this.process = process;
+    public StripProcessAndSize set(String process, double exitTemp, double width, double thickness) {
+        this.processBaseName = process;
+        this.exitTemp = exitTemp;
         this.width = width;
         this.thickness = thickness;
         return this;
     }
 
     public String toString() {
-        return "Strip " + width + " x " + thickness + " for process " + process;
+        return "Strip " + width + " x " + thickness + " for process " + processBaseName + ", exitTemp " + exitTemp;
     }
 }

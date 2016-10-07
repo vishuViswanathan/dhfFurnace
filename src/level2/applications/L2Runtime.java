@@ -1,6 +1,7 @@
 package level2.applications;
 
 import directFiredHeating.accessControl.L2AccessControl;
+import mvUtils.display.DataWithMsg;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
@@ -69,6 +70,26 @@ public class L2Runtime extends L2DFHeating {
 //        fileMenu = new JMenu("File");
         fileMenu.add(mIExit);
         return fileMenu;
+    }
+
+    public boolean connectProcessListToLevel1() {
+        return l2ProcessList.connectToLevel1();
+    }
+
+    public void clearLevel1ProcessList() {
+        l2ProcessList.clearLevel1ProcessList();
+//        l2Furnace.processListToLevel1Updated(0);
+    }
+
+    public boolean sendProcessListToLevel1() {
+        int p = l2ProcessList.sendListToLevel1();
+        l2Furnace.processListToLevel1Updated(p);
+        return p > 0;
+    }
+
+    void justQuit() {
+        l2Furnace.clearProcessList();
+        super.justQuit();
     }
 
     public boolean canClose() {

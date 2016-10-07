@@ -77,7 +77,7 @@ public class Performance {
     GregorianCalendar dateOfResult;
     String fuelName;
     double airTemp;
-    double chLength, chWidth, chThick;
+    public double chLength, chWidth, chThick;
     double chWt;
     double chPitch;
     double speed;
@@ -423,7 +423,7 @@ public class Performance {
 
     boolean isExitTempComparable(double nowTemp,  double allowance)  {
         double refTemp = exitTemp();
-        return ((nowTemp >= (refTemp - allowance)) && (nowTemp < (refTemp + allowance)));
+        return ((nowTemp > (refTemp - allowance)) && (nowTemp <= (refTemp + allowance)));
     }
 
     boolean isProcessNameComparable(String nowProcessName) {

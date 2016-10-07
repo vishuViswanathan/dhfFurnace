@@ -46,6 +46,10 @@ public abstract class StripHeating extends DFHeating {
         return jp;
     }
 
+    protected OneStripDFHProcess getDFHProcess() {
+        return dfhProcessList.getSelectedProcess();
+    }
+
     protected String getProcessName() {
         processName = dfhProcessList.getSelectedProcessName();
         return processName;
@@ -85,7 +89,7 @@ public abstract class StripHeating extends DFHeating {
     protected boolean getUserResponse(OneStripDFHProcess oneProc, ChMaterial material)  {
         boolean proceed = true;
         boolean someDecisionRequired = false;
-        String toDecide = "<html><h4>Some parameters are set from Strip DFH Process <b>" + oneProc.processName + "</b>";
+        String toDecide = "<html><h4>Some parameters are set from Strip DFH Process <b>" + oneProc.baseProcessName + "</b>";
         if (material != selChMaterial) {
             toDecide += "<blockQuote> # Charge Material selected is not matching for thickness <b>" + (chThickness * 1000) + "mm</b>.<p>" +
                     "&emsp;Will be changed to <b>" + material + "</b> as per DFH Strip Process</blockQuote>";
@@ -144,6 +148,12 @@ public abstract class StripHeating extends DFHeating {
         vp = XMLmv.getTag(xmlStr, profileCodeTag);
         profileCode = vp.val;
         if (isProfileCodeOK()) {
+            vp = XMLmv.getTag(xmlStr, "dfhProcessList");
+            if (vp.val.length() < 10 || !takeStripProcessListFromXML(vp.val)) {
+                retVal.addErrorMessage("No Strip Process Data available");
+            } else if (dfhProcessList.getCount() < 1) {
+                retVal.addErrorMessage("Process List must have at least one entry");
+            }
             retVal = super.takeProfileDataFromXML(xmlStr, true, HeatingMode.TOPBOTSTRIP,
                     DFHTuningParams.FurnaceFor.STRIP);
             if (retVal.getDataStatus() == StatusWithMessage.DataStat.OK) {
@@ -152,12 +162,12 @@ public abstract class StripHeating extends DFHeating {
                 if (vp.val.length() < 10 || !furnace.takeFceSettingsFromXML(vp.val)) {
                     retVal.addErrorMessage("No Fuel settings data available");
                 }
-                vp = XMLmv.getTag(xmlStr, "dfhProcessList");
-                if (vp.val.length() < 10 || !takeStripProcessListFromXML(vp.val)) {
-                    retVal.addErrorMessage("No Strip Process Data available");
-                } else if (dfhProcessList.getCount() < 1) {
-                    retVal.addErrorMessage("Process List must have at least one entry");
-                }
+//                vp = XMLmv.getTag(xmlStr, "dfhProcessList");
+//                if (vp.val.length() < 10 || !takeStripProcessListFromXML(vp.val)) {
+//                    retVal.addErrorMessage("No Strip Process Data available");
+//                } else if (dfhProcessList.getCount() < 1) {
+//                    retVal.addErrorMessage("Process List must have at least one entry");
+//                }
             }
         } else
             retVal.addErrorMessage("ERROR: Not a Level2 Furnace Profile");

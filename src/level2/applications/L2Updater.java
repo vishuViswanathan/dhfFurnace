@@ -5,6 +5,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
 import javax.swing.*;
+import java.awt.*;
 
 /**
  * User: M Viswanathan
@@ -89,13 +90,15 @@ public class L2Updater extends L2DFHeating{
 
     protected JMenu createPerformanceMenu() {
         definePerformanceMenu();
-//        perfMenu = new JMenu("Performance");
         perfMenu.add(mIShowPerfBase);
-        perfMenu.addSeparator();
+        perfMenu.add(new JSeparator());
+        JLabel blank = new JLabel("") ;
+        blank.setPreferredSize(new Dimension(100, 20));
+        perfMenu.add(blank);
+        perfMenu.add(new JSeparator());
         perfMenu.add(mISavePerformanceData);
         return perfMenu;
     }
-
 
     protected void showPerfMenu(boolean show) {
     }

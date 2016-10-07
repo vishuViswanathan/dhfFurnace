@@ -7,9 +7,9 @@ import directFiredHeating.applications.StripHeating;
 import display.QueryDialog;
 import directFiredHeating.accessControl.L2AccessControl;
 import level2.fieldResults.FieldResults;
+import level2.process.L2ProcessList;
 import level2.stripDFH.L2DFHFurnace;
 import directFiredHeating.process.OneStripDFHProcess;
-import directFiredHeating.process.StripDFHProcessList;
 import mvUtils.display.*;
 import mvUtils.file.AccessControl;
 import mvUtils.file.FileChooserWithOptions;
@@ -26,7 +26,6 @@ import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -61,6 +60,7 @@ public class L2DFHeating extends StripHeating {
     public L2DFHFurnace l2Furnace;
     public String equipment;
     L2AccessControl l2AccessControl;
+    L2ProcessList l2ProcessList;
 
     public L2DFHeating(String equipment) {
         super();
@@ -115,7 +115,7 @@ public class L2DFHeating extends StripHeating {
         return retVal;
     }
 
-    DataWithMsg markIAmOFF()  {
+    protected DataWithMsg markIAmOFF()  {
         DataWithMsg retVal = new DataWithMsg();
         FileLock lock = getFileLock();
         if (lock != null) {
@@ -180,7 +180,8 @@ public class L2DFHeating extends StripHeating {
             }
             furnace.setTuningParams(tuningParams);
             tuningParams.bConsiderChTempProfile = true;
-            dfhProcessList = new StripDFHProcessList(this);
+            l2ProcessList = new L2ProcessList(this);
+            dfhProcessList = l2ProcessList;
             createUIs(false); // without the default menuBar
             if (getFuelAndCharge()) {
                 setDefaultSelections();
@@ -197,6 +198,7 @@ public class L2DFHeating extends StripHeating {
                                 bProfileEdited = false;
                                 if (onProductionLine) {
                                     if (l2Furnace.makeAllConnections()) {   // createL2Zones()) {
+                                        connectProcessListToLevel1();
                                         ErrorStatAndMsg connStat = l2Furnace.checkConnection();
                                         if (connStat.inError)
                                             showError(connStat.msg);
@@ -232,14 +234,26 @@ public class L2DFHeating extends StripHeating {
             if (stat.getStatus() != DataWithMsg.DataStat.OK) {
                 showError(stat.errorMessage);
             }
+            sendProcessListToLevel1();
         }
         return l2SystemReady;
     }
 
-    protected String getProcessName() {
-        processName = dfhProcessList.getSelectedProcessName();
-        return processName;
+    public void clearLevel1ProcessList() {
     }
+
+    public boolean sendProcessListToLevel1() {
+        return true;
+    }
+
+    public boolean connectProcessListToLevel1() {
+        return true;
+    }
+
+//    protected String getProcessName() {
+//        processName = dfhProcessList.getSelectedProcessName();
+//        return processName;
+//    }
 
     public boolean setSelectedProcess(OneStripDFHProcess selProc) {
         return dfhProcessList.setSelectedProcess(selProc);
@@ -410,11 +424,11 @@ public class L2DFHeating extends StripHeating {
         return jp;
     }
 
-    protected JPanel processPanel() {
-        MultiPairColPanel jp = new MultiPairColPanel("Process");
-        jp.addItemPair("Process Name", dfhProcessList.getListUI());
-        return jp;
-    }
+//    protected JPanel processPanel() {
+//        MultiPairColPanel jp = new MultiPairColPanel("Process");
+//        jp.addItemPair("Process Name", dfhProcessList.getListUI());
+//        return jp;
+//    }
 
     protected FramedPanel titleAndFceCommon() {
         if (titleAndFceCommon == null) {
@@ -1282,6 +1296,7 @@ public class L2DFHeating extends StripHeating {
             while (--count > 0) {
                 if (!l2Furnace.isProcessDataBeingUsed()) {
                     l2Furnace.setProcessBeingUpdated(true);
+                    clearLevel1ProcessList();
                     gotIt = getStripDFHProcessList();
                     break;
                 }
@@ -1294,6 +1309,7 @@ public class L2DFHeating extends StripHeating {
             if (!gotIt)
                 logInfo("Unable to read modified Process Data");
             l2Furnace.setProcessBeingUpdated(false);
+            sendProcessListToLevel1();
         }
     }
 

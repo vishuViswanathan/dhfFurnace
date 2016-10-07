@@ -113,12 +113,13 @@ public class FieldResults {
         double width = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Width).floatValue, 3) / 1000; // m
         double thick = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Thick).floatValue, 3) / 1000; // m
         double speed = stripZone.getValue(L2ParamGroup.Parameter.Speed, Tag.TagName.PV).floatValue * 60; // m/h
-//        double output = 7.85 * width * speed * thick * 1000; // kg/h
-        String forProcess = stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Process).stringValue;
-        stripDFHProc = l2Furnace.l2DFHeating.getStripDFHProcess(forProcess);
+        String forProcess = stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.BaseProcess).stringValue.trim();
+//        stripDFHProc = l2Furnace.l2DFHeating.getStripDFHProcess(forProcess);
+        stripDFHProc = l2Furnace.l2DFHeating.getStripDFHProcess(forProcess, stripExitT, width, thick);
+        l2Furnace.logTrace("forProcess " + forProcess + ", " + stripExitT +  ", " + width + ", " + thick);
         if (stripDFHProc != null) {
             if (l2Furnace.isRefPerformanceAvailable(stripDFHProc, thick)) {
-                production = new ProductionData(stripDFHProc.processName);
+                production = new ProductionData(stripDFHProc.baseProcessName);
                 ChMaterial chMat = stripDFHProc.getChMaterial(thick);
                 if (chMat != null) {
                     Charge ch = new Charge(chMat, width, 1.0, thick, 0.1, Charge.ChType.SOLID_RECTANGLE);
@@ -142,7 +143,8 @@ public class FieldResults {
     }
 
     public ErrorStatAndMsg processOkForFieldResults() {
-        return stripDFHProc.productionOkForPerformanceSave(stripDFHProc.processName, production);
+        l2Furnace.logTrace("In processOkForFieldResults");
+        return stripDFHProc.productionOkForPerformanceSave(stripDFHProc.baseProcessName, production);
     }
 
     public void copyTempAtTCtoSection() {

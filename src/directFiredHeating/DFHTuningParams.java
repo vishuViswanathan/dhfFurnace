@@ -531,7 +531,7 @@ public class DFHTuningParams {
     // parameters for Field reference Data
     public double unitOutputOverRange = 1.05;
     public double unitOutputUnderRange = 0.9;
-    public double exitTempTolerance = 5;
+    public double exitTempTolerance = 5;   // it is (T - 5) > t >= (T + 5)
     NumberTextField ntUnitOutputOverRange;
     NumberTextField ntUnitOutputUnderRange;
     NumberTextField ntExitTempTolerance;
@@ -715,12 +715,14 @@ public class DFHTuningParams {
             jp.addItem(toNote);
             ntUnitOutputOverRange = new NumberTextField(controller, unitOutputOverRange, 6, false, 1.0, 1.2, "0.00", "Unit Output OverRange factor (B)");
             ntUnitOutputUnderRange = new NumberTextField(controller, unitOutputUnderRange, 6, false, 0.8, 1.0, "0.00", "Unit Output UnderRange factor (C)");
-            ntExitTempTolerance = new NumberTextField(controller, exitTempTolerance, 6, false, 1, 20, "##", "Margin (+-) on Exit Temperature in degC (D)");
-
+            ntExitTempTolerance = new NumberTextField(controller, exitTempTolerance, 6, false, 1, 20, "##",
+                    "Margin (+-) on Exit Temperature in degC (D)");
+            String explanation = "[(T - Margin) > t >= (T + Margin)]";
             jp.addItemPair(ntUnitOutputOverRange);
             jp.addItemPair(ntUnitOutputUnderRange);
             jp.addBlank();
             jp.addItemPair(ntExitTempTolerance);
+            jp.addItem(explanation);
             return jp;
         }
 
