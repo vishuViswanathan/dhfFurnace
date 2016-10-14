@@ -50,7 +50,7 @@ public class Level2Launcher {
 
     JFrame mainF;
 
-//    String opcIP = "opc.tcp://127.0.0.1:49320";
+    //    String opcIP = "opc.tcp://127.0.0.1:49320";
     L2AccessControl l2AccessControl;
     L2AccessControl installerAccessControl;
     String l2BasePath;
@@ -88,8 +88,7 @@ public class Level2Launcher {
             } catch (Exception e) {
                 retVal.addErrorMessage(e.getMessage());
             }
-        }
-        else
+        } else
             retVal.addErrorMessage(pathStatus.errorMessage);
         return retVal;
     }
@@ -132,9 +131,9 @@ public class Level2Launcher {
                 newKey = true;
             }
             if (key.length() > 5) {
-                StatusWithMessage keyStatus =  mc.checkKey(key);
+                StatusWithMessage keyStatus = mc.checkKey(key);
                 boolean tryAgain = false;
-                switch(keyStatus.getDataStatus()) {
+                switch (keyStatus.getDataStatus()) {
                     case WithErrorMsg:
                         showError(keyStatus.getErrorMessage());
                         break;
@@ -225,7 +224,7 @@ public class Level2Launcher {
 
     Dimension buttonSize = null;
 
-    boolean init()  {
+    boolean init() {
         ButtonHandler bh = new ButtonHandler();
         launchRuntime.addActionListener(bh);
         launchUpdater.addActionListener(bh);
@@ -242,7 +241,7 @@ public class Level2Launcher {
 //        mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         mainF.setSize(new Dimension(800, 600));
 
-        MultiPairColPanel mainP= new MultiPairColPanel("");
+        MultiPairColPanel mainP = new MultiPairColPanel("");
         mainP.addItem(new JLabel("<html><h1>Level2 for Strip Process Furnace</h1>"));
 
         mainP.addItem(new DetailsField(launchRuntime, buttonSize, runtimeDetails));
@@ -265,7 +264,7 @@ public class Level2Launcher {
         return true;
     }
 
-    String getStatusFileName(L2AccessControl.AccessLevel level)  {
+    String getStatusFileName(L2AccessControl.AccessLevel level) {
         return fceDataLocation + l2AccessControl.getDescription(level) + " is ON";
     }
 
@@ -279,8 +278,7 @@ public class Level2Launcher {
             else
                 retVal.setData(false);
             releaseLock(lock);
-        }
-        else
+        } else
             retVal.setErrorMsg("Unable to get the lock to get Status of application " + l2AccessControl.getDescription(level));
         return retVal;
     }
@@ -291,7 +289,7 @@ public class Level2Launcher {
         FileLock lock = getFileLock();
         if (lock != null) {
             File f;
-            for (L2AccessControl.AccessLevel level: levels) {
+            for (L2AccessControl.AccessLevel level : levels) {
                 f = new File(getStatusFileName(level));
                 if (f.exists()) {
                     retVal.setData(true);
@@ -299,8 +297,7 @@ public class Level2Launcher {
                 }
             }
             releaseLock(lock);
-        }
-        else
+        } else
             retVal.setErrorMsg("Unable to get the lock to get Status of applications ");
         return retVal;
     }
@@ -366,51 +363,65 @@ public class Level2Launcher {
 
     void launchUpdater() {
         DataWithMsg stat = isAnyAppActive(
-                new L2AccessControl.AccessLevel[] {L2AccessControl.AccessLevel.UPDATER,
-                        L2AccessControl.AccessLevel.EXPERT, L2AccessControl.AccessLevel.INSTALLER});
+                new L2AccessControl.AccessLevel[]{L2AccessControl.AccessLevel.RUNTIME});
         if (stat.getStatus() == DataWithMsg.DataStat.OK) {
-            if (!stat.booleanValue) {
-                if (getAccessToLevel2(L2Updater.defaultLevel())) {
-                    new WaitMsg(mainF, "Starting Level2Updater. Please wait ...", new ActInBackground() {
-                        public void doInBackground() {
-                            L2DFHeating l2 = new L2Updater("Furnace", true);
-                            if (l2.l2SystemReady)
-                                quit();
+            if (stat.booleanValue) {
+                stat = isAnyAppActive(
+                        new L2AccessControl.AccessLevel[]{L2AccessControl.AccessLevel.UPDATER,
+                                L2AccessControl.AccessLevel.EXPERT, L2AccessControl.AccessLevel.INSTALLER});
+                if (stat.getStatus() == DataWithMsg.DataStat.OK) {
+                    if (!stat.booleanValue) {
+                        if (getAccessToLevel2(L2Updater.defaultLevel())) {
+                            new WaitMsg(mainF, "Starting Level2Updater. Please wait ...", new ActInBackground() {
+                                public void doInBackground() {
+                                    L2DFHeating l2 = new L2Updater("Furnace", true);
+                                    if (l2.l2SystemReady)
+                                        quit();
+                                }
+                            });
                         }
-                    });
-                }
-            }
-            else
-                showError("One of level2 Updater/ Expert/ Installer is running");
-        }
-        else
+                    } else
+                        showError("One of level2 Updater/ Expert/ Installer is running");
+                } else
+                    showError(stat.errorMessage);
+            } else
+                showError("Level2 RUNTIME is not ON");
+        } else
             showError(stat.errorMessage);
     }
 
     void launchExpert() {
         DataWithMsg stat = isAnyAppActive(
-                new L2AccessControl.AccessLevel[]{L2AccessControl.AccessLevel.UPDATER,
-                        L2AccessControl.AccessLevel.EXPERT, L2AccessControl.AccessLevel.INSTALLER});
+                new L2AccessControl.AccessLevel[]{L2AccessControl.AccessLevel.RUNTIME});
         if (stat.getStatus() == DataWithMsg.DataStat.OK) {
-            if (!stat.booleanValue) {
-                if (getAccessToLevel2(Level2Expert.defaultLevel())) {
-                    new WaitMsg(mainF, "Starting Level2Expert. Please wait ...", new ActInBackground() {
-                        public void doInBackground() {
-                            L2DFHeating l2 = new Level2Expert("Furnace", true);
-                            if (l2.l2SystemReady)
-                                quit();
+            if (stat.booleanValue) {
+                stat = isAnyAppActive(
+                        new L2AccessControl.AccessLevel[]{L2AccessControl.AccessLevel.UPDATER,
+                                L2AccessControl.AccessLevel.EXPERT, L2AccessControl.AccessLevel.INSTALLER});
+                if (stat.getStatus() == DataWithMsg.DataStat.OK) {
+                    if (!stat.booleanValue) {
+                        if (getAccessToLevel2(Level2Expert.defaultLevel())) {
+                            new WaitMsg(mainF, "Starting Level2Expert. Please wait ...", new ActInBackground() {
+                                public void doInBackground() {
+                                    L2DFHeating l2 = new Level2Expert("Furnace", true);
+                                    if (l2.l2SystemReady)
+                                        quit();
+                                }
+                            });
                         }
-                    });
-                }
+                    } else
+                        showError("One of level2 Updater/ Expert/ Installer is running");
+                } else
+                    showError(stat.errorMessage);
             } else
-                showError("One of level2 Updater/ Expert/ Installer is running");
+                showError("Level2 RUNTIME is not ON");
         } else
             showError(stat.errorMessage);
     }
 
     void launchInstaller() {
         DataWithMsg stat = isAnyAppActive(
-                new L2AccessControl.AccessLevel[] {L2AccessControl.AccessLevel.EXPERT,
+                new L2AccessControl.AccessLevel[]{L2AccessControl.AccessLevel.EXPERT,
                         L2AccessControl.AccessLevel.UPDATER, L2AccessControl.AccessLevel.RUNTIME});
         if (stat.getStatus() == DataWithMsg.DataStat.OK) {
             if (!stat.booleanValue) {
@@ -434,8 +445,7 @@ public class Level2Launcher {
                     } else
                         showError(stm.getErrorMessage());
                 }
-            }
-            else
+            } else
                 showError("One of level2 Runtime/ Updater/ Expert is running");
         }
     }
@@ -475,13 +485,14 @@ public class Level2Launcher {
     public boolean decide(String title, String msg, int forTime) {
         return SimpleDialog.decide(null, title, msg, forTime);
     }
+
     void quit() {
         mainF.setVisible(false);
         mainF.dispose();
     }
 
     class DetailsField extends FramedPanel {
-        DetailsField (JButton button, Dimension size, String text) {
+        DetailsField(JButton button, Dimension size, String text) {
             super(new BorderLayout());
             JPanel bp = new JPanel();
             bp.add(button);
@@ -493,19 +504,15 @@ public class Level2Launcher {
     class ButtonHandler implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             Object src = e.getSource();
-            if (src == launchRuntime)  {
+            if (src == launchRuntime) {
                 launchRuntime();
-            }
-            else if (src == launchUpdater)  {
+            } else if (src == launchUpdater) {
                 launchUpdater();
-            }
-            else if (src == launchExpert)  {
+            } else if (src == launchExpert) {
                 launchExpert();
-            }
-            else if (src == launchInstaller) {
+            } else if (src == launchInstaller) {
                 launchInstaller();
-            }
-            else if (src == exitButton) {
+            } else if (src == exitButton) {
                 quit();
             }
         }

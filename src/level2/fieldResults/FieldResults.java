@@ -53,7 +53,7 @@ public class FieldResults {
     }
 
     public void takeFromCalculations() {
-        production = new ProductionData(l2Furnace.production);
+        production = new ProductionData(l2Furnace.productionData);
 //        setCommonData(l2Furnace.chTempIN, l2Furnace.chTempOUT, l2Furnace.flueTempOUT, l2Furnace.commonAirTemp);
         setCommonData(l2Furnace.flueTempOUT, l2Furnace.commonAirTemp, l2Furnace.commFuelFiring.fuelTemp);
         FceSection oneSec;
@@ -120,8 +120,9 @@ public class FieldResults {
         if (stripDFHProc != null) {
             if (l2Furnace.isRefPerformanceAvailable(stripDFHProc, thick)) {
                 production = new ProductionData(stripDFHProc.baseProcessName);
-                ChMaterial chMat = stripDFHProc.getChMaterial(thick);
-                if (chMat != null) {
+                DataWithStatus<ChMaterial> chMatSat = stripDFHProc.getChMaterial(thick);
+                if (chMatSat.valid) {
+                    ChMaterial chMat = chMatSat.getValue();
                     Charge ch = new Charge(chMat, width, 1.0, thick, 0.1, Charge.ChType.SOLID_RECTANGLE);
                     production.charge = ch;
                     production.chPitch = 1.0;
@@ -316,7 +317,7 @@ public class FieldResults {
 
     public StringBuilder dataInXML() {
         StringBuilder xmlStr =
-                new StringBuilder(XMLmv.putTag("productionData", l2Furnace.production.dataInXML()));
+                new StringBuilder(XMLmv.putTag("productionData", l2Furnace.productionData.dataInXML()));
         xmlStr.append(XMLmv.putTag("fuelFiring", l2Furnace.commFuelFiring.dataInXML()));
         xmlStr.append(XMLmv.putTag("flueTempOut", fmtTemp.format(flueTempOut)));
         xmlStr.append(XMLmv.putTag("commonAirTemp", fmtTemp.format(commonAirTemp)));

@@ -233,7 +233,7 @@ public class FceSubSection {
     JPanel subLossP = new JPanel(new GridBagLayout());
     FramedPanel detailsPanel;
     FceSection section;
-    ProductionData production;
+    ProductionData productionData;
     boolean chEndSub = false, dischEndSub = false;     // location in Section
     int subNum;
     public FceSubSection(DFHeating controller, FceSection theSec, int subNum) {
@@ -336,8 +336,8 @@ public class FceSubSection {
         tfLength.postActionEvent();
     }
 
-    public void setProduction(ProductionData production) {
-        this.production = production;
+    public void setProductionData(ProductionData productionData) {
+        this.productionData = productionData;
     }
 
     public boolean takeDataFromXML(String xmlStr) {

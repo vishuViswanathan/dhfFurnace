@@ -84,7 +84,7 @@ public class FceEvaluator implements Runnable, ThreadController{
         this.calculStep = calculStep;
         this.baseP = baseP;
         bShowProgress = true;
-        production = furnace.production;
+        production = furnace.productionData;
         tuningParams = furnace.tuningParams;
         addDoneListener(doneListener);
     }

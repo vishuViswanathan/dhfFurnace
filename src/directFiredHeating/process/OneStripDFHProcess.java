@@ -161,9 +161,13 @@ public class OneStripDFHProcess {
     }
 
     public double getLimitSpeed(double stripThickness) {
-        ChMaterial chMet = getChMaterial(stripThickness);
-        double limitSpeed = maxUnitOutput / chMet.density / stripThickness;
-        return Math.min(limitSpeed, maxSpeed);
+        DataWithStatus<ChMaterial> chMat = getChMaterial(stripThickness);
+        if (chMat.valid) {
+            double limitSpeed = maxUnitOutput / chMat.getValue().density / stripThickness;
+            return Math.min(limitSpeed, maxSpeed);
+        }
+        else
+            return 0;
     }
 
     boolean takeDataFromXML(String xmlStr) {
@@ -244,25 +248,22 @@ public class OneStripDFHProcess {
         return retVal;
     }
 
-    public ChMaterial getChMaterial(double stripThick) {
-        ChMaterial theMaterial;
-        if (stripThick <= thinUpperLimit)
-            theMaterial = chMaterialThin;
-        else
-            theMaterial = chMaterialThick;
-        return theMaterial;
+    public DataWithStatus<ChMaterial> getChMaterial(double stripThick) {
+        DataWithStatus<ChMaterial> retVal = new DataWithStatus<>();
+        if (thicknessInRange(stripThick)) {
+            if (stripThick <= thinUpperLimit)
+                retVal.setValue(chMaterialThin);
+            else
+                retVal.setValue(chMaterialThick);
+        }
+        return retVal;
     }
 
-
-    public ChMaterial getChMaterial(String proc, double stripThick) {
-        ChMaterial theMaterial = null;
-        if (proc.equalsIgnoreCase(baseProcessName)) {
-            if (stripThick <= thinUpperLimit)
-                theMaterial = chMaterialThin;
-            else
-                theMaterial = chMaterialThick;
-        }
-        return theMaterial;
+    public DataWithStatus<ChMaterial> getChMaterial(String proc, double stripThick) {
+        if (proc.equalsIgnoreCase(baseProcessName))
+            return getChMaterial(stripThick);
+        else
+            return new DataWithStatus<>();
     }
 
     public double getMinExitZoneTemp() {
@@ -345,8 +346,9 @@ public class OneStripDFHProcess {
         double unitOutput = p.unitOutput;
         double exitTemp = p.exitTemp();
         DFHTuningParams tuning = dfHeating.getTuningParams();
-        ErrorStatAndMsg retVal = new ErrorStatAndMsg(true, "Selecting Process for Performance data: ");
-        if (chMaterial.equalsIgnoreCase(getChMaterial(chThick).name)) {
+        ErrorStatAndMsg retVal = new ErrorStatAndMsg(false, "Selecting Process for Performance data: ");
+        DataWithStatus<ChMaterial> chMat = getChMaterial(chThick);
+        if (chMat.valid && (chMaterial.equalsIgnoreCase(chMat.getValue().name))) {
             if (exitTempInRange(exitTemp)) {
                 ErrorStatAndMsg stat = performanceOkForProcess(chWidth, unitOutput);
                 if (stat.inError)
@@ -355,6 +357,10 @@ public class OneStripDFHProcess {
             else
                 retVal.addErrorMsg("Exit Temperature no in range, required " + tempDFHExit + " +- " + tuning.exitTempTolerance);
         }
+        else
+            retVal.addErrorMsg("Charge Material mismatch: \n" +
+                    "performance = " + p + "\n" +
+                    "Process = " + getFullProcessID());
         return retVal;
     }
 
@@ -557,17 +563,12 @@ public class OneStripDFHProcess {
 
     public String getFullProcessID() {
         return getFullProcessID(baseProcessName, tempDFHExit, minWidth, maxWidth, minThickness, maxThickness);
-//        if (isProcessBaseNameOk(baseProcessName))
-//            return String.format("%s[%1.0f<W<%1.0f:%1.2f<TH<%1.2f:%1.0fC]", baseProcessName, minWidth * 1000, maxWidth * 1000,
-//                minThickness * 1000, maxThickness * 1000, tempDFHExit);
-//        else
-//            return "?";
     }
 
     public static String getFullProcessID(String baseProcessNameX, double  exitTempX, double minWidthX, double maxWidthX,
                                     double minThicknessX, double maxThicknessX) {
         if (isProcessBaseNameOk(baseProcessNameX))
-            return String.format("%s-%1.0f<W<%1.0f-%1.2f<TH<%1.2f-%1.0fC", baseProcessNameX, minWidthX * 1000, maxWidthX * 1000,
+            return String.format("%s-(%1.0f<W<%1.0f)(%1.2f<Th<%1.2f)(%1.0fC)", baseProcessNameX, minWidthX * 1000, maxWidthX * 1000,
                 minThicknessX * 1000, maxThicknessX * 1000, exitTempX);
         else
             return "?";

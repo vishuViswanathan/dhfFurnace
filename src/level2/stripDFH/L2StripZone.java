@@ -11,6 +11,7 @@ import directFiredHeating.accessControl.L2AccessControl;
 import level2.applications.L2DFHeating;
 import directFiredHeating.process.OneStripDFHProcess;
 import level2.common.*;
+import mvUtils.display.DataWithStatus;
 import mvUtils.display.FramedPanel;
 import mvUtils.display.MultiPairColPanel;
 import mvUtils.display.StatusWithMessage;
@@ -208,10 +209,10 @@ public class L2StripZone extends L2ParamGroup {
             l2Furnace.logTrace("Running strip with Process:" + theStrip.processBaseName);
             OneStripDFHProcess oneProcess = l2DFHeating.getStripDFHProcess(theStrip);
             if (oneProcess != null) {
-                Performance refP = l2Furnace.getBasePerformance(oneProcess, theStrip.thickness);
-                if (refP != null) {
-                    theStrip.refP = refP;
-                    double output = l2Furnace.getOutputWithFurnaceTemperatureStatus(refP, theStrip.width, theStrip.thickness);
+                DataWithStatus<Performance> refP = l2Furnace.getBasePerformance(oneProcess, theStrip.thickness);
+                if (refP.valid) {
+                    theStrip.refP = refP.getValue();
+                    double output = l2Furnace.getOutputWithFurnaceTemperatureStatus( theStrip.refP, theStrip.width, theStrip.thickness);
                     l2Furnace.logTrace("Running Strip capacity Based On temperature= " + (output / 1000) + "t/h");
                     if (output > 0) {
                         DoubleWithStatus speedData = oneProcess.getRecommendedSpeed(output, theStrip.width, theStrip.thickness);
@@ -258,10 +259,10 @@ public class L2StripZone extends L2ParamGroup {
             l2Furnace.logTrace("Strip: " + theStrip);
             OneStripDFHProcess oneProcess = l2DFHeating.getStripDFHProcess(theStrip);
             if (oneProcess != null) {
-                Performance refP = l2Furnace.getBasePerformance(oneProcess, theStrip.thickness);
-                if (refP != null) {
-                    theStrip.refP = refP;
-                    double output = l2Furnace.getOutputWithFurnaceTemperatureStatus(refP, theStrip.width, theStrip.thickness);
+                DataWithStatus<Performance> refP = l2Furnace.getBasePerformance(oneProcess, theStrip.thickness);
+                if (refP.valid) {
+                    theStrip.refP = refP.getValue();
+                    double output = l2Furnace.getOutputWithFurnaceTemperatureStatus(theStrip.refP, theStrip.width, theStrip.thickness);
                     l2Furnace.logTrace("capacity Based On temperature= " + (output / 1000) + "t/h");
                     if (output > 0) {
                         DoubleWithStatus speedData = oneProcess.getRecommendedSpeed(output, theStrip.width, theStrip.thickness);

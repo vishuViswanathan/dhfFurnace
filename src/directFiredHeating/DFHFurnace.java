@@ -65,7 +65,7 @@ public class DFHFurnace {
     String nlSpace = ErrorStatAndMsg.nlSpace;
     boolean bZ2TopTempSpecified = false, bZ2BotTempSpecified = false;
     public FuelFiring commFuelFiring;
-    public ProductionData production;
+    public ProductionData productionData;
 
     UnitFceArray topUfsArray, botUfsArray;
     UnitFceArray ufsArrAS; // for added Soak
@@ -253,15 +253,15 @@ public class DFHFurnace {
         return yes;
     }
 
-    public void setProduction(ProductionData production) {
-        this.production = production;
+    public void setProductionData(ProductionData productionData) {
+        this.productionData = productionData;
         for (FceSection sec : topSections)
-            sec.setProduction(production);
+            sec.setProductionData(productionData);
         if (bTopBot) {
             for (FceSection sec : botSections)
-                sec.setProduction(production);
+                sec.setProductionData(productionData);
             if (bAddTopSoak)
-                addedTopSoak.setProduction(production);
+                addedTopSoak.setProductionData(productionData);
         }
     }
 
@@ -529,7 +529,7 @@ public class DFHFurnace {
 
     void setEntrySlotChargeTemperatures() {
         UnitFurnace uf = vTopUnitFces.get(0);
-        double temp = production.entryTemp;
+        double temp = productionData.entryTemp;
         uf.tempWO = uf.tempWmean = uf.tempWcore = temp;
         if (bTopBot) {
             uf = vBotUnitFces.get(0);
@@ -591,13 +591,13 @@ public class DFHFurnace {
 
     protected ChargeStatus chargeAtExit(boolean bBot)  {
         FceSection exitSection = (bBot) ? botSections.get(nBotActiveSecs - 1) :  topSections.get(nTopActiveSecs - 1);
-        return new ChargeStatus(production.charge, production.production,
+        return new ChargeStatus(productionData.charge, productionData.production,
                 exitSection.chExitSurfaceTemp(), exitSection.chEndTemp(), exitSection.chExitCoreTemp());
     }
 
     protected ChargeStatus chargeAtExit(ChargeStatus chStatus, boolean bBot)  {
         FceSection exitSection = (bBot) ? botSections.get(nBotActiveSecs - 1) :  topSections.get(nTopActiveSecs - 1);
-        chStatus.setStatus(production.production,
+        chStatus.setStatus(productionData.production,
                 exitSection.chExitSurfaceTemp(), exitSection.chEndTemp(), exitSection.chExitCoreTemp());
         return chStatus;
     }
@@ -687,11 +687,11 @@ public class DFHFurnace {
         boolean retVal = false;
         enablePeformMenu(false);
         this.master = master;
-        tempProductionData = new ProductionData(production);
+        tempProductionData = new ProductionData(productionData);
         Charge rC = tempProductionData.charge;
-        production.charge.setSize(stripWidth, rC.width, rC.height);   // crC.length is strip width
-        ProductionData rP = production;
-        production.setProduction(forOutput,
+        productionData.charge.setSize(stripWidth, rC.width, rC.height);   // crC.length is strip width
+        ProductionData rP = productionData;
+        productionData.setProduction(forOutput,
                 rP.nChargeRows, rP.entryTemp, rP.exitTemp, rP.deltaTemp, rP.bottShadow);
         getReadyToCalcul();
         inPerfTableMode = true;
@@ -759,12 +759,16 @@ public class DFHFurnace {
                 double lastZoneFceTemp = lastZone.getLastSlotFceTemp();
                 if (lastZoneFceTemp < lastZoneMinTemp) {
                     UnitFurnace theSlot = lastZone.getLastSlot();
-                    theSlot.tempG = theSlot.gasTFromFceTandChT(lastZoneMinTemp, production.exitTemp);
+                    theSlot.tempG = theSlot.gasTFromFceTandChT(lastZoneMinTemp, productionData.exitTemp);
                     bRetVal = true;
                 }
             }
         }
         return bRetVal;
+    }
+
+    public boolean linkPerformanceWithProcess() {
+        return true;
     }
 
     protected boolean createPerfBase() {
@@ -787,7 +791,7 @@ public class DFHFurnace {
         if (createTable) {
             OneStripDFHProcess stripProc = controller.getStripDFHProcess(perform.processName);
             if (stripProc != null) {
-                ErrorStatAndMsg performanceStat = stripProc.productionOkForPerformanceSave(production);
+                ErrorStatAndMsg performanceStat = stripProc.productionOkForPerformanceSave(productionData);
                 if (performanceStat.inError) {
                     showError("Cannot save Performance, " + performanceStat.msg);
                     retVal = false;
@@ -833,7 +837,7 @@ public class DFHFurnace {
             }
         if (dataOK) {
             GregorianCalendar date = new GregorianCalendar();
-            return new Performance(production, commFuelFiring.fuel, controller.airTemp, allZones, date, this);
+            return new Performance(productionData, commFuelFiring.fuel, controller.airTemp, allZones, date, this);
         } else
             return null;
     }
@@ -898,12 +902,12 @@ public class DFHFurnace {
         }
         if (controller.furnaceFor == DFHTuningParams.FurnaceFor.STRIP) {
             reportSlNo++;
-            String material = production.charge.chMaterial.name;
-            double w = production.charge.length * 1000;   // for strips
-            double t = production.charge.height * 1000;
+            String material = productionData.charge.chMaterial.name;
+            double w = productionData.charge.length * 1000;   // for strips
+            double t = productionData.charge.height * 1000;
             double sp = speed / 60;
-            double output = production.production / 1000;
-            double uOutput = output / production.charge.length;
+            double output = productionData.production / 1000;
+            double uOutput = output / productionData.charge.length;
             Date date = new Date();
             Vector<Object> results = new Vector<Object>();
             results.add(material);
@@ -965,7 +969,7 @@ public class DFHFurnace {
     boolean resetToRequiredProduction() {
         boolean retVal = false;
         if (tempProductionData != null) {
-            production.copyFrom(tempProductionData);
+            productionData.copyFrom(tempProductionData);
             getReadyToCalcul();
             setAverageTemperatureRate();
             retVal = true;
@@ -987,14 +991,14 @@ public class DFHFurnace {
     }
 
     String getMainTitle() {
-        Charge ch = production.charge;
+        Charge ch = productionData.charge;
         String title;
         if (controller.furnaceFor == DFHTuningParams.FurnaceFor.STRIP)
             title = String.format("%s, Strip %4.0f x %4.2f at %5.2f t/h",
-                    ch.chMaterial.name, ch.getLength() * 1000, ch.getHeight() * 1000, production.production / 1000);
+                    ch.chMaterial.name, ch.getLength() * 1000, ch.getHeight() * 1000, productionData.production / 1000);
         else
             title = String.format("%s, Size %5.0f x %5.0f x %5.0f at %5.2f t/h",
-                    ch.chMaterial.name, ch.getWidth() * 1000, ch.getHeight() * 1000, ch.getLength() * 1000, production.production / 1000);
+                    ch.chMaterial.name, ch.getWidth() * 1000, ch.getHeight() * 1000, ch.getLength() * 1000, productionData.production / 1000);
         return title;
     }
 
@@ -1033,8 +1037,8 @@ public class DFHFurnace {
         FceSection theSection, toSection;
         FceSection firstSec, lastSec;
         UnitFurnace theSlot;
-        Charge ch = production.charge;
-        double tempWOEnd = production.exitTemp;
+        Charge ch = productionData.charge;
+        double tempWOEnd = productionData.exitTemp;
         String mainTitle = getMainTitle();
         double chTempProfileFactor = 1;    // for correction if (honorLastZoneMinFceTemp)
         double chInTempReqd;
@@ -1049,12 +1053,12 @@ public class DFHFurnace {
                 theSection = addedTopSoak;
                 theSlot = theSection.getLastSlot();
                 theSlot.eW = ch.getEmiss(tempWOEnd);
-                theSlot.tempG = gasTforChargeT(theSlot, tempWOEnd, production.deltaTemp); // theSlot.gasTforChargeT(tempWOEnd, production.deltaTemp);
+                theSlot.tempG = gasTforChargeT(theSlot, tempWOEnd, productionData.deltaTemp); // theSlot.gasTforChargeT(tempWOEnd, production.deltaTemp);
                 if (bStart) {
                     szTemp = theSlot.tempG;
                     setStartTProf(szTemp, bBot);
                 }
-                theSlot.getWMean(tempWOEnd, production.deltaTemp);
+                theSlot.getWMean(tempWOEnd, productionData.deltaTemp);
 
                 showStatus(statusHead + "Top Soak");
                 response = theSection.oneSectionInRev();
@@ -1097,7 +1101,7 @@ public class DFHFurnace {
                     chTempProfileFactor = 1.0;  // reset to default
                     honorLastZoneMinFceTemp = false;
                     if (!skipReferenceDataCheck) {
-                        int nPoints = performBase.getChInTempProfile(production, commFuelFiring.fuel, chInTempProfile);
+                        int nPoints = performBase.getChInTempProfile(productionData, commFuelFiring.fuel, chInTempProfile);
                         if (nPoints == nTopActiveSecs) {
                             if (inPerfTableMode)
                                 considerChTempProfile = true;
@@ -1127,10 +1131,10 @@ public class DFHFurnace {
                 if (honorLastZoneMinFceTemp)
                     theSlot.tempG = theSlot.gasTFromFceTandChT(controller.minExitZoneFceTemp, tempWOEnd);
                 else
-                    theSlot.tempG = gasTforChargeT(theSlot, tempWOEnd, production.deltaTemp);
+                    theSlot.tempG = gasTforChargeT(theSlot, tempWOEnd, productionData.deltaTemp);
                 if (bStart)
                     setStartTProf(theSlot.tempG, bBot);
-                theSlot.getWMean(tempWOEnd, production.deltaTemp);
+                theSlot.getWMean(tempWOEnd, productionData.deltaTemp);
             }
             if (allOk) {
                 bStart = false;
@@ -1186,7 +1190,7 @@ public class DFHFurnace {
                 firstSec = vSec.get(0);
                 lastSec = vSec.get(firstRevCalUpto);
                 if (bFlueTspecified) {    //eval the first zone in Fwd followed by the next zone in Rev
-                    setInitialChHeat(0, firstRevCalUpto - 1, production.entryTemp, lastSec.chEntryTemp(), bBot);
+                    setInitialChHeat(0, firstRevCalUpto - 1, productionData.entryTemp, lastSec.chEntryTemp(), bBot);
                     firstSec.fluePassThrough = totalFlue(flueTemp, bBot);
                     firstSec.totFlueCompAndQty.noteValues(commFuelFiring.flue, firstSec.fluePassThrough, 0, 0);
                     firstSec.passFlueCompAndQty.noteValues(firstSec.totFlueCompAndQty);
@@ -1297,7 +1301,7 @@ public class DFHFurnace {
     double gasTforChargeT(UnitFurnace theSlot, double tempWOReqd, double deltaTempReqd) {
         if (controller.furnaceFor == DFHTuningParams.FurnaceFor.STRIP) {
             double gasT = theSlot.gasTFromFceTandChT(controller.exitZoneFceTemp, tempWOReqd);
-            production.deltaTemp = theSlot.getDeltaTcharge(gasT, tempWOReqd);
+            productionData.deltaTemp = theSlot.getDeltaTcharge(gasT, tempWOReqd);
             return gasT;
         } else
             return theSlot.gasTforChargeT(tempWOReqd, deltaTempReqd);
@@ -1414,7 +1418,7 @@ public class DFHFurnace {
         if (tuningParams.bAutoTempForLosses) {
             XYArray tProf = new XYArray();
             //charging end temp is taken as
-            double entryT = production.entryTemp + (szTemp - production.entryTemp) * 0.65;
+            double entryT = productionData.entryTemp + (szTemp - productionData.entryTemp) * 0.65;
             tProf.add(new DoublePoint(0, entryT));
             // exit 30% length taken as szTemp
             // the middle 40% is considered with 50% of average slope
@@ -1650,7 +1654,7 @@ public class DFHFurnace {
         double tmNow, tmLast = 0;
         double diff, lastDiff = 0;
         double tgNow, tgLast = 0;
-        double reqdChTempM = production.entryTemp;
+        double reqdChTempM = productionData.entryTemp;
         while (!done && canRun()) {
             redoIt = false;
             firstFsec.setLastSlotGasTemp(tempGZ1Assume);
@@ -1795,8 +1799,8 @@ public class DFHFurnace {
             if (bAddTopSoak)
                 addedTopSoak.prepareHeatbalance();
         }
-        chTempIN = production.entryTemp;
-        chHeatIN = production.production * production.charge.getHeatFromTemp(chTempIN);
+        chTempIN = productionData.entryTemp;
+        chHeatIN = productionData.production * productionData.charge.getHeatFromTemp(chTempIN);
         commonAirTemp = commFuelFiring.airTemp;
 
         fuelFlow = totalFuel();
@@ -1823,7 +1827,7 @@ public class DFHFurnace {
 
         // Heat OUT
         chTempOUT = chTempOut();
-        chHeatOUT = production.production * production.charge.getHeatFromTemp(chTempOUT);
+        chHeatOUT = productionData.production * productionData.charge.getHeatFromTemp(chTempOUT);
 
         totLosses = losses();
 
@@ -1842,7 +1846,7 @@ public class DFHFurnace {
             regenFlueHeat = 0;
         }
         totHeatOut = chHeatOUT + totLosses + heatToFlue + regenFlueHeat;
-        spHeatCons = heatFromComb / production.production;
+        spHeatCons = heatFromComb / productionData.production;
         effChHeatVsFuel = (chHeatOUT - chHeatIN) / heatFromComb;
         effChHeatAndLossVsFuel = ((chHeatOUT - chHeatIN) + totLosses) / heatFromComb;
         if (prepareRecuBalance()) {
@@ -2363,7 +2367,7 @@ public class DFHFurnace {
     JPanel pChargeHeatIn() {
         MultiPairColPanel jp = new MultiPairColPanel("Charge Heat-In", labelWidth, valLabelW);
         NumberLabel nlProduction, nlTempIn, nlHeatIn;
-        nlProduction = new NumberLabel(controller, production.production, valLabelW, "#,###");
+        nlProduction = new NumberLabel(controller, productionData.production, valLabelW, "#,###");
         nlTempIn = new NumberLabel(controller, chTempIN, valLabelW, "#,###");
         nlHeatIn = new NumberLabel(controller, chHeatIN, valLabelW, "#,###", true);
 
@@ -2431,7 +2435,7 @@ public class DFHFurnace {
     JPanel pChargeHeatOut() {
         MultiPairColPanel jp = new MultiPairColPanel("Charge Heat - Out", labelWidth, valLabelW);
         NumberLabel nlProduction, nlTempOut, nlHeatOut;
-        nlProduction = new NumberLabel(controller, production.production, valLabelW, "#,###");
+        nlProduction = new NumberLabel(controller, productionData.production, valLabelW, "#,###");
         nlTempOut = new NumberLabel(controller, chTempOUT, valLabelW, "#,###");
         nlHeatOut = new NumberLabel(controller, chHeatOUT, valLabelW, "#,###", true);
 
@@ -3046,11 +3050,11 @@ public class DFHFurnace {
     }
 
     protected void evalTotTime() {
-        holdingWt = getFceLength() / production.chPitch * (production.charge.unitWt * production.nChargeRows);
-        totTime = holdingWt / production.production;
+        holdingWt = getFceLength() / productionData.chPitch * (productionData.charge.unitWt * productionData.nChargeRows);
+        totTime = holdingWt / productionData.production;
         speed = getFceLength() / totTime;
-        production.setSpeed(speed);
-        controller.setTimeValues(totTime, totTime * 60 / (production.charge.height * 1000), speed / 60);
+        productionData.setSpeed(speed);
+        controller.setTimeValues(totTime, totTime * 60 / (productionData.charge.height * 1000), speed / 60);
     }
 
     // AS - for Added Top Only Soak
@@ -3063,20 +3067,20 @@ public class DFHFurnace {
 
     protected void evalChUnitArea() {
         double gap, effSideH = 0;
-        Charge ch = production.charge;
+        Charge ch = productionData.charge;
         if (ch.type == Charge.ChType.SOLID_CIRCLE)
             evalChUnitAreaForCylinder();
         else {
-            gap = production.chPitch - ch.width;
+            gap = productionData.chPitch - ch.width;
             if (controller.heatingMode == DFHeating.HeatingMode.TOPBOTSTRIP) {
-                chUAreaTop = (ch.length * production.nChargeRows) * ch.width * 2;
+                chUAreaTop = (ch.length * productionData.nChargeRows) * ch.width * 2;
                 // total surface is taken since the strip is top and bottom heated
 //                showMessage("STRIP is Top and Bottom heated ");
             } else {
                 if (gap == 0) {
-                    chUAreaTop = (ch.length * production.nChargeRows) * ch.width;
+                    chUAreaTop = (ch.length * productionData.nChargeRows) * ch.width;
                     if (bTopBot)
-                        chUAreaBot = chUAreaTop * (1 - production.bottShadow);
+                        chUAreaBot = chUAreaTop * (1 - productionData.bottShadow);
                     sideAlphaFactor = 0;
                 } else {
                     double e1, e2, et, gapByH;
@@ -3091,9 +3095,9 @@ public class DFHFurnace {
                         et = e1 + e2;
                     }
                     effSideH = et * ch.height;
-                    chUAreaTop = (2 * effSideH + ch.width) * (ch.length * production.nChargeRows);
+                    chUAreaTop = (2 * effSideH + ch.width) * (ch.length * productionData.nChargeRows);
                     if (bTopBot) {
-                        chUAreaBot = chUAreaTop * (1 - production.bottShadow);
+                        chUAreaBot = chUAreaTop * (1 - productionData.bottShadow);
                         sideAlphaFactor = (2 * effSideH) / ch.height;
                     } else
                         sideAlphaFactor = effSideH / ch.height;
@@ -3106,7 +3110,7 @@ public class DFHFurnace {
             else
                 s152Start = 1.52 + (2 - 1.52) * fact;
 
-            effectiveChThick = (ch.unitWt * production.nChargeRows) / chUAreaTop / ch.chMaterial.density;
+            effectiveChThick = (ch.unitWt * productionData.nChargeRows) / chUAreaTop / ch.chMaterial.density;
 
             double xMin; // heat penetration depth
             xMin = ch.width / 2;
@@ -3120,9 +3124,9 @@ public class DFHFurnace {
             }
             if (effectiveChThick < xMin)
                 effectiveChThick = xMin;
-            gTop = (ch.unitWt * production.nChargeRows) / chUAreaTop;
+            gTop = (ch.unitWt * productionData.nChargeRows) / chUAreaTop;
             if (bTopBot)
-                gBot = (ch.unitWt * production.nChargeRows) / chUAreaBot;
+                gBot = (ch.unitWt * productionData.nChargeRows) / chUAreaBot;
             if (bTopBot && bAddTopSoak)
                 forAddedSoak();
         }
@@ -3130,42 +3134,42 @@ public class DFHFurnace {
 
     void evalChUnitAreaForCylinder() {
         double gap, effSideH = 0;
-        Charge ch = production.charge;
-        gap = production.chPitch - ch.diameter;
+        Charge ch = productionData.charge;
+        gap = productionData.chPitch - ch.diameter;
         double theta, projectedLen;
         double radius = ch.diameter / 2;
         if (gap == 0) {
-            chUAreaTop = (ch.length * production.nChargeRows) * ch.diameter;
+            chUAreaTop = (ch.length * productionData.nChargeRows) * ch.diameter;
             if (bTopBot)
-                chUAreaBot = chUAreaTop * (1 - production.bottShadow);
+                chUAreaBot = chUAreaTop * (1 - productionData.bottShadow);
             sideAlphaFactor = 0;
         } else {
-            theta = Math.acos(radius * 2 / production.chPitch);
+            theta = Math.acos(radius * 2 / productionData.chPitch);
             projectedLen = 2 * radius * (1 + theta);
-            chUAreaTop = projectedLen * (ch.length * production.nChargeRows);
+            chUAreaTop = projectedLen * (ch.length * productionData.nChargeRows);
             if (bTopBot)
-                chUAreaBot = chUAreaTop * (1 - production.bottShadow);
+                chUAreaBot = chUAreaTop * (1 - productionData.bottShadow);
         }
         s152Start = 2;
-        effectiveChThick = (ch.unitWt * production.nChargeRows) / chUAreaTop / ch.chMaterial.density;
+        effectiveChThick = (ch.unitWt * productionData.nChargeRows) / chUAreaTop / ch.chMaterial.density;
 
         double xMin; // heat penetration depth
         xMin = ch.diameter / 2;
         if (effectiveChThick < xMin)
             effectiveChThick = xMin;
-        gTop = (ch.unitWt * production.nChargeRows) / chUAreaTop;
+        gTop = (ch.unitWt * productionData.nChargeRows) / chUAreaTop;
         if (bTopBot)
-            gBot = (ch.unitWt * production.nChargeRows) / chUAreaBot;
+            gBot = (ch.unitWt * productionData.nChargeRows) / chUAreaBot;
         if (bTopBot && bAddTopSoak)
             forAddedSoakForCylinder();
     }
 
     void forAddedSoak() {
         double gap, effSideH = 0;
-        Charge ch = production.charge;
-        gap = production.chPitch - ch.width;
+        Charge ch = productionData.charge;
+        gap = productionData.chPitch - ch.width;
         if (gap == 0) {
-            chUAreaAS = (ch.length * production.nChargeRows) * ch.width;
+            chUAreaAS = (ch.length * productionData.nChargeRows) * ch.width;
         } else {
             double e1, e2, et, gapByH;
             gapByH = gap / ch.height;
@@ -3175,7 +3179,7 @@ public class DFHFurnace {
                             (Math.sqrt(1 + Math.pow(gapByH, 2)) - 1)));
             et = e1 + e2;
             effSideH = et * ch.height;
-            chUAreaAS = (2 * effSideH + ch.width) * (ch.length * production.nChargeRows);
+            chUAreaAS = (2 * effSideH + ch.width) * (ch.length * productionData.nChargeRows);
             sideAlphaFactorAS = effSideH / ch.height;
         }
         endAlphaFactorAS = sideAlphaFactorAS;
@@ -3185,7 +3189,7 @@ public class DFHFurnace {
         else
             s152StartAS = 1.52 + (2 - 1.52) * fact;
 
-        effectiveChThickAS = (ch.unitWt * production.nChargeRows) / chUAreaAS / ch.chMaterial.density;
+        effectiveChThickAS = (ch.unitWt * productionData.nChargeRows) / chUAreaAS / ch.chMaterial.density;
 
         double xMin; // heat penetration depth
         xMin = ch.width / 2;
@@ -3193,30 +3197,30 @@ public class DFHFurnace {
             xMin = ch.height;
         if (effectiveChThickAS < xMin)
             effectiveChThickAS = xMin;
-        gTopAS = (ch.unitWt * production.nChargeRows) / chUAreaAS;
+        gTopAS = (ch.unitWt * productionData.nChargeRows) / chUAreaAS;
     }
 
     void forAddedSoakForCylinder() {
         double gap, effSideH = 0;
-        Charge ch = production.charge;
-        gap = production.chPitch - ch.diameter;
+        Charge ch = productionData.charge;
+        gap = productionData.chPitch - ch.diameter;
         double theta, projectedLen;
         double radius = ch.diameter / 2;
         if (gap == 0) {
-            chUAreaAS = (ch.length * production.nChargeRows) * ch.diameter;
+            chUAreaAS = (ch.length * productionData.nChargeRows) * ch.diameter;
         } else {
-            theta = Math.acos(radius / (2 * production.chPitch));
+            theta = Math.acos(radius / (2 * productionData.chPitch));
             projectedLen = 2 * radius * (1 + theta);
-            chUAreaAS = projectedLen * (ch.length * production.nChargeRows);
+            chUAreaAS = projectedLen * (ch.length * productionData.nChargeRows);
         }
         s152StartAS = 2;
-        effectiveChThickAS = (ch.unitWt * production.nChargeRows) / chUAreaAS / ch.chMaterial.density;
+        effectiveChThickAS = (ch.unitWt * productionData.nChargeRows) / chUAreaAS / ch.chMaterial.density;
 
         double xMin; // heat penetration depth
         xMin = ch.diameter / 2;
         if (effectiveChThickAS < xMin)
             effectiveChThickAS = xMin;
-        gTopAS = (ch.unitWt * production.nChargeRows) / chUAreaAS;
+        gTopAS = (ch.unitWt * productionData.nChargeRows) / chUAreaAS;
     }
 
     Vector<Double> lArray;  // array of subsection end pos combining top and bottom
@@ -3273,7 +3277,7 @@ public class DFHFurnace {
         double totTime, totLength, hBig, hEnd, endTime;
         int iLloc;
         double balLcombined;
-        Charge ch = production.charge;
+        Charge ch = productionData.charge;
         UnitFurnace theSlot;
         FceSection sec;
         FceSubSection subSec;
@@ -3313,7 +3317,7 @@ public class DFHFurnace {
                 break;
         }
         UnitFurnace uf = ufs.get(0);
-        uf.setChargeTemperature(production.entryTemp);
+        uf.setChargeTemperature(productionData.entryTemp);
         linkSlots(bBot);
         ufsArr.setColData();
         if (bBot)
@@ -3841,7 +3845,7 @@ public class DFHFurnace {
 
     void setAverageTemperatureRate() {
         double avgRate;
-        avgRate = (production.exitTemp - production.entryTemp) / totTime;
+        avgRate = (productionData.exitTemp - productionData.entryTemp) / totTime;
         setAvgRate(false, avgRate);
         if (bTopBot)
             setAvgRate(true, avgRate);
@@ -4044,6 +4048,7 @@ public class DFHFurnace {
                 showError("Some problem in reading Performance Data");
                 performBase = null;
             }
+            retVal = linkPerformanceWithProcess();
         }
         return retVal;
     }

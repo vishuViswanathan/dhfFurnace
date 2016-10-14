@@ -6,6 +6,7 @@ import basic.ProductionData;
 import directFiredHeating.DFHFurnace;
 import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
+import mvUtils.display.StatusWithMessage;
 import mvUtils.display.TimedMessage;
 import mvUtils.math.MoreOrLess;
 import mvUtils.mvXML.ValAndPos;
@@ -126,6 +127,27 @@ public class PerformanceGroup implements ActionListener{
         return (refPerformance.size() > 0);
     }
 
+    public StatusWithMessage linkPerformanceWithProcess() {
+        StatusWithMessage retVal = new StatusWithMessage();
+        Vector<Performance> updatedRefPerf = new Vector<>();
+        for (Performance p:refPerformance) {
+            p.dfhProcess = controller.getDFHProcess(p);
+            if (p.dfhProcess != null) {
+                updatedRefPerf.add(p);
+            }
+            else {
+                retVal.addInfoMessage("Unable to get Process definition for Performance:\n   " + p +
+                ".\n The performance Data is deleted");
+            }
+        }
+        refPerformance = updatedRefPerf;
+        if (refPerformance.size() <= 0) {
+            retVal.addErrorMessage(retVal.getInfoMessage());
+            retVal.addErrorMessage("All performance data deleted!");
+        }
+        return retVal;
+    }
+
     int checkIfDuplicate(Performance performance)   {
         int foundAt = -1;
         for (Performance per: refPerformance) {
@@ -216,7 +238,10 @@ public class PerformanceGroup implements ActionListener{
     }
 
     public Performance getRefPerformance(String processName, ChMaterial chMaterial, String withFuel, double exitTemp) {
-        return getRefPerformance(processName, chMaterial.name, withFuel, exitTemp);
+        Performance p = null;
+        if (chMaterial != null)
+            p = getRefPerformance(processName, chMaterial.name, withFuel, exitTemp);
+        return p;
     }
 
     public boolean isRefPerformanceAvailable(String processName, String chMaterialName, double exitTemp) {

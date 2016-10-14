@@ -1,10 +1,12 @@
 package directFiredHeating.applications;
 
 import basic.ChMaterial;
+import basic.ProductionData;
 import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
 import directFiredHeating.process.OneStripDFHProcess;
 import directFiredHeating.stripDFH.SampleStripFurnace;
+import mvUtils.display.DataWithStatus;
 import mvUtils.display.ErrorStatAndMsg;
 import mvUtils.display.MultiPairColPanel;
 import mvUtils.display.StatusWithMessage;
@@ -26,11 +28,11 @@ import java.text.DecimalFormat;
  * To change this template use File | Settings | File Templates.
  */
 public abstract class StripHeating extends DFHeating {
-    String fceDataLocation = "level2FceData/mustBeUserEntry/";
-    String profileCode = "";
-    boolean changeProfileCode = true;
-    String profileCodeTag = "profileCode";
-    DecimalFormat profileCodeFormat = new DecimalFormat("000000");
+    protected String fceDataLocation = "level2FceData/mustBeUserEntry/";
+    protected String profileCode = "";
+    protected boolean changeProfileCode = true;
+    protected String profileCodeTag = "profileCode";
+    protected DecimalFormat profileCodeFormat = new DecimalFormat("000000");
     boolean associatedDataLoaded = false;
 
     protected void setTestData() {
@@ -117,15 +119,19 @@ public abstract class StripHeating extends DFHeating {
             if ((furnaceFor() == DFHTuningParams.FurnaceFor.STRIP)) {
                 OneStripDFHProcess oneProc = getDFHProcess();
                 if (oneProc != null) {
-                    ChMaterial material = oneProc.getChMaterial(chThickness);
-                    boolean proceed = getUserResponse(oneProc, material);
-                    if (proceed) {
-                        setChMaterial(material);
-                        setEntryTemperature(oneProc.tempDFHEntry);
-                        setExitTemperature(oneProc.tempDFHExit);
-                        setExitZoneTemperatures(oneProc.getMaxExitZoneTemp(), oneProc.getMinExitZoneTemp());
+                    DataWithStatus<ChMaterial> chMatSat = oneProc.getChMaterial(chThickness);
+                    if (chMatSat.valid) {
+                        ChMaterial material = chMatSat.getValue();
+                        boolean proceed = getUserResponse(oneProc, material);
+                        if (proceed) {
+                            setChMaterial(material);
+                            setEntryTemperature(oneProc.tempDFHEntry);
+                            setExitTemperature(oneProc.tempDFHExit);
+                            setExitZoneTemperatures(oneProc.getMaxExitZoneTemp(), oneProc.getMinExitZoneTemp());
+                        } else
+                            retVal.addErrorMsg("\n   ABORTING");
                     } else
-                        retVal.addErrorMsg("\n   ABORTING");
+                        retVal.addErrorMsg("\n   Charge material could not be obtained from Process Data (may be thickness not in range");
                 } else {
                     retVal.addErrorMsg("\n   Process not available in DFH Process List");
                 }
@@ -174,13 +180,18 @@ public abstract class StripHeating extends DFHeating {
         return retVal;
     }
 
-    void saveFurnaceWithNowProfileCode() {
+    protected boolean  linkPerformanceWithProcess() {
+        return furnace.linkPerformanceWithProcess();
+    }
+
+    protected boolean saveFurnaceWithNowProfileCode() {
         changeProfileCode = false;
         saveFceToFile(true);
         changeProfileCode = true;
+        return true;
     }
 
-    protected void saveFceToFile(boolean withPerformance) {
+protected void saveFceToFile(boolean withPerformance) {
         takeValuesFromUI();
         StatusWithMessage fceSettingsIntegrity = furnace.furnaceSettings.checkIntegrity();
         if (fceSettingsIntegrity.getDataStatus() == StatusWithMessage.DataStat.OK) {
@@ -193,17 +204,18 @@ public abstract class StripHeating extends DFHeating {
                                 FileDialog.SAVE);
                 boolean profileCodeChanged = createProfileCode();
                 String promptFile = (profileCodeChanged) ?
-                        (profileCode + " FurnaceProfile.dfhDat") :
+                        (profileCode + " FurnaceProfile." +  profileFileExtension) :
                         profileFileName;
+                fileDlg.setDirectory(fceDataLocation);
                 fileDlg.setFile(promptFile);
                 fileDlg.setVisible(true);
 
                 String bareFile = fileDlg.getFile();
                 if (!(bareFile == null)) {
                     int len = bareFile.length();
-                    if ((len < 8) || !(bareFile.substring(len - 7).equalsIgnoreCase(".dfhDat"))) {
-                        showMessage("Adding '.dfhDat' to file name");
-                        bareFile = bareFile + ".dfhDat";
+                    if ((len < 8) || !(bareFile.substring(len - 7).equalsIgnoreCase("." + profileFileExtension))) {
+                        showMessage("Adding '." + profileFileExtension + "' to file name");
+                        bareFile = bareFile + "." + profileFileExtension;
                     }
                     String fileName = fileDlg.getDirectory() + bareFile;
                     try {
@@ -224,7 +236,7 @@ public abstract class StripHeating extends DFHeating {
             showError("Problem in Fuel Settings :\n" + fceSettingsIntegrity.getErrorMessage());
     }
 
-    boolean createProfileCode() {
+    protected boolean createProfileCode() {
         debug("changeProfileCode: " + changeProfileCode);
         if (changeProfileCode || (profileCode.length() < 1)) {
             profileCode = profileCodeFormat.format(Math.random() * 999999.0);
@@ -345,6 +357,10 @@ public abstract class StripHeating extends DFHeating {
     protected boolean updateFurnace() {
         saveFurnaceWithNowProfileCode();
         return true;
+    }
+
+    protected ProductionData defineProduction() {
+        return new ProductionData(getDFHProcess());
     }
 
     class L2MenuListener implements ActionListener {

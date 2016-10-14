@@ -328,7 +328,7 @@ public class FceSection {
     LossListWithVal lossValList;
     double burnerFlueExhFract = 0;
     double burnerFlueHeat;
-    ProductionData production;
+    ProductionData productionData;
     NumberTextField tfFlueExhPercent, tfRegenPHtemp, tfExcessAir, tfFuelTemp;
     NumberTextField tfTCLocation;
     NumberLabel tlTCLocationFromEntry;
@@ -490,12 +490,12 @@ public class FceSection {
             subSections.get(s).setDefaults();
     }
 
-    public void setProduction(ProductionData production) {
-        this.production = production;
+    public void setProductionData(ProductionData productionData) {
+        this.productionData = productionData;
         FceSubSection sub;
         for (int s = 0; s < subSections.size(); s++) {
             sub = subSections.get(s);
-            sub.setProduction(production);
+            sub.setProductionData(productionData);
         }
     }
 
@@ -1357,7 +1357,7 @@ public class FceSection {
         vXLCharge = new Vector<XLcellData>();
         grpPan = new FramedPanel(new GridBagLayout());
         gbcL.gridy = 0;
-        nL = new NumberLabel(production.production, datW, "#,###");
+        nL = new NumberLabel(productionData.production, datW, "#,###");
         vXLCharge.add(nL);
         grpPan.add(nL, gbcL);
         gbcL.gridy++;
@@ -2019,7 +2019,7 @@ public class FceSection {
        stTemp = vUnitFurnaces.get(firstSlot - 1).tempWmean;
        endTemp = vUnitFurnaces.get(lastSlot).tempWmean;
        chargeHeatFraction = chargeHeat /
-                   (production.production * production.charge.getDeltaHeat(stTemp, endTemp));
+                   (productionData.production * productionData.charge.getDeltaHeat(stTemp, endTemp));
    }
 
    double flueForHeatIfFiring(double heat, double flueExitTemp) {

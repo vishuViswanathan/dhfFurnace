@@ -299,7 +299,7 @@ public class LossType {
                 aOrL = forSub.length;
                 break;
             case PIECES:
-                aOrL = forSub.getFurnace().production.piecesPerh;
+                aOrL = forSub.getFurnace().productionData.piecesPerh;
                 break;
             case NONE :
             default:

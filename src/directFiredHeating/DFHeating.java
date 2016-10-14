@@ -259,7 +259,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     ChMaterial material;
     Charge theCharge;
     XYArray hC, tk, emiss;
-    protected ProductionData production;
+//    protected ProductionData production;
     FceEvaluator evaluator;
     static protected boolean onProductionLine = false;
     public boolean bProfileEdited = false;
@@ -1939,6 +1939,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         rowHead.updateUI();
     }
 
+    public OneStripDFHProcess getDFHProcess(Performance forThisPerformance) {
+        return dfhProcessList.getDFHProcess(forThisPerformance) ;
+    }
+
     protected OneStripDFHProcess getDFHProcess() {
         return getStripDFHProcess(getProcessName());
     }
@@ -2559,6 +2563,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                     furnace.setCommonFuel(new FuelFiring(commFuel, false, excessAir, airTemp, fuelTemp));  // as normal burner
                     //                theCharge = new Charge(selChMaterial, chLength, chWidth, chThickness);
                     theCharge = new Charge(selChMaterial, chLength, chWidth, chThickness, chDiameter, (Charge.ChType) cbChType.getSelectedItem());
+
                     setProductionData(theCharge, tph * 1000);
                 }
                 proceed = true;
@@ -2583,12 +2588,16 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return evaluator;
     }
 
+    protected ProductionData defineProduction() {
+        return new ProductionData(processName);
+    }
+
     public boolean setProductionData(Charge charge, double output) {
-        production = new ProductionData(processName);
+        ProductionData production = defineProduction();
         production.setCharge(charge, chPitch);
         production.setProduction(output, nChargeRows, entryTemp, exitTemp, deltaTemp, bottShadow);
         production.setExitZoneTempData(exitZoneFceTemp, minExitZoneFceTemp);
-        furnace.setProduction(production);
+        furnace.setProductionData(production);
         return true;
     }
 

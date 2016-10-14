@@ -4,7 +4,9 @@ import basic.Observations;
 import directFiredHeating.DFHFurnace;
 import directFiredHeating.DFHeating;
 import directFiredHeating.FceSection;
+import mvUtils.display.ErrorStatAndMsg;
 import mvUtils.display.StatusWithMessage;
+import performance.stripFce.Performance;
 import performance.stripFce.PerformanceGroup;
 
 import java.awt.event.ActionListener;
@@ -18,6 +20,20 @@ import java.awt.event.ActionListener;
 public class StripFurnace extends DFHFurnace {
     public StripFurnace(DFHeating dfHeating, boolean bTopBot, boolean bAddTopSoak, ActionListener listener) {
         super(dfHeating, bTopBot, bAddTopSoak, listener);
+    }
+
+    public boolean linkPerformanceWithProcess() {
+        boolean retVal = true;
+        StatusWithMessage response =  performBase.linkPerformanceWithProcess();
+        StatusWithMessage.DataStat status = response.getDataStatus();
+        if (status == StatusWithMessage.DataStat.WithErrorMsg) {
+            showError("Reading Performance Data: " + response.getErrorMessage());
+            retVal = false;
+        }
+        else if (status == StatusWithMessage.DataStat.WithInfoMsg) {
+            showMessage("Checking Performance Data: " + response.getInfoMessage());
+        }
+        return retVal;
     }
 
     protected boolean createPerfBase() {

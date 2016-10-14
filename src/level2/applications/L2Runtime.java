@@ -93,6 +93,20 @@ public class L2Runtime extends L2DFHeating {
     }
 
     public boolean canClose() {
-        return true;
+        boolean retVal = false;
+        DataWithMsg status = isAnyRunning(
+                new L2AccessControl.AccessLevel[]{
+                        L2AccessControl.AccessLevel.EXPERT,
+                        L2AccessControl.AccessLevel.UPDATER});
+        if (status.getStatus() == DataWithMsg.DataStat.OK) {
+            if (status.booleanValue) {
+                showError("Either of " + L2AccessControl.AccessLevel.EXPERT +
+                        ", or " + L2AccessControl.AccessLevel.UPDATER + " is Running\n" +
+                "Exit them and then try exiting RUNTIME");
+            }
+            else
+                retVal = true;
+        }
+        return retVal;
     }
 }

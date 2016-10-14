@@ -128,11 +128,16 @@ public class Performance {
         this.furnace = furnace;
         this.controller = furnace.controller;
         this.processName = production.processName;
+        setDFHPProcess(production.stripProcess);
     }
 
     public Performance(ProductionData production, Fuel fuel, double airTemp, Vector<OneZone> topZones, GregorianCalendar dateOfResult,
                        DFHFurnace furnace) {
         this(production, fuel, airTemp, topZones, null, dateOfResult, furnace);
+    }
+
+    public void setDFHPProcess(OneStripDFHProcess stripProcess) {
+        dfhProcess = stripProcess;
     }
 
     public MoreOrLess.CompareResult isDateOfResultSame(Performance p) {

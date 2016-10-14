@@ -122,8 +122,8 @@ public class UnitFurnace {
 //        flue = fceSec.flueComposition;
         tuning = furnace.tuningParams;
         furnace = fceSec.furnace;
-        production = furnace.production;
-        ch = furnace.production.charge.chMaterial;
+        production = furnace.productionData;
+        ch = furnace.productionData.charge.chMaterial;
     }
 
     UnitFurnace(UnitFurnace copyFrom) {
@@ -175,7 +175,7 @@ public class UnitFurnace {
     void setOtherParams() {
         g = (bBot) ? furnace.gBot : ((bAddedTopSoak) ? furnace.gTopAS : furnace.gTop);
         double fceUnitArea;
-        ch = furnace.production.charge.chMaterial;
+        ch = furnace.productionData.charge.chMaterial;
         if (furnace.bTopBot && !bAddedTopSoak)
             fceUnitArea = (furnace.width + 2 * height) * production.chPitch;
         else {

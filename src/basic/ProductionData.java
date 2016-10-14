@@ -1,6 +1,7 @@
 package basic;
 
 import directFiredHeating.DFHeating;
+import directFiredHeating.process.OneStripDFHProcess;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 
@@ -13,6 +14,7 @@ import mvUtils.mvXML.XMLmv;
  */
 public class ProductionData {
     public String processName;
+    public OneStripDFHProcess stripProcess;  // used only in strip processing
     public Charge charge;
     public double bottShadow = 0;
     public double chPitch = 1.0;
@@ -39,9 +41,16 @@ public class ProductionData {
 
     }
 
+    public ProductionData(OneStripDFHProcess stripProcess) {
+        this();
+        this.stripProcess = stripProcess;
+        processName = stripProcess.getFullProcessID();
+    }
+
     public ProductionData(ProductionData fromProductionData) {
         this();
         ProductionData fP = fromProductionData;
+        this.stripProcess = fromProductionData.stripProcess;
         this.processName = fP.processName;
         charge = new Charge(fromProductionData.charge);
         chPitch = fromProductionData.chPitch;

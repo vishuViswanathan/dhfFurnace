@@ -3,6 +3,7 @@ package level2.stripDFH;
 import FceElements.heatExchanger.HeatExchProps;
 import TMopcUa.TMSubscription;
 import TMopcUa.TMuaClient;
+import basic.ChMaterial;
 import basic.Charge;
 import basic.Fuel;
 import basic.FuelFiring;
@@ -409,6 +410,11 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         for (ReadyNotedParam p: readyNotedParamList)
             p.initStatus();
         stripZone.initForLevel2Operation();
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         level2Enabled = informLevel2Ready();
     }
 
@@ -631,28 +637,20 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         return true;
     }
 
-    public Performance getBasePerformance(OneStripDFHProcess stripDFHProc, double stripThick) {
-        return performBase.getRefPerformance(stripDFHProc.getFullProcessID(), stripDFHProc.getChMaterial(stripDFHProc.baseProcessName, stripThick),
-                l2DFHeating.getSelectedFuel().name, stripDFHProc.tempDFHExit);
+    public DataWithStatus<Performance> getBasePerformance(OneStripDFHProcess stripDFHProc, double stripThick) {
+        DataWithStatus<Performance> retVal = new DataWithStatus<>();
+        DataWithStatus<ChMaterial> chMat = stripDFHProc.getChMaterial(stripDFHProc.baseProcessName, stripThick);
+        if (chMat.valid)
+            retVal.setValue(performBase.getRefPerformance(stripDFHProc.getFullProcessID(), chMat.getValue(),
+                    l2DFHeating.getSelectedFuel().name, stripDFHProc.tempDFHExit));
+        return retVal;
     }
 
-//    public Performance getBasePerformance(String forProcess, double stripThick) {
-//        Performance prf = null;
-//        OneStripDFHProcess stripDFHProc = l2DFHeating.getStripDFHProcess(forProcess);
-//        if (stripDFHProc != null)
-////            prf = performBase.getRefPerformance(stripDFHProc.getChMaterial(forProcess, stripThick),
-////                    stripDFHProc.tempDFHExit, exitTempAllowance);
-//            prf = performBase.getRefPerformance(stripDFHProc.baseProcessName, stripDFHProc.getChMaterial(forProcess, stripThick),
-//                l2DFHeating.getSelectedFuel().name, stripDFHProc.tempDFHExit);
-//        else
-//            logInfo("strip process " + forProcess + " is not available in the database");
-//        return prf;
-//    }
-
     public boolean isRefPerformanceAvailable(OneStripDFHProcess dfhProc, double stripThick) {
-        return (performBase != null) &&
+        DataWithStatus<ChMaterial> chMat = dfhProc.getChMaterial(stripThick);
+        return (performBase != null) && (chMat.valid) &&
                 performBase.isRefPerformanceAvailable(dfhProc.getFullProcessID(),
-                        dfhProc.getChMaterial(stripThick).name, dfhProc.tempDFHExit);
+                        chMat.getValue().name, dfhProc.tempDFHExit);
     }
 
     public L2ParamGroup getStripZone() {
@@ -786,9 +784,9 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         if (controller.heatingMode == DFHeating.HeatingMode.TOPBOTSTRIP) {
             setOnlyWallRadiation(true);
             setDisplayResults(false);
-            chargeStatus.setProductionData(production);
+            chargeStatus.setProductionData(productionData);
             getReadyToCalcul(true); // do not create new slots if already created
-            setEntrySlotChargeTemperature(production.entryTemp);
+            setEntrySlotChargeTemperature(productionData.entryTemp);
             setProductionBasedSlotParams();
             if (doTheCalculationWithOnlyWallRadiation()) {
                 chargeAtExit(chargeStatus, false);
@@ -845,7 +843,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         long stTimeNano = System.nanoTime();
         double outputAssumed = 0;
         this.calculStep = controller.calculStep;
-        setProduction(chStatus.getProductionData());
+        setProductionData(chStatus.getProductionData());
         if (prepareSlots()) {
             prepareSlotsWithTempO(fieldData);
             double tempAllowance = 2;
@@ -1015,6 +1013,13 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         logTrace("fieldDataIsBeingHandled is made ON");
         l2DFHeating.enablePerfMenu(false);
 
+    }
+
+    public boolean linkPerformanceWithProcess() {
+        logTrace("linking Performance with Process");
+        boolean status = super.linkPerformanceWithProcess();
+        logTrace("linking status = " + status);
+        return status;
     }
 
     void handleModifiedPerformanceData() {
@@ -1268,14 +1273,17 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         }
     }
 
+    /**
+     *  This only for handling ProcessList change noted signal for Level1
+      */
     class ProcessListListener extends L2SubscriptionListener {
         @Override
         public void onDataChange(Subscription subscription, MonitoredDataItem monitoredDataItem, DataValue dataValue) {
             L2AccessControl.AccessLevel accessLevel = l2DFHeating.accessLevel;
-            if (l2DFHeating.isL2SystemReady() &&
-                    (accessLevel == L2AccessControl.AccessLevel.RUNTIME) ) {
+            if (l2DFHeating.isL2SystemReady() && itIsRuntime ) {
                 Tag theTag = monitoredTags.get(monitoredDataItem);
                 processListParams.isNewData(theTag);
+//                logTrace("ProcessListListener heard something");
             }
         }
     }
@@ -1286,6 +1294,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
              if (l2DFHeating.isL2SystemReady()) {
                  Tag theTag = monitoredTags.get(monitoredDataItem);
                  fuelCharParams.isNewData(theTag);
+//                 logTrace("FuelCharListener heard something");
              }
          }
     }
@@ -1293,7 +1302,6 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     class UpdaterChangeListener extends L2SubscriptionListener {
         @Override
         public void onDataChange(Subscription subscription, MonitoredDataItem monitoredDataItem, DataValue dataValue) {
-            L2AccessControl.AccessLevel accessLevel = l2DFHeating.accessLevel;
             if (l2DFHeating.isL2SystemReady()) {
                 Tag theTag = monitoredTags.get(monitoredDataItem);
                 if (processDataStat.isNewData(theTag)) {

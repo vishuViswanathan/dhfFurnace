@@ -192,6 +192,10 @@ public class L2ParamGroup {
         return retVal;
     }
 
+    public void initForLevel2Operation() {
+
+    }
+
     void info(String msg) {
         l2Interface.logInfo("L2DataGroup: " + msg);
     }
