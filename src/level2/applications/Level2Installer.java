@@ -1,9 +1,7 @@
 package level2.applications;
 
 import directFiredHeating.accessControl.L2AccessControl;
-import mvUtils.display.DataWithMsg;
-import mvUtils.display.ErrorStatAndMsg;
-import mvUtils.display.StatusWithMessage;
+import mvUtils.display.*;
 import mvUtils.file.FileChooserWithOptions;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
@@ -73,7 +71,7 @@ public class Level2Installer extends L2DFHeating {
 //        userActionAllowed = true;
         accessLevel = L2AccessControl.AccessLevel.INSTALLER;
         StatusWithMessage status = getInstallerAccessFile();
-        if (status.getDataStatus() == StatusWithMessage.DataStat.OK) {
+        if (status.getDataStatus() == DataStat.Status.OK) {
             setItUp();
             if (l2SystemReady) {
                 showMessage("It is the responsibility of the user to ensure data integrity among:" +
@@ -126,11 +124,11 @@ public class Level2Installer extends L2DFHeating {
 
     StatusWithMessage getInstallerAccessFile() {
         StatusWithMessage retVal = new StatusWithMessage();
-        DataWithMsg pathStatus =
+        DataWithStatus<String> pathStatus =
                 FileChooserWithOptions.getOneExistingFilepath(fceDataLocation, L2AccessControl.installerAccessFileExtension, true);
-        if (pathStatus.getStatus() == DataWithMsg.DataStat.OK) {
+        if (pathStatus.getStatus() == DataStat.Status.OK) {
             try {
-                installerAccessControl = new L2AccessControl(pathStatus.stringValue, true); // only if file exists
+                installerAccessControl = new L2AccessControl(pathStatus.getValue(), true); // only if file exists
             } catch (Exception e) {
                 retVal.addErrorMessage(e.getMessage());
             }
@@ -143,7 +141,7 @@ public class Level2Installer extends L2DFHeating {
     protected boolean authenticate() {
         boolean retVal = false;
         StatusWithMessage stm = installerAccessControl.authenticate(accessLevel, "Re-confirm authority");
-        if (stm.getDataStatus() == StatusWithMessage.DataStat.OK)
+        if (stm.getDataStatus() == DataStat.Status.OK)
             retVal = true;
         return retVal;
     }

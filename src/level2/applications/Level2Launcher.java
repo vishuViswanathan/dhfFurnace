@@ -10,6 +10,7 @@ import mvUtils.file.WaitMsg;
 import protection.MachineCheck;
 
 import javax.swing.*;
+import javax.xml.transform.OutputKeys;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -80,11 +81,11 @@ public class Level2Launcher {
 
     StatusWithMessage getInstallerAccessFile() {
         StatusWithMessage retVal = new StatusWithMessage();
-        DataWithMsg pathStatus =
+        DataWithStatus<String> pathStatus =
                 FileChooserWithOptions.getOneExistingFilepath(fceDataLocation, L2AccessControl.installerAccessFileExtension, true);
-        if (pathStatus.getStatus() == DataWithMsg.DataStat.OK) {
+        if (pathStatus.getStatus() == DataStat.Status.OK) {
             try {
-                installerAccessControl = new L2AccessControl(pathStatus.stringValue, true); // only if file exists
+                installerAccessControl = new L2AccessControl(pathStatus.getValue(), true); // only if file exists
             } catch (Exception e) {
                 retVal.addErrorMessage(e.getMessage());
             }
@@ -97,21 +98,21 @@ public class Level2Launcher {
         boolean retVal = false;
         StatusWithMessage status = new StatusWithMessage();
         if (l2AccessControl == null) {
-            DataWithMsg pathStatus =
+            DataWithStatus<String> pathStatus =
                     FileChooserWithOptions.getOneExistingFilepath(fceDataLocation, L2AccessControl.l2AccessfileExtension, true);
-            if (pathStatus.getStatus() == DataWithMsg.DataStat.OK) {
+            if (pathStatus.getStatus() == DataStat.Status.OK) {
                 try {
-                    l2AccessControl = new L2AccessControl(pathStatus.stringValue, true); // only if file exists
+                    l2AccessControl = new L2AccessControl(pathStatus.getValue(), true); // only if file exists
                 } catch (Exception e) {
                     status.addErrorMessage(e.getMessage());
                 }
             } else
                 status.addErrorMessage(pathStatus.errorMessage);
         }
-        if (status.getDataStatus() == StatusWithMessage.DataStat.OK) {
+        if (status.getDataStatus() == DataStat.Status.OK) {
             status = l2AccessControl.authenticate(forLevel);
         }
-        if (status.getDataStatus() == StatusWithMessage.DataStat.OK)
+        if (status.getDataStatus() == DataStat.Status.OK)
             retVal = true;
         else
             showError(status.getErrorMessage());
@@ -268,31 +269,31 @@ public class Level2Launcher {
         return fceDataLocation + l2AccessControl.getDescription(level) + " is ON";
     }
 
-    DataWithMsg isThisAppActive(L2AccessControl.AccessLevel level) {
-        DataWithMsg retVal = new DataWithMsg();
-        FileLock lock = getFileLock();
-        if (lock != null) {
-            File f = new File(getStatusFileName(level));
-            if (f.exists())
-                retVal.setData(true);
-            else
-                retVal.setData(false);
-            releaseLock(lock);
-        } else
-            retVal.setErrorMsg("Unable to get the lock to get Status of application " + l2AccessControl.getDescription(level));
-        return retVal;
-    }
+//    DataWithMsg isThisAppActive(L2AccessControl.AccessLevel level) {  // TODO Not used ?
+//        DataWithMsg retVal = new DataWithMsg();
+//        FileLock lock = getFileLock();
+//        if (lock != null) {
+//            File f = new File(getStatusFileName(level));
+//            if (f.exists())
+//                retVal.setData(true);
+//            else
+//                retVal.setData(false);
+//            releaseLock(lock);
+//        } else
+//            retVal.setErrorMsg("Unable to get the lock to get Status of application " + l2AccessControl.getDescription(level));
+//        return retVal;
+//    }
 
-    DataWithMsg isAnyAppActive(L2AccessControl.AccessLevel[] levels) {
-        DataWithMsg retVal = new DataWithMsg();
-        retVal.setData(false);
+    DataWithStatus<Boolean> isAnyAppActive(L2AccessControl.AccessLevel[] levels) {
+        DataWithStatus<Boolean> retVal = new DataWithStatus<>();
+        retVal.setValue(false);
         FileLock lock = getFileLock();
         if (lock != null) {
             File f;
             for (L2AccessControl.AccessLevel level : levels) {
                 f = new File(getStatusFileName(level));
                 if (f.exists()) {
-                    retVal.setData(true);
+                    retVal.setValue(true);
                     break;
                 }
             }
@@ -340,11 +341,11 @@ public class Level2Launcher {
     }
 
     void launchRuntime() {
-        DataWithMsg stat = isAnyAppActive(
+        DataWithStatus<Boolean> stat = isAnyAppActive(
                 new L2AccessControl.AccessLevel[]{L2AccessControl.AccessLevel.RUNTIME,
                         L2AccessControl.AccessLevel.INSTALLER});
-        if (stat.getStatus() == DataWithMsg.DataStat.OK) {
-            if (!stat.booleanValue) {
+        if (stat.getStatus() == DataStat.Status.OK) {
+            if (!stat.getValue()) {
                 if (getAccessToLevel2(L2DFHeating.defaultLevel())) {
                     new WaitMsg(mainF, "Starting Level2Runtime. Please wait ...", new ActInBackground() {
                         public void doInBackground() {
@@ -362,15 +363,15 @@ public class Level2Launcher {
     }
 
     void launchUpdater() {
-        DataWithMsg stat = isAnyAppActive(
+        DataWithStatus<Boolean> stat = isAnyAppActive(
                 new L2AccessControl.AccessLevel[]{L2AccessControl.AccessLevel.RUNTIME});
-        if (stat.getStatus() == DataWithMsg.DataStat.OK) {
-            if (stat.booleanValue) {
+        if (stat.getStatus() == DataStat.Status.OK) {
+            if (stat.getValue()) {
                 stat = isAnyAppActive(
                         new L2AccessControl.AccessLevel[]{L2AccessControl.AccessLevel.UPDATER,
                                 L2AccessControl.AccessLevel.EXPERT, L2AccessControl.AccessLevel.INSTALLER});
-                if (stat.getStatus() == DataWithMsg.DataStat.OK) {
-                    if (!stat.booleanValue) {
+                if (stat.getStatus() == DataStat.Status.OK) {
+                    if (!stat.getValue()) {
                         if (getAccessToLevel2(L2Updater.defaultLevel())) {
                             new WaitMsg(mainF, "Starting Level2Updater. Please wait ...", new ActInBackground() {
                                 public void doInBackground() {
@@ -391,15 +392,15 @@ public class Level2Launcher {
     }
 
     void launchExpert() {
-        DataWithMsg stat = isAnyAppActive(
+        DataWithStatus<Boolean> stat = isAnyAppActive(
                 new L2AccessControl.AccessLevel[]{L2AccessControl.AccessLevel.RUNTIME});
-        if (stat.getStatus() == DataWithMsg.DataStat.OK) {
-            if (stat.booleanValue) {
+        if (stat.getStatus() == DataStat.Status.OK) {
+            if (stat.getValue()) {
                 stat = isAnyAppActive(
                         new L2AccessControl.AccessLevel[]{L2AccessControl.AccessLevel.UPDATER,
                                 L2AccessControl.AccessLevel.EXPERT, L2AccessControl.AccessLevel.INSTALLER});
-                if (stat.getStatus() == DataWithMsg.DataStat.OK) {
-                    if (!stat.booleanValue) {
+                if (stat.getStatus() == DataStat.Status.OK) {
+                    if (!stat.getValue()) {
                         if (getAccessToLevel2(Level2Expert.defaultLevel())) {
                             new WaitMsg(mainF, "Starting Level2Expert. Please wait ...", new ActInBackground() {
                                 public void doInBackground() {
@@ -420,22 +421,22 @@ public class Level2Launcher {
     }
 
     void launchInstaller() {
-        DataWithMsg stat = isAnyAppActive(
+        DataWithStatus<Boolean> stat = isAnyAppActive(
                 new L2AccessControl.AccessLevel[]{L2AccessControl.AccessLevel.EXPERT,
                         L2AccessControl.AccessLevel.UPDATER, L2AccessControl.AccessLevel.RUNTIME});
-        if (stat.getStatus() == DataWithMsg.DataStat.OK) {
-            if (!stat.booleanValue) {
+        if (stat.getStatus() == DataStat.Status.OK) {
+            if (!stat.getValue()) {
                 boolean allOK = (installerAccessControl != null);
                 if (!allOK) {
                     StatusWithMessage status = getInstallerAccessFile();
-                    if (status.getDataStatus() == StatusWithMessage.DataStat.OK)
+                    if (status.getDataStatus() == DataStat.Status.OK)
                         allOK = true;
                     else
                         showError("Unable to get Installer Access :" + status.getErrorMessage());
                 }
                 if (allOK) {
                     StatusWithMessage stm = installerAccessControl.authenticate(Level2Installer.defaultLevel());
-                    if (stm.getDataStatus() == StatusWithMessage.DataStat.OK) {
+                    if (stm.getDataStatus() == DataStat.Status.OK) {
                         new WaitMsg(mainF, "Starting Level2Installer. Please wait ...", new ActInBackground() {
                             public void doInBackground() {
                                 new Level2Installer("Furnace", true);

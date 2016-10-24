@@ -4,9 +4,8 @@ import basic.Observations;
 import directFiredHeating.DFHFurnace;
 import directFiredHeating.DFHeating;
 import directFiredHeating.FceSection;
-import mvUtils.display.ErrorStatAndMsg;
+import mvUtils.display.DataStat;
 import mvUtils.display.StatusWithMessage;
-import performance.stripFce.Performance;
 import performance.stripFce.PerformanceGroup;
 
 import java.awt.event.ActionListener;
@@ -25,12 +24,12 @@ public class StripFurnace extends DFHFurnace {
     public boolean linkPerformanceWithProcess() {
         boolean retVal = true;
         StatusWithMessage response =  performBase.linkPerformanceWithProcess();
-        StatusWithMessage.DataStat status = response.getDataStatus();
-        if (status == StatusWithMessage.DataStat.WithErrorMsg) {
+        DataStat.Status status = response.getDataStatus();
+        if (status == DataStat.Status.WithErrorMsg) {
             showError("Reading Performance Data: " + response.getErrorMessage());
             retVal = false;
         }
-        else if (status == StatusWithMessage.DataStat.WithInfoMsg) {
+        else if (status == DataStat.Status.WithInfoMsg) {
             showMessage("Checking Performance Data: " + response.getInfoMessage());
         }
         return retVal;
@@ -52,7 +51,7 @@ public class StripFurnace extends DFHFurnace {
         for (int sec = 0; sec < nTopActiveSecs; sec++) {
             FceSection oneSection = topSections.get(sec);
             StatusWithMessage status = furnaceSettings.checkFuelFlowInRange(sec, oneSection.secFuelFlow);
-            if (status.getDataStatus() == StatusWithMessage.DataStat.WithErrorMsg)
+            if (status.getDataStatus() == DataStat.Status.WithErrorMsg)
                 observations.add("Fuel Flow in " +  oneSection.sectionName() + " is out of Range: " + status.getErrorMessage());
         }
         return observations;

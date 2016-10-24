@@ -7,6 +7,7 @@ import directFiredHeating.accessControl.L2AccessControl;
 import directFiredHeating.accessControl.OfflineAccessControl;
 import directFiredHeating.process.StripDFHProcessList;
 import directFiredHeating.stripDFH.StripFurnace;
+import mvUtils.display.DataStat;
 import mvUtils.display.StatusWithMessage;
 import tmiOnly.GetSoftwareKey;
 
@@ -39,7 +40,7 @@ public class L2Configurator extends StripHeating {
         bAllowProfileChange = true;
         bAllowManualCalculation = true;
         asApplication = true;
-        releaseDate = "20160909 12:08";
+        releaseDate = "20161021 14:00";
         createLocalMenuItems();
     }
 
@@ -155,19 +156,19 @@ public class L2Configurator extends StripHeating {
 
     boolean loadAccessFile() {
         accessDataModified = false;
-        return (accessControl.loadAccessFile().getDataStatus() == StatusWithMessage.DataStat.OK);
+        return (accessControl.loadAccessFile().getDataStatus() == DataStat.Status.OK);
 
     }
 
     boolean saveAccessFile() {
         accessDataModified = false;
-        return (accessControl.saveAccessFile().getDataStatus() == StatusWithMessage.DataStat.OK);
+        return (accessControl.saveAccessFile().getDataStatus() == DataStat.Status.OK);
     }
 
     void addInstallerAccess() {
         StatusWithMessage response =
                 accessControl.addNewUser(L2AccessControl.AccessLevel.INSTALLER);
-        if (response.getDataStatus() == StatusWithMessage.DataStat.OK)
+        if (response.getDataStatus() == DataStat.Status.OK)
             accessDataModified = true;
         else
             showError(response.getErrorMessage());
@@ -176,7 +177,7 @@ public class L2Configurator extends StripHeating {
     void deleteInstallerAccess() {
         StatusWithMessage response =
                 accessControl.deleteUser(L2AccessControl.AccessLevel.INSTALLER);
-        if (response.getDataStatus() == StatusWithMessage.DataStat.OK)
+        if (response.getDataStatus() == DataStat.Status.OK)
             accessDataModified = true;
         else
             showError(response.getErrorMessage());

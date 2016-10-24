@@ -11,12 +11,8 @@ import directFiredHeating.accessControl.L2AccessControl;
 import level2.applications.L2DFHeating;
 import directFiredHeating.process.OneStripDFHProcess;
 import level2.common.*;
-import mvUtils.display.DataWithStatus;
-import mvUtils.display.FramedPanel;
-import mvUtils.display.MultiPairColPanel;
-import mvUtils.display.StatusWithMessage;
+import mvUtils.display.*;
 import mvUtils.math.DoubleMV;
-import mvUtils.math.DoubleWithStatus;
 import org.opcfoundation.ua.builtintypes.DataValue;
 import performance.stripFce.Performance;
 import performance.stripFce.StripProcessAndSize;
@@ -215,9 +211,9 @@ public class L2StripZone extends L2ParamGroup {
                     double output = l2Furnace.getOutputWithFurnaceTemperatureStatus( theStrip.refP, theStrip.width, theStrip.thickness);
                     l2Furnace.logTrace("Running Strip capacity Based On temperature= " + (output / 1000) + "t/h");
                     if (output > 0) {
-                        DoubleWithStatus speedData = oneProcess.getRecommendedSpeed(output, theStrip.width, theStrip.thickness);
-                        StatusWithMessage.DataStat speedStatus = speedData.getDataStatus();
-                        if (speedStatus != StatusWithMessage.DataStat.WithErrorMsg) {
+                        DataWithStatus<Double> speedData = oneProcess.getRecommendedSpeed(output, theStrip.width, theStrip.thickness);
+                        DataStat.Status speedStatus = speedData.getStatus();
+                        if (speedStatus != DataStat.Status.WithErrorMsg) {
                             ProcessValue responseSpeed = setValue(L2ParamGroup.Parameter.Now, Tag.TagName.SpeedNow,
                                     (float)(speedData.getValue() / 60));
                             if (responseSpeed.valid) {
@@ -226,7 +222,7 @@ public class L2StripZone extends L2ParamGroup {
                             }else
                                 status.setErrorMessage("Running Strip: Unable to set recommended speed" + responseSpeed.errorMessage);
                         } else
-                            status.setErrorMessage("Running Strip: Unable to get recommended speed: " + speedData.getErrorMessage());
+                            status.setErrorMessage("Running Strip: Unable to get recommended speed: " + speedData.errorMessage);
                     } else
                         status.setErrorMessage("Running Strip: Unable to calculate recommended capacity from reference");
                 }
@@ -265,9 +261,9 @@ public class L2StripZone extends L2ParamGroup {
                     double output = l2Furnace.getOutputWithFurnaceTemperatureStatus(theStrip.refP, theStrip.width, theStrip.thickness);
                     l2Furnace.logTrace("capacity Based On temperature= " + (output / 1000) + "t/h");
                     if (output > 0) {
-                        DoubleWithStatus speedData = oneProcess.getRecommendedSpeed(output, theStrip.width, theStrip.thickness);
-                        StatusWithMessage.DataStat speedStatus = speedData.getDataStatus();
-                        if (speedStatus != StatusWithMessage.DataStat.WithErrorMsg) {
+                        DataWithStatus<Double> speedData = oneProcess.getRecommendedSpeed(output, theStrip.width, theStrip.thickness);
+                        DataStat.Status speedStatus = speedData.getStatus();
+                        if (speedStatus != DataStat.Status.WithErrorMsg) {
                             ProcessValue responseSpeed = setValue(L2ParamGroup.Parameter.Next, Tag.TagName.SpeedNow,
                                     (float)(speedData.getValue() / 60));
                             if (responseSpeed.valid) {
@@ -278,8 +274,8 @@ public class L2StripZone extends L2ParamGroup {
                                             (float) (oneProcess.tempDFHExit));
                                     if (responseTempSp.valid) {
                                         setValue(L2ParamGroup.Parameter.Next, Tag.TagName.Ready, true);
-                                        if (speedStatus == StatusWithMessage.DataStat.WithInfoMsg)
-                                            status.setInfoMessage(speedData.getInfoMessage());
+                                        if (speedStatus == DataStat.Status.WithInfoMsg)
+                                            status.setInfoMessage(speedData.infoMessage);
                                     } else
                                         status.setErrorMessage("Unable to set Strip Exit Temperature : " + responseTempSp.errorMessage);
                                 } else
@@ -287,7 +283,7 @@ public class L2StripZone extends L2ParamGroup {
                             }else
                                 status.setErrorMessage("Unable to set recommended speed" + responseSpeed.errorMessage);
                         } else
-                            status.setErrorMessage("Unable to get recommended speed: " + speedData.getErrorMessage());
+                            status.setErrorMessage("Unable to get recommended speed: " + speedData.errorMessage);
                     } else
                         status.setErrorMessage("Unable to calculate recommended capacity from reference");
                 }
@@ -577,7 +573,7 @@ public class L2StripZone extends L2ParamGroup {
                             gotIt = true;
                             StatusWithMessage nowStripStatusWithMsg = new StatusWithMessage();
                             setNowStripAction(nowStripStatusWithMsg);
-                            if (nowStripStatusWithMsg.getDataStatus() == StatusWithMessage.DataStat.OK) {
+                            if (nowStripStatusWithMsg.getDataStatus() == DataStat.Status.OK) {
                                 setSpeedCheckMessge("OK");
                                 paramStripSpeedCheck.setValue(Tag.TagName.Running, true);
                             }

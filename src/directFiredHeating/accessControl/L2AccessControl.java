@@ -1,5 +1,6 @@
 package directFiredHeating.accessControl;
 
+import mvUtils.display.DataStat;
 import mvUtils.display.StatusWithMessage;
 import mvUtils.file.AccessControl;
 import mvUtils.file.AccessControlInFile;
@@ -96,7 +97,7 @@ public class L2AccessControl {
         try {
             L2AccessControl access = new L2AccessControl("level2FceData/l2AccessData.txt", false);
             StatusWithMessage stm = access.addNewUser(AccessLevel.EXPERT);
-            if (stm.getDataStatus() == StatusWithMessage.DataStat.OK)
+            if (stm.getDataStatus() == DataStat.Status.OK)
                 System.out.println("Done");
             else
                 System.out.println(stm.getErrorMessage());

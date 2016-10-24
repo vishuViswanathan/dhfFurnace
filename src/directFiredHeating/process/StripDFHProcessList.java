@@ -3,6 +3,7 @@ package directFiredHeating.process;
 import basic.ChMaterial;
 import directFiredHeating.DFHeating;
 import mvUtils.display.*;
+import mvUtils.math.BooleanWithStatus;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import performance.stripFce.Performance;
@@ -90,6 +91,7 @@ public class StripDFHProcessList {
             edited |= dlg.edited;
         } while (redo);
         cbProcess.updateUI();
+        cbProcess.setSelectedIndex(-1); // unselect
         return edited;
     }
 
@@ -140,13 +142,40 @@ public class StripDFHProcessList {
         return oneProcess;
     }
 
-    public OneStripDFHProcess getDFHProcess(Performance p) {
+    public DataWithStatus<OneStripDFHProcess> getDFHProcess(Performance p) {
+        DataWithStatus<OneStripDFHProcess> retVal = new DataWithStatus<>();
+        for (OneStripDFHProcess proc:list) {
+            ErrorStatAndMsg reply =  proc.performanceOkForProcess(p);
+            if (!reply.inError) {
+                BooleanWithStatus tableStat = proc.checkPerformanceTableRange(p);
+                if (tableStat.getDataStatus() == DataStat.Status.OK) {
+                    retVal.setValue(proc);
+                    break;
+                }
+                else
+                    retVal.setValue(proc, tableStat.getInfoMessage());
+            }
+            else
+                retVal.setErrorMessage(reply.msg);
+        }
+        return retVal;
+    }
+
+    public OneStripDFHProcess getDFHProcessREMOVE(Performance p) {  // TODO to be removed
         OneStripDFHProcess oneProcess = null;
         for (OneStripDFHProcess proc:list) {
-            if (!proc.performanceOkForProcess(p).inError) {
-                oneProcess = proc;
-                break;
+            ErrorStatAndMsg reply =  proc.performanceOkForProcess(p);
+            if (!reply.inError) {
+                BooleanWithStatus tableStat = proc.checkPerformanceTableRange(p);
+                if (tableStat.getDataStatus() == DataStat.Status.OK) {
+                    oneProcess = proc;
+                    break;
+                }
+                else
+                    dfHeating.logInfo(tableStat.getInfoMessage());
             }
+            else
+                dfHeating.logInfo(reply.msg);
         }
         return oneProcess;
     }
@@ -171,7 +200,7 @@ public class StripDFHProcessList {
                     else {
                         ErrorStatAndMsg stat = checkDuplication(oneProc);
                         if (stat.inError)
-                            dfHeating.showError("Skipping process '" + oneProc.getFullProcessID() + "' in Reading Proces List\n" +
+                            dfHeating.showError("Skipping process '" + oneProc.getFullProcessID() + "' in Reading Process List\n" +
                                     stat.msg);
                         else
                             list.add(oneProc);
@@ -184,6 +213,7 @@ public class StripDFHProcessList {
             }
         }
         cbProcess.updateUI();
+        cbProcess.setSelectedIndex(-1); // unselect
         return retVal;
     }
 

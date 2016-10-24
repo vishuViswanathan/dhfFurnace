@@ -6,6 +6,7 @@ import directFiredHeating.DFHFurnace;
 import directFiredHeating.DFHeating;
 import mvUtils.display.MultiPairColPanel;
 import mvUtils.display.NumberTextField;
+import mvUtils.math.DoubleRange;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import mvUtils.display.FramedPanel;
@@ -98,6 +99,14 @@ public class PerformanceTable {
         zonalTablesT = new Vector<ZonalTable>();
         if (baseP.botZones != null)
             zonalTablesB = new Vector<ZonalTable>();
+    }
+
+    public DoubleRange getWidthRange() {
+        return commTables.get(Performance.Params.OUTPUT).getRowHeadRange();
+    }
+
+    public DoubleRange getOutputFactorRange() {
+        return commTables.get(Performance.Params.OUTPUT).getColHeadRange();
     }
 
     public int nZones(boolean bBot) {

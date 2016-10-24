@@ -6,10 +6,8 @@ import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
 import directFiredHeating.process.OneStripDFHProcess;
 import directFiredHeating.stripDFH.SampleStripFurnace;
-import mvUtils.display.DataWithStatus;
-import mvUtils.display.ErrorStatAndMsg;
-import mvUtils.display.MultiPairColPanel;
-import mvUtils.display.StatusWithMessage;
+import mvUtils.display.*;
+import mvUtils.jnlp.JNLPFileHandler;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 
@@ -38,7 +36,7 @@ public abstract class StripHeating extends DFHeating {
     protected void setTestData() {
 //        super.setTestData();
         StatusWithMessage status = takeProfileDataFromXML(SampleStripFurnace.xmlStr);
-        if (status.getDataStatus() == StatusWithMessage.DataStat.WithErrorMsg)
+        if (status.getDataStatus() == DataStat.Status.WithErrorMsg)
             showError(status.getErrorMessage());
     }
 
@@ -74,14 +72,14 @@ public abstract class StripHeating extends DFHeating {
         return XMLmv.putTag(profileCodeTag, profileCode);
     }
 
-    String stripDFHProcessListInXML() {
-        return dfhProcessList.dataInXMl().toString();
+    protected String stripDFHProcessListInXML() {
+        return XMLmv.putTag("dfhProcessList", dfhProcessList.dataInXMl().toString());
     }
 
     public String inputDataXML(boolean withPerformance) {
         return profileCodeInXML() + super.inputDataXML(withPerformance) +
                 XMLmv.putTag("FuelSettings", furnace.fceSettingsInXML()) +
-                XMLmv.putTag("dfhProcessList", stripDFHProcessListInXML());
+               stripDFHProcessListInXML();
     }
 
     protected boolean isProfileCodeOK() {
@@ -162,7 +160,7 @@ public abstract class StripHeating extends DFHeating {
             }
             retVal = super.takeProfileDataFromXML(xmlStr, true, HeatingMode.TOPBOTSTRIP,
                     DFHTuningParams.FurnaceFor.STRIP);
-            if (retVal.getDataStatus() == StatusWithMessage.DataStat.OK) {
+            if (retVal.getDataStatus() == DataStat.Status.OK) {
                 furnace.clearAssociatedData();
                 vp = XMLmv.getTag(xmlStr, "FuelSettings");
                 if (vp.val.length() < 10 || !furnace.takeFceSettingsFromXML(vp.val)) {
@@ -194,7 +192,7 @@ public abstract class StripHeating extends DFHeating {
 protected void saveFceToFile(boolean withPerformance) {
         takeValuesFromUI();
         StatusWithMessage fceSettingsIntegrity = furnace.furnaceSettings.checkIntegrity();
-        if (fceSettingsIntegrity.getDataStatus() == StatusWithMessage.DataStat.OK) {
+        if (fceSettingsIntegrity.getDataStatus() == DataStat.Status.OK) {
             if (asJNLP)
                 saveFceToFileJNLP(withPerformance);
             else {
@@ -206,6 +204,7 @@ protected void saveFceToFile(boolean withPerformance) {
                 String promptFile = (profileCodeChanged) ?
                         (profileCode + " FurnaceProfile." +  profileFileExtension) :
                         profileFileName;
+                logInfo("setting default Folder to " + fceDataLocation);
                 fileDlg.setDirectory(fceDataLocation);
                 fileDlg.setFile(promptFile);
                 fileDlg.setVisible(true);
@@ -224,6 +223,7 @@ protected void saveFceToFile(boolean withPerformance) {
                         oStream.close();
                         if (withPerformance)
                             furnace.performanceIsSaved();
+                        profileFileName = bareFile;
                     } catch (FileNotFoundException e) {
                         showError("File " + fileName + " NOT found!");
                     } catch (IOException e) {
@@ -235,6 +235,23 @@ protected void saveFceToFile(boolean withPerformance) {
         } else
             showError("Problem in Fuel Settings :\n" + fceSettingsIntegrity.getErrorMessage());
     }
+
+    protected void saveFceToFileJNLP(boolean withPerformance) {
+        takeValuesFromUI();
+        boolean profileCodeChanged = createProfileCode();
+        String promptFile = (profileCodeChanged) ?
+                (profileCode + " FurnaceProfile." +  profileFileExtension) :
+                profileFileName;
+        DataWithStatus<String> saveStatus = JNLPFileHandler.saveToFile(inputDataXML(withPerformance), profileFileExtension,
+                promptFile, "Please save file With extension '." + profileFileExtension +", and suggested Name");
+        if (saveStatus.getStatus() == DataStat.Status.OK)
+            profileFileName = saveStatus.getValue();
+        else
+            showError(saveStatus.getErrorMessage() + " - Could not save to file");
+        parent().toFront();
+    }
+
+
 
     protected boolean createProfileCode() {
         debug("changeProfileCode: " + changeProfileCode);
@@ -249,10 +266,10 @@ protected void saveFceToFile(boolean withPerformance) {
         return dfhProcessList.takeStripProcessListFromXML(xmlStr);
     }
 
-    void editStripDFHProcess() {
+    protected void editStripDFHProcess() {
         if (dfhProcessList.addStripDFHProcess(parent()))
             showMessage("Strip DFh Process List updated\n" +
-                    "To make it effective in Level2 RUNTIME, the list must be saved to file\n" +
+                    "To make it permanent, the furnace data must be updated\n" +
                     "       " + fileMenu.getText() + "->" + mIUpdateFurnace.getText());
     }
 
@@ -355,6 +372,7 @@ protected void saveFceToFile(boolean withPerformance) {
     }
 
     protected boolean updateFurnace() {
+        linkPerformanceWithProcess();
         saveFurnaceWithNowProfileCode();
         return true;
     }

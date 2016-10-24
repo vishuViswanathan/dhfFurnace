@@ -1,6 +1,7 @@
 package basic;
 
 import mvUtils.math.DoublePoint;
+import mvUtils.math.DoubleRange;
 import mvUtils.math.XYArray;
 
 import javax.swing.*;
@@ -134,6 +135,14 @@ public class TwoDTable implements Serializable {
         else  if (head < min)
             checkResult.minViolated(min);
         return checkResult;
+    }
+
+    public DoubleRange getRowHeadRange() {
+        return new DoubleRange(getMinRowHead(), getMaxRowHead());
+    }
+
+    public DoubleRange getColHeadRange() {
+        return new DoubleRange(getMinColHead(), getMaxColHead());
     }
 
     public boolean IsRowHeadInRange(double head) {

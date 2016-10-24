@@ -13,6 +13,7 @@ import directFiredHeating.process.OneStripDFHProcess;
 import mvUtils.display.*;
 import mvUtils.file.AccessControl;
 import mvUtils.file.FileChooserWithOptions;
+import mvUtils.math.BooleanWithStatus;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import org.apache.log4j.Logger;
@@ -48,7 +49,7 @@ public class L2DFHeating extends StripHeating {
 
     public L2DisplayPageType l2DisplayNow = L2DisplayPageType.NONE;
 //    String fceDataLocation = "level2FceData\\";
-    String l2BasePath;
+    String l2BasePath = "";
     String accessDataFile;
     String lockPath;
     File lockFile;
@@ -78,8 +79,8 @@ public class L2DFHeating extends StripHeating {
         asApplication = true;
         this.equipment = equipment;
         accessLevel = L2AccessControl.AccessLevel.RUNTIME;
-        DataWithMsg accessFileStat = getAccessFilePath();
-        if (accessFileStat.getStatus() != DataWithMsg.DataStat.OK) {
+        DataWithStatus accessFileStat = getAccessFilePath();
+        if (accessFileStat.getStatus() != DataStat.Status.OK) {
             showError(accessFileStat.errorMessage + "\n\n   ABORTING");
             System.exit(1);
         }
@@ -89,8 +90,8 @@ public class L2DFHeating extends StripHeating {
         return fceDataLocation + l2AccessControl.getDescription(level) + " is ON";
     }
 
-    DataWithMsg markIAmON()  {
-        DataWithMsg retVal = new DataWithMsg();
+    DataWithStatus markIAmON()  {
+        DataWithStatus<Boolean> retVal = new DataWithStatus<>();
         FileLock lock = getFileLock();
         if (lock != null) {
             File f = new File(getStatusFileName(accessLevel));
@@ -102,7 +103,7 @@ public class L2DFHeating extends StripHeating {
                                 " started on " + dateFormat.format(new Date()) + "\n";
                     oStream.write(data.getBytes());
                     oStream.close();
-                    retVal.setData(true);
+                    retVal.setValue(true);
                 } catch (IOException e) {
                     retVal.setErrorMsg("Unable to set Status of this Application");
                 }
@@ -116,14 +117,15 @@ public class L2DFHeating extends StripHeating {
         return retVal;
     }
 
-    protected DataWithMsg isAnyRunning(L2AccessControl.AccessLevel[] levels) {
-        DataWithMsg retVal = new DataWithMsg();
+    protected DataWithStatus<Boolean> isAnyRunning(L2AccessControl.AccessLevel[] levels) {
+        DataWithStatus<Boolean> retVal = new DataWithStatus<>();
+        retVal.setValue(false);
         FileLock lock = getFileLock();
         if (lock != null) {
             for (L2AccessControl.AccessLevel l:levels) {
                 File f = new File(getStatusFileName(l));
                 if (f.exists()) {
-                    retVal.setData(true);
+                    retVal.setValue(true);
                     break;
                 }
             }
@@ -134,14 +136,15 @@ public class L2DFHeating extends StripHeating {
         return retVal;
     }
 
-    protected DataWithMsg markIAmOFF()  {
-        DataWithMsg retVal = new DataWithMsg();
+    protected DataWithStatus<Boolean> markIAmOFF()  {
+        DataWithStatus<Boolean> retVal = new DataWithStatus<>();
+        retVal.setValue(false);
         FileLock lock = getFileLock();
         if (lock != null) {
             File f = new File(getStatusFileName(accessLevel));
             if (f.exists()) {
                 f.delete();
-                retVal.setData(true);
+                retVal.setValue(true);
             }
             else
                 retVal.setErrorMsg("This Application was not running");
@@ -152,11 +155,11 @@ public class L2DFHeating extends StripHeating {
         return retVal;
     }
 
-    DataWithMsg getAccessFilePath() {
-        DataWithMsg pathStatus =
+    DataWithStatus<String> getAccessFilePath() {
+        DataWithStatus<String> pathStatus =
                 FileChooserWithOptions.getOneExistingFilepath(fceDataLocation, L2AccessControl.l2AccessfileExtension, true);
-        if (pathStatus.getStatus() == DataWithMsg.DataStat.OK) {
-            accessDataFile = pathStatus.stringValue;
+        if (pathStatus.getStatus() == DataStat.Status.OK) {
+            accessDataFile = pathStatus.getValue();
         }
         return pathStatus;
     }
@@ -205,14 +208,15 @@ public class L2DFHeating extends StripHeating {
             if (getFuelAndCharge()) {
                 setDefaultSelections();
                 StatusWithMessage statL2FceFile = getL2FceFromFile();
-                if (statL2FceFile.getDataStatus() != StatusWithMessage.DataStat.WithErrorMsg) {
+                if (statL2FceFile.getDataStatus() != DataStat.Status.WithErrorMsg) {
                     if (!onProductionLine || setupUaClient()) {
                         if (!onProductionLine || l2Furnace.basicConnectionToLevel1(uaClient)) {
                             StatusWithMessage status = l2Furnace.checkAndNoteAccessLevel();
-                            if (status.getDataStatus() == StatusWithMessage.DataStat.OK) {
+                            if (status.getDataStatus() == DataStat.Status.OK) {
                                 furnace.setWidth(width);
                                 enableDataEdit();
                                 l2MenuSet = true;
+                                lockFile = new File(lockPath);
                                 getFieldPerformanceList();
                                 bProfileEdited = false;
                                 if (onProductionLine) {
@@ -237,7 +241,7 @@ public class L2DFHeating extends StripHeating {
                 } else
                     showError("Unable to load Furnace Profile : " + statL2FceFile.getErrorMessage());
                 if (l2SystemReady) {
-                    lockFile = new File(lockPath);
+//                    lockFile = new File(lockPath);
                     displayIt();
                 }
             }
@@ -249,8 +253,8 @@ public class L2DFHeating extends StripHeating {
         }
         System.out.println("Java Version :" + System.getProperty("java.version"));
         if (l2SystemReady) {
-            DataWithMsg stat =  markIAmON();
-            if (stat.getStatus() != DataWithMsg.DataStat.OK) {
+            DataWithStatus stat =  markIAmON();
+            if (stat.getStatus() != DataStat.Status.OK) {
                 showError(stat.errorMessage);
             }
             sendProcessListToLevel1();
@@ -461,7 +465,7 @@ public class L2DFHeating extends StripHeating {
         return titleAndFceCommon;
     }
 
-    protected void enableTitleEditREMOVE (boolean ena)  {   // TODO to ber removed
+    protected void enableTitleEditREMOVE (boolean ena)  {   // TODO to be removed
         titleAndFceCommon.setEnabled(false);
     }
 
@@ -490,7 +494,7 @@ public class L2DFHeating extends StripHeating {
         return jp;
     }
 
-    protected JPanel OperationPageXX() {      // TODO to ber removed
+    protected JPanel OperationPageXX() {      // TODO to be removed
         JPanel jp = new JPanel(new GridBagLayout());
         jp.setBackground(new JPanel().getBackground());
         GridBagConstraints gbcOP = new GridBagConstraints();
@@ -525,12 +529,18 @@ public class L2DFHeating extends StripHeating {
         return jp;
     }
 
-    String stripDFHProcessListInXML() {
+    protected String stripDFHProcessListInXMLREMOVE () {  // TODO to be removed
         return dfhProcessList.dataInXMl().toString();
     }
 
-    boolean takeStripProcessListFromXML(String xmlStr) {
+    boolean takeStripProcessListFromXMLREMOVE (String xmlStr) {   // TODO tobe removed
         return dfhProcessList.takeStripProcessListFromXML(xmlStr);
+    }
+
+    boolean takeStripProcessListFromXML(String xmlStr) {
+        ValAndPos vp;
+        vp = XMLmv.getTag(xmlStr, "dfhProcessList");
+        return (vp.val.length() > 10 && dfhProcessList.takeStripProcessListFromXML(xmlStr));
     }
 
     File fceDataLocationDirectory = new File(fceDataLocation);
@@ -543,7 +553,7 @@ public class L2DFHeating extends StripHeating {
             FileChooserWithOptions fileDlg = new FileChooserWithOptions("Save Performance Data",
                     "Performance Data (*." + performanceExtension + ")", performanceExtension);
             fileDlg.setSelectedFile(new File(profileCode + " performanceData." + performanceExtension));
-            fileDlg.setCurrentDirectory(fceDataLocationDirectory);
+            fileDlg.setCurrentDirectory(new File(fceDataLocation));
             fileDlg.setStartWithString(profileCode);
             if (currentView != null)
                 fileDlg.setFileSystemView(currentView);
@@ -558,8 +568,9 @@ public class L2DFHeating extends StripHeating {
                 try {
                     BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(file));
                     oStream.write(("# Performance Data saved on " + dateFormat.format(new Date()) + " \n\n").getBytes());
-                    oStream.write((profileCodeInXML() + furnace.performanceInXML()).getBytes());
+                    oStream.write((profileCodeInXML() + stripDFHProcessListInXML() + furnace.performanceInXML()).getBytes());
                     oStream.close();
+                    furnace.performanceIsSaved();
                     retVal = true;
                 } catch (FileNotFoundException e) {
                     showError("File " + file + " NOT found!");
@@ -596,8 +607,8 @@ public class L2DFHeating extends StripHeating {
             break;
         }
         if (onProductionLine && saved) {
-            l2Furnace.informPerformanceDataModified();
-            furnace.performanceIsSaved();
+            l2Furnace.informProcessDataModified();
+//            l2Furnace.informPerformanceDataModified();
         } else if (!gotTheLock)
             showError("Facing some problem in getting Lock");
         else
@@ -605,33 +616,34 @@ public class L2DFHeating extends StripHeating {
         return saved;
     }
 
-    public ErrorStatAndMsg handleModifiedPerformanceData() {
-        ErrorStatAndMsg retVal = new ErrorStatAndMsg();
-        boolean gotIt = false;
-        FileLock lock;
-        int count = 5;
-        boolean gotTheLock = false;
-        while (--count > 0) {
-            lock = getTheLock();
-            if (lock == null) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                continue;
-            }
-            gotTheLock = true;
-            retVal = getFieldPerformanceList();
-            releaseLock(lock);
-            break;
-        }
-        if (!retVal.inError)
-            updateDisplay(DFHDisplayPageType.PERFOMANCELIST);
-        else if (!gotTheLock)
-            retVal.addErrorMsg("Facing some problem in getting Lock to take Modified Performance Data");
-        return retVal;
-    }
+//    public ErrorStatAndMsg handleModifiedPerformanceData() {
+//        ErrorStatAndMsg retVal = new ErrorStatAndMsg();
+//        boolean gotIt = false;
+//        FileLock lock;
+//        int count = 5;
+//        boolean gotTheLock = false;
+//        while (--count > 0) {
+//            lock = getTheLock();
+//            if (lock == null) {
+//                try {
+//                    Thread.sleep(1000);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//                continue;
+//            }
+//            gotTheLock = true;
+//            retVal = getFieldPerformanceList();
+//            releaseLock(lock);
+//            break;
+//        }
+//        if (!retVal.inError) {
+//            updateDisplay(DFHDisplayPageType.PERFOMANCELIST);
+//        }
+//        else if (!gotTheLock)
+//            retVal.addErrorMsg("Facing some problem in getting Lock to take Modified Performance Data");
+//        return retVal;
+//    }
 
 
     boolean loadSpecificPerformanceList() {
@@ -676,10 +688,19 @@ public class L2DFHeating extends StripHeating {
                 if (iStream.read(data) > 50) {
                     String xmlStr = new String(data);
                     if (checkProfileCodeInXML(xmlStr)) {
-                        if (furnace.takePerformanceFromXML(xmlStr, true)) {
-                            if (showDebugMessages)
-                                showMessage("Performance Data loaded");
-                            retVal = true;
+                        if (!takeStripProcessListFromXML(xmlStr)) {
+                            showError("No Strip Process Data available");
+                        }
+                        else if (dfhProcessList.getCount() < 2) {
+                            showError("Process List must have at least one entry");
+                        }
+                        else {
+
+                            if (furnace.takePerformanceFromXML(xmlStr, true)) {
+                                if (showDebugMessages)
+                                    showMessage("Performance Data loaded");
+                                retVal = true;
+                            }
                         }
                     } else
                         showError("mismatch in Performance Data file");
@@ -689,6 +710,37 @@ public class L2DFHeating extends StripHeating {
                 showError("File size " + len + " for " + file);
         } catch (Exception e) {
             showError("Some Problem in getting file!");
+        }
+        return retVal;
+    }
+
+    StatusWithMessage loadStripDFHProcessListREMOVE (File file) {  // TODO to be removed
+        StatusWithMessage retVal = new StatusWithMessage();
+        try {
+            BufferedInputStream iStream = new BufferedInputStream(new FileInputStream(file));
+            //           FileInputStream iStream = new FileInputStream(fileName);
+            long len = file.length();
+            if (len > 50 && len < maxSizeOfProfileFile) {
+                int iLen = (int) len;
+                byte[] data = new byte[iLen + 10];
+                if (iStream.read(data) > 50) {
+                    String xmlStr = new String(data);
+                    if (checkProfileCodeInXML(xmlStr)) {
+                        ValAndPos vp;
+                        vp = XMLmv.getTag(xmlStr, "dfhProcessList");
+                        if (vp.val.length() < 10 || !takeStripProcessListFromXML(vp.val)) {
+                            retVal.addErrorMessage("No Strip Process Data available");
+                        }
+                        else if (dfhProcessList.getCount() < 2) {
+                            retVal.addErrorMessage("Process List must have at least one entry");
+                        }
+                    } else
+                        retVal.addErrorMessage("mismatch in Furnace data file");
+                }
+            } else
+                retVal.addErrorMessage("File size " + len + " for " + file);
+        } catch (Exception e) {
+            retVal.addErrorMessage("Some Problem in getting file for Process Data!");
         }
         return retVal;
     }
@@ -705,9 +757,7 @@ public class L2DFHeating extends StripHeating {
                 if (iStream.read(data) > 50) {
                     String xmlStr = new String(data);
                     if (checkProfileCodeInXML(xmlStr)) {
-                        ValAndPos vp;
-                        vp = XMLmv.getTag(xmlStr, "dfhProcessList");
-                        if (vp.val.length() < 10 || !takeStripProcessListFromXML(vp.val)) {
+                        if (!takeStripProcessListFromXML(xmlStr)) {
                             retVal.addErrorMessage("No Strip Process Data available");
                         }
                         else if (dfhProcessList.getCount() < 2) {
@@ -747,7 +797,7 @@ public class L2DFHeating extends StripHeating {
         return files.length;
     }
 
-    boolean loadFurnaceSettings(File file) {
+    boolean loadFurnaceSettingsREMOVE(File file) { // TODO to be removed
         boolean retVal = false;
         try {
             BufferedInputStream iStream = new BufferedInputStream(new FileInputStream(file));
@@ -780,7 +830,7 @@ public class L2DFHeating extends StripHeating {
     void addAccess(L2AccessControl.AccessLevel forLevel) {
         if (authenticate()) {
             StatusWithMessage stm = l2AccessControl.addNewUser(forLevel);
-            if (stm.getDataStatus() == StatusWithMessage.DataStat.OK)
+            if (stm.getDataStatus() == DataStat.Status.OK)
                 showMessage("User added for " + l2AccessControl.getDescription(forLevel));
             else
                 showError(stm.getErrorMessage() + ": No user was added :");
@@ -793,7 +843,7 @@ public class L2DFHeating extends StripHeating {
     void deleteAccess(L2AccessControl.AccessLevel forLevel) {
         if (authenticate()) {
             StatusWithMessage stm = l2AccessControl.deleteUser(forLevel);
-            if (stm.getDataStatus() == StatusWithMessage.DataStat.OK)
+            if (stm.getDataStatus() == DataStat.Status.OK)
                 showMessage("One User deleted for " + l2AccessControl.getDescription(forLevel));
             else
                 showError(stm.getErrorMessage() + ": No user was deleted ");
@@ -806,7 +856,7 @@ public class L2DFHeating extends StripHeating {
     protected boolean authenticate() {
         boolean retVal = false;
         StatusWithMessage stm = l2AccessControl.authenticate(accessLevel, "Re-confirm authority");
-        if (stm.getDataStatus() == StatusWithMessage.DataStat.OK)
+        if (stm.getDataStatus() == DataStat.Status.OK)
             retVal = true;
         return retVal;
     }
@@ -876,17 +926,17 @@ public class L2DFHeating extends StripHeating {
     }
 
     StatusWithMessage getL2FceFromFile() {
-        DataWithMsg oneFile = FileChooserWithOptions.getOneExistingFilepath(fceDataLocation, profileFileExtension, true);
+        DataWithStatus<String> oneFile = FileChooserWithOptions.getOneExistingFilepath(fceDataLocation, profileFileExtension, true);
         StatusWithMessage retVal = new StatusWithMessage();
-        if (oneFile.getStatus() == DataWithMsg.DataStat.OK) {
-            String filePath = oneFile.stringValue;
+        if (oneFile.getStatus() == DataStat.Status.OK) {
+            String filePath = oneFile.getValue();
             disableCompare();
             furnace.resetSections();
             furnace.resetLossAssignment();
             furnace.clearPerfBase();
             hidePerformMenu();
             retVal = getFceFromFceDatFile(filePath);
-            if (retVal.getDataStatus() != StatusWithMessage.DataStat.WithErrorMsg) {
+            if (retVal.getDataStatus() != DataStat.Status.WithErrorMsg) {
                 profileFileName = (new File(filePath)).getName();
                 switchPage(DFHDisplayPageType.INPUTPAGE);
             }
@@ -906,7 +956,7 @@ public class L2DFHeating extends StripHeating {
 //    String profileCodeTag = "profileCode";
 //    DecimalFormat profileCodeFormat = new DecimalFormat("000000");
 
-    boolean createProfileCodeREMOVE() { // TODO to ber removed
+    boolean createProfileCodeREMOVE() { // TODO to be removed
         debug("changeProfileCode: " + changeProfileCode);
         if (changeProfileCode || (profileCode.length() < 1)) {
             profileCode = profileCodeFormat.format(Math.random() * 999999.0);
@@ -928,17 +978,17 @@ public class L2DFHeating extends StripHeating {
         return true;
     }
 
-    public String inputDataXMLREMOVE(boolean withPerformance) {    // TODO to ber removed
+    public String inputDataXMLREMOVE(boolean withPerformance) {    // TODO to be removed
         return profileCodeInXML() + super.inputDataXML(withPerformance) +
                 XMLmv.putTag("FuelSettings", furnace.fceSettingsInXML()) +
-                XMLmv.putTag("dfhProcessList", stripDFHProcessListInXML());
+                stripDFHProcessListInXML();
     }
 
-    protected boolean isProfileCodeOKREMOVE() {   // TODO to ber removed
+    protected boolean isProfileCodeOKREMOVE() {   // TODO to be removed
         return (profileCode.length() == profileCodeFormat.format(0).length());
     }
 
-    public boolean checkProfileCodeInXMLREMOVE(String xmlStr) {   // TODO to ber removed
+    public boolean checkProfileCodeInXMLREMOVE(String xmlStr) {   // TODO to be removed
         ValAndPos vp;
         vp = XMLmv.getTag(xmlStr, profileCodeTag);
         return checkProfileCode(vp.val);
@@ -948,7 +998,7 @@ public class L2DFHeating extends StripHeating {
         return XMLmv.putTag(profileCodeTag, profileCode);
     }
 
-    public StatusWithMessage takeProfileDataFromXMLREMOVE(String xmlStr) {  // TODO to ber removed
+    public StatusWithMessage takeProfileDataFromXMLREMOVE(String xmlStr) {  // TODO to be removed
         StatusWithMessage retVal = new StatusWithMessage();
         ValAndPos vp;
         vp = XMLmv.getTag(xmlStr, profileCodeTag);
@@ -956,7 +1006,7 @@ public class L2DFHeating extends StripHeating {
         if (isProfileCodeOK()) {
             retVal = super.takeProfileDataFromXML(xmlStr, true, HeatingMode.TOPBOTSTRIP,
                     DFHTuningParams.FurnaceFor.STRIP);
-            if (retVal.getDataStatus() == StatusWithMessage.DataStat.OK) {
+            if (retVal.getDataStatus() == DataStat.Status.OK) {
                 furnace.clearAssociatedData();
                 vp = XMLmv.getTag(xmlStr, "FuelSettings");
                 if (vp.val.length() < 10 || !furnace.takeFceSettingsFromXML(vp.val)) {
@@ -975,7 +1025,7 @@ public class L2DFHeating extends StripHeating {
         return retVal;
     }
 
-    protected boolean updateFurnace() {
+    protected boolean updateFurnaceREMOVE() {   // to be removed
         linkPerformanceWithProcess();
         boolean saved = false;
         FileLock lock;
@@ -1007,17 +1057,17 @@ public class L2DFHeating extends StripHeating {
         return saved;
     }
 
-    boolean saveFurnaceWithNowProfileCodeREMOVE() {    // TODO to ber removed
+    boolean saveFurnaceWithNowProfileCodeREMOVE() {    // TODO to be removed
         changeProfileCode = false;
         saveFceToFile(true);
         changeProfileCode = true;
         return true;
     }
 
-    protected void saveFceToFileREMOVE(boolean withPerformance) {   // TODO to ber removed
+    protected void saveFceToFileREMOVE(boolean withPerformance) {   // TODO to be removed
         takeValuesFromUI();
         StatusWithMessage fceSettingsIntegrity = furnace.furnaceSettings.checkIntegrity();
-        if (fceSettingsIntegrity.getDataStatus() == StatusWithMessage.DataStat.OK) {
+        if (fceSettingsIntegrity.getDataStatus() == DataStat.Status.OK) {
             String title = "Save/Update Level2 Furnace Data";
             FileDialog fileDlg =
                     new FileDialog(mainF, title,
@@ -1057,10 +1107,26 @@ public class L2DFHeating extends StripHeating {
 
     protected boolean getStripDFHProcessList(String basePath) {
         boolean retVal = false;
+        File file = getParticularFile(basePath, profileCode, performanceExtension);
+        if (file != null) {
+            StatusWithMessage response = loadStripDFHProcessList(file);
+            if (response.getDataStatus() == DataStat.Status.WithErrorMsg)
+                showError("Updated Process List: " + response.getErrorMessage());
+            else {
+                l2Info("loaded Process List from file " + file);
+                retVal = true;
+            }
+        } else
+            showError("Unable to locate Performance data File for getting Process List");
+        return retVal;
+    }
+
+    protected boolean getStripDFHProcessListREMOVE(String basePath) {     // TODO to be removed
+        boolean retVal = false;
         File file = getParticularFile(basePath, profileCode, profileFileExtension);
         if (file != null) {
             StatusWithMessage response = loadStripDFHProcessList(file);
-            if (response.getDataStatus() == StatusWithMessage.DataStat.WithErrorMsg)
+            if (response.getDataStatus() == DataStat.Status.WithErrorMsg)
                 showError("Updated Process List: " + response.getErrorMessage());
             else {
                 l2Info("loaded Process List from file " + file);
@@ -1152,7 +1218,35 @@ public class L2DFHeating extends StripHeating {
         return retVal;
     }
 
-    protected ErrorStatAndMsg getFieldPerformanceList() {
+    public ErrorStatAndMsg getFieldPerformanceList() {
+        ErrorStatAndMsg retVal = new ErrorStatAndMsg();
+        boolean gotIt = false;
+        FileLock lock;
+        int count = 5;
+        boolean gotTheLock = false;
+        while (--count > 0) {
+            lock = getTheLock();
+            if (lock == null) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                continue;
+            }
+            gotTheLock = true;
+            retVal = getFieldPerformanceList(fceDataLocation);
+            releaseLock(lock);
+            break;
+        }
+        if (!retVal.inError) {
+            updateDisplay(DFHDisplayPageType.PERFOMANCELIST);
+        } else if (!gotTheLock)
+            retVal.addErrorMsg("Facing some problem in getting Lock to take Modified Performance Data");
+        return retVal;
+    }
+
+    protected ErrorStatAndMsg getFieldPerformanceListREMOVE() {  // TODO to be removed
         return getFieldPerformanceList(fceDataLocation);
     }
 
@@ -1307,13 +1401,19 @@ public class L2DFHeating extends StripHeating {
     class ProcessModificationHandler implements Runnable {
         public void run() {
             int count = 5;
-            boolean gotIt = false;
+            boolean gotProcessList = false;
+            ErrorStatAndMsg gotPerformanceData = new ErrorStatAndMsg();
             while (--count > 0) {
                 if (!l2Furnace.isProcessDataBeingUsed()) {
                     l2Furnace.setProcessBeingUpdated(true);
                     clearLevel1ProcessList();
-                    gotIt = getStripDFHProcessList();
-                    linkPerformanceWithProcess();
+                    l2Furnace.logTrace("Reading Process Data");
+                    gotProcessList = getStripDFHProcessList();
+                    if (gotProcessList) {
+                        l2Furnace.logTrace("Reading Performance Data");
+                        gotPerformanceData = getFieldPerformanceList();
+                    }
+////                    linkPerformanceWithProcess();
                     break;
                 }
                 try {
@@ -1322,8 +1422,10 @@ public class L2DFHeating extends StripHeating {
                     e.printStackTrace();
                 }
             }
-            if (!gotIt)
+            if (!gotProcessList)
                 logInfo("Unable to read modified Process Data");
+            if ((gotPerformanceData.inError))
+                logError("Reading Performance data: " + gotPerformanceData.msg);
             l2Furnace.setProcessBeingUpdated(false);
             sendProcessListToLevel1();
         }
@@ -1394,8 +1496,8 @@ public class L2DFHeating extends StripHeating {
                 uaClient.disconnect();
             }
         }
-        DataWithMsg stat =  markIAmOFF();
-        if (stat.getStatus() != DataWithMsg.DataStat.OK) {
+        DataWithStatus stat =  markIAmOFF();
+        if (stat.getStatus() != DataStat.Status.OK) {
             showError(stat.errorMessage);
         }
 

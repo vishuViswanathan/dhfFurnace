@@ -2,7 +2,7 @@ package level2.stripDFH;
 
 import level2.applications.L2DFHeating;
 import directFiredHeating.process.FurnaceSettings;
-import mvUtils.display.DataWithMsg;
+import mvUtils.display.DataWithStatus;
 import mvUtils.math.DoubleRange;
 import mvUtils.math.XYArray;
 import performance.stripFce.PerformanceTable;
@@ -175,7 +175,7 @@ public class L2ZonalFuelProfile extends ZonalFuelProfile {
         return null;
     }
 
-    public DataWithMsg recommendedSpeed(double totFuel, boolean bBot) {
+    public DataWithStatus recommendedSpeed(double totFuel, boolean bBot) {
         if (bBot)
             return l2SpeedTotalFuelBot.getXatYwithStatus(totFuel);
         else

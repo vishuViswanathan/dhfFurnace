@@ -6,6 +6,7 @@ import org.apache.log4j.PropertyConfigurator;
 
 import javax.swing.*;
 import java.awt.*;
+import java.nio.channels.FileLock;
 
 /**
  * User: M Viswanathan
@@ -51,6 +52,49 @@ public class Level2Expert extends L2DFHeating {
     public static L2AccessControl.AccessLevel defaultLevel() {
         return L2AccessControl.AccessLevel.EXPERT;
     }
+
+    protected void editStripDFHProcess() {
+        if (dfhProcessList.addStripDFHProcess(parent()))
+            showMessage("Strip DFH Process List updated\n" +
+                    "To make it effective in Level2 RUNTIME, the Perfromance Data must be updated to file\n" +
+                    "       " + perfMenu.getText() + "->" + mISavePerformanceData.getText());
+    }
+
+
+    protected boolean updateFurnaceREMOVE() {   // TODO to be removed
+        linkPerformanceWithProcess();
+        boolean saved = false;
+        FileLock lock;
+        int count = 5;
+        boolean gotTheLock = false;
+        while (--count > 0) {
+            lock = getTheLock();
+            if (lock == null) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                continue;
+            }
+            gotTheLock = true;
+            saved = savePerformanceDataToFile();
+//            furnace.performanceIsSaved();
+            releaseLock(lock);
+            break;
+        }
+        if (saved) {
+            if (onProductionLine)
+                l2Furnace.informProcessDataModified();
+        }
+        else if (!gotTheLock)
+            showError("Facing some problem in getting Lock");
+        else
+            showError("Furnace Data not saved");
+        return saved;
+    }
+
+
 
     protected JMenuBar assembleMenuBar() {
         JMenuBar mb = new JMenuBar();

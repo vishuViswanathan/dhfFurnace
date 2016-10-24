@@ -2,13 +2,12 @@ package directFiredHeating.process;
 
 import basic.ChMaterial;
 import basic.ProductionData;
-import com.sun.deploy.xml.XMLable;
 import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
 import mvUtils.display.*;
 import mvUtils.jsp.JSPComboBox;
 import mvUtils.math.BooleanWithStatus;
-import mvUtils.math.DoubleWithStatus;
+import mvUtils.math.DoubleRange;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import performance.stripFce.Performance;
@@ -46,6 +45,8 @@ public class OneStripDFHProcess {
     public boolean inError = false;
     EditResponse.Response editResponse = EditResponse.Response.EXIT;
     StripDFHProcessList existingList;
+    Performance pThick;
+    Performance pThin;
 
     public OneStripDFHProcess(StripDFHProcessList existingList, String baseProcessName, Vector<ChMaterial> vChMaterial, InputControl inpC) {
         this.existingList = existingList;
@@ -95,27 +96,27 @@ public class OneStripDFHProcess {
 //        return stat;
 //    }
 
-    public DoubleWithStatus checkAndLimitOutput(double output, double width, double thickness) {
+    public DataWithStatus<Double> checkAndLimitOutput(double output, double width, double thickness) {
         BooleanWithStatus response = checkStripSize(width, thickness);
-        StatusWithMessage.DataStat stat = response.getDataStatus();
-        DoubleWithStatus outputWithStatus = new DoubleWithStatus(0);
-        if (stat == StatusWithMessage.DataStat.OK) {
+        DataStat.Status stat = response.getDataStatus();
+        DataWithStatus<Double> outputWithStatus = new DataWithStatus<>(0.0);
+        if (stat == DataStat.Status.OK) {
             if (response.getValue()) {
                 double unitOutput = output / width;
                 if (unitOutput > maxUnitOutput)
                     outputWithStatus.setValue(maxUnitOutput * width, "Limited by Unit Output");
                 else if (unitOutput < minUnitOutput)
-                    outputWithStatus.setErrorMessage(String.format("Unit Output is low <%5.2f tph/m>", output));
+                    outputWithStatus.setErrorMsg(String.format("Unit Output is low <%5.2f tph/m>", output));
                 else
                     outputWithStatus.setValue(output);
             }
         } else
-            outputWithStatus.setErrorMessage(response.getErrorMessage());
+            outputWithStatus.setErrorMsg(response.getErrorMessage());
         return outputWithStatus;
     }
 
     public BooleanWithStatus checkWidth(double width, BooleanWithStatus stat) {
-        if (stat.getDataStatus() == StatusWithMessage.DataStat.OK) {
+        if (stat.getDataStatus() == DataStat.Status.OK) {
             if (width > maxWidth)
                 stat.setErrorMessage(String.format("Strip Width is high <%4.0f mm>", width * 1000));
             else if (width <= minWidth)
@@ -125,7 +126,7 @@ public class OneStripDFHProcess {
     }
 
     public BooleanWithStatus checkThickness(double thick, BooleanWithStatus stat) {
-        if (stat.getDataStatus() == StatusWithMessage.DataStat.OK) {
+        if (stat.getDataStatus() == DataStat.Status.OK) {
             if (thick > maxThickness)
                 stat.setErrorMessage(String.format("Strip Thickness is high <%4.3f mm>", thick * 1000));
             else if (thick <= minThickness)
@@ -137,22 +138,22 @@ public class OneStripDFHProcess {
 
 //    public BooleanWithStatus isStripAcceptable(double output, double width, double thickness) {
 //        BooleanWithStatus response = checkStripSize(width, thickness);
-//        if ((response.getDataStatus() == StatusWithMessage.DataStat.OK) && (response.getValue()))
+//        if ((response.getDataStatus() == DataStat.Status.OK) && (response.getValue()))
 //            checkUnitOutput((output / width), response);
 //        return response;
 //    }
 
-    public DoubleWithStatus getRecommendedSpeed(double output, double width, double thickness) {
-        DoubleWithStatus response = checkAndLimitOutput(output, width, thickness);
-        StatusWithMessage.DataStat status = response.getDataStatus();
-        if (status != StatusWithMessage.DataStat.WithErrorMsg) {
+    public DataWithStatus<Double> getRecommendedSpeed(double output, double width, double thickness) {
+        DataWithStatus<Double> response = checkAndLimitOutput(output, width, thickness);
+        DataStat.Status status = response.getStatus();
+        if (status != DataStat.Status.WithErrorMsg) {
             double speed = response.getValue() / (width * thickness * density);
             if (speed > maxSpeed) {
                 speed = maxSpeed;
                 response.setValue(speed, "Restricted by Maximum Process Speed");
             } else {
-                if (status == StatusWithMessage.DataStat.WithInfoMsg)
-                    response.setValue(speed, response.getInfoMessage());   // if it had any infoMessage, it ic forwarded
+                if (status == DataStat.Status.WithInfoMsg)
+                    response.setValue(speed, response.infoMessage);   // if it had any infoMessage, it ic forwarded
                 else
                     response.setValue(speed);
             }
@@ -347,20 +348,31 @@ public class OneStripDFHProcess {
         double exitTemp = p.exitTemp();
         DFHTuningParams tuning = dfHeating.getTuningParams();
         ErrorStatAndMsg retVal = new ErrorStatAndMsg(false, "Selecting Process for Performance data: ");
-        DataWithStatus<ChMaterial> chMat = getChMaterial(chThick);
-        if (chMat.valid && (chMaterial.equalsIgnoreCase(chMat.getValue().name))) {
-            if (exitTempInRange(exitTemp)) {
+        if (exitTempInRange(exitTemp)) {
+            DataWithStatus<ChMaterial> chMat = getChMaterial(chThick);
+            if (chMat.valid && (chMaterial.equalsIgnoreCase(chMat.getValue().name))) {
                 ErrorStatAndMsg stat = performanceOkForProcess(chWidth, unitOutput);
                 if (stat.inError)
                     retVal.add(stat);
             }
             else
-                retVal.addErrorMsg("Exit Temperature no in range, required " + tempDFHExit + " +- " + tuning.exitTempTolerance);
+                retVal.addErrorMsg("Charge Material mismatch: \n" +
+                        "performance = " + p + "\n" +
+                        "Process = " + getFullProcessID());
         }
         else
-            retVal.addErrorMsg("Charge Material mismatch: \n" +
-                    "performance = " + p + "\n" +
-                    "Process = " + getFullProcessID());
+            retVal.addErrorMsg("Exit Temperature no in range, required " + tempDFHExit + " +- " + tuning.exitTempTolerance);
+        return retVal;
+    }
+
+    public BooleanWithStatus checkPerformanceTableRange(Performance p) {
+        BooleanWithStatus retVal = new BooleanWithStatus(true);
+        DoubleRange perfWidthRange = p.getWidthRange();
+        if (!perfWidthRange.isThisYourSubset(minWidth, maxWidth, 0.01))
+            retVal.addInfoMessage("Performance Data does not cover the Width Range");
+        DoubleRange perfUOutputRange = p.getUnitOutputRange();
+        if (!perfUOutputRange.isThisYourSubset(minUnitOutput, maxUnitOutput, 0.01))
+            retVal.addInfoMessage("Performance Data does not cover the Unit Output Range");
         return retVal;
     }
 
@@ -380,7 +392,7 @@ public class OneStripDFHProcess {
             if (chWidth >= minWallowed) {
                 double maxUnitOutputAllowed = maxUnitOutput * tuning.unitOutputOverRange;
                 double minUnitOutputAllowed = Math.max(minUnitOutput, maxUnitOutput * tuning.unitOutputUnderRange);
-                trace("" + minUnitOutputAllowed + " < " + unitOutput + " < " + maxUnitOutputAllowed);
+//                trace("" + minUnitOutputAllowed + " < " + unitOutput + " < " + maxUnitOutputAllowed);
                 if (unitOutput >= minUnitOutputAllowed) {
                     if (unitOutput <= maxUnitOutputAllowed) {
                         retVal.inError = false;

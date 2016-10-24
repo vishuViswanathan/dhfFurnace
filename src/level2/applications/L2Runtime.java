@@ -1,7 +1,8 @@
 package level2.applications;
 
 import directFiredHeating.accessControl.L2AccessControl;
-import mvUtils.display.DataWithMsg;
+import mvUtils.display.DataStat;
+import mvUtils.display.DataWithStatus;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
@@ -82,6 +83,7 @@ public class L2Runtime extends L2DFHeating {
     }
 
     public boolean sendProcessListToLevel1() {
+        l2Furnace.logTrace("sending Process List to Level1");
         int p = l2ProcessList.sendListToLevel1();
         l2Furnace.processListToLevel1Updated(p);
         return p > 0;
@@ -94,12 +96,12 @@ public class L2Runtime extends L2DFHeating {
 
     public boolean canClose() {
         boolean retVal = false;
-        DataWithMsg status = isAnyRunning(
+        DataWithStatus<Boolean> status = isAnyRunning(
                 new L2AccessControl.AccessLevel[]{
                         L2AccessControl.AccessLevel.EXPERT,
                         L2AccessControl.AccessLevel.UPDATER});
-        if (status.getStatus() == DataWithMsg.DataStat.OK) {
-            if (status.booleanValue) {
+        if (status.getStatus() == DataStat.Status.OK) {
+            if (status.getValue()) {
                 showError("Either of " + L2AccessControl.AccessLevel.EXPERT +
                         ", or " + L2AccessControl.AccessLevel.UPDATER + " is Running\n" +
                 "Exit them and then try exiting RUNTIME");

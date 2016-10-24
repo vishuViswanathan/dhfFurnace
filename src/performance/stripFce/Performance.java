@@ -7,6 +7,7 @@ import directFiredHeating.DFHeating;
 import directFiredHeating.process.OneStripDFHProcess;
 import display.*;
 import mvUtils.display.*;
+import mvUtils.math.DoubleRange;
 import mvUtils.math.MoreOrLess;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
@@ -322,7 +323,7 @@ public class Performance {
 //        controller.setTableFactors(this);
         boolean allOk = false;
         StatusWithMessage settingStat = setLimits();
-        if (settingStat.getDataStatus() == StatusWithMessage.DataStat.OK) {
+        if (settingStat.getDataStatus() == DataStat.Status.OK) {
             perfTable = new PerformanceTable(this, outputFactors, widthList);
             double forOutput;
             double forWidth;
@@ -354,8 +355,9 @@ public class Performance {
         return allOk;
     }
 
-    void getUnitOutput() {
+    double getUnitOutput() {
         unitOutput = output / chLength;
+        return unitOutput;
     }
 
     OneZone getOneZone(int nZone, boolean bBot) {
@@ -507,6 +509,14 @@ public class Performance {
                 zoneFuelSuggestion[z] = 0;
         }
         return true;
+    }
+
+    public DoubleRange getWidthRange() {
+        return perfTable.getWidthRange();
+    }
+
+    public DoubleRange getUnitOutputRange() {
+        return perfTable.getOutputFactorRange().multiply(getUnitOutput());
     }
 
     int getChInTempProfile(double[] chTempInProfile) {
@@ -752,7 +762,7 @@ public class Performance {
             public void actionPerformed(ActionEvent e) {
                 double flow = ntTotFlow.getData();
                 if (flow > 0) {
-                    nlSpeed.setData(fuelP.recommendedSpeed(flow, false).doubleValue);
+                    nlSpeed.setData(fuelP.recommendedSpeed(flow, false).getValue());
                 }
             }
         });

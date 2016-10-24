@@ -381,7 +381,7 @@ public class FurnaceSettings   {
             }
             edited = true;
             StatusWithMessage stat = checkIntegrity();
-            if (stat.getDataStatus() == StatusWithMessage.DataStat.WithErrorMsg) {
+            if (stat.getDataStatus() == DataStat.Status.WithErrorMsg) {
                 dfHeating.showError("Fuel data Error:\n" + stat.getErrorMessage(), this);
                 return false;
             }

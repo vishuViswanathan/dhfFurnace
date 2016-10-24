@@ -6,6 +6,9 @@ import basic.ProductionData;
 import directFiredHeating.DFHFurnace;
 import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
+import directFiredHeating.process.OneStripDFHProcess;
+import mvUtils.display.DataStat;
+import mvUtils.display.DataWithStatus;
 import mvUtils.display.StatusWithMessage;
 import mvUtils.display.TimedMessage;
 import mvUtils.math.MoreOrLess;
@@ -131,13 +134,17 @@ public class PerformanceGroup implements ActionListener{
         StatusWithMessage retVal = new StatusWithMessage();
         Vector<Performance> updatedRefPerf = new Vector<>();
         for (Performance p:refPerformance) {
-            p.dfhProcess = controller.getDFHProcess(p);
-            if (p.dfhProcess != null) {
+            DataWithStatus<OneStripDFHProcess> response = controller.getDFHProcess(p);
+            DataStat.Status responseStat = response.getStatus();
+            if (responseStat == DataStat.Status.OK) {
+                p.dfhProcess = response.getValue();
                 updatedRefPerf.add(p);
             }
             else {
                 retVal.addInfoMessage("Unable to get Process definition for Performance:\n   " + p +
                 ".\n The performance Data is deleted");
+                if (responseStat == DataStat.Status.WithInfoMsg)
+                    retVal.addInfoMessage("\n     " + response.getInfoMessage());
             }
         }
         refPerformance = updatedRefPerf;

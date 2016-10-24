@@ -464,7 +464,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
     protected void setTestData() {
         StatusWithMessage status = takeProfileDataFromXML(SampleWHFurnace.xmlStr);
-        if (status.getDataStatus() == StatusWithMessage.DataStat.WithErrorMsg)
+        if (status.getDataStatus() == DataStat.Status.WithErrorMsg)
             showError(status.getErrorMessage());
         setDefaultSelections();
         adjustForLengthChange();
@@ -1939,7 +1939,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         rowHead.updateUI();
     }
 
-    public OneStripDFHProcess getDFHProcess(Performance forThisPerformance) {
+    public DataWithStatus<OneStripDFHProcess> getDFHProcess(Performance forThisPerformance) {
         return dfhProcessList.getDFHProcess(forThisPerformance) ;
     }
 
@@ -3245,7 +3245,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                     String fceData = fceDataFromXL(fc);
                     if (checkVersion(fceData)) {
                         retVal = takeProfileDataFromXML(fceData);
-                        if ((retVal.getDataStatus() == StatusWithMessage.DataStat.OK)) {
+                        if ((retVal.getDataStatus() == DataStat.Status.OK)) {
 //                            retVal.setInfoMessage(fileName);
                             profileFileName = fileName;
                             parent().toFront();
@@ -3262,7 +3262,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                 }
                 else {
                     retVal = getFceFromFceDatFile(fc);
-                    if (retVal.getDataStatus() != StatusWithMessage.DataStat.WithErrorMsg)
+                    if (retVal.getDataStatus() != DataStat.Status.WithErrorMsg)
                         profileFileName = fileName;
 
                 }
@@ -3307,7 +3307,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                     }
                 } else {
                     retVal = getFceFromFceDatFile(filePath);
-                    if (retVal.getDataStatus() != StatusWithMessage.DataStat.WithErrorMsg)
+                    if (retVal.getDataStatus() != DataStat.Status.WithErrorMsg)
                         profileFileName = fileName;
                 }
             }
@@ -4356,10 +4356,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                     if (goAhead) {
                         pbEdit.doClick();
                         StatusWithMessage profileStatMsg = getFceFromFile();
-                        StatusWithMessage.DataStat dataStat = profileStatMsg.getDataStatus();
-                        if (dataStat != StatusWithMessage.DataStat.WithErrorMsg) {
+                        DataStat.Status dataStat = profileStatMsg.getDataStatus();
+                        if (dataStat != DataStat.Status.WithErrorMsg) {
                             parent().toFront();
-                            if (dataStat == StatusWithMessage.DataStat.WithInfoMsg)
+                            if (dataStat == DataStat.Status.WithInfoMsg)
                                 showMessage(profileStatMsg.getInfoMessage());
                             switchPage(DFHDisplayPageType.INPUTPAGE);
                             enableDataEntry(true);
@@ -4459,10 +4459,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 //                    if (goAhead) {
 //                        pbEdit.doClick();
 //                        StatusWithMessage profileStatMsg = getFceFromFile();
-//                        StatusWithMessage.DataStat dataStat = profileStatMsg.getDataStatus();
-//                        if (dataStat != StatusWithMessage.DataStat.WithErrorMsg) {
+//                        DataStat.Status dataStat = profileStatMsg.getDataStatus();
+//                        if (dataStat != DataStat.Status.WithErrorMsg) {
 //                            parent().toFront();
-//                            if (dataStat == StatusWithMessage.DataStat.WithInfoMsg)
+//                            if (dataStat == DataStat.Status.WithInfoMsg)
 //                                showMessage(profileStatMsg.getInfoMessage());
 //                            switchPage(DFHDisplayPageType.INPUTPAGE);
 //                            enableDataEntry(true);
