@@ -10,6 +10,8 @@ import mvUtils.display.*;
 import mvUtils.jnlp.JNLPFileHandler;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
+import performance.stripFce.Performance;
+import sun.misc.Perf;
 
 import javax.swing.*;
 import java.awt.*;
@@ -166,20 +168,18 @@ public abstract class StripHeating extends DFHeating {
                 if (vp.val.length() < 10 || !furnace.takeFceSettingsFromXML(vp.val)) {
                     retVal.addErrorMessage("No Fuel settings data available");
                 }
-//                vp = XMLmv.getTag(xmlStr, "dfhProcessList");
-//                if (vp.val.length() < 10 || !takeStripProcessListFromXML(vp.val)) {
-//                    retVal.addErrorMessage("No Strip Process Data available");
-//                } else if (dfhProcessList.getCount() < 1) {
-//                    retVal.addErrorMessage("Process List must have at least one entry");
-//                }
             }
         } else
             retVal.addErrorMessage("ERROR: Not a Level2 Furnace Profile");
         return retVal;
     }
 
-    protected boolean  linkPerformanceWithProcess() {
-        return furnace.linkPerformanceWithProcess();
+//    protected boolean  linkPerformanceWithProcess() {
+//        return furnace.linkPerformanceWithProcess();
+//    }
+
+    public void deletePerformance(Performance p) {
+        furnace.deletePerformance(p);
     }
 
     protected boolean saveFurnaceWithNowProfileCode() {
@@ -262,7 +262,8 @@ protected void saveFceToFile(boolean withPerformance) {
         return false;
     }
 
-    boolean takeStripProcessListFromXML(String xmlStr) {
+    protected boolean takeStripProcessListFromXML(String xmlStr) {
+        logInfo("#################### in StripHeating.takeStripProcessListFromXML ");
         return dfhProcessList.takeStripProcessListFromXML(xmlStr);
     }
 
@@ -372,7 +373,7 @@ protected void saveFceToFile(boolean withPerformance) {
     }
 
     protected boolean updateFurnace() {
-        linkPerformanceWithProcess();
+//        linkPerformanceWithProcess();
         saveFurnaceWithNowProfileCode();
         return true;
     }

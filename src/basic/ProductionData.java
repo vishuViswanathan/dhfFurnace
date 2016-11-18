@@ -50,7 +50,7 @@ public class ProductionData {
     public ProductionData(ProductionData fromProductionData) {
         this();
         ProductionData fP = fromProductionData;
-        this.stripProcess = fromProductionData.stripProcess;
+        this.stripProcess = fP.stripProcess;
         this.processName = fP.processName;
         charge = new Charge(fromProductionData.charge);
         chPitch = fromProductionData.chPitch;

@@ -12,6 +12,7 @@ import mvUtils.display.StatusWithMessage;
 import tmiOnly.GetSoftwareKey;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Vector;
@@ -40,7 +41,7 @@ public class L2Configurator extends StripHeating {
         bAllowProfileChange = true;
         bAllowManualCalculation = true;
         asApplication = true;
-        releaseDate = "20161021 14:00";
+        releaseDate = "20161118 10:42";
         createLocalMenuItems();
     }
 
@@ -51,7 +52,6 @@ public class L2Configurator extends StripHeating {
         dfhProcessList = new StripDFHProcessList(this);
         setUIDefaults();
         mainF = new JFrame();
-        mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         try {
             accessControl = new OfflineAccessControl(asJNLP, mainF);
             mainF.setTitle("DFH Furnace - L2 Configurator - " + releaseDate + testTitle);

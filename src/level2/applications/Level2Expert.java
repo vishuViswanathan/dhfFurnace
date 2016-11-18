@@ -34,12 +34,12 @@ public class Level2Expert extends L2DFHeating {
                 l2Furnace.startL2DisplayUpdater();
                 informLevel2Ready();
             } else {
-                showError("Level2 could not be started. Aborting 002...");
+                showError("Level2 Expert could not be started. Aborting 002...");
                 exitFromLevel2();
             }
         }
         else {
-            showMessage("Facing problem connecting to Level1. Aborting ...");
+            showMessage("Expert: Facing problem connecting to Level1. Aborting ...");
             close();
         }
     }
@@ -58,40 +58,6 @@ public class Level2Expert extends L2DFHeating {
             showMessage("Strip DFH Process List updated\n" +
                     "To make it effective in Level2 RUNTIME, the Perfromance Data must be updated to file\n" +
                     "       " + perfMenu.getText() + "->" + mISavePerformanceData.getText());
-    }
-
-
-    protected boolean updateFurnaceREMOVE() {   // TODO to be removed
-        linkPerformanceWithProcess();
-        boolean saved = false;
-        FileLock lock;
-        int count = 5;
-        boolean gotTheLock = false;
-        while (--count > 0) {
-            lock = getTheLock();
-            if (lock == null) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                continue;
-            }
-            gotTheLock = true;
-            saved = savePerformanceDataToFile();
-//            furnace.performanceIsSaved();
-            releaseLock(lock);
-            break;
-        }
-        if (saved) {
-            if (onProductionLine)
-                l2Furnace.informProcessDataModified();
-        }
-        else if (!gotTheLock)
-            showError("Facing some problem in getting Lock");
-        else
-            showError("Furnace Data not saved");
-        return saved;
     }
 
 

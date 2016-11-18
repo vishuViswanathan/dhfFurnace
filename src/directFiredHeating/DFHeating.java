@@ -148,7 +148,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = "JNLP 20161007";
+    protected String releaseDate = "JNLP 20161118";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -385,7 +385,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected void createUIs(boolean withDefaultMenuBar) {
          if (!itsON) {
              mainAppPanel = new FramedPanel(new BorderLayout());
-             mainAppPanel.setPreferredSize(new Dimension(1000, 650));
+             mainAppPanel.setPreferredSize(new Dimension(1000, 700));
              mainF.addWindowListener(new WinListener());
              createAllMenuItems();
              createAllUIItems();
@@ -1940,7 +1940,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     public DataWithStatus<OneStripDFHProcess> getDFHProcess(Performance forThisPerformance) {
-        return dfhProcessList.getDFHProcess(forThisPerformance) ;
+        logInfo("in getDFHProcess in DFHeating");
+        DataWithStatus retVal = dfhProcessList.getDFHProcess(forThisPerformance) ;
+        logInfo("retVal status =" + retVal.getDataStatus() + ", values = " + retVal.getValue());
+        return retVal;
     }
 
     protected OneStripDFHProcess getDFHProcess() {
@@ -2601,6 +2604,11 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return true;
     }
 
+    public boolean setProductionData(ProductionData production) {
+        furnace.setProductionData(new ProductionData(production));
+        return true;
+    }
+
     public FceEvaluator calculateFce(boolean bResetLossFactor, ResultsReadyListener resultsReadyListener) {
         return calculateFce(resultsReadyListener, true, bResetLossFactor, true);
     }
@@ -2727,6 +2735,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     public StatusWithMessage takeProfileDataFromXML(String xmlStr) {
+        logInfo("in takeProfileDatFromXML in DFHeating");
         return takeProfileDataFromXML(xmlStr, false, null, null);
     }
 

@@ -361,6 +361,7 @@ public class DFHFurnace {
             else
                 break;
         }
+        firedCount(false);
         if (bTopBot) {
             for (int s = 0; s < nBotActiveSecs; s++) {
                 sec = botSections.get(s);
@@ -369,6 +370,7 @@ public class DFHFurnace {
                 else
                     break;
             }
+            firedCount(true);
             if (bAddTopSoak)
                 addedTopSoak.getReadyToCalcul();
         }
@@ -767,9 +769,21 @@ public class DFHFurnace {
         return bRetVal;
     }
 
-    public boolean linkPerformanceWithProcess() {
-        return true;
+//    public boolean linkPerformanceWithProcess() {
+//        return true;
+//    }
+
+    public StatusWithMessage addPerformance(Performance p) {
+        return addPerformance(p, -1);
+//        performBase.addPerformance(p);
+//        return new StatusWithMessage();
     }
+
+    public StatusWithMessage addPerformance(Performance p, int atLoc) {
+        performBase.addPerformance(p, atLoc);
+        return new StatusWithMessage();
+    }
+
 
     protected boolean createPerfBase() {
         performBase = new PerformanceGroup(this, tuningParams);
@@ -812,13 +826,20 @@ public class DFHFurnace {
             if (chTempProfAvailable)
                 controller.perfBaseAvailable(true);
             if (perform != null && createTable) {
-                controller.calculateForPerformanceTable(perform);
-                showMessage("Preparing performance table for Base: " + perform);
+                calculateForPerformanceTable(perform);
+//                controller.calculateForPerformanceTable(perform);
+//                showMessage("Preparing performance table for Base: " + perform);
             }
         }
         return retVal;
     }
 
+    public FceEvaluator calculateForPerformanceTable(Performance perform) {
+        setProductionData(perform.getBaseProductionData());
+        FceEvaluator eval = controller.calculateForPerformanceTable(perform);
+        showMessage("Preparing performance table for Base: " + perform);
+        return eval;
+    }
 
     public Performance getPerformance() {
         Vector<OneZone> allZones = new Vector<OneZone>();
@@ -3745,9 +3766,9 @@ public class DFHFurnace {
     }
 
     public boolean showZoneDataMsgIfRequired(Component caller) {
-        firedCount(false);
-        if (bTopBot)
-            firedCount(true);
+//        firedCount(false);
+//        if (bTopBot)
+//            firedCount(true);
         if (chTempProfAvailable || perfBaseReady)
             return true;
         boolean bRetVal = showZoneDataMsgIfRequired(caller, false);
@@ -4029,32 +4050,36 @@ public class DFHFurnace {
     }
 
     public boolean takePerformanceFromXML(String xmlStr) {
-        return takePerformanceFromXML(xmlStr, false);
+        return takePerformanceFromXML(xmlStr, false, false);
     }
 
-    public boolean takePerformanceFromXML(String xmlStr, boolean append) {
+    public boolean takePerformanceFromXML(String xmlStr, boolean readPerfTable, boolean append) {
         boolean retVal = false;
         ValAndPos vp;
         vp = XMLmv.getTag(xmlStr, "PerformanceData", 0);
         if (vp.val.length() > 100) { //may be some data
             if ((!append) || performBase == null)
                 performBase = new PerformanceGroup(this, tuningParams);
-            if (performBase.takeDataFromXML(vp.val, append)) {
+            if (performBase.takeDataFromXML(vp.val, readPerfTable, append)) {
                 chTempProfAvailable = performBase.chTempProfAvailable;
                 controller.perfBaseAvailable(chTempProfAvailable);
                 performBase.markToBeSaved(append);
                 retVal = true;
             } else {
                 showError("Some problem in reading Performance Data");
-                performBase = null;
+//                performBase = null;
             }
-            retVal = linkPerformanceWithProcess();
+//            retVal = linkPerformanceWithProcess();
         }
         return retVal;
     }
 
     public void enableDeleteInPerformanceData(boolean ena) {
         performBase.enableDeleteAction(ena);
+    }
+
+    public void deletePerformance(Performance p) {
+        performBase.deletePerformance(p);
     }
 
     public void takeAirRecuFromXML(String xmlStr) {

@@ -137,7 +137,10 @@ public class FceEvaluator implements Runnable, ThreadController{
         mainFp.add(locCtrl, BorderLayout.SOUTH);
         progressPanel = progressPanel();
         mainFp.add(progressPanel, BorderLayout.CENTER);
-        return furnace.getReadyToCalcul(calculStep);
+//        if (baseP == null)
+            return furnace.getReadyToCalcul(calculStep);
+//        else
+//            return true;
     }
 
     JButton pbAbort = new JButton("Abort Calculation");

@@ -33,7 +33,7 @@ public class L2Runtime extends L2DFHeating {
                 exitFromLevel2();
             }
         } else {
-            showMessage("Facing problem connecting to Level1. Aborting ...");
+            showMessage("Runtime: Facing problem connecting to Level1. Aborting ...");
             close();
         }
     }

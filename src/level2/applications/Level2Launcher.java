@@ -351,6 +351,7 @@ public class Level2Launcher {
                         public void doInBackground() {
 //                            L2DFHeating l2 = new L2DFHeating("Furnace", true);
                             L2DFHeating l2 = new L2Runtime("Furnace");
+                            System.out.println("RUNTIME: l2.l2SystemReady = " + l2.l2SystemReady);
                             if (l2.l2SystemReady)
                                 quit();
                         }
@@ -376,6 +377,7 @@ public class Level2Launcher {
                             new WaitMsg(mainF, "Starting Level2Updater. Please wait ...", new ActInBackground() {
                                 public void doInBackground() {
                                     L2DFHeating l2 = new L2Updater("Furnace", true);
+                                    System.out.println("EXPERT: l2.l2SystemReady = " + l2.l2SystemReady);
                                     if (l2.l2SystemReady)
                                         quit();
                                 }
@@ -405,6 +407,7 @@ public class Level2Launcher {
                             new WaitMsg(mainF, "Starting Level2Expert. Please wait ...", new ActInBackground() {
                                 public void doInBackground() {
                                     L2DFHeating l2 = new Level2Expert("Furnace", true);
+                                    System.out.println("EXPERT: l2.l2SystemReady = " + l2.l2SystemReady);
                                     if (l2.l2SystemReady)
                                         quit();
                                 }

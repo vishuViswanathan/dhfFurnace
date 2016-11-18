@@ -74,7 +74,7 @@ public class L2DFHeating extends StripHeating {
         bAtSite = true;
         bAllowProfileChange = false;
         userActionAllowed = false;
-        releaseDate = "20160420";
+        releaseDate = "20161116";
         onProductionLine = true;
         asApplication = true;
         this.equipment = equipment;
@@ -533,15 +533,12 @@ public class L2DFHeating extends StripHeating {
         return dfhProcessList.dataInXMl().toString();
     }
 
-    boolean takeStripProcessListFromXMLREMOVE (String xmlStr) {   // TODO tobe removed
-        return dfhProcessList.takeStripProcessListFromXML(xmlStr);
-    }
-
-    boolean takeStripProcessListFromXML(String xmlStr) {
-        ValAndPos vp;
-        vp = XMLmv.getTag(xmlStr, "dfhProcessList");
-        return (vp.val.length() > 10 && dfhProcessList.takeStripProcessListFromXML(xmlStr));
-    }
+//    boolean takeStripProcessListFromXML(String xmlStr) {
+//        logInfo("##################### in L2DFHeating.takeStripProcessListFromXML ");
+//        ValAndPos vp;
+//        vp = XMLmv.getTag(xmlStr, "dfhProcessList");
+//        return (vp.val.length() > 10 && dfhProcessList.takeStripProcessListFromXML(xmlStr));
+//    }
 
     File fceDataLocationDirectory = new File(fceDataLocation);
 
@@ -695,8 +692,8 @@ public class L2DFHeating extends StripHeating {
                             showError("Process List must have at least one entry");
                         }
                         else {
-
-                            if (furnace.takePerformanceFromXML(xmlStr, true)) {
+                            logInfo("Loading Performance Data");
+                            if (furnace.takePerformanceFromXML(xmlStr)) {
                                 if (showDebugMessages)
                                     showMessage("Performance Data loaded");
                                 retVal = true;
@@ -978,131 +975,8 @@ public class L2DFHeating extends StripHeating {
         return true;
     }
 
-    public String inputDataXMLREMOVE(boolean withPerformance) {    // TODO to be removed
-        return profileCodeInXML() + super.inputDataXML(withPerformance) +
-                XMLmv.putTag("FuelSettings", furnace.fceSettingsInXML()) +
-                stripDFHProcessListInXML();
-    }
-
-    protected boolean isProfileCodeOKREMOVE() {   // TODO to be removed
-        return (profileCode.length() == profileCodeFormat.format(0).length());
-    }
-
-    public boolean checkProfileCodeInXMLREMOVE(String xmlStr) {   // TODO to be removed
-        ValAndPos vp;
-        vp = XMLmv.getTag(xmlStr, profileCodeTag);
-        return checkProfileCode(vp.val);
-    }
-
     String profileCodeInXML() {
         return XMLmv.putTag(profileCodeTag, profileCode);
-    }
-
-    public StatusWithMessage takeProfileDataFromXMLREMOVE(String xmlStr) {  // TODO to be removed
-        StatusWithMessage retVal = new StatusWithMessage();
-        ValAndPos vp;
-        vp = XMLmv.getTag(xmlStr, profileCodeTag);
-        profileCode = vp.val;
-        if (isProfileCodeOK()) {
-            retVal = super.takeProfileDataFromXML(xmlStr, true, HeatingMode.TOPBOTSTRIP,
-                    DFHTuningParams.FurnaceFor.STRIP);
-            if (retVal.getDataStatus() == DataStat.Status.OK) {
-                furnace.clearAssociatedData();
-                vp = XMLmv.getTag(xmlStr, "FuelSettings");
-                if (vp.val.length() < 10 || !furnace.takeFceSettingsFromXML(vp.val)) {
-                    retVal.addErrorMessage("No Fuel settings data available");
-                }
-                vp = XMLmv.getTag(xmlStr, "dfhProcessList");
-                if (vp.val.length() < 10 || !takeStripProcessListFromXML(vp.val)) {
-                    retVal.addErrorMessage("No Strip Process Data available");
-                }
-                else if (dfhProcessList.getCount() < 1) {
-                    retVal.addErrorMessage("Process List must have at least one entry");
-                }
-            }
-        } else
-            retVal.addErrorMessage("ERROR: Not a Level2 Furnace Profile");
-        return retVal;
-    }
-
-    protected boolean updateFurnaceREMOVE() {   // to be removed
-        linkPerformanceWithProcess();
-        boolean saved = false;
-        FileLock lock;
-        int count = 5;
-        boolean gotTheLock = false;
-        while (--count > 0) {
-            lock = getTheLock();
-            if (lock == null) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                continue;
-            }
-            gotTheLock = true;
-            saved = saveFurnaceWithNowProfileCode();
-            releaseLock(lock);
-            break;
-        }
-        if (saved) {
-            if (onProductionLine)
-                l2Furnace.informProcessDataModified();
-        }
-        else if (!gotTheLock)
-            showError("Facing some problem in getting Lock");
-        else
-            showError("Furnace Data not saved");
-        return saved;
-    }
-
-    boolean saveFurnaceWithNowProfileCodeREMOVE() {    // TODO to be removed
-        changeProfileCode = false;
-        saveFceToFile(true);
-        changeProfileCode = true;
-        return true;
-    }
-
-    protected void saveFceToFileREMOVE(boolean withPerformance) {   // TODO to be removed
-        takeValuesFromUI();
-        StatusWithMessage fceSettingsIntegrity = furnace.furnaceSettings.checkIntegrity();
-        if (fceSettingsIntegrity.getDataStatus() == DataStat.Status.OK) {
-            String title = "Save/Update Level2 Furnace Data";
-            FileDialog fileDlg =
-                    new FileDialog(mainF, title,
-                            FileDialog.SAVE);
-            boolean profileCodeChanged = createProfileCode();
-            String promptFile = (profileCodeChanged) ?
-                    (profileCode + " FurnaceProfile." + profileFileExtension) :
-                    profileFileName;
-            fileDlg.setDirectory(fceDataLocation);
-            fileDlg.setFile(promptFile);
-            fileDlg.setVisible(true);
-
-            String bareFile = fileDlg.getFile();
-            if (!(bareFile == null)) {
-                int len = bareFile.length();
-                if ((len < 8) || !(bareFile.substring(len - 7).equalsIgnoreCase("." + profileFileExtension))) {
-                    showMessage("Adding '." + profileFileExtension + "' to file name");
-                    bareFile = bareFile + "." + profileFileExtension;
-                }
-                String fileName = fileDlg.getDirectory() + bareFile;
-                try {
-                    BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(fileName));
-                    oStream.write(inputDataXML(withPerformance).getBytes());
-                    oStream.close();
-                    if (withPerformance)
-                        furnace.performanceIsSaved();
-                } catch (FileNotFoundException e) {
-                    showError("File " + fileName + " NOT found!");
-                } catch (IOException e) {
-                    showError("Some IO Error in writing to file " + fileName + "!");
-                }
-            }
-            parent().toFront();
-        } else
-            showError("Problem in Fuel Settings :\n" + fceSettingsIntegrity.getErrorMessage());
     }
 
     protected boolean getStripDFHProcessList(String basePath) {
@@ -1118,22 +992,6 @@ public class L2DFHeating extends StripHeating {
             }
         } else
             showError("Unable to locate Performance data File for getting Process List");
-        return retVal;
-    }
-
-    protected boolean getStripDFHProcessListREMOVE(String basePath) {     // TODO to be removed
-        boolean retVal = false;
-        File file = getParticularFile(basePath, profileCode, profileFileExtension);
-        if (file != null) {
-            StatusWithMessage response = loadStripDFHProcessList(file);
-            if (response.getDataStatus() == DataStat.Status.WithErrorMsg)
-                showError("Updated Process List: " + response.getErrorMessage());
-            else {
-                l2Info("loaded Process List from file " + file);
-                retVal = true;
-            }
-        } else
-            showError("Unable to locate Furnace data File for getting Process List");
         return retVal;
     }
 

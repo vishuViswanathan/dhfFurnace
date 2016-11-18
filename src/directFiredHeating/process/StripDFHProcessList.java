@@ -1,7 +1,8 @@
 package directFiredHeating.process;
 
 import basic.ChMaterial;
-import directFiredHeating.DFHeating;
+import directFiredHeating.FceEvaluator;
+import directFiredHeating.applications.StripHeating;
 import mvUtils.display.*;
 import mvUtils.math.BooleanWithStatus;
 import mvUtils.mvXML.ValAndPos;
@@ -22,7 +23,7 @@ import java.util.Vector;
  * To change this template use File | Settings | File Templates.
  */
 public class StripDFHProcessList {
-    DFHeating dfHeating;
+    StripHeating dfHeating;
     Vector<ChMaterial> vChMaterial;
     InputControl inpC;
     protected Vector<OneStripDFHProcess> list;
@@ -30,7 +31,7 @@ public class StripDFHProcessList {
     protected JComboBox<OneStripDFHProcess> cbProcess;
     protected int maxListLen = 5;
 
-    public StripDFHProcessList(DFHeating dfHeating) {
+    public StripDFHProcessList(StripHeating dfHeating) {
         this.vChMaterial = dfHeating.vChMaterial;
         this.dfHeating = dfHeating;
         this.inpC = dfHeating;
@@ -144,6 +145,7 @@ public class StripDFHProcessList {
 
     public DataWithStatus<OneStripDFHProcess> getDFHProcess(Performance p) {
         DataWithStatus<OneStripDFHProcess> retVal = new DataWithStatus<>();
+        dfHeating.logInfo("getDFHProcess in StripDFHProcessList lis = " + list);
         for (OneStripDFHProcess proc:list) {
             ErrorStatAndMsg reply =  proc.performanceOkForProcess(p);
             if (!reply.inError) {
@@ -159,25 +161,6 @@ public class StripDFHProcessList {
                 retVal.setErrorMessage(reply.msg);
         }
         return retVal;
-    }
-
-    public OneStripDFHProcess getDFHProcessREMOVE(Performance p) {  // TODO to be removed
-        OneStripDFHProcess oneProcess = null;
-        for (OneStripDFHProcess proc:list) {
-            ErrorStatAndMsg reply =  proc.performanceOkForProcess(p);
-            if (!reply.inError) {
-                BooleanWithStatus tableStat = proc.checkPerformanceTableRange(p);
-                if (tableStat.getDataStatus() == DataStat.Status.OK) {
-                    oneProcess = proc;
-                    break;
-                }
-                else
-                    dfHeating.logInfo(tableStat.getInfoMessage());
-            }
-            else
-                dfHeating.logInfo(reply.msg);
-        }
-        return oneProcess;
     }
 
     public boolean takeStripProcessListFromXML(String xmlStr) {
@@ -213,7 +196,8 @@ public class StripDFHProcessList {
             }
         }
         cbProcess.updateUI();
-        cbProcess.setSelectedIndex(-1); // unselect
+        cbProcess.setSelectedIndex(-1); // un-select
+        dfHeating.logInfo("Got " + list.size() + " processes");
         return retVal;
     }
 
@@ -313,7 +297,7 @@ public class StripDFHProcessList {
 //        Vector<ChMaterial> vChMaterial;
         InputControl ipc;
         StripDFHProcessList pListManager;
-        OneStripDFHProcess selectedP;
+        OneStripDFHProcess selectedProcess;
         DataListEditorPanel editorPanel;
         boolean editable = false;
         EditResponse.Response response;
@@ -375,53 +359,178 @@ public class StripDFHProcessList {
         }
 
         OneStripDFHProcess getLastSelectedP() {
-            return selectedP;
+            return selectedProcess;
         }
 
         void getSelectedProcess() {
             String pName = (String)jcbExisting.getSelectedItem();
             boolean bNew = (pName == enterNew);
             if (bNew)
-                selectedP = new OneStripDFHProcess(pListManager, pName, vChMaterial, inpC);
+                selectedProcess = new OneStripDFHProcess(pListManager, pName, vChMaterial, inpC);
             else
-                selectedP = getDFHProcess(pName);
+                selectedProcess = getDFHProcess(pName);
             detailsP.removeAll();
-            editorPanel = selectedP.getEditPanel(vChMaterial, inpC, this, editable, bNew);
+            editorPanel = selectedProcess.getEditPanel(vChMaterial, inpC, this, editable, bNew);
             detailsP.add(editorPanel);
             detailsP.updateUI();
 //            pack();
         }
 
         public ErrorStatAndMsg checkData() {
-            return selectedP.checkData();
+            return selectedProcess.checkData();
         }
 
         public boolean saveData() {
+            boolean canBeSaved = false;
             boolean itsNew = true;
-            ErrorStatAndMsg dataStat = selectedP.noteDataFromUI();
+            String errMsg = "";
+            OneStripDFHProcess oldProc = selectedProcess.createCopy();
+            ErrorStatAndMsg dataStat = selectedProcess.noteDataFromUI();
+            Vector<Performance> performancesToDelete = new Vector<>();
+            Vector<Performance> performancesToRedoTable = new Vector<>();
             if (!dataStat.inError) {
-                for (OneStripDFHProcess p : list)
-                    if (p == selectedP) {
+                canBeSaved = true;
+                for (OneStripDFHProcess process : list) {
+                    if (process == selectedProcess) {
+                        StatusWithMessage statThin = process.checkPerformanceDataState(true);
+                        DataStat.Status stat = statThin.getDataStatus();
+                        if (stat != DataStat.Status.OK) {
+                            canBeSaved = false;
+                            errMsg += "Existing Performance data for Thin Strip: " + process.pThin + "\n  ";
+                            if (stat == DataStat.Status.WithErrorMsg) {
+                                errMsg += statThin.getErrorMessage() + "\n";
+                                performancesToDelete.add(process.pThin);
+                            }
+                            if (stat == DataStat.Status.WithInfoMsg) {
+                                errMsg += statThin.getInfoMessage() + "\n";
+                                performancesToRedoTable.add(process.pThin);
+                            }
+                        }
+                        StatusWithMessage statThick = process.checkPerformanceDataState(false);
+                        stat = statThick.getDataStatus();
+                        if (stat != DataStat.Status.OK) {
+                            canBeSaved = false;
+                            errMsg += "Existing Performance data for Thick Strip: " + process.pThick + "\n  ";
+                            if (stat == DataStat.Status.WithErrorMsg) {
+                                errMsg += statThick.getErrorMessage() + "\n";
+                                performancesToDelete.add(process.pThick);
+                            }
+                            if (stat == DataStat.Status.WithInfoMsg) {
+                                errMsg += statThick.getInfoMessage() + "\n";
+                                performancesToRedoTable.add(process.pThick);
+                            }
+                        }
                         itsNew = false;
                         break;
                     }
-                if (itsNew) {
-                    list.add(selectedP);
                 }
-                populateJcbExisting();
-                jcbExisting.setSelectedItem(selectedP.baseProcessName);
-                response = EditResponse.Response.SAVE;
-                edited = true;
+                if (!canBeSaved) {
+                    canBeSaved = SimpleDialog.decide(this, "Checking with Performance Data", errMsg + "\n" +
+                        "     The affected Performance Data has to be Deleted/ Marked for Table update\n" +
+                        "     Press 'Yes', if you still want to proceed with the saving." +
+                        " Pressing 'No' will revert to original process data") ==  JOptionPane.YES_OPTION;
+                }
+                if (canBeSaved) {
+                    for (Performance p: performancesToDelete)
+                        dfHeating.deletePerformance(p);
+                    for (Performance p: performancesToRedoTable) {
+                        p.setDFHPProcess(selectedProcess);
+                        p.markTableToBeRedone();
+//                        FceEvaluator eval = dfHeating.furnace.calculateForPerformanceTable(p);
+//                        SimpleDialog.showMessage(this, "For " + p, "Re calculating table");
+//                        try {
+//                            eval.awaitThreadToExit();
+//                            if (eval.healthyExit()) {
+//                                edited = true;
+//                            }
+//                        } catch (InterruptedException e) {
+//                            SimpleDialog.showError(this, "Updating Performance Table", "Some problem in creating table for " + p);
+//                            canBeSaved = false;
+//                        }
+                    }
+                    if (canBeSaved) {
+                        if (itsNew) {
+                            list.add(selectedProcess);
+                        }
+                        populateJcbExisting();
+                        jcbExisting.setSelectedItem(selectedProcess.baseProcessName);
+                        response = EditResponse.Response.SAVE;
+                        edited = true;
+                    }
+                }
+                else {
+                    oldProc.copyTo(selectedProcess);
+                    selectedProcess.fillUI();
+                }
             }
             else
                 showError("Data Entry", dataStat.msg);
             return edited;
         }
 
+        public boolean saveDataREMOVE() { // TODO tobe Removed
+            boolean canBeSaved = false;
+            boolean itsNew = true;
+            String errMsg = "";
+            OneStripDFHProcess oldProc = selectedProcess.createCopy();
+            ErrorStatAndMsg dataStat = selectedProcess.noteDataFromUI();
+            if (!dataStat.inError) {
+                canBeSaved = true;
+                for (OneStripDFHProcess process : list) {
+                    if (process == selectedProcess) {
+                        StatusWithMessage statThin = process.checkPerformanceDataState(true);
+                        DataStat.Status stat = statThin.getDataStatus();
+                        if (stat == DataStat.Status.OK) {
+                            StatusWithMessage statThick = process.checkPerformanceDataState(false);
+                            stat = statThick.getDataStatus();
+                            if (stat != DataStat.Status.OK) {
+                                canBeSaved = false;
+                                errMsg += "Existing Performance data for Thick Strip: " + process.pThick + "\n";
+                                if (stat == DataStat.Status.WithErrorMsg)
+                                    errMsg += statThick.getErrorMessage();
+                                if (stat == DataStat.Status.WithInfoMsg)
+                                    errMsg += statThick.getInfoMessage();
+                            }
+                        } else {
+                            canBeSaved = false;
+                            errMsg += "Existing Performance data for Thin Strip: " + process.pThin + "\n";
+                            if (stat == DataStat.Status.WithErrorMsg)
+                                errMsg += statThin.getErrorMessage();
+                            if (stat == DataStat.Status.WithInfoMsg)
+                                errMsg += statThin.getInfoMessage();
+                        }
+                        itsNew = false;
+                        break;
+                    }
+                }
+                if (!canBeSaved) {
+                    canBeSaved = SimpleDialog.decide(this, "Checking with Performance Data", errMsg + "\n" +
+                            "     The affected Performance Data has to be Redone/Updated\n" +
+                            "     Press 'Yes', if you still want to proceed with the saving." +
+                            " Pressing 'No' will revert to original process data") ==  JOptionPane.YES_OPTION;
+                }
+                if (canBeSaved) {
+                    if (itsNew) {
+                        list.add(selectedProcess);
+                    }
+                    populateJcbExisting();
+                    jcbExisting.setSelectedItem(selectedProcess.baseProcessName);
+                    response = EditResponse.Response.SAVE;
+                    edited = true;
+                }
+                else {
+                    oldProc.copyTo(selectedProcess);
+                    selectedProcess.fillUI();
+                }
+            }
+            else
+                showError("Data Entry", dataStat.msg);
+            return edited;
+        }
         public void deleteData() {
-            list.remove(selectedP);
+            list.remove(selectedProcess);
             populateJcbExisting();
-            jcbExisting.setSelectedItem(selectedP.baseProcessName);
+            jcbExisting.setSelectedItem(selectedProcess.baseProcessName);
             response = EditResponse.Response.DELETE;
             edited = true;
             setVisible(false);

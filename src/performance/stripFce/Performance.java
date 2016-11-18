@@ -64,6 +64,35 @@ public class Performance {
         }
 
     }
+
+    enum DataBasis {
+        CALCULATED("Calculated"),
+        ACQUIRED("Acquired"),
+        INERPOLATED("Interpolated") ;
+        private final String name;
+
+
+        DataBasis(String s) {
+            this.name = s;
+        }
+
+        public String toString() {
+            return name;
+        }
+
+        public static DataBasis getEnum(String text) {
+            DataBasis retVal = null;
+            if (text != null) {
+                for (DataBasis b : DataBasis.values()) {
+                    if (text.equalsIgnoreCase(b.name)) {
+                        retVal = b;
+                        break;
+                    }
+                }
+            }
+            return retVal;
+        }
+    }
     public static final int STRIPWIDTH = 2;
     public static final int STRIPTHICK = 4;
     public static final int MATERIAL = 8;
@@ -87,11 +116,13 @@ public class Performance {
     DFHeating controller;
     DFHFurnace furnace;
     PerformanceTable perfTable;
+    boolean tableToBeRedone = false;
     boolean interpolated = false;
+    DataBasis dataBasis = DataBasis.CALCULATED;
     double maxWidth, minWidth, widthStep;
     double maxUnitOutput, minUnitOutput, outputStep;
     boolean bLimitsReady = false;
-
+    JButton updateTableButton;
     public Performance() {
 
     }
@@ -99,11 +130,14 @@ public class Performance {
     public Performance(DFHFurnace furnace) {
         this.furnace = furnace;
         this.controller = furnace.controller;
+        updateTableButton = new JButton("<html>Update Performance<p>Table</html>");
+        updateTableButton.addActionListener(e -> {furnace.calculateForPerformanceTable(this);});
     }
 
     public Performance(ProductionData production, Fuel fuel, double airTemp, Vector<OneZone> topZones,
                         Vector<OneZone> botZones, GregorianCalendar dateOfResult,
                         DFHFurnace furnace) {
+        this(furnace);
         output = production.production;
         Charge charge = production.charge;
         chMaterial = charge.chMaterial.name;
@@ -126,10 +160,19 @@ public class Performance {
                 z.setPerformanceOf(this);
         }
         this.dateOfResult = dateOfResult;
-        this.furnace = furnace;
-        this.controller = furnace.controller;
+//        this.furnace = furnace;
+//        this.controller = furnace.controller;
         this.processName = production.processName;
         setDFHPProcess(production.stripProcess);
+    }
+
+    public ProductionData getBaseProductionData() {
+        Charge ch = new Charge(controller.getSelChMaterial(chMaterial), chLength, chWidth, chThick);
+        ProductionData production = new ProductionData(dfhProcess);
+        production.setCharge(ch, chPitch);
+        production.setProduction(output, 1, dfhProcess.tempDFHEntry, dfhProcess.tempDFHExit, 0.1, 0);
+        production.setExitZoneTempData(dfhProcess.getMaxExitZoneTemp(), dfhProcess.getMinExitZoneTemp());
+        return production;
     }
 
     public Performance(ProductionData production, Fuel fuel, double airTemp, Vector<OneZone> topZones, GregorianCalendar dateOfResult,
@@ -141,13 +184,36 @@ public class Performance {
         dfhProcess = stripProcess;
     }
 
+    public StatusWithMessage linkToProcess() {
+        if (dfhProcess != null)
+            return dfhProcess.notePerformance(this);
+        else {
+            StatusWithMessage retVal = new StatusWithMessage();
+            retVal.addErrorMessage("DFH Process details not available in the Performance Data");
+            return retVal;
+        }
+    }
+
+    public StatusWithMessage deleteProcessLink() {
+        StatusWithMessage retVal = new StatusWithMessage();
+        if (dfhProcess != null)
+            retVal = dfhProcess.deletePerformance(this);
+        dfhProcess = null;
+        return retVal;
+    }
+
+    public void markTableToBeRedone() {
+        if (perfTable != null)
+            tableToBeRedone = true;
+    }
+
     public MoreOrLess.CompareResult isDateOfResultSame(Performance p) {
         return MoreOrLess.compare(dateOfResult, p.dateOfResult);
     }
 
     public StatusWithMessage setLimits() {
         StatusWithMessage retVal = new StatusWithMessage();
-        OneStripDFHProcess dfhProcess = controller.getStripDFHProcess(processName);
+//        OneStripDFHProcess dfhProcess = controller.getStripDFHProcess(processName);
         if (dfhProcess == null)
             retVal.setErrorMessage("Strip Process " + processName + " is not available");
         else {
@@ -630,7 +696,14 @@ public class Performance {
         return xmlStr;
     }
 
-    public boolean  takeDataFromXML(String xmlStr) {
+    /**
+     * gets the dfhProcess in case readPerfTable is true
+     * @param xmlStr
+     * @param readPerfTable
+     * @return
+     */
+
+    public boolean  takeDataFromXML(String xmlStr, boolean readPerfTable) {
         boolean bRetVal = true;
         ValAndPos vp;
         try {
@@ -710,13 +783,22 @@ public class Performance {
                     }
                 }
                 getUnitOutput();
-                vp = XMLmv.getTag(xmlStr, "PerfTable", vp.endPos);
-                if (vp.val.length() > 20) {
-                    try {
-                        perfTable = new PerformanceTable(this, vp.val);
-                    } catch (Exception e) {
-                        showError("takeDataFromXML: Facing some problem is loading Performance table \n" + e.getMessage());
-                        perfTable = null;
+                if (readPerfTable) {
+                    vp = XMLmv.getTag(xmlStr, "PerfTable", vp.endPos);
+                    if (vp.val.length() > 20) {
+                        try {
+                            perfTable = new PerformanceTable(this, vp.val);
+                        } catch (Exception e) {
+                            showError("takeDataFromXML: Facing some problem is loading Performance table \n" + e.getMessage());
+                            perfTable = null;
+                        }
+                    }
+                    if (perfTable != null) {
+                        DataWithStatus<OneStripDFHProcess> processStat = controller.getDFHProcess(this);
+                        if (processStat.getDataStatus() == DataStat.Status.OK)
+                            dfhProcess = processStat.getValue();
+                        else
+                            bRetVal = false;
                     }
                 }
             }
@@ -741,7 +823,12 @@ public class Performance {
          selectedPerfP.add(perfSummaryPanel, BorderLayout.SOUTH);
         selectedPerfP.setPreferredSize(selectedPerfP.getPreferredSize());
         if (perfTable != null) {
-            selectedPerfP.add(perfTable.tableSelPanel(), BorderLayout.NORTH);
+            JPanel basicPanel = new JPanel(new BorderLayout());
+            basicPanel.add(baseDataP(), BorderLayout.NORTH);
+            basicPanel.add(perfTable.tableSelPanel(), BorderLayout.SOUTH);
+
+            selectedPerfP.add(basicPanel, BorderLayout.NORTH);
+//            selectedPerfP.add(perfTable.tableSelPanel(), BorderLayout.NORTH);
             performancePanel.add(perfTable.perfTableP(), BorderLayout.NORTH);
             performancePanel.add(fuelFlowProfilePanel, BorderLayout.SOUTH);
             outerP.add(performancePanel, BorderLayout.WEST);
@@ -785,32 +872,6 @@ public class Performance {
         totPFH.add(ntTotFH, BorderLayout.WEST);
         totPFH.add(jbFromTotalFH, BorderLayout.CENTER);
         totPFH.add(nlSpeedFH, BorderLayout.EAST);
-//        JPanel zoneP = new JPanel();
-//        JButton jbFromZonal = new JButton("get");
-//        final Vector<NumberTextField> vNtf = new Vector<NumberTextField>();
-//        NumberTextField ntf;
-//        for (int z = 0; z < topZones.size(); z++) {
-//            ntf = new NumberTextField(controller, 0, 6, false, 0, 1000, "###.##", ("f" + z));
-//            vNtf.add(ntf);
-//            zoneP.add(ntf);
-//        }
-//        zoneP.add(jbFromZonal);
-//        final NumberLabel minL = new NumberLabel(0, 60, "###.##");
-//        final NumberLabel maxL = new NumberLabel(0, 60, "###.##");
-//        zoneP.add(minL);
-//        zoneP.add(maxL);
-//
-//        final double[] fuels = new double[vNtf.size()];
-//        jbFromZonal.addActionListener(new ActionListener() {
-//            public void actionPerformed(ActionEvent e) {
-//                for (int z = 0; z < vNtf.size(); z++)
-//                    fuels[z] = vNtf.get(z).getData();
-//                DoubleRange speedRange = fuelP.recommendedSpeedRange(fuels, false);
-//                minL.setData(speedRange.min);
-//                maxL.setData(speedRange.max);
-//            }
-//        });
-//
         JPanel speedQP = new FramedPanel(new BorderLayout());
         speedQP.add(totP, BorderLayout.NORTH);
         speedQP.add(totPFH, BorderLayout.SOUTH);
@@ -883,17 +944,38 @@ public class Performance {
 
     JPanel commonPerfDataP() {
         MultiPairColPanel pan = new MultiPairColPanel("");
-        addItemPair(pan, Params.DATE);
-        addItemPair(pan, Params.PROCESSNAME);
-        addItemPair(pan, Params.CHMATERIAL);
+        pan.addItemPair("Data Type: ", "Interpolated", false);
+//        addItemPair(pan, Params.DATE);
+//        addItemPair(pan, Params.PROCESSNAME);
+//        addItemPair(pan, Params.CHMATERIAL);
         addItemPair(pan, Params.STRIPWIDTH, 1000, "#,##0 mm");
         addItemPair(pan, Params.STRIPTHICK, 1000, "#,##0.00 mm");
         addItemPair(pan, Params.STRIPSPEED, (1.0 / 60), "#,##0.000 m/min");
-        addItemPair(pan, Params.CHTEMPOUT, 1, "#,##0 C");
+//        addItemPair(pan, Params.CHTEMPOUT, 1, "#,##0 C");
         addItemPair(pan, Params.OUTPUT, (1.0 / 1000), "#,##0.00 t/h");
-        addItemPair(pan, Params.FUEL);
+//        addItemPair(pan, Params.FUEL);
         addItemPair(pan, Params.AIRTEMP, 1, "#,##0 C");
         return pan;
+    }
+
+    public JPanel baseDataP() {
+        JPanel outerP = new JPanel(new BorderLayout());
+        MultiPairColPanel pan = new MultiPairColPanel("");
+        addItemPair(pan, Params.DATE);
+        addItemPair(pan, Params.PROCESSNAME);
+        addItemPair(pan, Params.CHMATERIAL);
+        addItemPair(pan, Params.CHTEMPOUT, 1, "#,##0 C");
+        addItemPair(pan, Params.FUEL);
+        outerP.add(pan, BorderLayout.WEST);
+        outerP.add(actionPanel(), BorderLayout.EAST);
+        return outerP;
+    }
+
+    JPanel actionPanel() {
+        updateTableButton.setEnabled(tableToBeRedone);
+        JPanel p = new JPanel();
+        p.add(updateTableButton);
+        return p;
     }
 
     void addItemPair(MultiPairColPanel pan, Params param) {

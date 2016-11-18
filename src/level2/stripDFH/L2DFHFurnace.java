@@ -976,27 +976,53 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             }
         }
         if (goAhead) {
-            l2DFHeating.enablePerfMenu(false);
-            FceEvaluator eval = controller.calculateForPerformanceTable(perform);
-            if (eval != null) {
-                logTrace("eval for Performance table is ok");
-                try {
-                    eval.awaitThreadToExit();
-                    logTrace("eval for Performance table is completed");
-                    if (eval.healthyExit()) {
-                        logTrace("eval for Performance table had healthy exit");
-                        if (replace)
-                            performBase.replaceExistingPerformance(perform);
-                        else
-                            performBase.noteBasePerformance(perform);
-                        retVal = true;
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            } else
-                logInfo("eval for Performance table is null");
+            retVal = calculateForPerformanceTable(perform, replace);
+//            l2DFHeating.enablePerfMenu(false);
+//            FceEvaluator eval = controller.calculateForPerformanceTable(perform);
+//            if (eval != null) {
+//                logTrace("eval for Performance table is ok");
+//                try {
+//                    eval.awaitThreadToExit();
+//                    logTrace("eval for Performance table is completed");
+//                    if (eval.healthyExit()) {
+//                        logTrace("eval for Performance table had healthy exit");
+//                        if (replace)
+//                            performBase.replaceExistingPerformance(perform);
+//                        else
+//                            performBase.noteBasePerformance(perform);
+//                        retVal = true;
+//                    }
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//            } else
+//                logInfo("eval for Performance table is null");
         }
+        return retVal;
+    }
+
+    public boolean calculateForPerformanceTable(Performance perform, boolean replace) {
+        boolean retVal = false;
+        l2DFHeating.enablePerfMenu(false);
+        FceEvaluator eval = controller.calculateForPerformanceTable(perform);
+        if (eval != null) {
+            logTrace("eval for Performance table is ok");
+            try {
+                eval.awaitThreadToExit();
+                logTrace("eval for Performance table is completed");
+                if (eval.healthyExit()) {
+                    logTrace("eval for Performance table had healthy exit");
+                    if (replace)
+                        performBase.replaceExistingPerformance(perform);
+                    else
+                        performBase.noteBasePerformance(perform);
+                    retVal = true;
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        } else
+            logInfo("eval for Performance table is null");
         return retVal;
     }
 
@@ -1015,12 +1041,12 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
 
     }
 
-    public boolean linkPerformanceWithProcess() {
-        logTrace("linking Performance with Process");
-        boolean status = super.linkPerformanceWithProcess();
-        logTrace("linking status = " + status);
-        return status;
-    }
+//    public boolean linkPerformanceWithProcess() {
+//        logTrace("linking Performance with Process");
+//        boolean status = super.linkPerformanceWithProcess();
+//        logTrace("linking status = " + status);
+//        return status;
+//    }
 
 //    void handleModifiedPerformanceData() {
 //        PerformanceModificationHandler thePerfModHandler= new PerformanceModificationHandler();

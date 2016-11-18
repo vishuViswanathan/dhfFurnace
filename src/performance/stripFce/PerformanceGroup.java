@@ -11,6 +11,7 @@ import mvUtils.display.DataStat;
 import mvUtils.display.DataWithStatus;
 import mvUtils.display.StatusWithMessage;
 import mvUtils.display.TimedMessage;
+import mvUtils.math.BooleanWithStatus;
 import mvUtils.math.MoreOrLess;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
@@ -80,11 +81,34 @@ public class PerformanceGroup implements ActionListener{
         widthFactors[nWidth - 1] = minWidthFactor;
     }
 
+    void deletePerformance(int atLoc) {
+        Performance existingP = refPerformance.get(atLoc);
+        deletePerformance(existingP);
+    }
+
+    public void deletePerformance(Performance p) {
+        p.deleteProcessLink();
+        refPerformance.remove(p);
+        getListPanel();
+    }
+
+    public void addPerformance(Performance p) {
+        refPerformance.add(p);
+    }
+
+    public void addPerformance(Performance p, int atLoc) {
+        if (atLoc >= 0)
+            refPerformance.set(atLoc, p);
+        else
+            addPerformance(p);
+    }
+
     public boolean noteBasePerformance(Performance performance, boolean fromXML) {
         boolean bNoted = false;
         boolean requiresInterpolCheck = false;
         int foundAt = getIndexOfSimilarPerformance(performance);
         if (foundAt >= 0) {
+//            Performance existingP = refPerformance.get(foundAt);
             MoreOrLess.CompareResult compareResult =
                     MoreOrLess.compare(refPerformance.get(foundAt).dateOfResult, performance.dateOfResult);
             boolean overWrite = true;
@@ -94,23 +118,30 @@ public class PerformanceGroup implements ActionListener{
                         "\nof Later Date ALREADY EXISTS!" +
                         "\n\nDo you want to OVERWRITE it?");
             }
-            else
-                overWrite = true;  // (compareResult == MoreOrLess.CompareResult.DATA1LESS or EQUAL);
             if (overWrite)  {
-                refPerformance.remove(foundAt);
-                refPerformance.add(foundAt, performance);
-                bNoted = true;
-                if (foundAt < 2)
-                    requiresInterpolCheck = true;
-                if (!fromXML)
-                    showMessage("Replaced earlier data" + ((requiresInterpolCheck) ? " with interpolation check" : ""));
+                deletePerformance(foundAt);
+                StatusWithMessage addResponse = furnace.addPerformance(performance, foundAt);
+                DataStat.Status status = addResponse.getDataStatus();
+                if (status == DataStat.Status.OK) {
+                    bNoted = true;
+                    if (foundAt < 2)
+                        requiresInterpolCheck = true;
+                    if (!fromXML)
+                        showMessage("Replaced earlier data" + ((requiresInterpolCheck) ? " with interpolation check" : ""));
+                }
+                else {
+                    String msg =  (status == DataStat.Status.WithInfoMsg) ? addResponse.getInfoMessage() : addResponse.getErrorMessage();
+                    showError("Performance NOT noted: " + msg);
+                }
             }
         }
         else {
-            if (foundAt == -1) {
-                refPerformance.add(performance);
-                bNoted = true;
+            StatusWithMessage stat = furnace.addPerformance(performance);
+            if (stat.getDataStatus() == DataStat.Status.WithErrorMsg)  {
+                controller.showError("Noting Performance data: " + stat.getErrorMessage());
             }
+            else
+                bNoted = true;
         }
         if (bNoted) {
             if (checkChTempProfAvailable() && !fromXML)
@@ -122,6 +153,10 @@ public class PerformanceGroup implements ActionListener{
         return bNoted;
     }
 
+//    private BooleanWithStatus linkWithProcess(Performance p) {
+//        return p.dfhProcess.notePerformance(p);
+//    }
+
     public void markToBeSaved(boolean tobeSaved) {
         this.tobeSaved = tobeSaved;
     }
@@ -130,30 +165,31 @@ public class PerformanceGroup implements ActionListener{
         return (refPerformance.size() > 0);
     }
 
-    public StatusWithMessage linkPerformanceWithProcess() {
-        StatusWithMessage retVal = new StatusWithMessage();
-        Vector<Performance> updatedRefPerf = new Vector<>();
-        for (Performance p:refPerformance) {
-            DataWithStatus<OneStripDFHProcess> response = controller.getDFHProcess(p);
-            DataStat.Status responseStat = response.getStatus();
-            if (responseStat == DataStat.Status.OK) {
-                p.dfhProcess = response.getValue();
-                updatedRefPerf.add(p);
-            }
-            else {
-                retVal.addInfoMessage("Unable to get Process definition for Performance:\n   " + p +
-                ".\n The performance Data is deleted");
-                if (responseStat == DataStat.Status.WithInfoMsg)
-                    retVal.addInfoMessage("\n     " + response.getInfoMessage());
-            }
-        }
-        refPerformance = updatedRefPerf;
-        if (refPerformance.size() <= 0) {
-            retVal.addErrorMessage(retVal.getInfoMessage());
-            retVal.addErrorMessage("All performance data deleted!");
-        }
-        return retVal;
-    }
+//    public StatusWithMessage linkPerformanceWithProcess() {
+//        StatusWithMessage retVal = new StatusWithMessage();
+//        Vector<Performance> updatedRefPerf = new Vector<>();
+//        for (Performance p:refPerformance) {
+//            DataWithStatus<OneStripDFHProcess> response = controller.getDFHProcess(p);
+//            DataStat.Status responseStat = response.getStatus();
+//            if (responseStat == DataStat.Status.OK) {
+//                p.dfhProcess = response.getValue();
+//                updatedRefPerf.add(p);
+//                p.linkToProcess();
+//            }
+//            else {
+//                retVal.addInfoMessage("Unable to get Process definition for Performance:\n   " + p +
+//                ".\n The performance Data is deleted");
+//                if (responseStat == DataStat.Status.WithInfoMsg)
+//                    retVal.addInfoMessage("\n     " + response.getInfoMessage());
+//            }
+//        }
+//        refPerformance = updatedRefPerf;
+//        if (refPerformance.size() <= 0) {
+//            retVal.addErrorMessage(retVal.getInfoMessage());
+//            retVal.addErrorMessage("All performance data deleted!");
+//        }
+//        return retVal;
+//    }
 
     int checkIfDuplicate(Performance performance)   {
         int foundAt = -1;
@@ -192,19 +228,6 @@ public class PerformanceGroup implements ActionListener{
         }
         return retVal;
     }
-
-
-//    public double zoneTempGonPerformance(ProductionData production, int sec) {
-//        double outputReqd = production.production;
-//        Performance pRef = getNearerPerformance(production);
-//        OneZone zoneRef = pRef.topZones.get(sec);
-//        double tempGref = zoneRef.gasTemp;
-//        double tempChMean = (zoneRef.stripTempIn + zoneRef.stripTempOut) / 2;
-//        double outputRef = pRef.getOutput();
-//        double tempGKreqd4 = (Math.pow(tempGref + 273, 4) - Math.pow(tempChMean + 273, 4)) * outputReqd / outputRef +
-//                            Math.pow(tempChMean + 274, 4);
-//        return Math.pow(tempGKreqd4, 0.25) - 273;
-//    }
 
     boolean checkChTempProfAvailable() {
         chTempProfAvailable = false;
@@ -324,7 +347,7 @@ public class PerformanceGroup implements ActionListener{
         tobeSaved = false;
     }
 
-    public boolean takeDataFromXML(String xmlStr, boolean append) {
+    public boolean takeDataFromXML(String xmlStr, boolean readPerfTable, boolean append) {
         if (!append)
             clearData();
         ValAndPos vp;
@@ -338,16 +361,17 @@ public class PerformanceGroup implements ActionListener{
                         for (int refP = 0; refP <nRefP; refP ++)  {
                             vp = XMLmv.getTag(xmlStr, "RefP" + ("" + refP).trim(), vp.endPos);
                             p = new Performance(furnace);
-                            if (p.takeDataFromXML(vp.val)) {
+                            if (p.takeDataFromXML(vp.val, readPerfTable)) {
                                 if (!noteBasePerformance(p, true))
                                     showError("Unable to note performance data :" + p);
                             }
                             else
-                                break; // take no more since seems to have some error
+                                showError("Some mismatch in performance data :" + p);
+//                                break; // take no more since seems to have some error
                         }
                     }
                     else
-                        showError("Too many reference data <" + nRefP + ">");
+                        showError("Too many reference Performance Data <" + nRefP + ">");
                 }
             } catch (NumberFormatException e) {
                 showError("some problem in reading the number of Reference Performances");
@@ -357,7 +381,7 @@ public class PerformanceGroup implements ActionListener{
     }
 
     public void enableDeleteAction(boolean ena) {
-        if (deleteB != null)
+//        if (deleteB != null)
             deleteB.setEnabled(ena);
     }
 
@@ -412,20 +436,12 @@ public class PerformanceGroup implements ActionListener{
 //        innerP.add(deleteB);
         listPanel.add(innerP);
 //        outerP.setPreferredSize(new Dimension(800, 500));
+        listPanel.updateUI();
         return listPanel;
     }
 
     void showSelectedPerf() {
         showThisPerformance(refPerformance.get(listTable.getSelectedRow()));
-/*
-        innerP.remove(perfDataPLoc);
-        JPanel detPerfP = new JPanel(new BorderLayout());
-        detPerfP.add(refPerformance.get(listTable.getSelectedRow()).performanceP(), BorderLayout.CENTER);
-//        detPerfP.add(refPerformance.get(listTable.getSelectedRow()).perfTableP(), BorderLayout.CENTER);
-        detPerfP.add(buttonP, BorderLayout.SOUTH);
-        innerP.add(detPerfP, perfDataPLoc) ;
-        innerP.updateUI();
-*/
     }
 
     void showThisPerformance(Performance p) {
@@ -452,9 +468,9 @@ public class PerformanceGroup implements ActionListener{
             int selPerf = listTable.getSelectedRow();
              if (selPerf >= 0) {
                 if (decide("Deletion of Performance Data", "The Selected Performance Data will be DELETED permanently")) {
-                    refPerformance.remove(selPerf);
-                    getListPanel();
-                    listPanel.updateUI();
+                    deletePerformance(selPerf);
+//                    getListPanel();
+//                    listPanel.updateUI();
                     if (!isValid())
                         controller.clearPerformBase();
                 }
@@ -465,9 +481,6 @@ public class PerformanceGroup implements ActionListener{
 
     class MyTableModel extends AbstractTableModel {
         private String[] columnNames = {"SlNo",  "Process", "Charge Material", "Strip Size", "Exit Temp", "Output t/h", "Fuel", "Data Date"};
-//        private String[] columnNames = {"SlNo",  "Charge Material", "Strip Size", "Exit Temp", "Output t/h", "Fuel",
-//                                                                                "Delete"};
-
         int _rows = refPerformance.size();
         int _cols = columnNames.length;
         Object[][] data = new Object[_rows][_cols];

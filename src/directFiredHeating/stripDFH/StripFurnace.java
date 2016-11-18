@@ -3,9 +3,11 @@ package directFiredHeating.stripDFH;
 import basic.Observations;
 import directFiredHeating.DFHFurnace;
 import directFiredHeating.DFHeating;
+import directFiredHeating.FceEvaluator;
 import directFiredHeating.FceSection;
 import mvUtils.display.DataStat;
 import mvUtils.display.StatusWithMessage;
+import performance.stripFce.Performance;
 import performance.stripFce.PerformanceGroup;
 
 import java.awt.event.ActionListener;
@@ -21,19 +23,42 @@ public class StripFurnace extends DFHFurnace {
         super(dfHeating, bTopBot, bAddTopSoak, listener);
     }
 
-    public boolean linkPerformanceWithProcess() {
-        boolean retVal = true;
-        StatusWithMessage response =  performBase.linkPerformanceWithProcess();
-        DataStat.Status status = response.getDataStatus();
-        if (status == DataStat.Status.WithErrorMsg) {
-            showError("Reading Performance Data: " + response.getErrorMessage());
-            retVal = false;
-        }
-        else if (status == DataStat.Status.WithInfoMsg) {
-            showMessage("Checking Performance Data: " + response.getInfoMessage());
-        }
-        return retVal;
+//    public boolean linkPerformanceWithProcess() {
+//        boolean retVal = true;
+//        StatusWithMessage response =  performBase.linkPerformanceWithProcess();
+//        DataStat.Status status = response.getDataStatus();
+//        if (status == DataStat.Status.WithErrorMsg) {
+//            showError("Reading Performance Data: " + response.getErrorMessage());
+//            retVal = false;
+//        }
+//        else if (status == DataStat.Status.WithInfoMsg) {
+//            showMessage("Checking Performance Data: " + response.getInfoMessage());
+//        }
+//        return retVal;
+//    }
+
+    public boolean takePerformanceFromXML(String xmlStr) {
+        return takePerformanceFromXML(xmlStr, true, false);
     }
+
+    public StatusWithMessage addPerformance(Performance p) {
+        return addPerformance(p, -1);
+//        StatusWithMessage stat =  p.linkToProcess();
+//        if (stat.getDataStatus() == DataStat.Status.OK)
+//            return super.addPerformance(p);
+//        else
+//            return stat;
+    }
+
+    public StatusWithMessage addPerformance(Performance p, int atLoc) {
+        StatusWithMessage stat =  p.linkToProcess();
+        if (stat.getDataStatus() == DataStat.Status.OK)
+            return super.addPerformance(p, atLoc) ;
+        else
+            return stat;
+    }
+
+
 
     protected boolean createPerfBase() {
         performBase = new PerformanceGroup(this, tuningParams);
