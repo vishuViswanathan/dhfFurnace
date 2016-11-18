@@ -51,7 +51,6 @@ public class Level2Launcher {
 
     JFrame mainF;
 
-    //    String opcIP = "opc.tcp://127.0.0.1:49320";
     L2AccessControl l2AccessControl;
     L2AccessControl installerAccessControl;
     String l2BasePath;
@@ -269,21 +268,6 @@ public class Level2Launcher {
         return fceDataLocation + l2AccessControl.getDescription(level) + " is ON";
     }
 
-//    DataWithMsg isThisAppActive(L2AccessControl.AccessLevel level) {  // TODO Not used ?
-//        DataWithMsg retVal = new DataWithMsg();
-//        FileLock lock = getFileLock();
-//        if (lock != null) {
-//            File f = new File(getStatusFileName(level));
-//            if (f.exists())
-//                retVal.setData(true);
-//            else
-//                retVal.setData(false);
-//            releaseLock(lock);
-//        } else
-//            retVal.setErrorMsg("Unable to get the lock to get Status of application " + l2AccessControl.getDescription(level));
-//        return retVal;
-//    }
-
     DataWithStatus<Boolean> isAnyAppActive(L2AccessControl.AccessLevel[] levels) {
         DataWithStatus<Boolean> retVal = new DataWithStatus<>();
         retVal.setValue(false);
@@ -349,7 +333,6 @@ public class Level2Launcher {
                 if (getAccessToLevel2(L2DFHeating.defaultLevel())) {
                     new WaitMsg(mainF, "Starting Level2Runtime. Please wait ...", new ActInBackground() {
                         public void doInBackground() {
-//                            L2DFHeating l2 = new L2DFHeating("Furnace", true);
                             L2DFHeating l2 = new L2Runtime("Furnace");
                             System.out.println("RUNTIME: l2.l2SystemReady = " + l2.l2SystemReady);
                             if (l2.l2SystemReady)

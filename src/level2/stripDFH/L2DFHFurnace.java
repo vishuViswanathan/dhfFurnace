@@ -141,8 +141,6 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         }
     }
 
-    Thread speedThread; // for updating recommended at regular intervals based on furnace
-
     public void startSpeedUpdater() {
         stripZone.startSpeedUpdater();
     }
@@ -429,7 +427,6 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         topL2Zones.clear();
         furnaceDisplayZones = new Vector<L2DFHDisplay>();
         int zNum = 1;
-//        String zoneName = "";
         String descriptiveName = "";
         try {
             for (FceSection sec : topSections) {
@@ -463,8 +460,6 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     public void clearProcessList() {
         logInfo("Process List cleared");
         processListToLevel1Updated(0);
-//        tagProcessCount.setValue(0.0);
-//        tagProcessListReady.setValue(true);
     }
 
     void updateUIDisplay() {
@@ -690,38 +685,9 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         return retVal;
     }
 
-//    public StringBuilder fieldResultsInXML() {
-//        return new StringBuilder(XMLmv.putTag("fieldResults", createOneFieldResults().dataInXML()));
-//    }
-
-//    /**
-//     * creates FieldResults type data from the calculated Results
-//     */
-//    FieldResults createOneFieldResults() {
-//        FieldResults fieldResults = new FieldResults(this);
-//        fieldResults.takeFromCalculations();
-//        return fieldResults;
-//    }
-
-//    public boolean getFieldDataFromUser() {
-//        return oneFieldResults.getDataFromUser();
-//    }
-
     public FceSection getOneSection(boolean bBot, int nSec) {
         return ((bBot) ? botSections : topSections).get(nSec);
     }
-
-//    FieldResults oneFieldResults;
-
-//    synchronized public boolean setFieldProductionData() {
-//        if (oneFieldResults != null) {
-//            l2DFHeating.setFieldProductionData(oneFieldResults);
-//            return true;
-//        }
-//        else
-//            return false;
-//
-//    }
 
     public FuelFiring getFuelFiring(boolean bRegen, double excessAir, double airTemp, double fuelTemp)  {
         Fuel f = l2DFHeating.getSelFuel(); // TODO considers only one fuel
@@ -730,47 +696,6 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         else
             return null;
     }
-
-//    public boolean adjustForFieldResults() {
-//        if (oneFieldResults != null) {
-//            return oneFieldResults.adjustForFieldResults();
-//        }
-//        else
-//            return false;
-//    }
-
-//     public boolean takeFieldResultsFromXML(String xmlStr) {
-//        boolean retVal = false;
-//        ValAndPos vp;
-//        vp = XMLmv.getTag(xmlStr, "fieldResults", 0);
-//        if (vp.val.length() > 10) {
-//            oneFieldResults = new FieldResults(this, xmlStr);
-//            retVal = !oneFieldResults.inError;
-//            if (!retVal)
-//                controller.showError(oneFieldResults.errMsg);
-//        }
-//        else
-//            controller.showError("Field Results data NOT found!");
-//        return retVal;
-//    }
-
-//    /**
-//     *
-//     * @param withStripData  this is required only for taking results from Level1
-//     * @return
-//     */
-//    public ErrorStatAndMsg takeFieldResultsFromLevel1(boolean withStripData) {
-//        oneFieldResults = new FieldResults(this, withStripData);
-//        if (oneFieldResults.inError)
-//            return new ErrorStatAndMsg(true, oneFieldResults.errMsg);
-//        else {
-//            if (withStripData) {
-//                return oneFieldResults.processOkForFieldResults();
-//            }
-//            else
-//                return new ErrorStatAndMsg(); // all ok
-//        }
-//    }
 
     public HeatExchProps getAirHeatExchProps() {
         return airRecu.getHeatExchProps(recuCounterFlow.isSelected());
@@ -812,18 +737,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         return zFP.recommendedSpeed(totFuel, false);
     }
 
-//    public double getOutputWithFurnaceTemperatureStatus() {
-//        ErrorStatAndMsg response = takeFieldResultsFromLevel1(false);
-//        if (response.inError) {
-//            logInfo("stripSpeedUpdate: Facing some problem in reading furnace field data: " + response.msg);
-//        }
-//        else {
-//        }
-//        return 0;
-//    }
-
     public double getOutputWithFurnaceTemperatureStatus(Performance refP, double stripWidth, double stripThick) {
-//        long stTimeNano = System.nanoTime();
         double exitTempRequired = refP.exitTemp();
         Charge ch = new Charge(controller.getSelChMaterial(refP.chMaterial), stripWidth, 1, stripThick);
         ChargeStatus chStatus = new ChargeStatus(ch, 0, exitTempRequired);
@@ -914,7 +828,6 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     }
 
     void handleFieldPerformance() {
-//        FieldPerformanceHandler thePerfHandler= new FieldPerformanceHandler(oneFieldResults);
         FieldPerformanceHandler thePerfHandler= new FieldPerformanceHandler();
         Thread t = new Thread(thePerfHandler);
         t.start();
@@ -977,26 +890,6 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         }
         if (goAhead) {
             retVal = calculateForPerformanceTable(perform, replace);
-//            l2DFHeating.enablePerfMenu(false);
-//            FceEvaluator eval = controller.calculateForPerformanceTable(perform);
-//            if (eval != null) {
-//                logTrace("eval for Performance table is ok");
-//                try {
-//                    eval.awaitThreadToExit();
-//                    logTrace("eval for Performance table is completed");
-//                    if (eval.healthyExit()) {
-//                        logTrace("eval for Performance table had healthy exit");
-//                        if (replace)
-//                            performBase.replaceExistingPerformance(perform);
-//                        else
-//                            performBase.noteBasePerformance(perform);
-//                        retVal = true;
-//                    }
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//            } else
-//                logInfo("eval for Performance table is null");
         }
         return retVal;
     }
@@ -1040,19 +933,6 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         l2DFHeating.enablePerfMenu(false);
 
     }
-
-//    public boolean linkPerformanceWithProcess() {
-//        logTrace("linking Performance with Process");
-//        boolean status = super.linkPerformanceWithProcess();
-//        logTrace("linking status = " + status);
-//        return status;
-//    }
-
-//    void handleModifiedPerformanceData() {
-//        PerformanceModificationHandler thePerfModHandler= new PerformanceModificationHandler();
-//        Thread t = new Thread(thePerfModHandler);
-//        t.start();
-//    }
 
     public boolean showErrorInLevel1(String msg) {
         return showErrorInLevel1("", msg);
@@ -1187,7 +1067,6 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                     showErrorInLevel1("Error in Taking Field Performance");
                 }
                 if (canContinue) {
-//                    if (setFieldProductionData()) {
                     if (l2DFHeating.setFieldProductionData(theFieldResults)) {
                         setCurveSmoothening(false);
                         l2DFHeating.showMessage("Field Performance", "Evaluating from Model");
@@ -1224,50 +1103,6 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         }
     }
 
-//    class PerformanceModificationHandler implements Runnable {
-//        public void run() {
-//            int count = 5;
-//            ErrorStatAndMsg gotIt = new ErrorStatAndMsg();
-//            while(--count > 0) {
-//                if (!isProcessDataBeingUsed()) { // newStripIsBeingHandled.get() && !fieldDataIsBeingHandled.get()) {
-//                    fieldDataIsBeingHandled.set(true);
-//                    gotIt = l2DFHeating.getFieldPerformanceList();
-//                    fieldDataIsBeingHandled.set(false);
-//                    break;
-//                }
-//                try {
-//                    Thread.sleep(1000);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//            if (gotIt.inError)
-//                showErrorInLevel1("Field Performance", gotIt.msg);
-//        }
-//    }
-
-//    class PerformanceModificationHandlerREMOVE implements Runnable { // TODO to be removed
-//        public void run() {
-//            int count = 5;
-//            ErrorStatAndMsg gotIt = new ErrorStatAndMsg();
-//            while(--count > 0) {
-//                if (!isProcessDataBeingUsed()) { // newStripIsBeingHandled.get() && !fieldDataIsBeingHandled.get()) {
-//                    fieldDataIsBeingHandled.set(true);
-//                    gotIt = l2DFHeating.handleModifiedPerformanceData();
-//                    fieldDataIsBeingHandled.set(false);
-//                    break;
-//                }
-//                try {
-//                    Thread.sleep(1000);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//            if (gotIt.inError)
-//                showErrorInLevel1("Field Performance", gotIt.msg);
-//        }
-//    }
-
     class SubAliveListener implements SubscriptionAliveListener {     // TODO This is common dummy class used everywhere to be made proper
         public void onAlive(Subscription s) {
 //            l2DFHeating.showMessage("" + s + String.format(
@@ -1287,7 +1122,6 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         public void onDataChange(Subscription subscription, MonitoredDataItem monitoredDataItem, DataValue dataValue) {
             if (monitoredTagsReady) {
                 String fromElement = monitoredDataItem.toString();
-//                controller.info("From L2Zones " + "Messages" + ":fromElement-" + fromElement + ", VALUE: " + dataValue.getValue().toStringWithType());
                 Tag theTag = monitoredTags.get(monitoredDataItem);
                 if (theTag.element == L2ParamGroup.Parameter.InfoMsg) {
                     if (l2InfoMessages.isNewData(theTag)) {  // the data will be already read if new data
@@ -1359,13 +1193,6 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                         l2DFHeating.handleModifiedProcessData();
                     }
                 }
-//                if (performanceStat.isNewData(theTag)) {
-//                    if (itIsRuntime && (theTag == performanceChanged) && theTag.getValue().booleanValue) {
-//                        logTrace("Performance data Changed");
-//                        performanceStat.setAsNoted(true);
-//                        handleModifiedPerformanceData();
-//                    }
-//                }
             }
         }
     }
