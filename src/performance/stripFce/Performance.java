@@ -131,7 +131,11 @@ public class Performance {
         this.furnace = furnace;
         this.controller = furnace.controller;
         updateTableButton = new JButton("<html>Update Performance<p>Table</html>");
-        updateTableButton.addActionListener(e -> {furnace.calculateForPerformanceTable(this);});
+        updateTableButton.addActionListener(e -> {
+            showMessage("<html>Not ready for recalculation of table.<p>" +
+                "For the moment, the only option is to delete this Performance Data and ...</html>");
+//            furnace.calculateForPerformanceTable(this);
+        });
     }
 
     public Performance(ProductionData production, Fuel fuel, double airTemp, Vector<OneZone> topZones,
@@ -251,7 +255,7 @@ public class Performance {
     double[] outputFactors;
     double[] widthList; // in fact, it is width steps
 
-    public boolean setTableFactors(double minOutputFactor, double outputStep, double minWidthFactor, double widthStep) {
+    public boolean setTableFactorsREMOVE(double minOutputFactor, double outputStep, double minWidthFactor, double widthStep) { // TOD to be removed
 //        int nOutput = (int)((1.0 - minOutputFactor) / outputStep) + 1;
         Vector<Double> vOF = new Vector<Double>();
         double of = 1.0; //  + outputStep;
@@ -283,7 +287,7 @@ public class Performance {
         return true;
     }
 
-    public boolean setTableFactors(double outputStep, double widthStep) {
+    public boolean setTableFactorsREMOVE(double outputStep, double widthStep) {  // TODO tobe removed
         OneStripDFHProcess dfhProc = controller.getStripDFHProcess(processName);
         if (dfhProc != null) {
             double minOutputFactor = dfhProc.minOutputFactor();
@@ -360,7 +364,7 @@ public class Performance {
                             widthList = new double[vWF.size()];
                             n = 0;
                             for (double w : vWF)
-                                widthList[n++] = w * chLength;
+                                widthList[n++] = w * refWidth;
                         }
                         else
                             retVal.setErrorMessage(String.format("Production is more than limit of %5.3f t/h/meter width",
@@ -416,6 +420,8 @@ public class Performance {
                     break;
             }
 //            controller.enableDataEdit();
+            if (allOk)
+                dfhProcess = controller.getStripDFHProcess(processName);
             controller.performanceTableDone();
         }
         return allOk;
@@ -795,8 +801,10 @@ public class Performance {
                     }
                     if (perfTable != null) {
                         DataWithStatus<OneStripDFHProcess> processStat = controller.getDFHProcess(this);
-                        if (processStat.getDataStatus() == DataStat.Status.OK)
+                        if (processStat.getDataStatus() == DataStat.Status.OK) {
                             dfhProcess = processStat.getValue();
+                            processName = dfhProcess.getFullProcessID();
+                        }
                         else
                             bRetVal = false;
                     }

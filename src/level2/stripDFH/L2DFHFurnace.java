@@ -632,7 +632,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         return true;
     }
 
-    public DataWithStatus<Performance> getBasePerformance(OneStripDFHProcess stripDFHProc, double stripThick) {
+    public DataWithStatus<Performance> getBasePerformanceREMOVE(OneStripDFHProcess stripDFHProc, double stripThick) { // TODO to be removed
         DataWithStatus<Performance> retVal = new DataWithStatus<>();
         DataWithStatus<ChMaterial> chMat = stripDFHProc.getChMaterial(stripDFHProc.baseProcessName, stripThick);
         if (chMat.valid)

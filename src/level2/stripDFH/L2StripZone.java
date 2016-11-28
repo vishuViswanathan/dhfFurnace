@@ -205,9 +205,12 @@ public class L2StripZone extends L2ParamGroup {
             l2Furnace.logTrace("Running strip with Process:" + theStrip.processBaseName);
             OneStripDFHProcess oneProcess = l2DFHeating.getStripDFHProcess(theStrip);
             if (oneProcess != null) {
-                DataWithStatus<Performance> refP = l2Furnace.getBasePerformance(oneProcess, theStrip.thickness);
-                if (refP.valid) {
-                    theStrip.refP = refP.getValue();
+//                DataWithStatus<Performance> refP = l2Furnace.getBasePerformance(oneProcess, theStrip.thickness);
+//                if (refP.valid) {
+//                    theStrip.refP = refP.getValue();
+                Performance refP = oneProcess.getPerformance();
+                if (refP != null) {
+                    theStrip.refP = refP;
                     double output = l2Furnace.getOutputWithFurnaceTemperatureStatus( theStrip.refP, theStrip.width, theStrip.thickness);
                     l2Furnace.logTrace("Running Strip capacity Based On temperature= " + (output / 1000) + "t/h");
                     if (output > 0) {
@@ -255,9 +258,12 @@ public class L2StripZone extends L2ParamGroup {
             l2Furnace.logTrace("Strip: " + theStrip);
             OneStripDFHProcess oneProcess = l2DFHeating.getStripDFHProcess(theStrip);
             if (oneProcess != null) {
-                DataWithStatus<Performance> refP = l2Furnace.getBasePerformance(oneProcess, theStrip.thickness);
-                if (refP.valid) {
-                    theStrip.refP = refP.getValue();
+//                DataWithStatus<Performance> refP = l2Furnace.getBasePerformance(oneProcess, theStrip.thickness);
+//                if (refP.valid) {
+//                    theStrip.refP = refP.getValue();
+                Performance refP = oneProcess.getPerformance();
+                if (refP != null) {
+                    theStrip.refP = refP;
                     double output = l2Furnace.getOutputWithFurnaceTemperatureStatus(theStrip.refP, theStrip.width, theStrip.thickness);
                     l2Furnace.logTrace("capacity Based On temperature= " + (output / 1000) + "t/h");
                     if (output > 0) {

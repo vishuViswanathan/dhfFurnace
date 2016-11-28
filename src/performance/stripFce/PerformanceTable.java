@@ -34,7 +34,7 @@ public class PerformanceTable {
     Vector<ZonalTable> zonalTablesB;
     Performance baseP;
     DFHeating control;
-    String colHeadName = "Output";
+    String colHeadName = "OutputF";
     String rowHeadName = "Width";
     DFHFurnace furnace;
 
@@ -45,7 +45,7 @@ public class PerformanceTable {
         if (vp.val.length() > 20) {
             TwoDTable outputT = splTwoDTable(vp.val, "Performance Table, output");
 //            outputT.setColAndRowHeadNames(colHeadName, rowHeadName);
-            outputT.setFormats("0.00", "0.000", "0.00");
+            outputT.setFormats("0.000", "0.000", "0.00");
             commTables.put(Performance.Params.OUTPUT, outputT);
             vp = XMLmv.getTag(xmlStr, "airTempPT", vp.endPos);
             if (vp.val.length() > 20) {
@@ -124,8 +124,8 @@ public class PerformanceTable {
     }
 
     private void setFormats() {
-        commTables.get(Performance.Params.OUTPUT).setFormats("0.00", "0.000", "0.00");
-        commTables.get(Performance.Params.AIRTEMP).setFormats("0.00", "0.000", "0.00");
+        commTables.get(Performance.Params.OUTPUT).setFormats("0.000", "0.000", "0.00");
+        commTables.get(Performance.Params.AIRTEMP).setFormats("0.000", "0.000", "0.00");
     }
 
     public boolean addToTable(double width, double outputFactor, Performance p) {

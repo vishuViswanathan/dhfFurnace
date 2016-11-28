@@ -120,7 +120,7 @@ public class PerformanceGroup implements ActionListener{
             }
             if (overWrite)  {
                 deletePerformance(foundAt);
-                StatusWithMessage addResponse = furnace.addPerformance(performance, foundAt);
+                StatusWithMessage addResponse = furnace.addPerformance(performance, -1);
                 DataStat.Status status = addResponse.getDataStatus();
                 if (status == DataStat.Status.OK) {
                     bNoted = true;
@@ -150,6 +150,7 @@ public class PerformanceGroup implements ActionListener{
             if (nPerf == 2 || requiresInterpolCheck)
                 checkIfCanInterpolate();
         }
+        getListPanel();
         return bNoted;
     }
 
@@ -366,7 +367,8 @@ public class PerformanceGroup implements ActionListener{
                                     showError("Unable to note performance data :" + p);
                             }
                             else
-                                showError("Some mismatch in performance data :" + p);
+                                showError("Some mismatch in performance data :" + p +
+                                    "\n    The Data is discarded !");
 //                                break; // take no more since seems to have some error
                         }
                     }
@@ -556,9 +558,9 @@ public class PerformanceGroup implements ActionListener{
 
     void showError(String msg){
         (new TimedMessage("In Performance Data", msg, TimedMessage.ERROR, controller.parent(), 5000)).show();
-     }
+    }
 
-     void showMessage(String msg) {
-         (new TimedMessage("In Performance Data", msg, TimedMessage.INFO, controller.parent(), 3000)).show();
-     }
+    void showMessage(String msg) {
+        (new TimedMessage("In Performance Data", msg, TimedMessage.INFO, controller.parent(), 3000)).show();
+    }
 }

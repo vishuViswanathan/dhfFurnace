@@ -982,12 +982,12 @@ public class SampleStripFurnace {
             "<dfhProcessList><pNum>1</pNum>\n" +
             "<StripP1><processName>FHGI</processName>\n" +
             "<description>A Test Process</description>\n" +
-            "<chMaterialThin>CR Lo-C emiss 0.32</chMaterialThin>\n" +
-            "<chMaterialThick>CR Lo-C emiss 0.33</chMaterialThick>\n" +
+//            "<chMaterialThin>CR Lo-C emiss 0.32</chMaterialThin>\n" +
+            "<chMaterial>CR Lo-C emiss 0.33</chMaterial>\n" +
             "<tempDFHExit>480.0</tempDFHExit>\n" +
             "<maxExitZoneTemp>1050.0</maxExitZoneTemp>\n" +
             "<minExitZoneTemp>850.0</minExitZoneTemp>\n" +
-            "<thinUpperLimit>0.2</thinUpperLimit>\n" +
+//            "<thinUpperLimit>0.2</thinUpperLimit>\n" +
             "<maxUnitOutput>20.42</maxUnitOutput>\n" +
             "<minUnitOutput>10.0</minUnitOutput>\n" +
             "<maxSpeed>150.0</maxSpeed>\n" +

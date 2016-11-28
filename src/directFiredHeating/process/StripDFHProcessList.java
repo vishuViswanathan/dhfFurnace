@@ -392,34 +392,34 @@ public class StripDFHProcessList {
                 canBeSaved = true;
                 for (OneStripDFHProcess process : list) {
                     if (process == selectedProcess) {
-                        StatusWithMessage statThin = process.checkPerformanceDataState(true);
-                        DataStat.Status stat = statThin.getDataStatus();
+                        StatusWithMessage statusWithMessage = process.checkPerformanceDataState();
+                        DataStat.Status stat = statusWithMessage.getDataStatus();
                         if (stat != DataStat.Status.OK) {
                             canBeSaved = false;
-                            errMsg += "Existing Performance data for Thin Strip: " + process.pThin + "\n  ";
+                            errMsg += "Existing Performance data : " + process.performance + "\n  ";
                             if (stat == DataStat.Status.WithErrorMsg) {
-                                errMsg += statThin.getErrorMessage() + "\n";
-                                performancesToDelete.add(process.pThin);
+                                errMsg += statusWithMessage.getErrorMessage() + "\n";
+                                performancesToDelete.add(process.performance);
                             }
                             if (stat == DataStat.Status.WithInfoMsg) {
-                                errMsg += statThin.getInfoMessage() + "\n";
-                                performancesToRedoTable.add(process.pThin);
+                                errMsg += statusWithMessage.getInfoMessage() + "\n";
+                                performancesToRedoTable.add(process.performance);
                             }
                         }
-                        StatusWithMessage statThick = process.checkPerformanceDataState(false);
-                        stat = statThick.getDataStatus();
-                        if (stat != DataStat.Status.OK) {
-                            canBeSaved = false;
-                            errMsg += "Existing Performance data for Thick Strip: " + process.pThick + "\n  ";
-                            if (stat == DataStat.Status.WithErrorMsg) {
-                                errMsg += statThick.getErrorMessage() + "\n";
-                                performancesToDelete.add(process.pThick);
-                            }
-                            if (stat == DataStat.Status.WithInfoMsg) {
-                                errMsg += statThick.getInfoMessage() + "\n";
-                                performancesToRedoTable.add(process.pThick);
-                            }
-                        }
+//                        StatusWithMessage statThick = process.checkPerformanceDataState(false);
+//                        stat = statThick.getDataStatus();
+//                        if (stat != DataStat.Status.OK) {
+//                            canBeSaved = false;
+//                            errMsg += "Existing Performance data for Thick Strip: " + process.pThick + "\n  ";
+//                            if (stat == DataStat.Status.WithErrorMsg) {
+//                                errMsg += statThick.getErrorMessage() + "\n";
+//                                performancesToDelete.add(process.pThick);
+//                            }
+//                            if (stat == DataStat.Status.WithInfoMsg) {
+//                                errMsg += statThick.getInfoMessage() + "\n";
+//                                performancesToRedoTable.add(process.pThick);
+//                            }
+//                        }
                         itsNew = false;
                         break;
                     }
@@ -453,7 +453,7 @@ public class StripDFHProcessList {
                             list.add(selectedProcess);
                         }
                         populateJcbExisting();
-                        jcbExisting.setSelectedItem(selectedProcess.baseProcessName);
+//                        jcbExisting.setSelectedItem(selectedProcess.getFullProcessID());
                         response = EditResponse.Response.SAVE;
                         edited = true;
                     }
@@ -468,65 +468,6 @@ public class StripDFHProcessList {
             return edited;
         }
 
-        public boolean saveDataREMOVE() { // TODO tobe Removed
-            boolean canBeSaved = false;
-            boolean itsNew = true;
-            String errMsg = "";
-            OneStripDFHProcess oldProc = selectedProcess.createCopy();
-            ErrorStatAndMsg dataStat = selectedProcess.noteDataFromUI();
-            if (!dataStat.inError) {
-                canBeSaved = true;
-                for (OneStripDFHProcess process : list) {
-                    if (process == selectedProcess) {
-                        StatusWithMessage statThin = process.checkPerformanceDataState(true);
-                        DataStat.Status stat = statThin.getDataStatus();
-                        if (stat == DataStat.Status.OK) {
-                            StatusWithMessage statThick = process.checkPerformanceDataState(false);
-                            stat = statThick.getDataStatus();
-                            if (stat != DataStat.Status.OK) {
-                                canBeSaved = false;
-                                errMsg += "Existing Performance data for Thick Strip: " + process.pThick + "\n";
-                                if (stat == DataStat.Status.WithErrorMsg)
-                                    errMsg += statThick.getErrorMessage();
-                                if (stat == DataStat.Status.WithInfoMsg)
-                                    errMsg += statThick.getInfoMessage();
-                            }
-                        } else {
-                            canBeSaved = false;
-                            errMsg += "Existing Performance data for Thin Strip: " + process.pThin + "\n";
-                            if (stat == DataStat.Status.WithErrorMsg)
-                                errMsg += statThin.getErrorMessage();
-                            if (stat == DataStat.Status.WithInfoMsg)
-                                errMsg += statThin.getInfoMessage();
-                        }
-                        itsNew = false;
-                        break;
-                    }
-                }
-                if (!canBeSaved) {
-                    canBeSaved = SimpleDialog.decide(this, "Checking with Performance Data", errMsg + "\n" +
-                            "     The affected Performance Data has to be Redone/Updated\n" +
-                            "     Press 'Yes', if you still want to proceed with the saving." +
-                            " Pressing 'No' will revert to original process data") ==  JOptionPane.YES_OPTION;
-                }
-                if (canBeSaved) {
-                    if (itsNew) {
-                        list.add(selectedProcess);
-                    }
-                    populateJcbExisting();
-                    jcbExisting.setSelectedItem(selectedProcess.baseProcessName);
-                    response = EditResponse.Response.SAVE;
-                    edited = true;
-                }
-                else {
-                    oldProc.copyTo(selectedProcess);
-                    selectedProcess.fillUI();
-                }
-            }
-            else
-                showError("Data Entry", dataStat.msg);
-            return edited;
-        }
         public void deleteData() {
             list.remove(selectedProcess);
             populateJcbExisting();

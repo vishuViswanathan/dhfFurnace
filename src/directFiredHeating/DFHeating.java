@@ -1172,10 +1172,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return compareResults;
     }
 
-    protected void enablePerformanceMenu(boolean ena) {
-
-    }
-
     protected JMenu definePerformanceMenu() {
         perfMenu = new JMenu("Performance");
         perfMenu.setMnemonic(KeyEvent.VK_P);
@@ -2343,7 +2339,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     public FceEvaluator calculateForPerformanceTable(Performance baseP) {
-        baseP.setTableFactors(tuningParams.outputStep, tuningParams.widthStep);
+//        baseP.setTableFactors(tuningParams.outputStep, tuningParams.widthStep);
         return calculateForPerformanceTable(baseP, null);
     }
 
@@ -2470,6 +2466,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         enableDefineMenu(true);
         enableResultsMenu(false);
         enableFileMenu(true);
+        enablePerfMenu(true);
         showError("ABORTING CALCULATION!");
         switchPage(DFHDisplayPageType.INPUTPAGE);
         parent().toFront();
@@ -2560,7 +2557,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     public StatusWithMessage takeProfileDataFromXML(String xmlStr) {
-        logInfo("in takeProfileDatFromXML in DFHeating");
+//        logInfo("in takeProfileDatFromXML in DFHeating");
         return takeProfileDataFromXML(xmlStr, false, null, null);
     }
 

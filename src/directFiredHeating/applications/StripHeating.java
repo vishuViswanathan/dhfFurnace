@@ -263,7 +263,7 @@ protected void saveFceToFile(boolean withPerformance) {
     }
 
     protected boolean takeStripProcessListFromXML(String xmlStr) {
-        logInfo("#################### in StripHeating.takeStripProcessListFromXML ");
+//        logInfo("#################### in StripHeating.takeStripProcessListFromXML ");
         return dfhProcessList.takeStripProcessListFromXML(xmlStr);
     }
 
