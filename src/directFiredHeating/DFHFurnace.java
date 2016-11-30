@@ -3766,9 +3766,9 @@ public class DFHFurnace {
     }
 
     public boolean showZoneDataMsgIfRequired(Component caller) {
-//        firedCount(false);
-//        if (bTopBot)
-//            firedCount(true);
+        firedCount(false);
+        if (bTopBot)
+            firedCount(true);
         if (chTempProfAvailable || perfBaseReady)
             return true;
         boolean bRetVal = showZoneDataMsgIfRequired(caller, false);
@@ -3777,7 +3777,14 @@ public class DFHFurnace {
         return bRetVal;
     }
 
-    public boolean showZoneDataMsgIfRequired(Component caller, boolean bBot) {
+    /**
+     * It is id required that firedCount(..) has been called before
+     * @param caller
+     * @param bBot
+     * @return
+     */
+
+    private boolean showZoneDataMsgIfRequired(Component caller, boolean bBot) {
         boolean retVal = false;
         int fired = (bBot) ? nBotFired : nTopFired; // firedCount(bBot);
         int[] firedSecs = (bBot) ? botFiredSections : topFiredSections;

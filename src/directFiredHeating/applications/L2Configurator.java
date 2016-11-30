@@ -41,7 +41,7 @@ public class L2Configurator extends StripHeating {
         bAllowProfileChange = true;
         bAllowManualCalculation = true;
         asApplication = true;
-        releaseDate = "20161118 10:42";
+        releaseDate = "20161130 12:00";
         createLocalMenuItems();
     }
 
