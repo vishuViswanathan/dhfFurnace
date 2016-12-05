@@ -38,16 +38,15 @@ public class OneStripDFHProcess {
     public double maxThickness = 0.0015;  // m
     public double minThickness = 0.0001; //m
     public double maxSpeed = 120 * 60; // m/h
+    public double minSpeed = 20 * 60; // m/h
     public double maxWidth = 1.25;  // m
     public double minWidth = 0.9;  // m
     public double maxUnitOutput = 25000;  // kg/h for 1m with
     public double minUnitOutput = 8500; // kg/h  for 1m width
     String errMeg = "Error reading StripDFHProcess :";
     public boolean inError = false;
-//    EditResponse.Response editResponse = EditResponse.Response.EXIT;
+    DFHTuningParams tuning;
     StripDFHProcessList existingList;
-//    Performance pThick;
-//    Performance pThin;
     Performance performance;
 
     private OneStripDFHProcess() {
@@ -57,15 +56,15 @@ public class OneStripDFHProcess {
     public OneStripDFHProcess(StripDFHProcessList existingList, String baseProcessName, Vector<ChMaterial> vChMaterial, InputControl inpC) {
         this.existingList = existingList;
         this.dfHeating = existingList.dfHeating;
+        tuning = dfHeating.getTuningParams();
         this.baseProcessName = baseProcessName;
         chMaterial = vChMaterial.get(0);
-//        chMaterialThin = vChMaterial.get(0);
-//        chMaterialThick = vChMaterial.get(0);
     }
 
     public OneStripDFHProcess(DFHeating dfHeating, StripDFHProcessList existingList, String xmlStr) {
         this.existingList = existingList;
         this.dfHeating = dfHeating;
+        tuning = dfHeating.getTuningParams();
         if (!takeDataFromXML(xmlStr))
             inError = true;
     }
@@ -78,26 +77,23 @@ public class OneStripDFHProcess {
     public OneStripDFHProcess copyTo(OneStripDFHProcess c) {
         c.density = density;
         c.dfHeating = dfHeating;
+        c.tuning = tuning;
         c.baseProcessName = baseProcessName;
         c.chMaterial = chMaterial;
-//        c.chMaterialThin = chMaterialThin;
-//        c.chMaterialThick = chMaterialThick;
         c.tempDFHEntry = tempDFHEntry;
         c.tempDFHExit = tempDFHExit;
         c.maxExitZoneTemp = maxExitZoneTemp;
         c.minExitZoneTemp = minExitZoneTemp;
-//        c.thinUpperLimit = thinUpperLimit;   // in m
         c.maxThickness = maxThickness;  // m
         c.minThickness = minThickness; //m
         c.maxSpeed = maxSpeed; // m/h
+        c.minSpeed = minSpeed; // m/h
         c.maxWidth = maxWidth;  // m
         c.minWidth = minWidth;  // m
         c.maxUnitOutput = maxUnitOutput;  // kg/h for 1m with
         c.minUnitOutput = minUnitOutput; // kg/h  for 1m width
         c.existingList = existingList;
         c.performance = performance;
-//        c.pThick = pThick;
-//        c.pThin = pThin;
         return c;
     }
 
@@ -115,19 +111,6 @@ public class OneStripDFHProcess {
             performance = null;
         else
             retVal.addErrorMessage("Existing Performance Data different, NOT DELETED");
-
-//        if (isItThinMaterial(p.chThick)) {
-//            if (pThin == null || pThin == p)
-//                pThin = null;
-//            else
-//                retVal.addErrorMessage("Existing Performance Data for Thin material is different, NOT DELETED");
-//        }
-//        else  {
-//            if (pThick == null || pThick == p)
-//                pThick = null;
-//            else
-//                retVal.addErrorMessage("Existing Performance Data for Thick material is different, NOT DELETED");
-//        }
         return retVal;
     }
 
@@ -136,17 +119,6 @@ public class OneStripDFHProcess {
         if (performance != null)
             retVal.addInfoMessage("Performance Data existed, OVERWRITTEN now");
         performance = p;
-
-//        if (isItThinMaterial(p.chThick)) {
-//            if (pThin != null)
-//                retVal.addInfoMessage("Performance Data for thin material existed, OVERWRITTEN now");
-//            pThin = p;
-//        }
-//        else {
-//            if (pThick != null)
-//                retVal.addInfoMessage("Performance Data for thick material existed,  OVERWRITTEN now");
-//            pThick = p;
-//        }
         return retVal;
     }
 
@@ -219,10 +191,15 @@ public class OneStripDFHProcess {
                 speed = maxSpeed;
                 response.setValue(speed, "Restricted by Maximum Process Speed");
             } else {
-                if (status == DataStat.Status.WithInfoMsg)
-                    response.setValue(speed, response.infoMessage);   // if it had any infoMessage, it ic forwarded
-                else
-                    response.setValue(speed);
+                if (speed < minSpeed) {
+                    speed = minSpeed;
+                    response.setValue(speed, "Restricted by Minimum Process Speed");
+                } else {
+                    if (status == DataStat.Status.WithInfoMsg)
+                        response.setValue(speed, response.infoMessage);   // if it had any infoMessage, it ic forwarded
+                    else
+                        response.setValue(speed);
+                }
             }
         }
         return response;
@@ -231,8 +208,8 @@ public class OneStripDFHProcess {
     public double getLimitSpeed(double stripThickness) {
         DataWithStatus<ChMaterial> chMat = getChMaterial(stripThickness);
         if (chMat.valid) {
-            double limitSpeed = maxUnitOutput / chMat.getValue().density / stripThickness;
-            return Math.min(limitSpeed, maxSpeed);
+            double limitSpeed = maxUnitOutput * tuning.unitOutputOverRange / chMat.getValue().density / stripThickness;
+            return Math.max(Math.min(limitSpeed, maxSpeed), minSpeed);
         }
         else
             return 0;
@@ -248,8 +225,6 @@ public class OneStripDFHProcess {
                 try {
                     vp = XMLmv.getTag(xmlStr, "processName", 0);
                     baseProcessName = vp.val.trim();
-//                    vp = XMLmv.getTag(xmlStr, "description", 0);
-//                    description = vp.val.trim();
                     String materialName;
                     vp = XMLmv.getTag(xmlStr, "chMaterial", 0);
                     materialName = vp.val.trim();
@@ -258,22 +233,6 @@ public class OneStripDFHProcess {
                         errMeg += "Strip Material (" + materialName + ") not found";
                         break aBlock;
                     }
-//                    String thinMaterialName;
-//                    vp = XMLmv.getTag(xmlStr, "chMaterialThin", 0);
-//                    thinMaterialName = vp.val.trim();
-//                    chMaterialThin = dfHeating.getSelChMaterial(thinMaterialName);
-//                    if (chMaterialThin == null) {
-//                        errMeg += "ChMaterialThin (" + thinMaterialName + ") not found";
-//                        break aBlock;
-//                    }
-//                    String thickMaterialName;
-//                    vp = XMLmv.getTag(xmlStr, "chMaterialThick", 0);
-//                    thickMaterialName = vp.val.trim();
-//                    chMaterialThick = dfHeating.getSelChMaterial(thickMaterialName);
-//                    if (chMaterialThick == null) {
-//                        errMeg += "ChMaterialThick (" +thickMaterialName + ")  not found";
-//                        break aBlock;
-//                    }
                     vp = XMLmv.getTag(xmlStr, "tempDFHEntry", 0);
                     if (vp.val.length() > 0)
                         tempDFHEntry = Double.valueOf(vp.val);
@@ -288,9 +247,6 @@ public class OneStripDFHProcess {
                     vp = XMLmv.getTag(xmlStr, "minExitZoneTemp", 0);
                     minExitZoneTemp = Double.valueOf(vp.val);
 
-//                    vp = XMLmv.getTag(xmlStr, "thinUpperLimit", 0);
-//                    thinUpperLimit = Double.valueOf(vp.val) / 1000;
-//
                     vp = XMLmv.getTag(xmlStr, "maxUnitOutput", 0);
                     maxUnitOutput = Double.valueOf(vp.val) * 1000;
 
@@ -299,6 +255,10 @@ public class OneStripDFHProcess {
 
                     vp = XMLmv.getTag(xmlStr, "maxSpeed", 0);
                     maxSpeed = Double.valueOf(vp.val) * 60;
+
+                    vp = XMLmv.getTag(xmlStr, "minSpeed", 0);
+                    if (vp.val.length() > 0)
+                        minSpeed = Double.valueOf(vp.val) * 60;
 
                     vp = XMLmv.getTag(xmlStr, "maxThickness", 0);
                     maxThickness = Double.valueOf(vp.val) / 1000;
@@ -326,12 +286,6 @@ public class OneStripDFHProcess {
 
     public DataWithStatus<ChMaterial> getChMaterial(double stripThick) {
         DataWithStatus<ChMaterial> retVal = new DataWithStatus<>();
-//        if (thicknessInRange(stripThick)) {
-//            if (stripThick <= thinUpperLimit)
-//                retVal.setValue(chMaterialThin);
-//            else
-//                retVal.setValue(chMaterialThick);
-//        }
         if (thicknessInRange(stripThick)) {
             retVal.setValue(chMaterial);
         }
@@ -355,18 +309,15 @@ public class OneStripDFHProcess {
 
     public StringBuffer dataInXML() {
         StringBuffer xmlStr = new StringBuffer(XMLmv.putTag("processName", baseProcessName));
-//        xmlStr.append(XMLmv.putTag("description", description));
         xmlStr.append(XMLmv.putTag("chMaterial", "" + chMaterial));
-//        xmlStr.append(XMLmv.putTag("chMaterialThin", "" + chMaterialThin));
-//        xmlStr.append(XMLmv.putTag("chMaterialThick", "" + chMaterialThick));
         xmlStr.append(XMLmv.putTag("tempDFHEntry", "" + tempDFHEntry));
         xmlStr.append(XMLmv.putTag("tempDFHExit", "" + tempDFHExit));
         xmlStr.append(XMLmv.putTag("maxExitZoneTemp", "" + maxExitZoneTemp));
         xmlStr.append(XMLmv.putTag("minExitZoneTemp", "" + minExitZoneTemp));
-//        xmlStr.append(XMLmv.putTag("thinUpperLimit", "" + (thinUpperLimit * 1000)));
         xmlStr.append(XMLmv.putTag("maxUnitOutput", "" + (maxUnitOutput / 1000)));
         xmlStr.append(XMLmv.putTag("minUnitOutput", "" + (minUnitOutput / 1000)));
-        xmlStr.append(XMLmv.putTag("maxSpeed", "" + maxSpeed / 60));
+        xmlStr.append(XMLmv.putTag("maxSpeed", "" + (maxSpeed / 60)));
+        xmlStr.append(XMLmv.putTag("minSpeed", "" + (minSpeed / 60)));
         xmlStr.append(XMLmv.putTag("maxThickness", "" + (maxThickness * 1000)));
         xmlStr.append(XMLmv.putTag("minThickness", "" + (minThickness * 1000)));
         xmlStr.append(XMLmv.putTag("maxWidth", "" + (maxWidth * 1000)));
@@ -389,6 +340,7 @@ public class OneStripDFHProcess {
     NumberTextField ntMaxUnitOutput;
     NumberTextField ntMinUnitOutput;
     NumberTextField ntMaxSpeed;
+    NumberTextField ntMinSpeed;
     NumberTextField ntMaxThickness;
     NumberTextField ntMinThickness;
     NumberTextField ntMaxWidth;
@@ -403,13 +355,12 @@ public class OneStripDFHProcess {
     }
 
     boolean exitTempInRange(double temperature) {
-        double margin = dfHeating.getTuningParams().exitTempTolerance;
+        double margin = tuning.exitTempTolerance;
         return (temperature > (tempDFHExit - margin)) && (temperature <= (tempDFHExit + margin));
     }
 
     public ErrorStatAndMsg checkExitTemperature(double nowExitTemp) {
         ErrorStatAndMsg retVal = new ErrorStatAndMsg();
-        DFHTuningParams tuning = dfHeating.getTuningParams();
         DecimalFormat tempFmt = new DecimalFormat("#,###");
         double maxExitTempAllowed = tempDFHExit + tuning.exitTempTolerance;
         double minExitTempAllowed = tempDFHExit - tuning.exitTempTolerance;
@@ -427,7 +378,6 @@ public class OneStripDFHProcess {
         String chMaterial = p.chMaterial;
         double unitOutput = p.unitOutput;
         double exitTemp = p.exitTemp();
-        DFHTuningParams tuning = dfHeating.getTuningParams();
         ErrorStatAndMsg retVal = new ErrorStatAndMsg(false, "");
         if (exitTempInRange(exitTemp)) {
             DataWithStatus<ChMaterial> chMat = getChMaterial(chThick);
@@ -457,7 +407,7 @@ public class OneStripDFHProcess {
             retVal.addInfoMessage("Performance Data does not cover the Width Range");
         }
         DoubleRange perfUOutputRange = p.getUnitOutputRange();
-        double maxUOutputWithOverRange = maxUnitOutput * dfHeating.getTuningParams().unitOutputOverRange;
+        double maxUOutputWithOverRange = maxUnitOutput * tuning.unitOutputOverRange;
 
         if (!perfUOutputRange.isThisYourSubset(minUnitOutput, maxUOutputWithOverRange, 0.01)) {
             retVal.setValue(false);
@@ -474,7 +424,6 @@ public class OneStripDFHProcess {
      */
     public ErrorStatAndMsg performanceOkForProcess(double chWidth, double unitOutput) {
         ErrorStatAndMsg retVal = new ErrorStatAndMsg(true, "");
-        DFHTuningParams tuning = dfHeating.getTuningParams();
         DecimalFormat mmFmt = new DecimalFormat("#,###");
         DecimalFormat outputFmt = new DecimalFormat("#,###.000");
         if (chWidth <= maxWidth) {
@@ -520,30 +469,6 @@ public class OneStripDFHProcess {
         return retVal;
     }
 
-//    public StatusWithMessage checkPerformanceDataState(boolean bThinStrip) {
-//        StatusWithMessage retVal = new StatusWithMessage();
-//        Performance p = (bThinStrip) ? pThin : pThick;
-//        if (p!= null) {
-//            ErrorStatAndMsg stat = performanceOkForProcess(p);
-//            String matName = chMaterial.getName();
-////            String matName = (bThinStrip) ? chMaterialThin.getName() : chMaterialThick.getName();
-//            if (!stat.inError) {
-//                if (matName.equalsIgnoreCase(p.chMaterial)) {
-//                    BooleanWithStatus tableStat = checkPerformanceTableRange(p);
-//                    if (tableStat.getDataStatus() == DataStat.Status.WithInfoMsg) {
-//                        retVal.addInfoMessage(tableStat.getInfoMessage());
-//                    }
-//                }
-//                else {
-//                    String msg = "Performance saved for " + ((bThinStrip) ? "Thin " : "Thick") + " strip, has a mismatch";
-//                    retVal.addErrorMessage(msg);
-//                }
-//            } else
-//                retVal.addErrorMessage(stat.msg);
-//        }
-//        return retVal;
-//    }
-
     public ErrorStatAndMsg productionOkForPerformanceSave(ProductionData production) {
         return productionOkForPerformanceSave(baseProcessName, production);
     }
@@ -586,16 +511,6 @@ public class OneStripDFHProcess {
         cbChMaterial = new JSPComboBox<>(dfHeating.jspConnection, vChMaterial);
         cbChMaterial.setName("Select Strip Material");
         cbChMaterial.setSelectedItem(chMaterial);
-//        cbChMaterialThin = new JSPComboBox<ChMaterial>(dfHeating.jspConnection, vChMaterial);
-//        cbChMaterialThin.setName("Select Material to be taken for Thin strips");
-//        cbChMaterialThin.setSelectedItem(chMaterialThin);
-//        ntf = ntThinUpperLimit = new NumberTextField(inpC, thinUpperLimit * 1000, 6, false, 0.05, 0.9,
-//                "0.00", "Upper thickness Limit for Thin material (mm)");
-//        dataFieldList.add(ntf);
-//        cbChMaterialThick = new JSPComboBox<ChMaterial>(dfHeating.jspConnection, vChMaterial);
-//        cbChMaterialThick.setName("Select Material to be taken for Thick strips");
-//        cbChMaterialThick.setSelectedItem(chMaterialThick);
-
         ntf = ntTempDFHEntry = new NumberTextField(inpC, tempDFHEntry, 6, false, 0, 300,
                 "#,##0", "Strip Temperature at DFH Entry (deg C)");
         dataFieldList.add(ntf);
@@ -617,6 +532,9 @@ public class OneStripDFHProcess {
         ntf = ntMaxSpeed = new NumberTextField(inpC, maxSpeed / 60, 6, false, 50, 1000.0,
                 "##0.00", "Maximum Process speed (m/min)");
         dataFieldList.add(ntf);
+        ntf = ntMinSpeed = new NumberTextField(inpC, minSpeed / 60, 6, false, 10, 1000.0,
+                "##0.00", "Minimum Process speed (m/min)");
+        dataFieldList.add(ntf);
         ntf = ntMaxThickness = new NumberTextField(inpC, maxThickness * 1000, 6, false, 0.0, 100.0,
                 "##0.00", "Maximum Strip Thickness (mm) - Inclusive");
         dataFieldList.add(ntf);
@@ -635,10 +553,6 @@ public class OneStripDFHProcess {
         editorPanel.addItemPair(tfFullProcessID);
         editorPanel.addBlank();
         editorPanel.addItemPair(cbChMaterial);
-
-//        editorPanel.addItemPair(cbChMaterialThin);
-//        editorPanel.addItemPair(ntThinUpperLimit);
-//        editorPanel.addItemPair(cbChMaterialThick);
         editorPanel.addBlank();
         editorPanel.addItemPair(ntTempDFHEntry);
         editorPanel.addItemPair(ntTempDFHExit);
@@ -648,6 +562,7 @@ public class OneStripDFHProcess {
         editorPanel.addBlank();
         editorPanel.addItemPair(ntMinUnitOutput);
         editorPanel.addItemPair(ntMaxUnitOutput);
+        editorPanel.addItem("<html><font color='red'>(Ensure Maximum Unit Output is sufficient for thickest strip at minimum speed)</html>");
         editorPanel.addBlank();
         editorPanel.addItemPair(ntMinThickness);
         editorPanel.addItemPair(ntMaxThickness);
@@ -655,8 +570,9 @@ public class OneStripDFHProcess {
         editorPanel.addItemPair(ntMinWidth);
         editorPanel.addItemPair(ntMaxWidth);
         editorPanel.addBlank();
+        editorPanel.addItemPair(ntMinSpeed);
         editorPanel.addItemPair(ntMaxSpeed);
-        editorPanel.addItem("<html>Ensure speed is sufficient for Minimum Unit Output with thinnest strip</html>");
+        editorPanel.addItem("<html><font color='red'>(Ensure Maximum speed is sufficient for Minimum Unit Output with thinnest strip)<html>");
         editorPanel.setVisible(true, startEditable);
         return editorPanel;
     }
@@ -699,7 +615,7 @@ public class OneStripDFHProcess {
         StringBuilder msg = new StringBuilder("New Process '" +
                 getFullProcessID(baseProcessNameX, exitTempX, minWidthX, maxWidthX, minThicknessX, maxThicknessX) +
                 "', parameters overlap with \nthe existing '" + getFullProcessID() + ";");
-        double margin = dfHeating.getTuningParams().exitTempTolerance;
+        double margin = tuning.exitTempTolerance;
         if (baseProcessNameX.equalsIgnoreCase(baseProcessName)) {
             msg.append("\n  Base Process Names are identical,");
             if (!(((exitTempX + margin) <= (tempDFHExit - margin)) || (exitTempX - margin) >= (tempDFHExit + margin)) ) {
@@ -746,6 +662,7 @@ public class OneStripDFHProcess {
                 double maxThicknessX = ntMaxThickness.getData() / 1000;
                 double minThicknessX = ntMinThickness.getData() / 1000;
                 double maxSpeedX = ntMaxSpeed.getData() * 60;
+                double minSpeedX = ntMinSpeed.getData() * 60;
                 double maxWidthX = ntMaxWidth.getData() / 1000;
                 double minWidthX = ntMinWidth.getData()/ 1000;
 //                double thinUpperLimitX = ntThinUpperLimit.getData() / 1000;
@@ -761,6 +678,8 @@ public class OneStripDFHProcess {
                     status.addErrorMsg("Max. Thickness must be > Min. Thickness\n");
                 if (maxWidthX < minWidthX)
                     status.addErrorMsg("Max. Width must be > Min. Width\n");
+                if (maxSpeedX <= minSpeedX)
+                    status.addErrorMsg("Max. Speed must be > Min. Speed\n");
 //                if (minThicknessX > thinUpperLimitX || maxThicknessX < thinUpperLimitX)
 //                    status.addErrorMsg("Mismatch in Strip Thickness data\n");
 //                if (minUnitOutputX / (minThicknessX * chMaterialThinX.density) > maxSpeedX)
@@ -805,6 +724,7 @@ public class OneStripDFHProcess {
             maxThickness = ntMaxThickness.getData() / 1000;
             minThickness = ntMinThickness.getData() / 1000;
             maxSpeed = ntMaxSpeed.getData() * 60;
+            minSpeed = ntMinSpeed.getData() * 60;
             maxWidth = ntMaxWidth.getData() / 1000;
             minWidth = ntMinWidth.getData() / 1000;
             tfFullProcessID.setText(getFullProcessID());
@@ -829,6 +749,7 @@ public class OneStripDFHProcess {
         ntMaxThickness.setData(maxThickness * 1000);
         ntMinThickness.setData(minThickness * 1000);
         ntMaxSpeed.setData(maxSpeed / 60);
+        ntMinSpeed.setData(minSpeed / 60);
         ntMaxWidth.setData(maxWidth * 1000);
         ntMinWidth.setData(minWidth * 1000);
         tfFullProcessID.setText(getFullProcessID());

@@ -32,7 +32,7 @@ public class L2DFHZone extends L2ParamGroup {
     int fuelCharSteps;
     public Tag[] tagsFuelChrTotal;
     public Tag[] tagsFuelChrZone;
-
+    public Tag[] tagsFuelChrSpeed;
 
     public L2DFHZone(L2DFHFurnace l2Furnace, String zoneName, String descriptiveName, FceSection theSection,
                      boolean bSubscribe) throws TagCreationException {
@@ -44,6 +44,7 @@ public class L2DFHZone extends L2ParamGroup {
         String basePath = "";
         String temperatureFmt = "#,##0";
         String fuelFlowFmt = "#,##0.00";
+        String speedFmt = "#,##0";
         String ratioFmt = "#0.00";
         String airFlowFmt = "#,##0"; Tag[] temperatureTags = {new Tag(Parameter.Temperature, Tag.TagName.SP, false, false, temperatureFmt),
                 new Tag(Parameter.Temperature, Tag.TagName.PV, false, true, temperatureFmt),
@@ -64,19 +65,24 @@ public class L2DFHZone extends L2ParamGroup {
                 new Tag(Parameter.AirFlow, Tag.TagName.Remote, false, false),
                 new Tag(Parameter.AirFlow, Tag.TagName.Temperature, false, true, temperatureFmt)};
         fuelCharSteps = l2Furnace.furnaceSettings.fuelCharSteps;
-        Tag[] allfuelChrTags = new Tag[fuelCharSteps * 2];
+        Tag[] allfuelChrTags = new Tag[fuelCharSteps * 3]; // totFuel, zoneFuel and Speed
         tagsFuelChrTotal = new Tag[fuelCharSteps];
         tagsFuelChrZone = new Tag[fuelCharSteps];
+        tagsFuelChrSpeed = new Tag[fuelCharSteps];
         int pos = 0;
         for (int s = 1; s <= fuelCharSteps; s++) {
-            Tag tx = new Tag(Parameter.FuelCharacteristic,
-                    Tag.TagName.getEnum("X" + ("" + s).trim()), true, false, fuelFlowFmt );
-            tagsFuelChrTotal[s - 1] = tx;
-            allfuelChrTags[pos++] = tx;
-            Tag ty = new Tag(Parameter.FuelCharacteristic,
-                    Tag.TagName.getEnum("Y" + ("" + s).trim()), true, false, fuelFlowFmt);
-            tagsFuelChrZone[s - 1] = ty;
-            allfuelChrTags[pos++] = ty;
+            Tag tTotFuel = new Tag(Parameter.FuelCharacteristic,
+                    Tag.TagName.TotFuel.buildTag(s), true, false, fuelFlowFmt );
+            tagsFuelChrTotal[s - 1] = tTotFuel;
+            allfuelChrTags[pos++] = tTotFuel;
+            Tag tZoneFuel = new Tag(Parameter.FuelCharacteristic,
+                    Tag.TagName.ZoneFuel.buildTag(s), true, false, fuelFlowFmt);
+            tagsFuelChrZone[s - 1] = tZoneFuel;
+            allfuelChrTags[pos++] = tZoneFuel;
+            Tag tSpeed = new Tag(Parameter.FuelCharacteristic,
+                    Tag.TagName.Speed.buildTag(s), true, false, speedFmt);
+            tagsFuelChrSpeed[s - 1] = tSpeed;
+            allfuelChrTags[pos++] = tSpeed;
         }
         monitoredTags = new Hashtable<MonitoredDataItem, Tag>();
         addOneParameter(Parameter.Temperature, temperatureTags);
@@ -91,16 +97,6 @@ public class L2DFHZone extends L2ParamGroup {
         monitoredTagsReady = true;
     }
 
-//    /**
-//     * For common sections with external subscription
-//     * @param l2Furnace
-//     * @param zoneName
-//     * @param subscription
-//     */
-//    public L2DFHZone(L2DFHFurnace l2Furnace, String zoneName, Subscription subscription) {
-//        super(l2Furnace, zoneName, subscription);
-//    }
-//
     void noteMonitoredTags(Tag[] tags) {
         for (Tag tag : tags)
             if (tag.isMonitored())
@@ -117,8 +113,9 @@ public class L2DFHZone extends L2ParamGroup {
         if (theSection != null) {
             int steps = fuelTable.length;
             for (int s = 0; s < steps; s++) {
-                setValue(Parameter.FuelCharacteristic, Tag.TagName.getEnum("X" + ("" + (s + 1)).trim()), (float)fuelTable[s][0]);
-                setValue(Parameter.FuelCharacteristic, Tag.TagName.getEnum("Y" + ("" + (s + 1)).trim()), (float)fuelTable[s][1]);
+                setValue(Parameter.FuelCharacteristic, Tag.TagName.TotFuel.buildTag(s + 1), (float)fuelTable[s][0]);
+                setValue(Parameter.FuelCharacteristic, Tag.TagName.ZoneFuel.buildTag(s + 1), (float)fuelTable[s][1]);
+                setValue(Parameter.FuelCharacteristic, Tag.TagName.Speed.buildTag(s + 1), (float)fuelTable[s][2]);
             }
         }
         return retVal;

@@ -6,10 +6,12 @@ import level2.common.L2ParamGroup;
 import level2.common.L2ZoneParam;
 import level2.common.Tag;
 import mvUtils.display.FramedPanel;
+import mvUtils.display.MultiColDataPanel;
 import mvUtils.display.MultiPairColPanel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.GregorianCalendar;
 import java.util.Vector;
 
 /**
@@ -254,14 +256,26 @@ public class L2DFHDisplay implements L2Display{
         level2DisplayPanel.add(spPanel, gbcH);
         gbcH.gridy++;
 
-        MultiPairColPanel fuelChrPanel = new MultiPairColPanel("Fuel Control Characteristic");
-        fuelChrPanel.addItemPair( "Total", "Zone", true, GridBagConstraints.CENTER);
+//        MultiPairColPanel fuelChrPanel = new MultiPairColPanel("Fuel Control Characteristic");
+//        fuelChrPanel.addItemPair( "Total", "Zone", true, GridBagConstraints.CENTER);
+//        for (int s = 0; s < l2DFHZone.tagsFuelChrTotal.length; s++) {
+//            Tag tagL = l2DFHZone.tagsFuelChrTotal[s];
+//            l2Tags.add(tagL);
+//            Tag tagR = l2DFHZone.tagsFuelChrZone[s];
+//            l2Tags.add(tagR);
+//            fuelChrPanel.addItemPair(tagL.displayComponent(), tagR.displayComponent());
+//        }
+
+        MultiColDataPanel fuelChrPanel = new MultiColDataPanel("Fuel Control Characteristic", 3);
+        fuelChrPanel.addItemSet(new String[]{"Total", "Zone", "Speed"}, true, GridBagConstraints.CENTER);
         for (int s = 0; s < l2DFHZone.tagsFuelChrTotal.length; s++) {
-            Tag tagL = l2DFHZone.tagsFuelChrTotal[s];
-            l2Tags.add(tagL);
-            Tag tagR = l2DFHZone.tagsFuelChrZone[s];
-            l2Tags.add(tagR);
-            fuelChrPanel.addItemPair(tagL.displayComponent(), tagR.displayComponent());
+            Tag tag1 = l2DFHZone.tagsFuelChrTotal[s];
+            l2Tags.add(tag1);
+            Tag tag2 = l2DFHZone.tagsFuelChrZone[s];
+            l2Tags.add(tag2);
+            Tag tag3 = l2DFHZone.tagsFuelChrSpeed[s];
+            l2Tags.add(tag3);
+            fuelChrPanel.addItemSet(new Component[]{tag1.displayComponent(), tag2.displayComponent(), tag3.displayComponent()});
         }
         level2DisplayPanel.add(fuelChrPanel, gbcH);
         return level2DisplayPanel;

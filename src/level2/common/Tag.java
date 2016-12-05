@@ -39,8 +39,45 @@ public class Tag {
         Temperature("Temperature"),    // for Air and fuel and strip (from Level2)
         SpeedNow("SpeedNow"),
         SpeedMax("SpeedMax"),
+        SpeedMin("SpeedMin"),
         Span("span"),
         Data("Data"),
+        TotFuel("totFuel"), // used for building TotFuel1, TotFue2 etc.
+        TotFuel1("totFuel1"),
+        TotFuel2("totFuel2"),
+        TotFuel3("totFuel3"),
+        TotFuel4("totFuel4"),
+        TotFuel5("totFuel5"),
+        TotFuel6("totFuel6"),
+        TotFuel7("totFuel7"),
+        TotFuel8("totFuel8"),
+        TotFuel9("totFuel9"),
+        TotFuel10("totFuel10"),
+
+        ZoneFuel("zoneFuel"),   // used for building ZoneFuel1, ZoneFue2 etc.
+        ZoneFuel1("zoneFuel1"),
+        ZoneFuel2("zoneFuel2"),
+        ZoneFuel3("zoneFuel3"),
+        ZoneFuel4("zoneFuel4"),
+        ZoneFuel5("zoneFuel5"),
+        ZoneFuel6("zoneFuel6"),
+        ZoneFuel7("zoneFuel7"),
+        ZoneFuel8("zoneFuel8"),
+        ZoneFuel9("zoneFuel9"),
+        ZoneFuel10("zoneFuel10"),
+
+        Speed("speed"),  // used for building Speed1, Speed2 etc.
+        Speed1("speed1"),
+        Speed2("speed2"),
+        Speed3("speed3"),
+        Speed4("speed4"),
+        Speed5("speed5"),
+        Speed6("speed6"),
+        Speed7("speed7"),
+        Speed8("speed8"),
+        Speed9("speed9"),
+        Speed10("speed10"),
+
         X1("x1"),
         X2("x2"),
         X3("x3"),
@@ -101,6 +138,10 @@ public class Tag {
             }
             return retVal;
         }
+
+        public TagName buildTag(int index) {
+            return getEnum(name + ("" + index).trim());
+        }
     }
 
     int datW = 6;
@@ -141,7 +182,10 @@ public class Tag {
         noteFormat(onOffString);
     }
 
+    String fmtStr;
+
     protected void noteFormat(String fmtStr) {
+        this.fmtStr = fmtStr;
         switch(tagName) {
             case Auto:
                 booleanStat = new BooleanDisplay("Auto", "Manual");
@@ -209,7 +253,8 @@ public class Tag {
                 displayComponent = ta;
                 break;
             default:
-                JTextField tf1 = new JTextField(datW);
+//                JTextField tf1 = new JTextField(datW);
+                JTextField tf1 = new JTextField("F" + fmtStr);
                 tf1.setDisabledTextColor(Color.BLUE);
                 displayComponent = tf1;
                 if (format != null)

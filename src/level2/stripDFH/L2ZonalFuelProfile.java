@@ -125,12 +125,14 @@ public class L2ZonalFuelProfile extends ZonalFuelProfile {
     }
 
     public double[][] oneZoneFuelArray(int zNum, boolean bBot) {
-        double[][] zoneFuel = new double[extendedSteps][(bBot) ? nBotZones : nTopZones];
+//        double[][] zoneFuel = new double[extendedSteps][(bBot) ? nBotZones : nTopZones];
+        double[][] zoneFuel = new double[extendedSteps][3];
         if (zNum >= 0 && zNum < ((bBot) ? nBotZones : nTopZones)) {
             Double[][] allZoneFuels = (bBot) ? l2BotZoneFuels : l2TopZoneFuels;
             for (int r = 0; r < extendedSteps; r++) {
-                zoneFuel[r][0] = allZoneFuels[r][2];
-                zoneFuel[r][1] = allZoneFuels[r][zNum + 3];
+                zoneFuel[r][0] = allZoneFuels[r][TotFuelCol];
+                zoneFuel[r][1] = allZoneFuels[r][zNum + FirstZoneCol];
+                zoneFuel[r][2] = allZoneFuels[r][USpeedCol];
             }
         }
         return zoneFuel;
@@ -141,8 +143,8 @@ public class L2ZonalFuelProfile extends ZonalFuelProfile {
         if (zNum >= 0 && zNum < ((bBot) ? nBotZones : nTopZones)) {
             Double[][] allZoneFuelHeats = (bBot) ? l2BotZoneFuelHeat : l2TopZoneFuelHeat;
             for (int r = 0; r < extendedSteps; r++) {
-                zoneFuelHeat[r][0] = allZoneFuelHeats[r][2];
-                zoneFuelHeat[r][1] = allZoneFuelHeats[r][zNum + 3];
+                zoneFuelHeat[r][0] = allZoneFuelHeats[r][TotFuelCol];
+                zoneFuelHeat[r][1] = allZoneFuelHeats[r][zNum + FirstZoneCol];
             }
         }
         return zoneFuelHeat;
