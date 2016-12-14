@@ -74,7 +74,7 @@ public class L2DFHeating extends StripHeating {
         bAtSite = true;
         bAllowProfileChange = false;
         userActionAllowed = false;
-        releaseDate = "20161130";
+        releaseDate = "20161207";
         onProductionLine = true;
         asApplication = true;
         this.equipment = equipment;

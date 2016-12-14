@@ -69,12 +69,18 @@ public class DFHTuningParams {
     public boolean bTakeEndWalls = false;
     public boolean bTakeGasAbsorptionForInterRad = false;
     public double wallLoss = 0;
+    public boolean bHotCharge = false;
+    double defaultStartFlueTempHead = 100;
+    public double startFlueTempHead = defaultStartFlueTempHead;  // for hot charge
     public boolean bEvalBotFirst = false;
     public boolean bSectionalFlueExh = false;    // not used yet
     public boolean bSlotRadInCalcul = false;
     public boolean bSectionProgress = true;
     public boolean bSlotProgress = true;
-    public double suggested1stCorrection = 0;
+    double defaultSuggested1stCorrection = 10;
+    public double suggested1stCorrection = defaultSuggested1stCorrection;
+    double defaultCorrectionForTooLowGas =10;
+    public double correctionForTooLowGas = defaultCorrectionForTooLowGas;
     public boolean bMindChHeight = true;
     public boolean bAllowSecFuel = false;
     public boolean bAllowRegenAirTemp = true;
@@ -116,6 +122,7 @@ public class DFHTuningParams {
         tferrorAllowed = new NumberTextField(controller, errorAllowed, 6, false, 0.001, 5, "#,###.00", "", true);
         tfwallLoss = new NumberTextField(controller, wallLoss, 6, false, 0, 1000, "#,###.00", "", true);
         tfsuggested1stCorrection = new NumberTextField(controller, suggested1stCorrection, 6, false, 0, 20, "#,###.00", "", true);
+        tfCorrectionforTooLowGas = new NumberTextField(controller, correctionForTooLowGas, 6, false, 0, 20, "#,###.00", "", true);
 
         cBSlotRadInCalcul = new JCheckBox();
         cBTakeEndWalls = new JCheckBox();
@@ -139,6 +146,8 @@ public class DFHTuningParams {
         cBTakeGasAbsorptionForInterRad = new JCheckBox();
         cBNoGasAbsorptionInWallBalance = new JCheckBox();
         cBbEvalBotFirst = new JCheckBox();
+        tfStartFlueTempHead = new NumberTextField(controller, startFlueTempHead, 6, false, 1, 1000, "#,###", "", false);
+        cBHotCharge = new JCheckBox();
         cBbSectionProgress = new JCheckBox();
         cBbSlotProgress = new JCheckBox();
         cBbMindChHeight = new JCheckBox();
@@ -266,9 +275,11 @@ public class DFHTuningParams {
         errorAllowed = tferrorAllowed.getData();
         wallLoss = tfwallLoss.getData();
         suggested1stCorrection = tfsuggested1stCorrection.getData();
-
+        correctionForTooLowGas = tfCorrectionforTooLowGas.getData();
         bTakeEndWalls = (cBTakeEndWalls.isSelected());
         bEvalBotFirst = (cBbEvalBotFirst.isSelected());
+        bHotCharge = cBHotCharge.isSelected();
+        startFlueTempHead = tfStartFlueTempHead.getData();
         bTakeGasAbsorptionForInterRad = (cBTakeGasAbsorptionForInterRad.isSelected());
         bNoGasAbsorptionInWallBalance = (cBNoGasAbsorptionInWallBalance.isSelected());
         bSlotRadInCalcul = cBSlotRadInCalcul.isSelected();
@@ -296,10 +307,13 @@ public class DFHTuningParams {
         tferrorAllowed.setData(errorAllowed);
         tfwallLoss.setData(wallLoss);
         tfsuggested1stCorrection.setData(suggested1stCorrection);
+        tfCorrectionforTooLowGas.setData(correctionForTooLowGas);
         cBTakeEndWalls.setSelected(bTakeEndWalls);
         cBTakeGasAbsorptionForInterRad.setSelected(bTakeGasAbsorptionForInterRad);
         cBNoGasAbsorptionInWallBalance.setSelected(bNoGasAbsorptionInWallBalance);
         cBbEvalBotFirst.setSelected(bEvalBotFirst);
+        cBHotCharge.setSelected(bHotCharge);
+        tfStartFlueTempHead.setData(startFlueTempHead);
         cBSlotRadInCalcul.setSelected(bSlotRadInCalcul);
         cBbSectionProgress.setSelected(bSectionProgress);
         cBbSlotProgress.setSelected(bSlotProgress);
@@ -355,9 +369,12 @@ public class DFHTuningParams {
 
         xmlStr += XMLmv.putTag("errorAllowed", errorAllowed);
         xmlStr += XMLmv.putTag("suggested1stCorrection", suggested1stCorrection);
+        xmlStr += XMLmv.putTag("correctionForTooLowGas", correctionForTooLowGas);
         xmlStr += XMLmv.putTag("bTakeEndWalls", (bTakeEndWalls) ? 1 : 0);
         xmlStr += XMLmv.putTag("bTakeGasAbsorption", (bTakeGasAbsorptionForInterRad) ? 1 : 0);
         xmlStr += XMLmv.putTag("bEvalBotFirst", (bEvalBotFirst) ? 1: 0);
+        xmlStr += XMLmv.putTag("bHotCharge", (bHotCharge) ? 1: 0);
+        xmlStr += XMLmv.putTag("startFlueTempHead", startFlueTempHead);
         xmlStr += XMLmv.putTag("bSectionalFlueExh", (bSectionalFlueExh) ? 1: 0);
         xmlStr += XMLmv.putTag("bSlotRadInCalcul", (bSlotRadInCalcul) ? 1: 0);
         xmlStr += XMLmv.putTag("bSectionProgress", (bSectionProgress) ? 1: 0);
@@ -403,8 +420,19 @@ public class DFHTuningParams {
             vp = XMLmv.getTag(xmlStr, "errorAllowed", 0);
             errorAllowed = Double.valueOf(vp.val);
             vp = XMLmv.getTag(xmlStr, "suggested1stCorrection", 0);
-            suggested1stCorrection = Double.valueOf(vp.val);
+            double val = Double.valueOf(vp.val);
+            // the following since earlier the value could be 0 and the user sets value if 0
+            if (val > 0)
+                suggested1stCorrection = Double.valueOf(vp.val);
+            else
+                suggested1stCorrection = defaultSuggested1stCorrection;
 
+            vp = XMLmv.getTag(xmlStr, "correctionForTooLowGas", 0);
+            // the following since, earlier,  this was not being saved
+            if (vp.val.length() > 0)
+                correctionForTooLowGas = Double.valueOf(vp.val);
+            else
+                correctionForTooLowGas = defaultCorrectionForTooLowGas;
 
             vp = XMLmv.getTag(xmlStr, "bTakeEndWalls", 0);
             bTakeEndWalls = (vp.val.equals("1"));
@@ -412,6 +440,16 @@ public class DFHTuningParams {
             bTakeGasAbsorptionForInterRad = (vp.val.equals("1"));
             vp = XMLmv.getTag(xmlStr, "bEvalBotFirst", 0);
             bEvalBotFirst = (vp.val.equals("1"));
+            vp = XMLmv.getTag(xmlStr, "bHotCharge", 0);
+            if (vp.val.length() > 0)
+                bHotCharge = (vp.val.equals("1"));
+            else
+                bHotCharge = false;
+            vp = XMLmv.getTag(xmlStr, "startFlueTempHead", 0);
+            if (vp.val.length() > 0)
+                startFlueTempHead =  Double.valueOf(vp.val);
+            else
+                startFlueTempHead = defaultStartFlueTempHead;
             vp = XMLmv.getTag(xmlStr, "bSectionalFlueExh", 0);
             bSectionalFlueExh = (vp.val.equals("1"));
             vp = XMLmv.getTag(xmlStr, "bSlotRadInCalcul", 0);
@@ -516,7 +554,7 @@ public class DFHTuningParams {
         return jp;
     }
 
-    NumberTextField tferrorAllowed, tfwallLoss, tfsuggested1stCorrection;
+    NumberTextField tferrorAllowed, tfwallLoss, tfsuggested1stCorrection, tfCorrectionforTooLowGas;
     NumberTextField tfTFMStep;
     // for evaluation from reference performance
     public boolean bConsiderChTempProfile = true;
@@ -553,6 +591,7 @@ public class DFHTuningParams {
         jp.addItemPair("Error Allowed (degC)", tferrorAllowed);
         jp.addItemPair("Wall loss (for internal use)", tfwallLoss);
         jp.addItemPair("Suggested First Correction (degC)", tfsuggested1stCorrection);
+        jp.addItemPair("Correction For TooLowGas (degC)", tfCorrectionforTooLowGas);
         jp.addBlank();
         jp.addItemPair("Temperature Profile for TFM", cBProfileForTFM);
         jp.addItemPair("Length step for TFM Temperature Profile (mm)", tfTFMStep);
@@ -569,18 +608,23 @@ public class DFHTuningParams {
     JCheckBox cBNoGasAbsorptionInWallBalance;
     JCheckBox cBbAutoTempForLosses;
     JCheckBox cBbSmoothenCurve;
+    JCheckBox cBHotCharge;
+    NumberTextField tfStartFlueTempHead;
+
 
     JPanel setting2Pan() {
         MultiPairColPanel jp = new MultiPairColPanel(200, 60);
         jp.addItemPair("Smoothen Temperature trends", cBbSmoothenCurve);
         jp.addItemPair("Evaluate Bottom Section First", cBbEvalBotFirst);
+        jp.addItemPair("Calculate for Hot Charge", cBHotCharge);
+        jp.addItemPair("Start Flue Temp Head Hot Charge", tfStartFlueTempHead);
         jp.addItemPair("Show Section Progress", cBbSectionProgress);
         jp.addItemPair("Show Stepwise Progress", cBbSlotProgress);
         jp.addItemPair("Mind Charge Height for Radiation", cBbMindChHeight);
         jp.addItemPair("Allow Section-wise Fuel", cBAllowSecFuel);
         jp.addItemPair("Allow REGEN Air Temperature", cBAllowRegenAirTemp);
         jp.addItemPair("Show Flue Composition", cBShowFlueCompo);
-//        jp.addItemPair("Auto Section Temp for Losses", cBbAutoTempForLosses);
+        jp.addItemPair("Auto Section Temp for Losses", cBbAutoTempForLosses);
         jp.addBlank();
         jp.addItemPair("Take Gas Absorption in Internal Rad", cBTakeGasAbsorptionForInterRad);
         jp.addItemPair("No Gas Absorption in Wall Balance", cBNoGasAbsorptionInWallBalance);

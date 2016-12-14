@@ -2000,11 +2000,18 @@ public class FceSection {
         return retVal;
     }
 
-   public double flueQtyForExitT(double flueExitT) {
+   public double flueQtyForExitT(double flueExitT) {    // TODO canuse the next method
        double totHeat = 0;
        for (int u = firstSlot; u <= lastSlot; u++)
             totHeat += vUnitFurnaces.get(u).totalHeat();
        return flueForHeatIfFiring(totHeat, flueExitT);
+   }
+
+   public double totalHeat() {
+       double totHeat = 0;
+       for (int u = firstSlot; u <= lastSlot; u++)
+           totHeat += vUnitFurnaces.get(u).totalHeat();
+       return totHeat;
    }
 
    public double heatToCharge() {
@@ -2104,8 +2111,9 @@ public class FceSection {
         double deltaTreqd = (exitTemp - entryTemp);
         double chSecMeanReqd = entryTemp + deltaTreqd / 2;
         double deltaTnow;
-        double trialDeltaT = (controller.tuningParams.suggested1stCorrection > 0) ?
-                controller.tuningParams.suggested1stCorrection : 10;
+//        double trialDeltaT = (controller.tuningParams.suggested1stCorrection > 0) ?
+//                controller.tuningParams.suggested1stCorrection : 10;
+        double trialDeltaT = controller.tuningParams.suggested1stCorrection;
  //    showOneResult (lastSlot) ' starting conditions
         while (!done) {
 

@@ -443,6 +443,7 @@ public class DFHFurnace {
             bUnableToUsePerfData = false;
             resultsReady = false;
             skipReferenceDataCheck = false;
+            boolean bFirstTime = true;
             while (true) {
                 while (allOk && reDo) {
                     allOk = false;
@@ -456,8 +457,14 @@ public class DFHFurnace {
                         if (allOk && bTopBot && canRun())
                             allOk = evalTopOrBottom(true, bStart, addMsg);
                     }
+                    if (bStart && bFirstTime && tuningParams.bHotCharge) {
+                        bFirstTime = false;
+                        tuningParams.bHotCharge = false;
+                        continue;
+//                        allOk = true;
+//                        break;
+                    }
                     bStart = false;
-
                     if (allOk && canRun() && prepareHeatBalance()) {
                         if (redoWithRecuResults()) {
                             reDo = true;
@@ -1031,7 +1038,7 @@ public class DFHFurnace {
         int nFiredSecs;
         int[] fired;
         int firstRevCalUpto = 0;
-        boolean bFlueTspecified = false;
+        boolean bFlueTspecified =  false;
         double flueTemp = 0;
         String title;
         String add2ToTilte = "";
@@ -1217,7 +1224,7 @@ public class DFHFurnace {
                     firstSec.passFlueCompAndQty.noteValues(firstSec.totFlueCompAndQty);
                     vSec.get(iFirstFiredSection).secFlueFlow = firstSec.secFlueFlow;
                     firstSec.setEntryGasTemp(flueTemp);
-                    firstZoneInFwd(iFirstFiredSection, bBot);
+                    firstZoneInFwd(iFirstFiredSection, bBot, true);
                     if (bBot) {
                         tempGZ1Bot = vSec.get(fired[0]).getLastSlotGasTemp();
                         bRecalculBot = true;
@@ -1234,7 +1241,54 @@ public class DFHFurnace {
                     bFlueTspecified = false;
                     continue;
                 } else {
-                    firstZoneInRev(bBot);
+                    if (tuningParams.bHotCharge) {
+                        double chEntryTemp = productionData.entryTemp;
+                        double tempToReach =  lastSec.chEntryTemp();
+                        double tempNow;
+                        double diff;
+                        FceSection theFiredSec = vSec.get(iFirstFiredSection);
+                        flueTemp = productionData.entryTemp + tuningParams.startFlueTempHead;
+//                        setInitialChHeat(0, firstRevCalUpto - 1, chEntryTemp, lastSec.chEntryTemp(), bBot);
+                        boolean thisDone = false;
+                        while(!thisDone) {
+                            if (canRun()) {
+                                setInitialChHeat(0, firstRevCalUpto - 1, chEntryTemp, lastSec.chEntryTemp(), bBot);
+                                firstSec.fluePassThrough = totalFlue(flueTemp, bBot);
+//                                System.out.println("flueTemp = " + flueTemp + ", Qty= " + firstSec.fluePassThrough );
+                                firstSec.totFlueCompAndQty.noteValues(commFuelFiring.flue, firstSec.fluePassThrough, 0, 0);
+                                firstSec.passFlueCompAndQty.noteValues(firstSec.totFlueCompAndQty);
+//                        vSec.get(iFirstFiredSection).secFlueFlow = firstSec.secFlueFlow;
+                                firstSec.setEntryGasTemp(flueTemp);
+                                firstZoneInFwd(iFirstFiredSection, bBot, false);   // do not copy forward the last slot
+                                if (bBot) {
+                                    tempGZ1Bot = vSec.get(fired[0]).getLastSlotGasTemp();
+                                    bRecalculBot = true;
+                                } else {
+                                    tempGZ1Top = vSec.get(fired[0]).getLastSlotGasTemp();
+                                    bRecalculTop = true;
+                                }
+                                tempNow = theFiredSec.chEndTemp();
+                                diff = tempToReach - tempNow;
+                                if (Math.abs(diff) < 0.5)
+                                    thisDone = true;
+                                else {
+                                    flueTemp += diff / (tempToReach - chEntryTemp) * (flueTemp - chEntryTemp);
+                                }
+                            }
+                            else {
+                                allOk = false;
+                                break;
+                            }
+//                        zoneInRevToBalance(firstRevCalUpto - 1, iFirstFiredSection + 1, tmToReach, bBot);
+//
+//                        firstRevCalUpto = iFirstFiredSection + 1;
+//                        theSection = vSec.get(fired[1]);
+//                            theSection.setPresetGasTemp(vSec.get(firstRevCalUpto - 1).getEnteringGasTemp());
+
+                        }
+                    }
+                    else
+                        firstZoneInRev(bBot);
                 }
             }
             if (allOk) {
@@ -1506,19 +1560,19 @@ public class DFHFurnace {
         double tgNow, tgLast = 0, tgDiff;
         double tgMax = -1000, tgMin = 100000;
         boolean trial1;
-        double trialDelT = 10;
-        boolean redoit = false;
+//        double trialDelT = 10;
+//        boolean redoit = false;
         FceSection theSection, toSection;
         FceSection fireSec = vSec.get(iFromSec);
-        double suggested1stCorrection = tuningParams.suggested1stCorrection;
-        if (suggested1stCorrection > 0)
-            trialDelT = tuningParams.suggested1stCorrection;
+//        double suggested1stCorrection = tuningParams.suggested1stCorrection;
+//        if (suggested1stCorrection > 0)
+        double trialDelT = tuningParams.suggested1stCorrection;
         tempGZAssume = fireSec.getEnteringGasTemp();
         trial1 = true;
         response = FceEvaluator.EvalStat.OK;
         lastResponse = FceEvaluator.EvalStat.DONTKNOW;
         while (canRun()) {
-            redoit = false;
+//            redoit = false;
             fireSec.setLastSlotGasTemp(tempGZAssume);
             for (int iSec = iFromSec; iSec >= iToSec; iSec--) {
                 showStatus(statusHead + (iSec + 1));
@@ -1527,20 +1581,20 @@ public class DFHFurnace {
                 if (!(response == FceEvaluator.EvalStat.OK)) {
                     if (response != lastResponse) {
                         lastResponse = response;
-                        if (suggested1stCorrection > 0)
+//                        if (suggested1stCorrection > 0)
                             trialDelT = tuningParams.suggested1stCorrection;
-                        else
-                            trialDelT = 10;
+//                        else
+//                            trialDelT = 10;
                     } else
                         trialDelT *= 2;
                     if (response == FceEvaluator.EvalStat.TOOHIGHGAS) {
                         tempGZAssume -= trialDelT;
-                        redoit = true;
+//                        redoit = true;
                         break;
                     }
                     if (response == FceEvaluator.EvalStat.TOOLOWGAS) {
                         tempGZAssume += trialDelT;
-                        redoit = true;
+//                        redoit = true;
                         break;
                     }
                 }
@@ -1604,7 +1658,7 @@ public class DFHFurnace {
             addedTopSoak.evalSlotRadiationSumm();
     }
 
-    boolean firstZoneInFwd(int uptoSec, boolean bBot) {
+    boolean firstZoneInFwd(int uptoSec, boolean bBot, boolean copyForward) {
         boolean bRetVal = true;
         FceEvaluator.EvalStat response;
         String statusHead;
@@ -1628,16 +1682,21 @@ public class DFHFurnace {
             if (!response.isOk()) {
                 showError(statusHead + response + "-Some Problem in First Section");
             }
-            nextSec = vSec.get(s + 1);
-            nextSec.copyFromPrevSection(sec);
-            setInitialChHeat(s + 1, uptoSec, sec.chEndTemp(), vSec.get(uptoSec + 1).chEntryTemp(), bBot);
-            nextSec.fluePassThrough = flueFromDEndApprox(sec.getEnteringGasTemp(), s, bBot);
+            if(s != iFirstFiredSec || copyForward) {
+                nextSec = vSec.get(s + 1);
+                nextSec.copyFromPrevSection(sec);
+                setInitialChHeat(s + 1, uptoSec, sec.chEndTemp(), vSec.get(uptoSec + 1).chEntryTemp(), bBot);
+                nextSec.fluePassThrough = flueFromDEndApprox(sec.getEnteringGasTemp(), s, bBot);
+            }
         }
         return bRetVal;
     }
 
     boolean firstZoneInRev(boolean bBot) {
         boolean bRetVal = true;
+        double correctionForToooLowGas = tuningParams.correctionForTooLowGas;
+        if (correctionForToooLowGas <= 0)
+            correctionForToooLowGas = 10;
         FceEvaluator.EvalStat lastResponse, response;
         String statusHead;
         Vector<FceSection> vSec;
@@ -1656,8 +1715,9 @@ public class DFHFurnace {
         entrySec = vSec.get(0);
         double tempGZ1Assume;
 
-        double trialDeltaT = (tuningParams.suggested1stCorrection > 0) ?
-                tuningParams.suggested1stCorrection : 10;
+//        double trialDeltaT = (tuningParams.suggested1stCorrection > 0) ?
+//                tuningParams.suggested1stCorrection : 10;
+        double trialDeltaT = tuningParams.suggested1stCorrection;
         firstFsec = vSec.get(iFirstFiredSec);
         tempGZ1Assume = firstFsec.getLastSlotGasTemp();
         if (tempGZ1Assume <= 0)
@@ -1686,8 +1746,9 @@ public class DFHFurnace {
                 if (response != FceEvaluator.EvalStat.OK) {
                     if (response != lastResponse) {
                         lastResponse = response;
-                        trialDeltaT = (tuningParams.suggested1stCorrection > 0) ?
-                                tuningParams.suggested1stCorrection : 10;
+//                        trialDeltaT = (tuningParams.suggested1stCorrection > 0) ?
+//                                tuningParams.suggested1stCorrection : 10;
+                        trialDeltaT = tuningParams.suggested1stCorrection;
                     }
                     if (response == FceEvaluator.EvalStat.TOOHIGHGAS) {
                         trialDeltaT *= 2;
@@ -1695,7 +1756,10 @@ public class DFHFurnace {
                         loopBack = true;
                         break;
                     } else if (response == FceEvaluator.EvalStat.TOOLOWGAS) {
+                        tempGZ1Assume += correctionForToooLowGas; // 10;
+                        loopBack = true;
                         break;
+//                        break;
                     } else {
                         showError("firstZoneInRev: Unknown response from oneSectionInRev() for " + statusHead + s);
                         redoIt = true;
@@ -1721,21 +1785,21 @@ public class DFHFurnace {
 
             if (loopBack || redoIt) {
                 loopBack = false;
+                bTrial1 = true;
                 continue;
             }
-            if (response != lastResponse) {
-                lastResponse = response;
-                trialDeltaT = (tuningParams.suggested1stCorrection > 0) ?
-                        tuningParams.suggested1stCorrection : 10;
-            }
-            if (response == FceEvaluator.EvalStat.TOOLOWGAS) {
-                tempGZ1Assume += 10;
-                continue;
-            }
+//            if (response != lastResponse) {
+//                lastResponse = response;
+//                trialDeltaT = (tuningParams.suggested1stCorrection > 0) ?
+//                        tuningParams.suggested1stCorrection : 10;
+//            }
+//            if (response == FceEvaluator.EvalStat.TOOLOWGAS) {
+//                tempGZ1Assume += correctionForToooLowGas; // 10;
+//                continue;
+//            }
             tmNow = entrySec.chEntryTemp();
             diff = tmNow - reqdChTempM;
 
-//showError("WAITING TO CONTINUE tmNow = " + tmNow);
             if (Math.abs(diff) <= 1 * tuningParams.errorAllowed)
                 break;
             if (bTrial1) {
@@ -1746,6 +1810,16 @@ public class DFHFurnace {
             } else {
                 tgNow = tempGZ1Assume;
                 tempGZ1Assume = tgNow + (tgNow - tgLast) / (tmNow - tmLast) * (reqdChTempM - tmNow);
+////                tempGZ1Assume = tgLast + (tgNow - tgLast) / (tmNow - tmLast) * (reqdChTempM - tmLast);
+//                double TgLast4 = Math.pow(tgLast + 273, 4);
+//                double TgNow4 = Math.pow(tgNow + 273, 4);
+//                double TmLast4 = Math.pow(tmLast + 273, 4);
+//                double TmNow4 = Math.pow(tmNow + 273, 4);
+//                double TmReqd4 = Math.pow(reqdChTempM + 273, 4);
+////                double TgAssume4 = TgLast4 + (TgNow4 - TgLast4) / (TmNow4 - TmLast4) * (TmReqd4 - TmLast4);
+//                double TgAssume4 = TmNow4 + (TgNow4 - TmNow4) / (TmNow4 - TmLast4) * (TmReqd4 - TmLast4);
+//                tempGZ1Assume = Math.pow(TgAssume4, 0.25) - 273;
+
                 tgLast = tgNow;
                 tmLast = tmNow;
             }
@@ -3852,7 +3926,7 @@ public class DFHFurnace {
     }
 
 
-    double totalFlue(double flueExitT, boolean bBot) {
+    double totalFlueOLD(double flueExitT, boolean bBot) {
         Vector<FceSection> vSec;
         vSec = getVsecs(bBot);
         double totFlue = 0;
@@ -3860,6 +3934,22 @@ public class DFHFurnace {
             totFlue += vSec.get(s).flueQtyForExitT(flueExitT);
         return totFlue;
     }
+
+    double totalFlue(double flueExitT, boolean bBot) {
+        Vector<FceSection> vSec;
+        vSec = getVsecs(bBot);
+        double totHeat = 0;
+        for (int s = 0; s < activeSections(bBot); s++)
+            totHeat += vSec.get(s).totalHeat();
+        double realCalVal, airHeat, flueHeat;
+        airHeat = commFuelFiring.airHeatPerUfuel;
+        flueHeat = commFuelFiring.flueHeatPerUFuel(flueExitT);
+        realCalVal = commFuelFiring.fuel.calVal + airHeat - flueHeat;
+        double fuelQty = totHeat / realCalVal;
+        double flue = fuelQty * commFuelFiring.actFFratio;
+        return flue;
+    }
+
 
     double flueFromDEndApprox(double flueExitT, int prevSec, boolean bBot) {
         Vector<FceSection> vSec;

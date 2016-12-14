@@ -764,6 +764,11 @@ public class UnitFurnace {
                     (ch.getHeatFromTemp(tWMassume) - ch.getHeatFromTemp(tempWmean));
             totheat = chHeat - totLosses(); // losses;
             tempGB = (bRecuType) ? gasTempAfterHeat(tempG, fceSec.passFlueCompAndQty, totheat) : tempG;
+            if (tempGB <= tempWmean) {
+                retVal = FceEvaluator.EvalStat.TOOLOWGAS;
+                break;
+            }
+
             if (bLastSlot) {
                 eW = ch.getEmiss(tempWmean);
                 chargeSurfTemp(tempG, tempWmean);
@@ -791,11 +796,11 @@ public class UnitFurnace {
                     done = true;
                 else
                     tWMassume = tWMassume + (tWMrevised - tWMassume) / 4;
-             }
-             else
-                 retVal = FceEvaluator.EvalStat.DONTKNOW;
+            }
+            else
+                retVal = FceEvaluator.EvalStat.DONTKNOW;
         }
-        if (furnace.canRun()) {
+        if (furnace.canRun() && (retVal == FceEvaluator.EvalStat.OK)) {
             // temperature with in limits
             chargeHeat = -chHeat;
 
@@ -864,6 +869,56 @@ public class UnitFurnace {
         double tWMassume, tWMrevised = 0, diff;
         double chHeat = 0, totheat;
         double tempGE = 0;
+        double tempGEforCharge; // temperature as seen by charge (ie. after Gas losses heat to losses)
+        double two = 0, lmDiff, twoAvg, tgAvg, twmAvg;
+        double alpha;
+        boolean done;
+        deltaT = (bFirstSlot) ? fceSec.lastRate : 0;
+        tWMassume = prevSlot.tempWmean + deltaT * delTime;
+        done = false;
+        while (!done  && furnace.canRun()) {
+            chHeat = production.production * gRatio *
+                    (ch.getHeatFromTemp(tWMassume) - ch.getHeatFromTemp(prevSlot.tempWmean));
+            tempGEforCharge = (bRecuType) ? gasTempAfterHeat(prevSlot.tempG, fceSec.passFlueCompAndQty, chHeat) : prevSlot.tempG;
+            totheat = chHeat + totLosses(); //losses;
+            tempGE = (bRecuType) ? gasTempAfterHeat(prevSlot.tempG, fceSec.passFlueCompAndQty, totheat) : prevSlot.tempG;
+
+            eW = ch.getEmiss(tWMassume);
+            two = chargeSurfTemp(tempGEforCharge, tWMassume);
+            lmDiff = SPECIAL.lmtd((tempGEforCharge - two), (prevSlot.tempG - prevSlot.tempWO));
+            twoAvg = (two + prevSlot.tempWO) / 2;
+            tgAvg = twoAvg + lmDiff;
+            twmAvg = (tWMassume + prevSlot.tempWmean) / 2;
+            eW = ch.getEmiss(twmAvg);
+            alpha = fceTempAndAlpha(tgAvg, twoAvg);
+            tau = evalTau(alpha, ch.getTk(twmAvg), ((bAddedTopSoak) ? furnace.effectiveChThickAS : furnace.effectiveChThick)* gRatio);
+            tWMrevised = chargeEndTemp(tgAvg, prevSlot.tempWmean,
+                    g * gRatio * ch.avgSpHt(tWMassume, prevSlot.tempWmean), alpha, false);
+            diff = tWMassume - tWMrevised;
+            if (Math.abs(diff) <= 0.5 * tuning.errorAllowed)
+                done = true;
+            else
+                tWMassume = (bRecuType) ? (tWMassume + tWMrevised) / 2 : tWMrevised;
+        }
+        tempWO = two;
+        tempWmean = tWMrevised;
+        chargeHeat = chHeat;
+        tempG = tempGE;
+        tempOMean = (tempO + prevSlot.tempO) / 2;
+        tempWOMean = (tempWO + prevSlot.tempWO) / 2;
+//        showOneResult(iSlot)
+        showResult();
+        deltaT = (tempWmean - prevSlot.tempWmean) / delTime;
+        return FceEvaluator.EvalStat.OK;
+    }
+
+    public FceEvaluator.EvalStat evalInFwdOLD(boolean bFirstSlot, UnitFurnace prevSlot) {
+        if (furnace.bBaseOnOnlyWallRadiation)
+            return evalWithWallRadiationInFwd(bFirstSlot, prevSlot);
+        double deltaT;
+        double tWMassume, tWMrevised = 0, diff;
+        double chHeat = 0, totheat;
+        double tempGE = 0;
         double two = 0, lmDiff, twoAvg, tgAvg, twmAvg;
         double alpha;
         boolean done;
@@ -874,8 +929,8 @@ public class UnitFurnace {
             chHeat = production.production * gRatio *
                     (ch.getHeatFromTemp(tWMassume) - ch.getHeatFromTemp(prevSlot.tempWmean));
             totheat = chHeat + totLosses(); //losses;
-//            tempGE = (bRecuType) ? gasTempAfterHeat(prevSlot.tempG, fceSec.fluePassThrough, totheat) : prevSlot.tempG;
             tempGE = (bRecuType) ? gasTempAfterHeat(prevSlot.tempG, fceSec.passFlueCompAndQty, totheat) : prevSlot.tempG;
+
             eW = ch.getEmiss(tWMassume);
             two = chargeSurfTemp(tempGE, tWMassume);
             lmDiff = SPECIAL.lmtd((tempGE - two), (prevSlot.tempG - prevSlot.tempWO));
@@ -903,6 +958,7 @@ public class UnitFurnace {
         showResult();
         deltaT = (tempWmean - prevSlot.tempWmean) / delTime;
         return FceEvaluator.EvalStat.OK;
+
     }
 
     /**
