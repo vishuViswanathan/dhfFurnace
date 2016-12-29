@@ -305,7 +305,7 @@ public class FceSection {
         return sizedLabel(name, d, false);
     }
 
-    Vector<FceSubSection> subSections;
+    public Vector<FceSubSection> subSections;
     public boolean bRecuType;
     public boolean botSection;
     boolean bGasTempSpecified;
@@ -360,14 +360,14 @@ public class FceSection {
     DFHeating controller;
     boolean enabled = false;
     UnitFurnace[] unitFurnaces;
-    Vector<UnitFurnace> vUnitFurnaces;
+    public Vector<UnitFurnace> vUnitFurnaces;
     double cumLossDischEnd;
     boolean bAllowSecFuel = false;
     FuelsAndUsage secFuelUsage;
     FuelsAndUsage secFuelUsageBreakup;
     boolean bAddedSoak = false;
     double tcLocationFromZoneStart; // location of thermocouple fro the section start in m
-    double tempAtTCLocation = 0;
+    public double tempAtTCLocation = 0;
 
     public FceSection(DFHeating controller, DFHFurnace furnace,  boolean botSection, boolean bRecuType) {
         this.controller = controller;
@@ -454,6 +454,10 @@ public class FceSection {
 
     void resetSection() {
         nActiveSubs = -1;
+        resetGasTemp();
+    }
+
+    void resetGasTemp() {
         bGasTempSpecified = false;
     }
 
@@ -1739,7 +1743,7 @@ public class FceSection {
         bRetVal &= takeSubSecsFromXML(vp.val);
         takeValuesFromUI();
         return bRetVal;
-     }
+    }
 
     void setTempForLosses(XYArray tprof) {
         for (int ss = 0; ss < getNactive(); ss++)
@@ -2000,10 +2004,8 @@ public class FceSection {
         return retVal;
     }
 
-   public double flueQtyForExitT(double flueExitT) {    // TODO canuse the next method
-       double totHeat = 0;
-       for (int u = firstSlot; u <= lastSlot; u++)
-            totHeat += vUnitFurnaces.get(u).totalHeat();
+   public double flueQtyForExitT(double flueExitT) {
+       double totHeat = totalHeat();
        return flueForHeatIfFiring(totHeat, flueExitT);
    }
 
@@ -2111,10 +2113,7 @@ public class FceSection {
         double deltaTreqd = (exitTemp - entryTemp);
         double chSecMeanReqd = entryTemp + deltaTreqd / 2;
         double deltaTnow;
-//        double trialDeltaT = (controller.tuningParams.suggested1stCorrection > 0) ?
-//                controller.tuningParams.suggested1stCorrection : 10;
         double trialDeltaT = controller.tuningParams.suggested1stCorrection;
- //    showOneResult (lastSlot) ' starting conditions
         while (!done) {
 
             bLastSlot = true;

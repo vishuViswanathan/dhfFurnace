@@ -113,8 +113,7 @@ public class FieldResults {
         double width = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Width).floatValue, 3) / 1000; // m
         double thick = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Thick).floatValue, 3) / 1000; // m
         double speed = stripZone.getValue(L2ParamGroup.Parameter.Speed, Tag.TagName.PV).floatValue * 60; // m/h
-        String forProcess = stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.BaseProcess).stringValue.trim();
-//        stripDFHProc = l2Furnace.l2DFHeating.getStripDFHProcess(forProcess);
+        String forProcess = stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.BaseProcess).stringValue.trim(); // TODO what happens for Fresh Field Performance
         stripDFHProc = l2Furnace.l2DFHeating.getStripDFHProcess(forProcess, stripExitT, width, thick);
         l2Furnace.logTrace("forProcess " + forProcess + ", " + stripExitT +  ", " + width + ", " + thick);
         if (stripDFHProc != null) {

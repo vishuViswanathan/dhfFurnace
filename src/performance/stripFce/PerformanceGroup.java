@@ -315,6 +315,8 @@ public class PerformanceGroup implements ActionListener{
         return retVal;
     }
 
+    double[] chInTempProfile;
+
     public int getChInTempProfile(ProductionData forProduction, Fuel withFuel, double[] chInTempProfile) {
         Performance refP = getRefPerformance(forProduction, withFuel);
         int retVal = 0;

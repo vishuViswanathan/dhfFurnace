@@ -63,6 +63,8 @@ public class DFHTuningParams {
     public double emmFactor = 1;
     boolean bNoEmissivityCorrFactor = false;
     JCheckBox cBNoEmissivityCorrFactor;
+    public double chEmmissCorrectionFactor = 1.0;  // this is dynamically set before furnce calculation
+                                                  // no user entry
     boolean noGasRadiationToCharge = false;
     JCheckBox cBNoGasRadiationToCharge;
     public double errorAllowed = 1;
@@ -260,7 +262,7 @@ public class DFHTuningParams {
         tfmStep = tfTFMStep.getData() / 1000;
     }
 
-    void takeValuesFromUI() {
+    public void takeValuesFromUI() {
         preSets.get(FurnaceFor.MANUAL).takeFromUI();
         epsilonO = selectedPreset.eO;
         gasWallHTMultipler = selectedPreset.gMulti;

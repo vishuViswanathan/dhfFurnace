@@ -215,13 +215,13 @@ public class FceSubSection {
     }
 
     boolean enabled = false;
-    boolean bActive = false;
+    public boolean bActive = false;
     FceSection theSec;
     static DFHeating controller;
     public double length;
     public double width, stHeight, endHeight;
     double stLen, endLen;  // , slope;
-    double temperature;
+    public double temperature;
     double losses, fixedLoss;
     public double totLosses;
     double lossFactor = 1.0;

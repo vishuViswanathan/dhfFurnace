@@ -1762,7 +1762,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
     public DataWithStatus<OneStripDFHProcess> getDFHProcess(Performance forThisPerformance) {
         logInfo("in getDFHProcess in DFHeating");
-        DataWithStatus retVal = dfhProcessList.getDFHProcess(forThisPerformance) ;
+        DataWithStatus<OneStripDFHProcess> retVal = dfhProcessList.getDFHProcess(forThisPerformance) ;
         logInfo("retVal status =" + retVal.getDataStatus() + ", values = " + retVal.getValue());
         return retVal;
     }
@@ -1952,6 +1952,9 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
         ambTemp = tfAmbTemp.getData();
         airTemp = tfAirTemp.getData();
+
+//        showMessage("Start Air preheat = " + airTemp);    // TODO remove in RELEASE
+
         fuelTemp = tfFuelTemp.getData();
         calculStep = tfCalculStep.getData() / 1000;
         furnace.takeValuesFromUI();

@@ -63,7 +63,7 @@ public class DFHFurnace {
     FramedPanel topDetailsPanel, botDetailsPanel;
     public DFHeating controller;
     String nlSpace = ErrorStatAndMsg.nlSpace;
-    boolean bZ2TopTempSpecified = false, bZ2BotTempSpecified = false;
+//    boolean bZ2TopTempSpecified = false, bZ2BotTempSpecified = false;
     public FuelFiring commFuelFiring;
     public ProductionData productionData;
 
@@ -268,13 +268,21 @@ public class DFHFurnace {
     public void resetSections() {
         fceLength = Double.NaN;
         topOnlyDEnd = false;
-        bZ2TopTempSpecified = false;
-        bZ2BotTempSpecified = false;
+//        bZ2TopTempSpecified = false;
+//        bZ2BotTempSpecified = false;
         for (FceSection sec : topSections)
             sec.resetSection();
         if (bTopBot)
             for (FceSection sec : botSections)
                 sec.resetSection();
+    }
+
+    public void resetGasTempPresets() {
+        for (FceSection sec : topSections)
+            sec.resetGasTemp();
+        if (bTopBot)
+            for (FceSection sec : botSections)
+                sec.resetGasTemp();
     }
 
     public void resetLossFactor() {
@@ -285,7 +293,15 @@ public class DFHFurnace {
                 sec.resetLossFactor();
     }
 
-     boolean setWallTemperatures() {
+    public void resetChEmmissCorrectionFactor() {
+        tuningParams.chEmmissCorrectionFactor = 1.0;
+    }
+
+    protected void setChEmmissCorrectionFactor(double factor) {
+        tuningParams.chEmmissCorrectionFactor = factor;
+    }
+
+    boolean setWallTemperatures() {
         ZoneTemperatureDlg dlg = new ZoneTemperatureDlg(controller.parent(), false);
         dlg.setLocation(400, 100);
         dlg.setVisible(true);
@@ -333,6 +349,7 @@ public class DFHFurnace {
             else
                 uf.setTempO(sec.tempAtTCLocation);
         }
+        setTempForLosses(zoneTemps, bBot);
     }
 
     public boolean getReadyToCalcul() {
@@ -432,6 +449,7 @@ public class DFHFurnace {
     }
 
     public boolean doTheCalculation() {
+        // Zone gas temperature presets,  if required to be cleared, is taken care by the caller
         if (bBaseOnOnlyWallRadiation)
             return doTheCalculationWithOnlyWallRadiation();
         else {
@@ -619,6 +637,7 @@ public class DFHFurnace {
         tuningParams.takeValuesFromUI();
         DFHResult.Type switchDisplayto = DFHResult.Type.HEATSUMMARY;
         boolean noHeatBalance = bBaseOnOnlyWallRadiation;
+        resetGasTempPresets();
         if (doTheCalculation() && bDisplayResults) {
             if (noHeatBalance) {
                 switchDisplayto = DFHResult.Type.TOPtempTRENDS;
@@ -1013,6 +1032,31 @@ public class DFHFurnace {
     boolean considerChTempProfile = false;
     boolean skipReferenceDataCheck = false;
     boolean smoothenCurve = true;
+    protected boolean bConsiderPresetChInTempProfile = false;
+    double[] presetChInTempProfileTop;
+    double[] presetChInTempProfileBot;
+
+    protected boolean fillChInTempProfile() {
+        boolean retVal = true;
+        presetChInTempProfileTop = new double[nTopActiveSecs];
+        for (int s = 0; s < nTopActiveSecs; s++)
+            presetChInTempProfileTop[s] = topSections.get(s).chEntryTemp();
+
+        // TODO the following to be removed
+        String prof = "In fillChInTempProfile";
+        for (double val: presetChInTempProfileTop)
+            prof += String.format(", %3.3f", val);
+        System.out.println("Ch Temp Profile = " + prof);
+        // The above to be removed
+
+
+        if (bTopBot) {
+            presetChInTempProfileBot = new double[nBotActiveSecs];
+            for (int s = 0; s < nBotActiveSecs; s++)
+                presetChInTempProfileBot[s] = botSections.get(s).chEntryTemp();
+        }
+        return retVal;
+    }
 
     public void setCurveSmoothening(boolean ena) {
         smoothenCurve = ena;
@@ -1075,7 +1119,7 @@ public class DFHFurnace {
         String statusHead = (bBot) ? "Bottom Zone " : "Top Zone ";
         FceEvaluator.EvalStat response;
         double szTemp = 0;
-//        double zoneFuelSuggestion[] = new double[(bBot) ? nBotActiveSecs: nTopActiveSecs];
+
         while (allOk && canRun()) {
             if (bTopBot && !bBot && bAddTopSoak) {
                 theSection = addedTopSoak;
@@ -1129,7 +1173,13 @@ public class DFHFurnace {
                     chTempProfileFactor = 1.0;  // reset to default
                     honorLastZoneMinFceTemp = false;
                     if (!skipReferenceDataCheck) {
-                        int nPoints = performBase.getChInTempProfile(productionData, commFuelFiring.fuel, chInTempProfile);
+                        int nPoints;
+                        if (bConsiderPresetChInTempProfile) {
+                            chInTempProfile = presetChInTempProfileTop;
+                            nPoints = chInTempProfile.length;
+                        }
+                        else
+                            nPoints = performBase.getChInTempProfile(productionData, commFuelFiring.fuel, chInTempProfile);
                         if (nPoints == nTopActiveSecs) {
                             if (inPerfTableMode)
                                 considerChTempProfile = true;
@@ -1158,12 +1208,15 @@ public class DFHFurnace {
                 theSlot.eW = ch.getEmiss(tempWOEnd);
                 if (honorLastZoneMinFceTemp)
                     theSlot.tempG = theSlot.gasTFromFceTandChT(controller.minExitZoneFceTemp, tempWOEnd);
-                else
+                else {
                     theSlot.tempG = gasTforChargeT(theSlot, tempWOEnd, productionData.deltaTemp);
+//                    System.out.println("DFHFurnace.1204: lastSlot.TempG = " + theSlot.tempG );
+                }
                 if (bStart)
                     setStartTProf(theSlot.tempG, bBot);
                 theSlot.getWMean(tempWOEnd, productionData.deltaTemp);
             }
+
             if (allOk) {
                 bStart = false;
 
@@ -1184,6 +1237,9 @@ public class DFHFurnace {
                         } else
                             chInTempReqd = chInTempProfile[iSec];
                         response = theSection.oneSectionInRev(chInTempReqd);
+
+//                        System.out.println("DFHFurnace.1232: '" + title + add2ToTilte + addToTitle + "' : theSection.chEntryTemp " +  theSection.chEntryTemp()); // TODO remove in RELEASE
+
                     } else {
                         response = theSection.oneSectionInRev();
                         if (tuningParams.bAdjustChTempProfile && (iSec == iLastSec) && honorLastZoneMinFceTemp)
@@ -1420,6 +1476,9 @@ public class DFHFurnace {
                     allOK = false;
             } else
                 sec.setPresetGasTemp(suggTemp);
+
+//            System.out.println("DFHFurnace.1472: iSec " + iSec + ", suggTemp = " + suggTemp); // TODO to be removed in RELEASE
+
         }
         return allOK;
     }
@@ -1504,11 +1563,19 @@ public class DFHFurnace {
             tProf.add(new DoublePoint(0.3 * len, midEntryT));
             tProf.add(new DoublePoint(0.7 * len, szTemp));
             tProf.add(new DoublePoint(len, szTemp));
-            Vector<FceSection> vSec = getVsecs(bBot);
-            for (FceSection sec : vSec) {
-                sec.setTempForLosses(tProf);
-                sec.redoLosses();
-            }
+            setTempForLosses(tProf, bBot);
+//            Vector<FceSection> vSec = getVsecs(bBot);
+//            for (FceSection sec : vSec) {
+//                sec.setTempForLosses(tProf);
+//                sec.redoLosses();
+//            }
+        }
+    }
+
+    protected void setTempForLosses(XYArray tProf, boolean bBot) {
+        for (FceSection sec : getVsecs(bBot)) {
+            sec.setTempForLosses(tProf);
+            sec.redoLosses();
         }
     }
 
@@ -3353,16 +3420,16 @@ public class DFHFurnace {
     void createUnitfces(Vector<Double> combLens, boolean bBot) {
         int len = combLens.size();
         if (bBot) {
-            vBotUnitFces = new Vector<UnitFurnace>();
+            vBotUnitFces = new Vector<>();
             botUfsArray = new UnitFceArray(bBot, vBotUnitFces, controller.furnaceFor);
         }
         //        botUnitFces = new UnitFurnace[MAXUFS];
         else {
-            vTopUnitFces = new Vector<UnitFurnace>();
+            vTopUnitFces = new Vector<>();
             topUfsArray = new UnitFceArray(bBot, vTopUnitFces, controller.furnaceFor);
         }
         if (bTopBot && bAddTopSoak) {
-            vASUnitFces = new Vector<UnitFurnace>();
+            vASUnitFces = new Vector<>();
             ufsArrAS = new UnitFceArray(false, vASUnitFces, controller.furnaceFor);
         }
         // space added for empty slots at section boundaries
@@ -3517,7 +3584,7 @@ public class DFHFurnace {
     }
 
     Vector<Double> fillLarray() {
-        lArray = new Vector<Double>();
+        lArray = new Vector<>();
         Vector<Double> topLengths = new Vector<Double>();
         topLengths.add(new Double(0));
         double topEndLen = 0;

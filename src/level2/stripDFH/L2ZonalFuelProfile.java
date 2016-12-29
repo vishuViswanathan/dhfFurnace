@@ -177,7 +177,7 @@ public class L2ZonalFuelProfile extends ZonalFuelProfile {
         return null;
     }
 
-    public DataWithStatus recommendedSpeed(double totFuel, boolean bBot) {
+    public DataWithStatus<Double> recommendedSpeed(double totFuel, boolean bBot) {
         if (bBot)
             return l2SpeedTotalFuelBot.getXatYwithStatus(totFuel);
         else

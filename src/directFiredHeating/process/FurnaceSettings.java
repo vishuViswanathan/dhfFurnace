@@ -290,21 +290,19 @@ public class FurnaceSettings   {
                  }
             });
             editorPanel = new DataListEditorPanel("Furnace Fuel Settings", this, true);
-//            ntMaxSpeed = new NumberTextField(ipc, maxSpeed, 6, false, 10, 500, "#,###", "Maximum Process Speed (m/mt)");
             ntFuelSegments = new NumberTextField(ipc, fuelCharSteps, 6, false, 3, 10, "##", "Fuel Characteristics-steps");
             ntSpeedCheckInterval = new NumberTextField(ipc, speedCheckInterval, 6, true, 10, 60000, "#,##0", "Speed Check Interval (s)");
 
             rbConsiderFieldZoneTempForLossCorrection =
                     new JRadioButton("Take Field Zone Temp For Loss Check", considerFieldZoneTempForLossCorrection);
-            rbConsiderFieldZoneTempForLossCorrection.addChangeListener(new ChangeListener() {
-                public void stateChanged(ChangeEvent e) {
-                    if (rbConsiderFieldZoneTempForLossCorrection.isSelected()) {
-                        dfHeating.showError("Not ready for this to be ON", FceSettingsDlg.this);
-                        rbConsiderFieldZoneTempForLossCorrection.setSelected(false);
-                    }
-                }
-            });
-//            editorPanel.addItemPair(ntMaxSpeed);
+//            rbConsiderFieldZoneTempForLossCorrection.addChangeListener(new ChangeListener() {
+//                public void stateChanged(ChangeEvent e) {
+//                    if (rbConsiderFieldZoneTempForLossCorrection.isSelected()) {
+//                        dfHeating.showError("Not ready for this to be ON", FceSettingsDlg.this);
+//                        rbConsiderFieldZoneTempForLossCorrection.setSelected(false);
+//                    }
+//                }
+//            });
             editorPanel.addItemPair(ntFuelSegments);
             editorPanel.addBlank();
             editorPanel.addItemPair(ntSpeedCheckInterval);
@@ -315,7 +313,6 @@ public class FurnaceSettings   {
             nZones = dfHeating.furnace.nTopActiveSecs;
             ntRangeMax = new NumberTextField[nZones];
             ntRangeMin = new NumberTextField[nZones];
-//            ntTurnDown = new NumberTextField[nZones];
 
             for (int z = 0; z < nZones; z++) {
                 max = zoneFuelRange[z].max;

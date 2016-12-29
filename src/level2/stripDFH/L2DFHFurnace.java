@@ -3,10 +3,7 @@ package level2.stripDFH;
 import FceElements.heatExchanger.HeatExchProps;
 import TMopcUa.TMSubscription;
 import TMopcUa.TMuaClient;
-import basic.ChMaterial;
-import basic.Charge;
-import basic.Fuel;
-import basic.FuelFiring;
+import basic.*;
 import com.prosysopc.ua.ServiceException;
 import com.prosysopc.ua.client.MonitoredDataItem;
 import com.prosysopc.ua.client.Subscription;
@@ -21,6 +18,7 @@ import level2.fieldResults.FieldResults;
 import directFiredHeating.process.FurnaceSettings;
 import directFiredHeating.process.OneStripDFHProcess;
 import mvUtils.display.*;
+import mvUtils.math.BooleanWithStatus;
 import org.opcfoundation.ua.builtintypes.DataValue;
 import performance.stripFce.Performance;
 import performance.stripFce.StripProcessAndSize;
@@ -632,15 +630,6 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         return true;
     }
 
-    public DataWithStatus<Performance> getBasePerformanceREMOVE(OneStripDFHProcess stripDFHProc, double stripThick) { // TODO to be removed
-        DataWithStatus<Performance> retVal = new DataWithStatus<>();
-        DataWithStatus<ChMaterial> chMat = stripDFHProc.getChMaterial(stripDFHProc.baseProcessName, stripThick);
-        if (chMat.valid)
-            retVal.setValue(performBase.getRefPerformance(stripDFHProc.getFullProcessID(), chMat.getValue(),
-                    l2DFHeating.getSelectedFuel().name, stripDFHProc.tempDFHExit));
-        return retVal;
-    }
-
     public boolean isRefPerformanceAvailable(OneStripDFHProcess dfhProc, double stripThick) {
         DataWithStatus<ChMaterial> chMat = dfhProc.getChMaterial(stripThick);
         return (performBase != null) && (chMat.valid) &&
@@ -753,7 +742,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         return outputAssumed;
     }
 
-    public double getOutputWithFurnaceTemperatureStatus(FieldResults fieldData, ChargeStatus chStatus, Performance refP, double exitTempRequired) {
+    private double getOutputWithFurnaceTemperatureStatus(FieldResults fieldData, ChargeStatus chStatus, Performance refP, double exitTempRequired) {
         long stTimeNano = System.nanoTime();
         double outputAssumed = 0;
         this.calculStep = controller.calculStep;
@@ -789,6 +778,58 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             logInfo("Facing problem in creating calculation steps");
         logTrace("Nano seconds for calculation = " + (System.nanoTime() - stTimeNano));
         return outputAssumed;
+    }
+
+    public DataWithStatus<Double> setEmmissFactorBasedOnFieldResults(FieldResults fieldData) {
+        long stTimeNano = System.nanoTime();
+        tuningParams.setSelectedProc(controller.furnaceFor);
+        this.calculStep = controller.calculStep;
+        double exitTempRequired = fieldData.production.exitTemp;
+        ProductionData productionReqd = fieldData.production;
+        ChargeStatus chStatus = new ChargeStatus(productionReqd.charge, productionReqd.production, productionReqd.exitTemp);
+        setProductionData(fieldData.production);
+        double chEmmissCorrectionFactor = 1.0;
+        double chInTemp = productionReqd.entryTemp;
+        boolean done = false;
+        if (prepareSlots()) {
+            prepareSlotsWithTempO(fieldData);
+            double tempAllowance = 2;
+            double nowExitTemp, diff;
+            int trials = 0;
+            while (!done) {
+                setChEmmissCorrectionFactor(chEmmissCorrectionFactor);
+                trials++;
+                processInFurnace(chStatus);
+                if (chStatus.isValid()) {
+                    nowExitTemp = chStatus.tempWM;
+                    diff = exitTempRequired - nowExitTemp;
+//                    logTrace(String.format("nowExitTemp %3.2f, diff %3.4f, chEmmissCorrectionFactor %3.3f", nowExitTemp, diff, chEmmissCorrectionFactor));
+                    if (Math.abs(diff) < tempAllowance)
+                        done = true;
+                    else {
+//                        logTrace(String.format("exitTempRequired %3.3f, chInTemp %3.3f, nowExitTemp %3.3f",
+//                                exitTempRequired, chInTemp, nowExitTemp));
+                        chEmmissCorrectionFactor = chEmmissCorrectionFactor * (exitTempRequired - chInTemp) / (nowExitTemp - chInTemp);
+                        if (chEmmissCorrectionFactor > 2 || chEmmissCorrectionFactor < 0.1)
+                            break;
+                    }
+                }
+                else {
+                    showError("setEmmissFactorBasedOnFieldResults:" +
+                            "processInFurnace returned with error!");
+                    break;
+                }
+            }
+            logTrace("setEmmissFactorBasedOnFieldResults:" +
+                    "Trials in setEmmissFactorBasedOnFieldResults = " + trials);
+        } else
+            logInfo("Facing problem in creating calculation steps");
+        logTrace("Emm Factor = " + chEmmissCorrectionFactor + ",  " +
+                "Nano seconds for calculation = " + (System.nanoTime() - stTimeNano));
+        DataWithStatus<Double> retVal =  new DataWithStatus<>(chEmmissCorrectionFactor);
+        if (!done)
+            retVal.addErrorMessage("Unable to evaluate Charge emissivity Correction based on Field Data");
+        return retVal;
     }
 
     void prepareSlotsWithTempO(FieldResults results) {
@@ -1044,6 +1085,89 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     }
 
     class FieldPerformanceHandler implements Runnable {
+        public void run() {
+            setFieldDataBeingHandled();
+            boolean response = getYesNoResponseFromLevel1("Confirm that Strip Size Data is updated", 20);
+            logTrace("L2 " + ((response) ? "Responded " : "did not Respond ") + "to Confirm-Strip-Data query");
+            if ((response) && (l2YesNoQuery.getValue(Tag.TagName.Response).booleanValue)) {
+                boolean canContinue = true;
+                FieldResults theFieldResults = new FieldResults(L2DFHFurnace.this, true);
+                ErrorStatAndMsg dataOkForFieldResults = new ErrorStatAndMsg();
+                if (theFieldResults.inError) {
+                    canContinue = false;
+                    logError("Getting Field Results: " + theFieldResults.errMsg);
+                }
+                else  {
+                    dataOkForFieldResults =  theFieldResults.processOkForFieldResults();  // TODO modify this for Fresh Process from field
+                    if (dataOkForFieldResults.inError) {
+                        canContinue = false;
+                        logError("Checking Field Data: " + dataOkForFieldResults.msg);
+                    }
+                }
+                if (theFieldResults.inError || dataOkForFieldResults.inError) {
+                    showErrorInLevel1("Error in Taking Field Performance");
+                }
+                if (canContinue) {
+                    if (l2DFHeating.setFieldProductionData(theFieldResults)) {
+                        boolean considerFieldZonalTemperatures = true;
+//                        considerFieldZonalTemperatures = l2DFHeating.decide("field Performance",
+//                                "Make Corrections for Field Zone Temperatures?"); // TODO to be removed in RELEASE
+                        setCurveSmoothening(false);
+                        DataWithStatus<Double> emmStat = null;
+                        double chEmmissCorrectionFactor = 1.0;
+                        if (considerFieldZonalTemperatures) {
+                            emmStat = setEmmissFactorBasedOnFieldResults(theFieldResults);
+                            chEmmissCorrectionFactor = emmStat.getValue();
+                        }
+                        if (!considerFieldZonalTemperatures || (emmStat.getDataStatus() == DataStat.Status.OK) ){
+                            if (!considerFieldZonalTemperatures || fillChInTempProfile()) {
+
+                                bConsiderPresetChInTempProfile = considerFieldZonalTemperatures;
+                                l2DFHeating.showMessage("Field Performance", "Evaluating from Model");
+                                FceEvaluator eval1 = l2DFHeating.calculateFce(true, null);
+                                if (eval1 != null) {
+                                    try {
+                                        eval1.awaitThreadToExit();
+                                        if (eval1.healthyExit()) {
+                                            boolean proceed = true;
+//                                            proceed = l2DFHeating.decide("Field Performance",
+//                                                    "Proceed with Fuel Flow Corrections"); // TODO to be removed in RELEASE
+                                            if (proceed && theFieldResults.adjustForFieldResults()) { // was (adjustForFieldResults()) {
+                                                l2DFHeating.showMessage("Field Performance", "Recalculating after fuel flow adjustments");
+                                                FceEvaluator eval2 = l2DFHeating.calculateFce(false, null); // without reset the loss Factors
+                                                if (eval2 != null) {
+                                                    eval2.awaitThreadToExit();
+                                                    logTrace("eval2 completed");
+                                                    if (eval2.healthyExit()) {
+                                                        logTrace("eval2 had healthy exit");
+                                                        if (addFieldBasedPerformanceToPerfBase())
+                                                            l2DFHeating.showMessage("Field Performance", "Save updated Performance to file from Performance Menu");
+                                                    }
+                                                }
+                                                resetLossFactor();
+                                                logTrace("lossFactors reset");
+                                            }
+                                        }
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }
+                        } else
+                            showError("Facing some problem in evaluating strip emissivity factor");
+                        resetChEmmissCorrectionFactor();
+                    }
+                    setCurveSmoothening(false);
+                }
+            }
+            else
+                showErrorInLevel1("Running Strip size data is not confirmed. Performance data is NOT recorded");
+            bConsiderPresetChInTempProfile = false;
+            resetFieldDataBeingHandled();
+        }
+    }
+
+    class FieldPerformanceHandlerOLD  implements Runnable {
         public void run() {
             setFieldDataBeingHandled();
             boolean response = getYesNoResponseFromLevel1("Confirm that Strip Size Data is updated", 20);
