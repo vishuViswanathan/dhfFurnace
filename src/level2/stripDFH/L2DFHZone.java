@@ -46,20 +46,24 @@ public class L2DFHZone extends L2ParamGroup {
         String fuelFlowFmt = "#,##0.00";
         String speedFmt = "#,##0";
         String ratioFmt = "#0.00";
-        String airFlowFmt = "#,##0"; Tag[] temperatureTags = {new Tag(Parameter.Temperature, Tag.TagName.SP, false, false, temperatureFmt),
+        String airFlowFmt = "#,##0";
+        Tag[] temperatureTags = {new Tag(Parameter.Temperature, Tag.TagName.SP, false, false, temperatureFmt),
                 new Tag(Parameter.Temperature, Tag.TagName.PV, false, true, temperatureFmt),
                 new Tag(Parameter.Temperature, Tag.TagName.Auto, false, false),
                 new Tag(Parameter.Temperature, Tag.TagName.SP, true, false, temperatureFmt)};
-        Tag[] fuelFlowTags = {new Tag(Parameter.FuelFlow, Tag.TagName.SP, false, false, fuelFlowFmt),
+
+        Tag[] fuelFlowTags = {   // new Tag(Parameter.FuelFlow, Tag.TagName.SP, false, false, fuelFlowFmt),
                 new Tag(Parameter.FuelFlow, Tag.TagName.PV, false, true, fuelFlowFmt),
                 new Tag(Parameter.FuelFlow, Tag.TagName.Auto, false, false),
                 new Tag(Parameter.FuelFlow, Tag.TagName.Remote, false, false),
                 new Tag(Parameter.FuelFlow, Tag.TagName.Span, false, false, fuelFlowFmt),
                 new Tag(Parameter.FuelFlow, Tag.TagName.SP, false, false, fuelFlowFmt),
                 new Tag(Parameter.FuelFlow, Tag.TagName.SP, true, false, fuelFlowFmt)};
+
         Tag airFuelRatioTags = new Tag(Parameter.AFRatio, Tag.TagName.SP, false, false, ratioFmt);
 
-        Tag[] airFlowTags = {new Tag(Parameter.AirFlow, Tag.TagName.SP, false, false, airFlowFmt),
+        Tag[] airFlowTags = {
+                new Tag(Parameter.AirFlow, Tag.TagName.SP, false, false, airFlowFmt),
                 new Tag(Parameter.AirFlow, Tag.TagName.PV, false, true, airFlowFmt),
                 new Tag(Parameter.AirFlow, Tag.TagName.Auto, false, false),
                 new Tag(Parameter.AirFlow, Tag.TagName.Remote, false, false),

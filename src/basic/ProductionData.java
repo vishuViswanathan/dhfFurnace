@@ -16,6 +16,7 @@ public class ProductionData {
     public String processName;
     public OneStripDFHProcess stripProcess;  // used only in strip processing
     public Charge charge;
+    public double chEmmissCorrectionFactor = 1.0;
     public double bottShadow = 0;
     public double chPitch = 1.0;
     public double production;  // in kg/h
@@ -52,16 +53,17 @@ public class ProductionData {
         ProductionData fP = fromProductionData;
         this.stripProcess = fP.stripProcess;
         this.processName = fP.processName;
+        this.chEmmissCorrectionFactor = fP.chEmmissCorrectionFactor;
         charge = new Charge(fromProductionData.charge);
         chPitch = fromProductionData.chPitch;
         setProduction(fP.production, fP.nChargeRows, fP.entryTemp, fP.exitTemp, fP.deltaTemp, fP.bottShadow);
         setExitZoneTempData(fP.exitZoneFceTemp, fP.minExitZoneTemp);
     }
 
-    public ProductionData(DFHeating dfHeating, String xmlStr) {
-        this();
-        inError = !takeDataFromXML(dfHeating, xmlStr);
-    }
+//    public ProductionData(DFHeating dfHeating, String xmlStr) {
+//        this();
+//        inError = !takeDataFromXML(dfHeating, xmlStr);
+//    }
 
     public void setCharge(Charge charge, double chPitch) {
         this.charge = charge;
@@ -75,8 +77,13 @@ public class ProductionData {
         this.deltaTemp = deltaTemp;
         this.bottShadow = bottShadow;
         this.nChargeRows = nChargeRows;
+        chEmmissCorrectionFactor = 1.0;
         if (charge != null)
             piecesPerh = production / charge.unitWt;
+    }
+
+    public void setChEmmissCorrectionFactor(double chEmmissCorrectionFactor) {
+        this.chEmmissCorrectionFactor = chEmmissCorrectionFactor;
     }
 
     public void setExitZoneTempData(double exitZoneFceTemp, double minExitZoneTemp) {
@@ -114,6 +121,9 @@ public class ProductionData {
             processName =  vp.val;
             vp = XMLmv.getTag(xmlStr, "charge", 0);
             charge = new Charge(dfHeating, vp.val);
+            vp = XMLmv.getTag(xmlStr, "chEmmissCorrectionFactor", vp.endPos);
+            if (vp.val.length() > 0)
+                chEmmissCorrectionFactor = Double.valueOf(vp.val);
             vp = XMLmv.getTag(xmlStr, "bottShadow", 0);
             bottShadow = Double.valueOf(vp.val);
             vp = XMLmv.getTag(xmlStr, "chPitch", 0);
@@ -139,26 +149,22 @@ public class ProductionData {
         return bRetVal;
     }
 
-    public StringBuilder dataInXML() {
-        StringBuilder xmlStr = new StringBuilder(XMLmv.putTag("processName", processName));
-        xmlStr.append(XMLmv.putTag("charge", charge.dataInXML()));
-        xmlStr.append(XMLmv.putTag("bottShadow", bottShadow));
-        xmlStr.append(XMLmv.putTag("chPitch", chPitch));
-        xmlStr.append(XMLmv.putTag("production", production));
-        xmlStr.append(XMLmv.putTag("entryTemp", entryTemp));
-        xmlStr.append(XMLmv.putTag("exitTemp", exitTemp));
-        xmlStr.append(XMLmv.putTag("deltaTemp", deltaTemp));
-        xmlStr.append(XMLmv.putTag("nChargeRows", nChargeRows));
-        xmlStr.append(XMLmv.putTag("dischZoneFceTemp", exitZoneFceTemp));
-        xmlStr.append(XMLmv.putTag("minDischZoneTemp", minExitZoneTemp));
-
-        return xmlStr;
-    }
-    /*
-        public double dischZoneFceTemp;
-    public double minDischZoneTemp;
-
-     */
+//    public StringBuilder dataInXML() {
+//        StringBuilder xmlStr = new StringBuilder(XMLmv.putTag("processName", processName));
+//        xmlStr.append(XMLmv.putTag("charge", charge.dataInXML()));
+//        xmlStr.append(XMLmv.putTag("chEmmissCorrectionFactor", chEmmissCorrectionFactor));
+//        xmlStr.append(XMLmv.putTag("bottShadow", bottShadow));
+//        xmlStr.append(XMLmv.putTag("chPitch", chPitch));
+//        xmlStr.append(XMLmv.putTag("production", production));
+//        xmlStr.append(XMLmv.putTag("entryTemp", entryTemp));
+//        xmlStr.append(XMLmv.putTag("exitTemp", exitTemp));
+//        xmlStr.append(XMLmv.putTag("deltaTemp", deltaTemp));
+//        xmlStr.append(XMLmv.putTag("nChargeRows", nChargeRows));
+//        xmlStr.append(XMLmv.putTag("dischZoneFceTemp", exitZoneFceTemp));
+//        xmlStr.append(XMLmv.putTag("minDischZoneTemp", minExitZoneTemp));
+//
+//        return xmlStr;
+//    }
 
     public String getErrString() {
         return errString;

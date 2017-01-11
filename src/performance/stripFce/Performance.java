@@ -34,6 +34,7 @@ public class Performance {
         DATE("Date of Calculation"),
         PROCESSNAME("Process name"),
         CHMATERIAL("Charge Material"),
+        CHEMMFACTOR("Charge Emmissvity Factor"),
         STRIPWIDTH("Strip Width"),
         STRIPTHICK("Strip Thickness"),
         STRIPSPEED("Strip Speed"),
@@ -113,6 +114,7 @@ public class Performance {
     double speed;
     double piecesPerH;
     public String chMaterial;
+    public double chEmmCorrectionFactor = 1.0;
     DFHeating controller;
     DFHFurnace furnace;
     PerformanceTable perfTable;
@@ -144,6 +146,7 @@ public class Performance {
         this(furnace);
         output = production.production;
         Charge charge = production.charge;
+        chEmmCorrectionFactor = production.chEmmissCorrectionFactor;
         chMaterial = charge.chMaterial.name;
         chLength = charge.getLength();
         chWidth = charge.getWidth();
@@ -176,6 +179,7 @@ public class Performance {
         production.setCharge(ch, chPitch);
         production.setProduction(output, 1, dfhProcess.tempDFHEntry, dfhProcess.tempDFHExit, 0.1, 0);
         production.setExitZoneTempData(dfhProcess.getMaxExitZoneTemp(), dfhProcess.getMinExitZoneTemp());
+        production.setChEmmissCorrectionFactor(chEmmCorrectionFactor);
         return production;
     }
 
@@ -461,6 +465,9 @@ public class Performance {
             case CHTEMPOUT:
                 retVal = exitTemp();
                 break;
+            case CHEMMFACTOR:
+                retVal = chEmmCorrectionFactor;
+                break;
         }
         return retVal;
     }
@@ -603,19 +610,30 @@ public class Performance {
         return retVal;
     }
 
-    int getChInTempProfile(double[] chTempInProfile, double forExitTemp) {
+//    int getChInTempProfile(double[] chTempInProfile, double forExitTemp) {
+//        double tempIn = topZones.get(0).stripTempIn;
+//        double baseTempOut = topZones.get(topZones.size() - 1).stripTempOut;
+//        double adjustFactor = (forExitTemp - tempIn) / (baseTempOut - tempIn);
+//        int retVal = topZones.size();
+//        int zNum = 0;
+//        if (retVal <= chTempInProfile.length) {
+//            for (OneZone z: topZones)
+//                chTempInProfile[zNum++] = tempIn + (z.stripTempIn - tempIn) * adjustFactor;
+//        }
+//        else
+//            retVal = 0;
+//        return retVal;
+//    }
+
+    public double[] getChInTempProfile(double forExitTemp) {
         double tempIn = topZones.get(0).stripTempIn;
         double baseTempOut = topZones.get(topZones.size() - 1).stripTempOut;
         double adjustFactor = (forExitTemp - tempIn) / (baseTempOut - tempIn);
-        int retVal = topZones.size();
+        double[] chTempInProfile = new double[topZones.size()];
         int zNum = 0;
-        if (retVal <= chTempInProfile.length) {
             for (OneZone z: topZones)
                 chTempInProfile[zNum++] = tempIn + (z.stripTempIn - tempIn) * adjustFactor;
-        }
-        else
-            retVal = 0;
-        return retVal;
+        return chTempInProfile;
     }
 
     /**
@@ -676,6 +694,7 @@ public class Performance {
         }
         else
             xmlStr.append(XMLmv.putTagNew("dateOfResult", dateOfResult.getTime().getTime()));
+        xmlStr.append(XMLmv.putTagNew("chEmmCorrectionFactor", chEmmCorrectionFactor));
         xmlStr.append(XMLmv.putTagNew("chWidthP", chWidth));
         xmlStr.append(XMLmv.putTagNew("chLengthP", chLength));
         xmlStr.append(XMLmv.putTagNew("chThickP", chThick));
@@ -729,6 +748,11 @@ public class Performance {
             processName = vp.val;
             vp = XMLmv.getTag(xmlStr, "ChMaterialP", 0);
             chMaterial = vp.val;
+            vp = XMLmv.getTag(xmlStr, "chEmmCorrectionFactor", 0);
+            if (vp.val.length() > 0)
+                chEmmCorrectionFactor = Double.valueOf(vp.val);
+            else
+                chEmmCorrectionFactor = 1.0;
             vp = XMLmv.getTag(xmlStr, "chWidthP", 0);
             chWidth = Double.valueOf(vp.val);
             vp = XMLmv.getTag(xmlStr, "chLengthP", 0);
@@ -953,15 +977,10 @@ public class Performance {
     JPanel commonPerfDataP() {
         MultiPairColPanel pan = new MultiPairColPanel("");
         pan.addItemPair("Data Type: ", "Interpolated", false);
-//        addItemPair(pan, Params.DATE);
-//        addItemPair(pan, Params.PROCESSNAME);
-//        addItemPair(pan, Params.CHMATERIAL);
         addItemPair(pan, Params.STRIPWIDTH, 1000, "#,##0 mm");
         addItemPair(pan, Params.STRIPTHICK, 1000, "#,##0.00 mm");
         addItemPair(pan, Params.STRIPSPEED, (1.0 / 60), "#,##0.000 m/min");
-//        addItemPair(pan, Params.CHTEMPOUT, 1, "#,##0 C");
         addItemPair(pan, Params.OUTPUT, (1.0 / 1000), "#,##0.00 t/h");
-//        addItemPair(pan, Params.FUEL);
         addItemPair(pan, Params.AIRTEMP, 1, "#,##0 C");
         return pan;
     }
@@ -972,6 +991,7 @@ public class Performance {
         addItemPair(pan, Params.DATE);
         addItemPair(pan, Params.PROCESSNAME);
         addItemPair(pan, Params.CHMATERIAL);
+        addItemPair(pan, Params.CHEMMFACTOR, 1, "0.000");
         addItemPair(pan, Params.CHTEMPOUT, 1, "#,##0 C");
         addItemPair(pan, Params.FUEL);
         outerP.add(pan, BorderLayout.WEST);

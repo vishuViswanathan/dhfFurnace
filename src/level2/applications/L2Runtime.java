@@ -3,6 +3,7 @@ package level2.applications;
 import directFiredHeating.accessControl.L2AccessControl;
 import mvUtils.display.DataStat;
 import mvUtils.display.DataWithStatus;
+import mvUtils.display.ErrorStatAndMsg;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
@@ -71,6 +72,12 @@ public class L2Runtime extends L2DFHeating {
 //        fileMenu = new JMenu("File");
         fileMenu.add(mIExit);
         return fileMenu;
+    }
+
+    public ErrorStatAndMsg checkConnection() {
+        ErrorStatAndMsg retVal = super.checkConnection();
+        l2ProcessList.noteConnectionsCheckStat(retVal);
+        return retVal;
     }
 
     public boolean connectProcessListToLevel1() {

@@ -14,6 +14,8 @@ import javax.xml.transform.OutputKeys;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -237,8 +239,8 @@ public class Level2Launcher {
         buttonSize = new Dimension(buttonWidth, launchInstaller.getPreferredSize().height);
 
         mainF = new JFrame();
-//        mainF.addWindowListener(new WinListener());
-//        mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        mainF.addWindowListener(new WinListener());
+        mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         mainF.setSize(new Dimension(800, 600));
 
         MultiPairColPanel mainP = new MultiPairColPanel("");
@@ -504,6 +506,35 @@ public class Level2Launcher {
             }
         }
     }
+
+    class WinListener implements WindowListener {
+        public void windowOpened(WindowEvent e) {
+        }
+
+        public void windowClosing(WindowEvent e) {
+            quit();
+//            destroy();
+//            if (asApplication)
+//                System.exit(0);
+//            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        public void windowClosed(WindowEvent e) {
+        }
+
+        public void windowIconified(WindowEvent e) {
+        }
+
+        public void windowDeiconified(WindowEvent e) {
+        }
+
+        public void windowActivated(WindowEvent e) {
+        }
+
+        public void windowDeactivated(WindowEvent e) {
+        }
+    }
+
 
     public static void main(String[] args) {
         Level2Launcher launcher = new Level2Launcher();

@@ -1,5 +1,7 @@
 package performance.stripFce;
 
+import directFiredHeating.process.OneStripDFHProcess;
+
 /**
  * User: M Viswanathan
  * Date: 11-Apr-16
@@ -8,6 +10,7 @@ package performance.stripFce;
  */
 public class StripProcessAndSize {
     public String processBaseName;
+    public OneStripDFHProcess theProcess;
     public double exitTemp;
     public double width;
     public double thickness;
@@ -23,6 +26,14 @@ public class StripProcessAndSize {
         this.width = width;
         this.thickness = thickness;
         return this;
+    }
+
+    public OneStripDFHProcess getProcess() {
+        return theProcess;
+    }
+
+    public void setTheProcess(OneStripDFHProcess theProcess) {
+        this.theProcess = theProcess;
     }
 
     public String toString() {

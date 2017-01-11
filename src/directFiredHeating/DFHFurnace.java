@@ -294,11 +294,13 @@ public class DFHFurnace {
     }
 
     public void resetChEmmissCorrectionFactor() {
-        tuningParams.chEmmissCorrectionFactor = 1.0;
+        productionData.chEmmissCorrectionFactor = 1.0;
+        chEmmFactorForPresetTempProfile = 1.0;
     }
 
     protected void setChEmmissCorrectionFactor(double factor) {
-        tuningParams.chEmmissCorrectionFactor = factor;
+        productionData.setChEmmissCorrectionFactor(factor);
+//        tuningParams.chEmmissCorrectionFactor = factor;
     }
 
     boolean setWallTemperatures() {
@@ -1027,7 +1029,7 @@ public class DFHFurnace {
     }
 
     boolean preDefChTemp = true;
-    double[] chInTempProfile;
+//    double[] chInTempProfile;
     boolean honorLastZoneMinFceTemp = false;
     boolean considerChTempProfile = false;
     boolean skipReferenceDataCheck = false;
@@ -1035,6 +1037,7 @@ public class DFHFurnace {
     protected boolean bConsiderPresetChInTempProfile = false;
     double[] presetChInTempProfileTop;
     double[] presetChInTempProfileBot;
+    double chEmmFactorForPresetTempProfile = 1.0;
 
     protected boolean fillChInTempProfile() {
         boolean retVal = true;
@@ -1042,19 +1045,19 @@ public class DFHFurnace {
         for (int s = 0; s < nTopActiveSecs; s++)
             presetChInTempProfileTop[s] = topSections.get(s).chEntryTemp();
 
-        // TODO the following to be removed
+        // TODO the following to be removed in RELEASE
         String prof = "In fillChInTempProfile";
         for (double val: presetChInTempProfileTop)
             prof += String.format(", %3.3f", val);
-        System.out.println("Ch Temp Profile = " + prof);
+        System.out.println("Ch Temp Profile = " + prof + ", chEmmFactor = " + productionData.chEmmissCorrectionFactor);
         // The above to be removed
-
 
         if (bTopBot) {
             presetChInTempProfileBot = new double[nBotActiveSecs];
             for (int s = 0; s < nBotActiveSecs; s++)
                 presetChInTempProfileBot[s] = botSections.get(s).chEntryTemp();
         }
+        chEmmFactorForPresetTempProfile = productionData.chEmmissCorrectionFactor;
         return retVal;
     }
 
@@ -1079,6 +1082,7 @@ public class DFHFurnace {
         Vector<FceSection> vSec;
         int iFirstFiredSection;
         int iLastFiredSection;
+        double[] chInTempProfile = null;
         int nFiredSecs;
         int[] fired;
         int firstRevCalUpto = 0;
@@ -1168,26 +1172,31 @@ public class DFHFurnace {
                 theSlot.getWMean(temWOreqd, deltaTempReqd);
             } else {
                 if ((controller.furnaceFor == DFHTuningParams.FurnaceFor.STRIP) &&
-                        tuningParams.bConsiderChTempProfile && bFirstTime && chTempProfAvailable && !considerChTempProfile) {
-                    chInTempProfile = new double[nTopActiveSecs];
-                    chTempProfileFactor = 1.0;  // reset to default
+                        tuningParams.bConsiderChTempProfile && /*bFirstTime &&*/ chTempProfAvailable /*&& !considerChTempProfile*/) {
+//                    chInTempProfile = new double[nTopActiveSecs];
+                    chTempProfileFactor = 1.0;  // reset to default. This is for respecting exit zone minimum temperature
                     honorLastZoneMinFceTemp = false;
                     if (!skipReferenceDataCheck) {
-                        int nPoints;
                         if (bConsiderPresetChInTempProfile) {
                             chInTempProfile = presetChInTempProfileTop;
-                            nPoints = chInTempProfile.length;
+                            setChEmmissCorrectionFactor(chEmmFactorForPresetTempProfile);
                         }
-                        else
-                            nPoints = performBase.getChInTempProfile(productionData, commFuelFiring.fuel, chInTempProfile);
-                        if (nPoints == nTopActiveSecs) {
+                        else {
+                            Performance refP = performBase.getRefPerformance(productionData, commFuelFiring.fuel);
+                            if (refP != null) {
+                                chInTempProfile = refP.getChInTempProfile(productionData.exitTemp);
+                                setChEmmissCorrectionFactor(refP.chEmmCorrectionFactor);
+                            }
+                        }
+                        if (chInTempProfile != null && chInTempProfile.length == nTopActiveSecs) {
                             if (inPerfTableMode)
                                 considerChTempProfile = true;
                             else {
                                 if (!userActionAllowed())
                                     considerChTempProfile = true;
                                 else
-                                    considerChTempProfile = decide("Charge Temperature Profile",
+                                    if (!considerChTempProfile)
+                                        considerChTempProfile = decide("Charge Temperature Profile",
                                             "Do you want to consider the Charge Temperature Profile from the Reference Performance data?", 3000);
                             }
                         } else {
@@ -1203,6 +1212,11 @@ public class DFHFurnace {
                         }
                     }
                 }
+                else
+                    setChEmmissCorrectionFactor(1.0);
+
+                System.out.println("DFHFurnace.1218: chEmmfactor = "  + productionData.chEmmissCorrectionFactor); // TODO remove on RELEASE
+
                 theSection = vSec.get(iLastSec);  // the last fired section
                 theSlot = theSection.getLastSlot();
                 theSlot.eW = ch.getEmiss(tempWOEnd);

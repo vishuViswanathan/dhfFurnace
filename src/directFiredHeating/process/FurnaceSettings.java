@@ -295,14 +295,6 @@ public class FurnaceSettings   {
 
             rbConsiderFieldZoneTempForLossCorrection =
                     new JRadioButton("Take Field Zone Temp For Loss Check", considerFieldZoneTempForLossCorrection);
-//            rbConsiderFieldZoneTempForLossCorrection.addChangeListener(new ChangeListener() {
-//                public void stateChanged(ChangeEvent e) {
-//                    if (rbConsiderFieldZoneTempForLossCorrection.isSelected()) {
-//                        dfHeating.showError("Not ready for this to be ON", FceSettingsDlg.this);
-//                        rbConsiderFieldZoneTempForLossCorrection.setSelected(false);
-//                    }
-//                }
-//            });
             editorPanel.addItemPair(ntFuelSegments);
             editorPanel.addBlank();
             editorPanel.addItemPair(ntSpeedCheckInterval);
@@ -328,6 +320,9 @@ public class FurnaceSettings   {
                 editorPanel.addItemPair(ntRangeMin[z]);
 //                editorPanel.addItemPair(ntTurnDown[z]);
             }
+            editorPanel.closeGroup();
+            JPanel fieldProcessDataPanel = dfHeating.dfhProcessList.dataPanel();
+            editorPanel.addItem(fieldProcessDataPanel);
             editorPanel.setVisible(true);
             add(editorPanel);
             pack();
@@ -383,9 +378,14 @@ public class FurnaceSettings   {
                 return false;
             }
             else {
-                backup = getBackup();
-                return true;
+                if (dfHeating.dfhProcessList.takeFromUI()) {
+                    backup = getBackup();
+                    return true;
+                }
+                else
+                    dfHeating.showError("Error in Settings for Field Process", this);
             }
+            return false;
         }
 
         public void deleteData() {
@@ -412,6 +412,7 @@ public class FurnaceSettings   {
             editorPanel.resetAll();
 //            editorPanel.setVisible(false);
 //            editorPanel.setVisible(true);
+            dfHeating.dfhProcessList.resetUI();
         }
 
          public void cancel() {

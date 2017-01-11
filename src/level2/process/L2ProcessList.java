@@ -3,9 +3,11 @@ package level2.process;
 import directFiredHeating.process.OneStripDFHProcess;
 import directFiredHeating.process.StripDFHProcessList;
 import level2.applications.L2DFHeating;
+import level2.common.L2ParamGroup;
 import level2.common.TagCreationException;
 import level2.stripDFH.L2DFHFurnace;
 import level2.stripDFH.L2DFHProcessZone;
+import mvUtils.display.ErrorStatAndMsg;
 
 import java.util.Vector;
 
@@ -27,7 +29,7 @@ public class L2ProcessList extends StripDFHProcessList{
     public boolean connectToLevel1() {
         boolean retVal = false;
         try {
-            for (int p = 0; p < maxListLen; p++) {
+            for (int p = 0; p < maxListLenFP; p++) {
                 System.out.println(String.format("Process%02d", (p + 1)));
                 processZones.add(new L2DFHProcessZone(l2Furnace, String.format("Process%02d", (p + 1)),
                         String.format("DFH Process %02d", (p + 1))));
@@ -37,6 +39,18 @@ public class L2ProcessList extends StripDFHProcessList{
             e.printStackTrace();
         }
         return retVal;
+    }
+
+    public boolean noteConnectionsCheckStat(ErrorStatAndMsg stat) {
+        ErrorStatAndMsg oneSecStat;
+        for (L2ParamGroup oneZ:processZones) {
+            oneSecStat = oneZ.checkConnections();
+            if (oneSecStat.inError) {
+                stat.inError = true;
+                stat.msg += "\n" + oneSecStat.msg;
+            }
+        }
+        return stat.inError;
     }
 
     public void clearLevel1ProcessList() {

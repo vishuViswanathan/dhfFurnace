@@ -12,7 +12,10 @@ import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import performance.stripFce.Performance;
 import performance.stripFce.StripProcessAndSize;
+import radiantTubeHeating.RTHeating;
 
+import javax.swing.*;
+import java.awt.*;
 import java.text.DecimalFormat;
 import java.util.Vector;
 
@@ -28,8 +31,6 @@ public class OneStripDFHProcess {
     DFHeating dfHeating;
     public String baseProcessName;
     ChMaterial chMaterial;
-    ChMaterial chMaterialThin;
-    ChMaterial chMaterialThick;
     public double tempDFHEntry = 30;
     public double tempDFHExit = 620;
     double maxExitZoneTemp = 1050;
@@ -43,6 +44,9 @@ public class OneStripDFHProcess {
     public double minWidth = 0.9;  // m
     public double maxUnitOutput = 25000;  // kg/h for 1m with
     public double minUnitOutput = 8500; // kg/h  for 1m width
+    public double rthExitTemp = 550;
+    public double soakTemp = 550;
+    public double hbrStripTemp = 460;
     String errMeg = "Error reading StripDFHProcess :";
     public boolean inError = false;
     DFHTuningParams tuning;
@@ -92,6 +96,9 @@ public class OneStripDFHProcess {
         c.minWidth = minWidth;  // m
         c.maxUnitOutput = maxUnitOutput;  // kg/h for 1m with
         c.minUnitOutput = minUnitOutput; // kg/h  for 1m width
+        c.rthExitTemp = rthExitTemp;
+        c.soakTemp = soakTemp;
+        c.hbrStripTemp = hbrStripTemp;
         c.existingList = existingList;
         c.performance = performance;
         return c;
@@ -147,11 +154,12 @@ public class OneStripDFHProcess {
         BooleanWithStatus response = checkStripSize(width, thickness);
         DataStat.Status stat = response.getDataStatus();
         DataWithStatus<Double> outputWithStatus = new DataWithStatus<>(0.0);
+        double maxExtendedUnitOutput = maxUnitOutput * tuning.unitOutputOverRange;
         if (stat == DataStat.Status.OK) {
             if (response.getValue()) {
                 double unitOutput = output / width;
-                if (unitOutput > maxUnitOutput)
-                    outputWithStatus.setValue(maxUnitOutput * width, "Limited by Unit Output");
+                if (unitOutput > maxExtendedUnitOutput)
+                    outputWithStatus.setValue(maxExtendedUnitOutput * width, "Limited by Maximum Unit Output");
                 else if (unitOutput < minUnitOutput)
                     outputWithStatus.setErrorMsg(String.format("Unit Output is low <%5.2f tph/m>", output));
                 else
@@ -272,6 +280,18 @@ public class OneStripDFHProcess {
                     vp = XMLmv.getTag(xmlStr, "minWidth", 0);
                     minWidth = Double.valueOf(vp.val) / 1000;
 
+                    vp = XMLmv.getTag(xmlStr, "rthExitTemp", 0);
+                    if (vp.val.length() > 0)
+                        rthExitTemp = Double.valueOf(vp.val);
+
+                    vp = XMLmv.getTag(xmlStr, "soakTemp", 0);
+                    if (vp.val.length() > 0)
+                        soakTemp = Double.valueOf(vp.val);
+
+                    vp = XMLmv.getTag(xmlStr, "hbrStripTemp", 0);
+                    if (vp.val.length() > 0)
+                        hbrStripTemp = Double.valueOf(vp.val);
+
                     retVal = true;
                 } catch (NumberFormatException e) {
                     errMeg += "Some Number format error";
@@ -322,6 +342,9 @@ public class OneStripDFHProcess {
         xmlStr.append(XMLmv.putTag("minThickness", "" + (minThickness * 1000)));
         xmlStr.append(XMLmv.putTag("maxWidth", "" + (maxWidth * 1000)));
         xmlStr.append(XMLmv.putTag("minWidth", "" + (minWidth * 1000)));
+        xmlStr.append(XMLmv.putTag("rthExitTemp", "" + rthExitTemp));
+        xmlStr.append(XMLmv.putTag("soakTemp", "" + soakTemp));
+        xmlStr.append(XMLmv.putTag("hbrStripTemp", "" + hbrStripTemp));
         return xmlStr;
     }
 
@@ -329,9 +352,6 @@ public class OneStripDFHProcess {
     XLTextField tfFullProcessID;
     JSPComboBox<ChMaterial> cbChMaterial;
 
-    JSPComboBox cbChMaterialThin;
-    NumberTextField ntThinUpperLimit;
-    JSPComboBox cbChMaterialThick;
     Vector<NumberTextField> dataFieldList;
     NumberTextField ntTempDFHEntry;
     NumberTextField ntTempDFHExit;
@@ -345,6 +365,10 @@ public class OneStripDFHProcess {
     NumberTextField ntMinThickness;
     NumberTextField ntMaxWidth;
     NumberTextField ntMinWidth;
+    NumberTextField ntRTHExitTemp;
+    NumberTextField ntSoakTemp;
+    NumberTextField ntHBRStriptemp;
+
 
     boolean widthInRange(double width) {
         return width > minWidth && width <= maxWidth;
@@ -545,34 +569,48 @@ public class OneStripDFHProcess {
         dataFieldList.add(ntf);
         ntf = ntMinWidth = new NumberTextField(inpC, minWidth * 1000, 6, false, 200, 5000,
                 "#,##0", "Minimum Strip Width (mm) - Exclusive");
+        ntf = ntRTHExitTemp = new NumberTextField(inpC, rthExitTemp, 6, false, 300, 1200,
+                "#,##0", "RTH Strip Exit Temperature (deg C)");
+        dataFieldList.add(ntf);
+        ntf = ntSoakTemp = new NumberTextField(inpC, soakTemp, 6, false, 300, 1200,
+                "#,##0", "Soak Zone Temperature (deg C)");
+        dataFieldList.add(ntf);
+        ntf = ntHBRStriptemp = new NumberTextField(inpC, hbrStripTemp, 6, false, 300, 1200,
+                "#,##0", "Exit Section Strip Temperature (deg C)");
+        dataFieldList.add(ntf);
         dataFieldList.add(ntf);
 
         DataListEditorPanel editorPanel = new DataListEditorPanel("Strip Process Data", dataHandler, editable, editable);
         // if editable, it is also deletable
         editorPanel.addItemPair(tfBaseProcessName);
         editorPanel.addItemPair(tfFullProcessID);
-        editorPanel.addBlank();
+        editorPanel.addItem("Strip Parameters", true, GridBagConstraints.WEST);
         editorPanel.addItemPair(cbChMaterial);
+        editorPanel.addItemPair(ntMinThickness);
+        editorPanel.addItemPair(ntMaxThickness);
+        editorPanel.addItemPair(ntMinWidth);
+        editorPanel.addItemPair(ntMaxWidth);
         editorPanel.addBlank();
+        editorPanel.addItem("Production Parameters", true, GridBagConstraints.WEST);
+        editorPanel.addItemPair(ntMinUnitOutput);
+        editorPanel.addItemPair(ntMaxUnitOutput);
+        editorPanel.addItem("<html><font color='red'>(Ensure Maximum Unit Output is sufficient for thickest strip at minimum speed)</html>");
+        editorPanel.addBlank();
+        editorPanel.addItemPair(ntMinSpeed);
+        editorPanel.addItemPair(ntMaxSpeed);
+        editorPanel.addItem("<html><font color='red'>(Ensure Maximum speed is sufficient for Minimum Unit Output with thinnest strip)<html>");
+        editorPanel.addBlank();
+        editorPanel.addItem("DFH Temperature Parameters", true, GridBagConstraints.WEST);
         editorPanel.addItemPair(ntTempDFHEntry);
         editorPanel.addItemPair(ntTempDFHExit);
         editorPanel.addBlank();
         editorPanel.addItemPair(ntMinExitZoneTemp);
         editorPanel.addItemPair(ntMaxExitZoneTemp);
         editorPanel.addBlank();
-        editorPanel.addItemPair(ntMinUnitOutput);
-        editorPanel.addItemPair(ntMaxUnitOutput);
-        editorPanel.addItem("<html><font color='red'>(Ensure Maximum Unit Output is sufficient for thickest strip at minimum speed)</html>");
-        editorPanel.addBlank();
-        editorPanel.addItemPair(ntMinThickness);
-        editorPanel.addItemPair(ntMaxThickness);
-        editorPanel.addBlank();
-        editorPanel.addItemPair(ntMinWidth);
-        editorPanel.addItemPair(ntMaxWidth);
-        editorPanel.addBlank();
-        editorPanel.addItemPair(ntMinSpeed);
-        editorPanel.addItemPair(ntMaxSpeed);
-        editorPanel.addItem("<html><font color='red'>(Ensure Maximum speed is sufficient for Minimum Unit Output with thinnest strip)<html>");
+        editorPanel.addItem("After-DFH Temperature Parameters", true, GridBagConstraints.WEST);
+        editorPanel.addItemPair(ntRTHExitTemp);
+        editorPanel.addItemPair(ntSoakTemp);
+        editorPanel.addItemPair(ntHBRStriptemp);
         editorPanel.setVisible(true, startEditable);
         return editorPanel;
     }
@@ -727,6 +765,10 @@ public class OneStripDFHProcess {
             minSpeed = ntMinSpeed.getData() * 60;
             maxWidth = ntMaxWidth.getData() / 1000;
             minWidth = ntMinWidth.getData() / 1000;
+            rthExitTemp = ntRTHExitTemp.getData();
+            soakTemp = ntSoakTemp.getData();
+            hbrStripTemp = ntHBRStriptemp.getData();
+
             tfFullProcessID.setText(getFullProcessID());
         }
         else
@@ -752,6 +794,9 @@ public class OneStripDFHProcess {
         ntMinSpeed.setData(minSpeed / 60);
         ntMaxWidth.setData(maxWidth * 1000);
         ntMinWidth.setData(minWidth * 1000);
+        ntRTHExitTemp.setData(rthExitTemp);
+        ntSoakTemp.setData(soakTemp);
+        ntHBRStriptemp.setData(hbrStripTemp);
         tfFullProcessID.setText(getFullProcessID());
     }
 

@@ -44,7 +44,8 @@ public class L2OneParameterZone extends L2ParamGroup implements L2Display {
     }
 
     void createProcessDisplay() {
-        processDisplayPanel = new FramedPanel();
+//        processDisplayPanel = new FramedPanel();
+        processDisplayPanel = new JPanel();
         MultiPairColPanel mp = new MultiPairColPanel(descriptiveName + ": " + parameter);
         for (Tag t: processTags)
             mp.addItemPair(t.toString(), t.displayComponent());
@@ -53,7 +54,8 @@ public class L2OneParameterZone extends L2ParamGroup implements L2Display {
     }
 
     void createLevel2Display() {
-        level2DisplayPanel = new FramedPanel();
+//        level2DisplayPanel = new FramedPanel();
+        level2DisplayPanel = new JPanel();
         MultiPairColPanel mp = new MultiPairColPanel(descriptiveName + ": " + parameter);
         for (Tag t: level2Tags)
             mp.addItemPair(t.toString(), t.displayComponent());

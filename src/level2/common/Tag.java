@@ -144,7 +144,7 @@ public class Tag {
         }
     }
 
-    int datW = 6;
+    int datW = 4; // this is overwritten elsewhere
     BooleanDisplay booleanStat;
 
     public TagName tagName;
@@ -213,7 +213,7 @@ public class Tag {
                 break;
             default:
                 format = new DecimalFormat(fmtStr);
-                datW = fmtStr.length();
+                datW = (int)(fmtStr.length()* 0.7);
                 break;
         }
     }
@@ -253,8 +253,11 @@ public class Tag {
                 displayComponent = ta;
                 break;
             default:
-//                JTextField tf1 = new JTextField(datW);
-                JTextField tf1 = new JTextField("F" + fmtStr);
+                JTextField tf1 = new JTextField("", datW);
+//                JTextField tf1 = new JTextField();
+//                tf1.setColumns(fmtStr.length());
+//                tf1.setMaximumSize(tf1.getPreferredSize());
+//                tf1.setMinimumSize(tf1.getPreferredSize());
                 tf1.setDisabledTextColor(Color.BLUE);
                 displayComponent = tf1;
                 if (format != null)
@@ -383,7 +386,7 @@ public class Tag {
         BooleanDisplay(String trueName, String falseName) {
             this.trueName = trueName;
             this.falseName = falseName;
-            datW = textLen();
+            datW = (int)(textLen() * 0.85);
         }
 
         String statusString() {

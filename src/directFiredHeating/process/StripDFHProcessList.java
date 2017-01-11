@@ -1,9 +1,9 @@
 package directFiredHeating.process;
 
 import basic.ChMaterial;
-import directFiredHeating.FceEvaluator;
 import directFiredHeating.applications.StripHeating;
 import mvUtils.display.*;
+import mvUtils.jsp.JSPComboBox;
 import mvUtils.math.BooleanWithStatus;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
@@ -29,7 +29,19 @@ public class StripDFHProcessList {
     protected Vector<OneStripDFHProcess> list;
     StripDFHProcessList me;
     protected JComboBox<OneStripDFHProcess> cbProcess;
-    protected int maxListLen = 5;
+    protected int maxListLenFP = 10;
+    ChMaterial materialForFieldProcess;
+    protected double maxStripSpeedFP = 150 * 60;
+    protected double maxExitZoneTempFP = 1050;
+    protected double maxStripExitTempFP = 800;
+    protected double maxStripThicknessFP = 0.0015;
+    JSPComboBox<ChMaterial> cbMaterial;
+    NumberTextField ntMaxStripSpeed;
+    NumberTextField ntMaxStripExitTemp;
+    NumberTextField ntMaxExitZoneTemp;
+    NumberTextField ntMaxProcess;
+    NumberTextField ntMaxStripThickness;
+
 
     public StripDFHProcessList(StripHeating dfHeating) {
         this.vChMaterial = dfHeating.vChMaterial;
@@ -38,6 +50,64 @@ public class StripDFHProcessList {
         list = new Vector<>();
         cbProcess = new JComboBox<>(list);
         cbProcess.setPreferredSize(new Dimension(300, 20));
+        cbMaterial = new JSPComboBox<>(dfHeating.jspConnection, dfHeating.vChMaterial);
+        ntMaxStripSpeed =
+                new NumberTextField(dfHeating, (maxStripSpeedFP / 60), 6, true, 20, 1000, "#,##0", "Maximum Strip Speed (mpm)");
+        ntMaxStripExitTemp =
+                new NumberTextField(dfHeating, maxStripExitTempFP, 6, true, 500, 1200, "#,##0", "Maximum Exit Strip Temperature (C)");
+        ntMaxExitZoneTemp =
+                new NumberTextField(dfHeating, maxExitZoneTempFP, 6, true, 500, 1200, "#,##0", "Maximum Zone Temperature (C)");
+        ntMaxProcess =
+                new NumberTextField(dfHeating, maxListLenFP, 6, true, 5, 100, "#,##0", "Maximum Number of Processes");
+        ntMaxStripThickness =
+                new NumberTextField(dfHeating, maxStripThicknessFP * 1000, 6, false, 0.01, 5.0, "##0.000", "Maximum Strip Thickness (mm)");
+    }
+
+    public void setMaterialForFieldProcess() {
+        JSPComboBox<ChMaterial> cbMaterial = new JSPComboBox<>(dfHeating.jspConnection, dfHeating.vChMaterial);
+//        if (materialForFieldProcess != null)
+            cbMaterial.setSelectedItem(materialForFieldProcess);
+        OneComponentDialog dlg = new OneComponentDialog(dfHeating, "Material for Field Process", cbMaterial);
+        dlg.setVisible(true);
+        if (dlg.isOk()) {
+            materialForFieldProcess = (ChMaterial)(cbMaterial.getSelectedItem());
+        }
+    }
+
+    public JPanel dataPanel() {
+        MultiPairColPanel mp = new MultiPairColPanel("Settings for Field Process");
+        resetUI();
+        mp.addItemPair("Material for Field Process", cbMaterial);
+        mp.addItemPair(ntMaxStripSpeed);
+        mp.addItemPair(ntMaxStripThickness);
+        mp.addItemPair(ntMaxStripExitTemp);
+        mp.addItemPair(ntMaxExitZoneTemp);
+        mp.addItemPair(ntMaxProcess);
+        return mp;
+    }
+
+    public void resetUI() {
+        cbMaterial.setSelectedItem(materialForFieldProcess);
+        ntMaxStripSpeed.setData(maxStripSpeedFP / 60);
+        ntMaxStripThickness.setData(maxStripThicknessFP * 1000);
+        ntMaxStripExitTemp.setData(maxStripExitTempFP);
+        ntMaxExitZoneTemp.setData(maxExitZoneTempFP);
+        ntMaxProcess.setData(maxListLenFP);
+    }
+
+
+    public boolean takeFromUI() {
+        boolean retVal = cbMaterial.getSelectedItem() != null &&
+                !(ntMaxStripSpeed.inError || ntMaxStripThickness.inError|| ntMaxStripExitTemp.inError || ntMaxExitZoneTemp.inError || ntMaxProcess.inError);
+        if (retVal) {
+            materialForFieldProcess = (ChMaterial)cbMaterial.getSelectedItem();
+            maxStripSpeedFP = ntMaxStripSpeed.getData() * 60;
+            maxStripThicknessFP = ntMaxStripThickness.getData() / 1000;
+            maxStripExitTempFP = ntMaxStripExitTemp.getData();
+            maxExitZoneTempFP = ntMaxExitZoneTemp.getData();
+            maxListLenFP = (int)ntMaxProcess.getData();
+        }
+        return retVal;
     }
 
     public OneStripDFHProcess getSelectedProcess() {
@@ -51,15 +121,6 @@ public class StripDFHProcessList {
             retVal = p.getFullProcessID();
         return retVal;
     }
-
-//    public boolean setSelectedProcess(String processName) {
-//        OneStripDFHProcess process = getDFHProcess(processName);
-//        boolean retVal = false;
-//        if (process != null) {
-//            retVal = setSelectedProcess(process);
-//        }
-//        return retVal;
-//    }
 
     public boolean setSelectedProcess(OneStripDFHProcess process) {
         cbProcess.setSelectedItem(process);
@@ -169,6 +230,28 @@ public class StripDFHProcessList {
         ValAndPos vp;
         oneBlk:
         {
+            vp = XMLmv.getTag(xmlStr, "materialForFieldProcess", 0);
+            if (vp.val.length() > 0)
+                materialForFieldProcess = dfHeating.getSelChMaterial(vp.val);
+            else
+                materialForFieldProcess = null;
+            vp = XMLmv.getTag(xmlStr, "maxStripSpeedFP", 0);
+            if (vp.val.length() > 0)
+                maxStripSpeedFP = Double.valueOf(vp.val);
+            vp = XMLmv.getTag(xmlStr, "maxStripThicknessFP", 0);
+            if (vp.val.length() > 0)
+                maxStripThicknessFP = Double.valueOf(vp.val);
+            vp = XMLmv.getTag(xmlStr, "maxStripExitTempFP", 0);
+            if (vp.val.length() > 0)
+                maxStripExitTempFP = Double.valueOf(vp.val);
+            vp = XMLmv.getTag(xmlStr, "maxExitZoneTempFP", 0);
+            if (vp.val.length() > 0)
+                maxExitZoneTempFP = Double.valueOf(vp.val);
+            vp = XMLmv.getTag(xmlStr, "maxListLenFP", 0);
+            if (vp.val.length() > 0)
+                maxListLenFP = Integer.valueOf(vp.val);
+
+
             vp = XMLmv.getTag(xmlStr, "pNum", 0);
             try {
                 int pNum = Integer.valueOf(vp.val);
@@ -202,7 +285,15 @@ public class StripDFHProcessList {
     }
 
     public StringBuilder dataInXMl() {
-        StringBuilder xmlStr = new StringBuilder(XMLmv.putTag("pNum", list.size()));
+        StringBuilder xmlStr = new StringBuilder();
+        if (materialForFieldProcess != null)
+        xmlStr.append(XMLmv.putTag("materialForFieldProcess", materialForFieldProcess.name));
+        xmlStr.append(XMLmv.putTag("maxStripSpeedFP", maxStripSpeedFP));
+        xmlStr.append(XMLmv.putTag("maxStripThicknessFP", maxStripThicknessFP));
+        xmlStr.append(XMLmv.putTag("maxStripExitTempFP", maxStripExitTempFP));
+        xmlStr.append(XMLmv.putTag("maxExitZoneTempFP", maxExitZoneTempFP));
+        xmlStr.append(XMLmv.putTag("maxListLenFP", maxListLenFP));
+        xmlStr.append(XMLmv.putTag("pNum", list.size()));
         int pNum = 0;
         for (OneStripDFHProcess oneProc: list)
             xmlStr.append(XMLmv.putTag("StripP" + ("" + ++pNum).trim(), oneProc.dataInXML().toString()) + "\n");

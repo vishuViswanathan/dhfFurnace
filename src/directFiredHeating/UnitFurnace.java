@@ -590,7 +590,7 @@ public class UnitFurnace {
      * @return
      */
     double getSimpleAlpha(double twO) {
-        double emissChO = ch.getEmiss(twO) * tuning.chEmmissCorrectionFactor;
+        double emissChO = ch.getEmiss(twO) * production.chEmmissCorrectionFactor;
         double epsilonOW = 1 / (1 / emissChO + psi * (1 / eO - 1));
         double alpha = epsilonOW * 1 * SPECIAL.stefenBoltz * (Math.pow(tempO + 273, 4) - Math.pow(twO + 273, 4)) / (tempO - twO);
         alpha *= tuning.radiationMultiplier;
@@ -680,7 +680,7 @@ public class UnitFurnace {
 
     double chargeSurfTemp(double tg, double twm) {
         double twoAssume, twoRevised, diff, alpha;
-        eW = ch.getEmiss(twm) * tuning.chEmmissCorrectionFactor;
+        eW = ch.getEmiss(twm) * production.chEmmissCorrectionFactor;
         twoAssume = twm + 20;
         boolean done = false;
         while (!done  && furnace.canRun()) {
@@ -768,18 +768,18 @@ public class UnitFurnace {
             }
 
             if (bLastSlot) {
-                eW = ch.getEmiss(tempWmean) * tuning.chEmmissCorrectionFactor;
+                eW = ch.getEmiss(tempWmean) * production.chEmmissCorrectionFactor;
                 chargeSurfTemp(tempG, tempWmean);
             }
 
-            prevSlot.eW = ch.getEmiss(tWMassume) * tuning.chEmmissCorrectionFactor;
+            prevSlot.eW = ch.getEmiss(tWMassume) * production.chEmmissCorrectionFactor;
             two = prevSlot.chargeSurfTemp(tempGB, tWMassume);
             if (furnace.canRun()) {
                 lmDiff = SPECIAL.lmtd((tempGB - two), (tempG - tempWO));
                 twoAvg = (two + tempWO) / 2;
                 tgAvg = twoAvg + lmDiff;
                 twmAvg = (tWMassume + tempWmean) / 2;
-                eW = ch.getEmiss(twmAvg) * tuning.chEmmissCorrectionFactor;
+                eW = ch.getEmiss(twmAvg) * production.chEmmissCorrectionFactor;
                 alpha = fceTempAndAlpha(tgAvg, twoAvg);
                 tau = evalTau(alpha, ch.getTk(twmAvg), ((bAddedTopSoak) ? furnace.effectiveChThickAS : furnace.effectiveChThick) * gRatio);
                 tWMrevised = chargeEndTemp(tgAvg, tempWmean,
@@ -881,13 +881,13 @@ public class UnitFurnace {
             totheat = chHeat + totLosses(); //losses;
             tempGE = (bRecuType) ? gasTempAfterHeat(prevSlot.tempG, fceSec.passFlueCompAndQty, totheat) : prevSlot.tempG;
 
-            eW = ch.getEmiss(tWMassume) * tuning.chEmmissCorrectionFactor;
+            eW = ch.getEmiss(tWMassume) * production.chEmmissCorrectionFactor;
             two = chargeSurfTemp(tempGEforCharge, tWMassume);
             lmDiff = SPECIAL.lmtd((tempGEforCharge - two), (prevSlot.tempG - prevSlot.tempWO));
             twoAvg = (two + prevSlot.tempWO) / 2;
             tgAvg = twoAvg + lmDiff;
             twmAvg = (tWMassume + prevSlot.tempWmean) / 2;
-            eW = ch.getEmiss(twmAvg) * tuning.chEmmissCorrectionFactor;
+            eW = ch.getEmiss(twmAvg) * production.chEmmissCorrectionFactor;
             alpha = fceTempAndAlpha(tgAvg, twoAvg);
             tau = evalTau(alpha, ch.getTk(twmAvg), ((bAddedTopSoak) ? furnace.effectiveChThickAS : furnace.effectiveChThick)* gRatio);
             tWMrevised = chargeEndTemp(tgAvg, prevSlot.tempWmean,
@@ -929,13 +929,13 @@ public class UnitFurnace {
             totheat = chHeat + totLosses(); //losses;
             tempGE = (bRecuType) ? gasTempAfterHeat(prevSlot.tempG, fceSec.passFlueCompAndQty, totheat) : prevSlot.tempG;
 
-            eW = ch.getEmiss(tWMassume) * tuning.chEmmissCorrectionFactor;
+            eW = ch.getEmiss(tWMassume) * production.chEmmissCorrectionFactor;
             two = chargeSurfTemp(tempGE, tWMassume);
             lmDiff = SPECIAL.lmtd((tempGE - two), (prevSlot.tempG - prevSlot.tempWO));
             twoAvg = (two + prevSlot.tempWO) / 2;
             tgAvg = twoAvg + lmDiff;
             twmAvg = (tWMassume + prevSlot.tempWmean) / 2;
-            eW = ch.getEmiss(twmAvg) * tuning.chEmmissCorrectionFactor;
+            eW = ch.getEmiss(twmAvg) * production.chEmmissCorrectionFactor;
             alpha = fceTempAndAlpha(tgAvg, twoAvg);
             tau = evalTau(alpha, ch.getTk(twmAvg), ((bAddedTopSoak) ? furnace.effectiveChThickAS : furnace.effectiveChThick)* gRatio);
             tWMrevised = chargeEndTemp(tgAvg, prevSlot.tempWmean,

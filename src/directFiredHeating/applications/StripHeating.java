@@ -81,14 +81,14 @@ public abstract class StripHeating extends DFHeating {
     public String inputDataXML(boolean withPerformance) {
         return profileCodeInXML() + super.inputDataXML(withPerformance) +
                 XMLmv.putTag("FuelSettings", furnace.fceSettingsInXML()) +
-               stripDFHProcessListInXML();
+                stripDFHProcessListInXML();
     }
 
     protected boolean isProfileCodeOK() {
         return (profileCode.length() == profileCodeFormat.format(0).length());
     }
 
-    protected boolean getUserResponse(OneStripDFHProcess oneProc, ChMaterial material)  {
+    protected boolean getUserResponse(OneStripDFHProcess oneProc, ChMaterial material) {
         boolean proceed = true;
         boolean someDecisionRequired = false;
         String toDecide = "<html><h4>Some parameters are set from Strip DFH Process <b>" + oneProc.baseProcessName + "</b>";
@@ -113,7 +113,7 @@ public abstract class StripHeating extends DFHeating {
 //        ErrorStatAndMsg retVal = super.isChargeInFceOK();
         ErrorStatAndMsg retVal = new ErrorStatAndMsg();
         if (tfProduction.isInError()) {
-           retVal.addErrorMsg("\n   " + tfProduction.getName());
+            retVal.addErrorMsg("\n   " + tfProduction.getName());
         }
         if (!retVal.inError) {
             if ((furnaceFor() == DFHTuningParams.FurnaceFor.STRIP)) {
@@ -135,8 +135,7 @@ public abstract class StripHeating extends DFHeating {
                 } else {
                     retVal.addErrorMsg("\n   Process not available in DFH Process List");
                 }
-            }
-            else
+            } else
                 retVal.addErrorMsg("The furnace if not processing strip");
         }
         return retVal;
@@ -189,7 +188,7 @@ public abstract class StripHeating extends DFHeating {
         return true;
     }
 
-protected void saveFceToFile(boolean withPerformance) {
+    protected void saveFceToFile(boolean withPerformance) {
         takeValuesFromUI();
         StatusWithMessage fceSettingsIntegrity = furnace.furnaceSettings.checkIntegrity();
         if (fceSettingsIntegrity.getDataStatus() == DataStat.Status.OK) {
@@ -202,7 +201,7 @@ protected void saveFceToFile(boolean withPerformance) {
                                 FileDialog.SAVE);
                 boolean profileCodeChanged = createProfileCode();
                 String promptFile = (profileCodeChanged) ?
-                        (profileCode + " FurnaceProfile." +  profileFileExtension) :
+                        (profileCode + " FurnaceProfile." + profileFileExtension) :
                         profileFileName;
                 logInfo("setting default Folder to " + fceDataLocation);
                 fileDlg.setDirectory(fceDataLocation);
@@ -240,17 +239,16 @@ protected void saveFceToFile(boolean withPerformance) {
         takeValuesFromUI();
         boolean profileCodeChanged = createProfileCode();
         String promptFile = (profileCodeChanged) ?
-                (profileCode + " FurnaceProfile." +  profileFileExtension) :
+                (profileCode + " FurnaceProfile." + profileFileExtension) :
                 profileFileName;
         DataWithStatus<String> saveStatus = JNLPFileHandler.saveToFile(inputDataXML(withPerformance), profileFileExtension,
-                promptFile, "Please save file With extension '." + profileFileExtension +", and suggested Name");
+                promptFile, "Please save file With extension '." + profileFileExtension + ", and suggested Name");
         if (saveStatus.getStatus() == DataStat.Status.OK)
             profileFileName = saveStatus.getValue();
         else
             showError(saveStatus.getErrorMessage() + " - Could not save to file");
         parent().toFront();
     }
-
 
 
     protected boolean createProfileCode() {
@@ -295,7 +293,11 @@ protected void saveFceToFile(boolean withPerformance) {
         }
     }
 
-//    JMenu mL2FileMenu;
+    void setMaterialForFieldProcess() {
+        dfhProcessList.setMaterialForFieldProcess();
+    }
+
+    //    JMenu mL2FileMenu;
     protected JMenuItem mIUpdateFurnace;
 
     protected JMenu mL2Configuration;
@@ -303,6 +305,7 @@ protected void saveFceToFile(boolean withPerformance) {
     protected JMenuItem mIEditDFHStripProcess;
     protected JMenuItem mIViewDFHStripProcess;
     protected JMenuItem mICreateFceSettings;
+//    protected JMenuItem mIBaseMatrialForFieldProcess;
 
     protected void disableCompare() {
     }
@@ -311,12 +314,14 @@ protected void saveFceToFile(boolean withPerformance) {
         super.createAllMenuItems();
         L2MenuListener li = new L2MenuListener();
         mIOPCServerIP = new JMenuItem("Set OPC server IP");
-        mICreateFceSettings = new JMenuItem("View/Edit Zonal Fuel Range");
+        mICreateFceSettings = new JMenuItem("View/Edit L2 Basic Settings");
         mIEditDFHStripProcess = new JMenuItem("Add/Edit StripDFHProcess List");
         mIViewDFHStripProcess = new JMenuItem("View StripDFHProcess List");
+//        mIBaseMatrialForFieldProcess = new JMenuItem("Set Material For Field Process");
         mIOPCServerIP.addActionListener(li);
         mICreateFceSettings.addActionListener(li);
         mIViewDFHStripProcess.addActionListener(li);
+//        mIBaseMatrialForFieldProcess.addActionListener(li);
         mIEditDFHStripProcess.addActionListener(li);
         mIUpdateFurnace = new JMenuItem("Update Furnace");
         mIUpdateFurnace.addActionListener(li);
@@ -355,7 +360,9 @@ protected void saveFceToFile(boolean withPerformance) {
         }
         mL2Configuration.add(mIViewDFHStripProcess);
         mL2Configuration.add(mIEditDFHStripProcess);
-        mL2Configuration.addSeparator();
+//        mL2Configuration.addSeparator();
+//        if (!onProductionLine)
+//            mL2Configuration.add(mIBaseMatrialForFieldProcess);
         mL2Configuration.setEnabled(true);
         return mL2Configuration;
     }
@@ -393,6 +400,8 @@ protected void saveFceToFile(boolean withPerformance) {
                 editStripDFHProcess();
             else if (caller == mICreateFceSettings)
                 createFceSetting();
+//            else if (caller == mIBaseMatrialForFieldProcess)
+//                setMaterialForFieldProcess();
             else if (caller == mIOPCServerIP)
                 setOPCIP();
         }

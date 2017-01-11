@@ -103,7 +103,11 @@ public class L2DFHeating extends StripHeating {
                                 " started on " + dateFormat.format(new Date()) + "\n";
                     oStream.write(data.getBytes());
                     oStream.close();
-                    retVal.setValue(true);
+                    StatusWithMessage markAccess = l2Furnace.noteAccessLevel();
+                    if (markAccess.getDataStatus() == DataStat.Status.OK)
+                        retVal.setValue(true);
+                    else
+                        retVal.addErrorMessage(markAccess.getErrorMessage());
                 } catch (IOException e) {
                     retVal.setErrorMsg("Unable to set Status of this Application");
                 }
@@ -211,7 +215,7 @@ public class L2DFHeating extends StripHeating {
                 if (statL2FceFile.getDataStatus() != DataStat.Status.WithErrorMsg) {
                     if (!onProductionLine || setupUaClient()) {
                         if (!onProductionLine || l2Furnace.basicConnectionToLevel1(uaClient)) {
-                            StatusWithMessage status = l2Furnace.checkAndNoteAccessLevel();
+                            StatusWithMessage status = l2Furnace.checkAccessLevel();
                             if (status.getDataStatus() == DataStat.Status.OK) {
                                 furnace.setWidth(width);
                                 enableDataEdit();
@@ -222,7 +226,7 @@ public class L2DFHeating extends StripHeating {
                                 if (onProductionLine) {
                                     if (l2Furnace.makeAllConnections()) {   // createL2Zones()) {
                                         connectProcessListToLevel1();
-                                        ErrorStatAndMsg connStat = l2Furnace.checkConnection();
+                                        ErrorStatAndMsg connStat = checkConnection();
                                         if (connStat.inError)
                                             showError(connStat.msg);
                                         else {
@@ -254,12 +258,21 @@ public class L2DFHeating extends StripHeating {
         System.out.println("Java Version :" + System.getProperty("java.version"));
         if (l2SystemReady) {
             DataWithStatus stat =  markIAmON();
-            if (stat.getStatus() != DataStat.Status.OK) {
-                showError(stat.errorMessage);
+            if (stat.getStatus() == DataStat.Status.OK) {
+                sendProcessListToLevel1();
             }
-            sendProcessListToLevel1();
+            else {
+                showError(stat.errorMessage);
+                l2SystemReady = false;
+            }
         }
+        if (!l2SystemReady)
+            exitFromLevel2();
         return l2SystemReady;
+    }
+
+    public ErrorStatAndMsg checkConnection() {
+        return l2Furnace.checkConnection();
     }
 
     public void clearLevel1ProcessList() {

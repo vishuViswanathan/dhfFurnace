@@ -148,7 +148,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = "JNLP 20161207";
+    protected String releaseDate = "JNLP 20170109";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -263,7 +263,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     FceEvaluator evaluator;
     static protected boolean onProductionLine = false;
     public boolean bProfileEdited = false;
-    protected StripDFHProcessList dfhProcessList;
+    public StripDFHProcessList dfhProcessList;
     boolean freshResults = false;  // i.e results not saved to performance base
 
     public DFHeating() {
@@ -2428,10 +2428,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return true;
     }
 
-    public boolean setProductionData(ProductionData production) {
-        furnace.setProductionData(new ProductionData(production));
-        return true;
-    }
+//    public boolean setProductionData(ProductionData production) {
+//        furnace.setProductionData(new ProductionData(production));
+//        return true;
+//    }
 
     public FceEvaluator calculateFce(boolean bResetLossFactor, ResultsReadyListener resultsReadyListener) {
         return calculateFce(resultsReadyListener, true, bResetLossFactor, true);
@@ -4256,105 +4256,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             }
         } // actionPerformed
     } // class MenuActions
-
-//    class MenuActionsOLD implements ActionListener {
-//        public void actionPerformed(ActionEvent e) {
-//            String command = e.getActionCommand();
-//            menuBlk:
-//            {
-//                if (command.equals("Exit")) {
-//                    checkAndClose(true);
-//                    break menuBlk;
-//                }
-//                if (command.equals("Save Results and Furnace Data to Excel")) {
-//                    excelResultsFile();
-//                    break menuBlk;
-//                }
-//
-//                if (command.equals("Save Temperature Profile for TFM")) {
-//                    tProfileForTFM();
-//                    break menuBlk;
-//                }
-//                if (command.equals("Save Furnace Profile")) {
-//                    Component lastShown = slate.getViewport().getView();
-//                    saveFceToFile(true);
-//                    parent().toFront();
-//                    slate.setViewportView(lastShown);
-//                    break menuBlk;
-//                }
-//
-//
-//                if (command.equals("Get Furnace Profile")) {
-//                    boolean goAhead = true;
-//                    if (furnace.isPerformanceToBeSaved()) {
-//                        goAhead = decide("Unsaved Performance Data", "Some Performance data have been collected\n" +
-//                                "Do you want to ABANDON them and load a new furnace ?");
-//                    }
-//                    if (goAhead) {
-//                        pbEdit.doClick();
-//                        StatusWithMessage profileStatMsg = getFceFromFile();
-//                        DataStat.Status dataStat = profileStatMsg.getDataStatus();
-//                        if (dataStat != DataStat.Status.WithErrorMsg) {
-//                            parent().toFront();
-//                            if (dataStat == DataStat.Status.WithInfoMsg)
-//                                showMessage(profileStatMsg.getInfoMessage());
-//                            switchPage(DFHDisplayPageType.INPUTPAGE);
-//                            enableDataEntry(true);
-//                        }
-//                        else
-//                            showError(profileStatMsg.getErrorMessage());
-//                    }
-//                    break menuBlk;
-//                }
-//                if (command.equals("Load Recuperator Specs.")) {
-//                    loadRecuperator();
-//                    break menuBlk;
-//                }
-//                if (command.equals("Save Fuel Specifications to File")) {
-//                    saveFuelSpecs();
-//                    break menuBlk;
-//                }
-//
-//                if (command.equals("Save Steel Specifications to File")) {
-//                    saveSteelSpecs();
-//                    break menuBlk;
-//                }
-//
-//                if (command.equals("Input Data")) {
-//                    switchPage(DFHDisplayPageType.INPUTPAGE);
-//                    break menuBlk;
-//                }
-//                if (command.equals("Operation Data")) {
-//                    switchPage(DFHDisplayPageType.OPPAGE);
-//                    break menuBlk;
-//                }
-////                if (command.equals("Show Progress")) {
-////                    switchPage(DFHDisplayPageType.PROGRESSPAGE);
-////                    break menuBlk;
-////                }
-//                if (command.equals("Tuning Parameters")) {
-//                    switchPage(DFHDisplayPageType.TUNINGPAGE);
-//                    break menuBlk;
-//                }
-//                if (command.equals("Walking Beam Params from TFM")) {
-//                    switchPage(DFHDisplayPageType.BEAMSPAGE);
-//                    break menuBlk;
-//                }
-//
-//                if (command.equals("Loss Params from TFM")) {
-//                    switchPage(DFHDisplayPageType.LOSSPARAMSTFM);
-//                    break menuBlk;
-//                }
-//                if (command.equals("Create Fuel Mix")) {
-//                    switchPage(DFHDisplayPageType.FUELMIX);
-//                    break menuBlk;
-//                }
-//                if (command.equals("Regen Burner Study"))
-//                    switchPage(DFHDisplayPageType.REGENSTUDY);
-//                break menuBlk;
-//            }
-//        } // actionPerformed
-//    } // class MenuActions
 
     class CompareMenuListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {

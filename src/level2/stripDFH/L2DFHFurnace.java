@@ -1,6 +1,7 @@
 package level2.stripDFH;
 
 import FceElements.heatExchanger.HeatExchProps;
+import TMopcUa.ProcessValue;
 import TMopcUa.TMSubscription;
 import TMopcUa.TMuaClient;
 import basic.*;
@@ -180,6 +181,61 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             canResetAccess = (retVal.getDataStatus() == DataStat.Status.OK);
         }
         return retVal;
+    }
+
+    /**
+     * Checks in the the module access level is valid or not
+     * Baically checks if another module exists with this level
+     * @return
+     */
+    public StatusWithMessage checkAccessLevel() {
+        StatusWithMessage retVal = new StatusWithMessage();
+        if (l2DFHeating.isOnProductionLine()) {
+            switch (l2DFHeating.accessLevel) {
+                case EXPERT:
+                    if (tagExpertReady.getValue().booleanValue)
+                        retVal.setErrorMessage("Level2 with Expert Access is already ON");
+                    else if (tagUpdaterReady.getValue().booleanValue)
+                        retVal.setErrorMessage("Exit from Level2 Updater and try again as Expert");
+                    break;
+                case UPDATER:
+                    if (tagUpdaterReady.getValue().booleanValue)
+                        retVal.setErrorMessage("Level2 with Updater Access is already ON");
+                    else if (tagExpertReady.getValue().booleanValue)
+                        retVal.setErrorMessage("Exit from Level2 Expert and try again as Updater");
+                    break;
+                default:
+                    if (tagRuntimeReady.getValue().booleanValue)
+                        retVal.setErrorMessage("Level2-Runtime is already ON");
+                    break;
+            }
+        }
+        return retVal;
+    }
+
+    public StatusWithMessage noteAccessLevel() {
+        StatusWithMessage retVal = new StatusWithMessage();
+        Tag accessMarkTag;
+        if (l2DFHeating.isOnProductionLine()) {
+            switch (l2DFHeating.accessLevel) {
+                case EXPERT:
+                    accessMarkTag = tagExpertReady;
+                    break;
+                case UPDATER:
+                    accessMarkTag = tagUpdaterReady;
+                    break;
+                default:
+                    accessMarkTag = tagRuntimeReady;
+                    break;
+            }
+            accessMarkTag.setValue(true);
+            if (accessMarkTag.getValue().booleanValue)
+                canResetAccess = (retVal.getDataStatus() == DataStat.Status.OK);
+            else
+                retVal.addErrorMessage("Unable to set Runtime ON on Level1");
+        }
+        return retVal;
+
     }
 
     public void exitFromAccess() {
@@ -508,7 +564,8 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
 
     JPanel dfhProcessDisplayPanel() {
         FramedPanel innerP = new FramedPanel(new BorderLayout());
-        FramedPanel jp = new FramedPanel();
+//        FramedPanel jp = new FramedPanel();
+        JPanel jp = new JPanel();
         jp.add(L2DFHDisplay.getRowHeader());
         for (L2DFHDisplay z:furnaceDisplayZones) {
             jp.add(z.getProcessDisplay());
@@ -531,6 +588,20 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     }
 
     JPanel othersProcessDisplayPanel() {
+        FramedPanel innerP = new FramedPanel(new BorderLayout());
+        JPanel jp = new JPanel();
+        jp.add(stripZone.nowStripProcessTempPanel);
+        jp.add(rthExit.getProcessDisplay());
+        jp.add(soakZone.getProcessDisplay());
+        jp.add(hbExit.getProcessDisplay());
+        JPanel titleP = new JPanel();
+        titleP.add(new JLabel("Sections After DFH"));
+        innerP.add(titleP, BorderLayout.NORTH);
+        innerP.add(jp, BorderLayout.CENTER);
+        return innerP;
+    }
+
+    JPanel othersProcessDisplayPanelOLD() {    // TODO to be removed
         FramedPanel innerP = new FramedPanel(new BorderLayout());
         FramedPanel jp = new FramedPanel();
         jp.add(stripZone.nowStripProcessTempPanel);
@@ -754,10 +825,15 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             boolean done = false;
             double nowExitTemp, diff;
             int trials = 0;
+
+//            if (l2DFHeating.decide("L2DFHFurnace.757: chEmmCorrectionFactor", "Apply chEmmCorrectionFactor (" + refP.chEmmCorrectionFactor + ")")) // TODO remove on RELEASE
+            setChEmmissCorrectionFactor(refP.chEmmCorrectionFactor);
+
             while (!done) {
                 logTrace("in the loop " + trials + ", " + outputAssumed);
                 trials++;
                 chStatus.output = outputAssumed;
+//                setChEmmissCorrectionFactor(refP.chEmmCorrectionFactor);
                 processInFurnace(chStatus);
                 if (chStatus.isValid()) {
                     nowExitTemp = chStatus.tempWM;
@@ -773,10 +849,11 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                     break;
                 }
             }
+            resetChEmmissCorrectionFactor();
             logTrace("Trials in getOutputWithFurnaceStatus = " + trials);
         } else
             logInfo("Facing problem in creating calculation steps");
-        logTrace("Nano seconds for calculation = " + (System.nanoTime() - stTimeNano));
+        logTrace("L2DFHFurnace.785: Nano seconds for calculation = " + (System.nanoTime() - stTimeNano));
         return outputAssumed;
     }
 
@@ -797,8 +874,8 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             double nowExitTemp, diff;
             int trials = 0;
             while (!done) {
-                setChEmmissCorrectionFactor(chEmmissCorrectionFactor);
                 trials++;
+                setChEmmissCorrectionFactor(chEmmissCorrectionFactor);
                 processInFurnace(chStatus);
                 if (chStatus.isValid()) {
                     nowExitTemp = chStatus.tempWM;
@@ -825,7 +902,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         } else
             logInfo("Facing problem in creating calculation steps");
         logTrace("Emm Factor = " + chEmmissCorrectionFactor + ",  " +
-                "Nano seconds for calculation = " + (System.nanoTime() - stTimeNano));
+                "L2DFHFurnace.843: Nano seconds for calculation = " + (System.nanoTime() - stTimeNano));
         DataWithStatus<Double> retVal =  new DataWithStatus<>(chEmmissCorrectionFactor);
         if (!done)
             retVal.addErrorMessage("Unable to evaluate Charge emissivity Correction based on Field Data");
@@ -866,6 +943,18 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                 break;
             }
         return retVal;
+    }
+
+    boolean sendRTHandOtherSPs(OneStripDFHProcess theProcess) {
+        ProcessValue p;
+        p = rthExit.setValue(L2ParamGroup.Parameter.Temperature, Tag.TagName.SP, (float)theProcess.rthExitTemp);
+        if (p.valid) {
+            p = soakZone.setValue(L2ParamGroup.Parameter.Temperature, Tag.TagName.SP, (float) theProcess.soakTemp);
+            if (p.valid) {
+                p = hbExit.setValue(L2ParamGroup.Parameter.Temperature, Tag.TagName.SP, (float) theProcess.hbrStripTemp);
+            }
+        }
+        return p.valid;
     }
 
     void handleFieldPerformance() {
@@ -1071,7 +1160,10 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                         if (sendFuelCharacteristics(zFP)) {
                             if (newStripStatus == DataStat.Status.WithInfoMsg)
                                 showInfoInLevel1(newStripStatusWithMsg.getInfoMessage());
-                            commonDFHZ.setValue(L2ParamGroup.Parameter.L2Data, Tag.TagName.Ready, true);
+                            if (sendRTHandOtherSPs(newStrip.getProcess()))
+                                commonDFHZ.setValue(L2ParamGroup.Parameter.L2Data, Tag.TagName.Ready, true);
+                            else
+                                showErrorInLevel1("Unable to set RTH, Soak snd Exit section Temperatures");
                         } else
                             showErrorInLevel1("Unable to send Fuel Characteristics");
                     } else
@@ -1114,34 +1206,52 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
 //                                "Make Corrections for Field Zone Temperatures?"); // TODO to be removed in RELEASE
                         setCurveSmoothening(false);
                         DataWithStatus<Double> emmStat = null;
-                        double chEmmissCorrectionFactor = 1.0;
                         if (considerFieldZonalTemperatures) {
                             emmStat = setEmmissFactorBasedOnFieldResults(theFieldResults);
-                            chEmmissCorrectionFactor = emmStat.getValue();
                         }
+
+                        logInfo("l2DFHFurnace.1127: productionData = " + productionData);
+                        if (productionData != null) logInfo("l2DFHFurnace.1128: productionData.chEmmissCorrectionFactor = " + productionData.chEmmissCorrectionFactor);
+
                         if (!considerFieldZonalTemperatures || (emmStat.getDataStatus() == DataStat.Status.OK) ){
                             if (!considerFieldZonalTemperatures || fillChInTempProfile()) {
 
                                 bConsiderPresetChInTempProfile = considerFieldZonalTemperatures;
                                 l2DFHeating.showMessage("Field Performance", "Evaluating from Model");
+
+                                logInfo("l2DFHFurnace.1135: productionData = " + productionData);
+                                if (productionData != null) logInfo("l2DFHFurnace.1136: productionData.chEmmissCorrectionFactor = " + productionData.chEmmissCorrectionFactor);
+
                                 FceEvaluator eval1 = l2DFHeating.calculateFce(true, null);
                                 if (eval1 != null) {
                                     try {
                                         eval1.awaitThreadToExit();
                                         if (eval1.healthyExit()) {
                                             boolean proceed = true;
+
+                                            logInfo("l2DFHFurnace.1145: productionData = " + productionData);
+                                            if (productionData != null) logInfo("l2DFHFurnace.1146: productionData.chEmmissCorrectionFactor = " + productionData.chEmmissCorrectionFactor);
+
 //                                            proceed = l2DFHeating.decide("Field Performance",
 //                                                    "Proceed with Fuel Flow Corrections"); // TODO to be removed in RELEASE
                                             if (proceed && theFieldResults.adjustForFieldResults()) { // was (adjustForFieldResults()) {
-                                                l2DFHeating.showMessage("Field Performance", "Recalculating after fuel flow adjustments");
+//                                                l2DFHeating.showMessage("Field Performance", "Recalculating after fuel flow adjustments");
                                                 FceEvaluator eval2 = l2DFHeating.calculateFce(false, null); // without reset the loss Factors
+//
+//                                                logInfo("l2DFHFurnace.1154: productionData = " + productionData);
+//                                                logInfo("l2DFHFurnace.1155: productionData.chEmmissCorrectionFactor = " + productionData.chEmmissCorrectionFactor);
+//
                                                 if (eval2 != null) {
                                                     eval2.awaitThreadToExit();
                                                     logTrace("eval2 completed");
                                                     if (eval2.healthyExit()) {
                                                         logTrace("eval2 had healthy exit");
-                                                        if (addFieldBasedPerformanceToPerfBase())
+                                                        if (addFieldBasedPerformanceToPerfBase()) {
+
+                                                            logInfo("l2DFHFurnace.1165: productionData.chEmmissCorrectionFactor = " + productionData.chEmmissCorrectionFactor);
+
                                                             l2DFHeating.showMessage("Field Performance", "Save updated Performance to file from Performance Menu");
+                                                        }
                                                     }
                                                 }
                                                 resetLossFactor();
@@ -1167,65 +1277,65 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         }
     }
 
-    class FieldPerformanceHandlerOLD  implements Runnable {
-        public void run() {
-            setFieldDataBeingHandled();
-            boolean response = getYesNoResponseFromLevel1("Confirm that Strip Size Data is updated", 20);
-            logTrace("L2 " + ((response) ? "Responded " : "did not Respond ") + "to Confirm-Strip-Data query");
-            if ((response) && (l2YesNoQuery.getValue(Tag.TagName.Response).booleanValue)) {
-                boolean canContinue = true;
-                FieldResults theFieldResults = new FieldResults(L2DFHFurnace.this, true);
-                ErrorStatAndMsg dataOkForFieldResults = new ErrorStatAndMsg();
-                if (theFieldResults.inError) {
-                    canContinue = false;
-                    logError("Getting Field Results: " + theFieldResults.errMsg);
-                }
-                else  {
-                    dataOkForFieldResults =  theFieldResults.processOkForFieldResults();
-                    if (dataOkForFieldResults.inError) {
-                        canContinue = false;
-                        logError("Checking Field Data: " + dataOkForFieldResults.msg);
-                    }
-                }
-                if (theFieldResults.inError || dataOkForFieldResults.inError) {
-                    showErrorInLevel1("Error in Taking Field Performance");
-                }
-                if (canContinue) {
-                    if (l2DFHeating.setFieldProductionData(theFieldResults)) {
-                        setCurveSmoothening(false);
-                        l2DFHeating.showMessage("Field Performance", "Evaluating from Model");
-                        FceEvaluator eval1 = l2DFHeating.calculateFce(true, null);
-                        if (eval1 != null) {
-                            try {
-                                eval1.awaitThreadToExit();
-                                if (eval1.healthyExit()) {
-                                    if (theFieldResults.adjustForFieldResults()) { // was (adjustForFieldResults()) {
-                                        FceEvaluator eval2 = l2DFHeating.calculateFce(false, null); // without reset the loss Factors
-                                        if (eval2 != null) {
-                                            eval2.awaitThreadToExit();
-                                            logTrace("eval2 completed");
-                                            if (eval2.healthyExit()) {
-                                                logTrace("eval2 had healthy exit");
-                                                if (addFieldBasedPerformanceToPerfBase())
-                                                    l2DFHeating.showMessage("Field Performance", "Save updated Performance to file from Performance Menu");
-                                            }
-                                        }
-                                        resetLossFactor();
-                                        logTrace("lossFactors reset");
-                                    }
-                                }
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                }
-            }
-            else
-                showErrorInLevel1("Running Strip size data is not confirmed. Performance data is NOT recorded");
-            resetFieldDataBeingHandled();
-        }
-    }
+//    class FieldPerformanceHandlerOLD  implements Runnable {
+//        public void run() {
+//            setFieldDataBeingHandled();
+//            boolean response = getYesNoResponseFromLevel1("Confirm that Strip Size Data is updated", 20);
+//            logTrace("L2 " + ((response) ? "Responded " : "did not Respond ") + "to Confirm-Strip-Data query");
+//            if ((response) && (l2YesNoQuery.getValue(Tag.TagName.Response).booleanValue)) {
+//                boolean canContinue = true;
+//                FieldResults theFieldResults = new FieldResults(L2DFHFurnace.this, true);
+//                ErrorStatAndMsg dataOkForFieldResults = new ErrorStatAndMsg();
+//                if (theFieldResults.inError) {
+//                    canContinue = false;
+//                    logError("Getting Field Results: " + theFieldResults.errMsg);
+//                }
+//                else  {
+//                    dataOkForFieldResults =  theFieldResults.processOkForFieldResults();
+//                    if (dataOkForFieldResults.inError) {
+//                        canContinue = false;
+//                        logError("Checking Field Data: " + dataOkForFieldResults.msg);
+//                    }
+//                }
+//                if (theFieldResults.inError || dataOkForFieldResults.inError) {
+//                    showErrorInLevel1("Error in Taking Field Performance");
+//                }
+//                if (canContinue) {
+//                    if (l2DFHeating.setFieldProductionData(theFieldResults)) {
+//                        setCurveSmoothening(false);
+//                        l2DFHeating.showMessage("Field Performance", "Evaluating from Model");
+//                        FceEvaluator eval1 = l2DFHeating.calculateFce(true, null);
+//                        if (eval1 != null) {
+//                            try {
+//                                eval1.awaitThreadToExit();
+//                                if (eval1.healthyExit()) {
+//                                    if (theFieldResults.adjustForFieldResults()) { // was (adjustForFieldResults()) {
+//                                        FceEvaluator eval2 = l2DFHeating.calculateFce(false, null); // without reset the loss Factors
+//                                        if (eval2 != null) {
+//                                            eval2.awaitThreadToExit();
+//                                            logTrace("eval2 completed");
+//                                            if (eval2.healthyExit()) {
+//                                                logTrace("eval2 had healthy exit");
+//                                                if (addFieldBasedPerformanceToPerfBase())
+//                                                    l2DFHeating.showMessage("Field Performance", "Save updated Performance to file from Performance Menu");
+//                                            }
+//                                        }
+//                                        resetLossFactor();
+//                                        logTrace("lossFactors reset");
+//                                    }
+//                                }
+//                            } catch (InterruptedException e) {
+//                                e.printStackTrace();
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//            else
+//                showErrorInLevel1("Running Strip size data is not confirmed. Performance data is NOT recorded");
+//            resetFieldDataBeingHandled();
+//        }
+//    }
 
     class SubAliveListener implements SubscriptionAliveListener {     // TODO This is common dummy class used everywhere to be made proper
         public void onAlive(Subscription s) {

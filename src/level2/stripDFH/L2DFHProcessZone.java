@@ -1,5 +1,6 @@
 package level2.stripDFH;
 
+import TMopcUa.ProcessValue;
 import directFiredHeating.process.OneStripDFHProcess;
 import level2.common.L2ParamGroup;
 import level2.common.Tag;

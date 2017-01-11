@@ -108,6 +108,9 @@ public class L2DFHDisplay implements L2Display{
             sL = new SizedLabel("Auto/Manual", colHeadSize, JLabel.TRAILING, false, false);
             grpPan.add(sL, gbcL);
             gbcL.gridy++;
+            sL = new SizedLabel("Set Point", colHeadSize, JLabel.TRAILING, false, false);
+            grpPan.add(sL, gbcL);
+            gbcL.gridy++;
             sL = new SizedLabel("Process Value", colHeadSize, JLabel.TRAILING, false, false);
             grpPan.add(sL, gbcL);
             gbcH.gridy++;
@@ -208,6 +211,11 @@ public class L2DFHDisplay implements L2Display{
         grpPan.add(c, gbcL);
         gbcL.gridy++;
         tag = param.getProcessTag(Tag.TagName.Auto);
+        processTags.add(tag);
+        c = tag.displayComponent();
+        grpPan.add(c, gbcL);
+        gbcL.gridy++;
+        tag = param.getProcessTag(Tag.TagName.SP);
         processTags.add(tag);
         c = tag.displayComponent();
         grpPan.add(c, gbcL);

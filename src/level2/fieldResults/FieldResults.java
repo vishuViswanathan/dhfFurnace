@@ -77,12 +77,12 @@ public class FieldResults {
         airHeatExchProps = l2Furnace.getAirHeatExchProps();
     }
 
-    public FieldResults(L2DFHFurnace l2Furnace, String xmlStr) {
-        this(l2Furnace);
-        if (!takeFromXML(xmlStr)) {
-            inError = true;
-        }
-    }
+//    public FieldResults(L2DFHFurnace l2Furnace, String xmlStr) {
+//        this(l2Furnace);
+//        if (!takeFromXML(xmlStr)) {
+//            inError = true;
+//        }
+//    }
 
     public FieldResults(L2DFHFurnace l2Furnace, boolean withStripData) {
         this(l2Furnace);
@@ -243,69 +243,69 @@ public class FieldResults {
         }
     }
 
-    public boolean takeFromXML(String xmlStr) {
-        boolean bRetVal = true;
-        ValAndPos vp;
-        blk:
-        {
-            vp = XMLmv.getTag(xmlStr, "productionData", 0);
-            production = new ProductionData(l2Furnace.controller, vp.val);
-            if (production.inError) {
-                bRetVal = false;
-                errMsg += production.errMsg;
-                break blk;
-            }
-            vp = XMLmv.getTag(xmlStr, "fuelFiring", 0);
-            fuelFiring = new FuelFiring(l2Furnace.controller, vp.val);
-            if (fuelFiring.inError) {
-                bRetVal = false;
-                errMsg += fuelFiring.errMsg;
-                break blk;
-            }
-            if (!production.inError) {
-                try {
-                    vp = XMLmv.getTag(xmlStr, "flueTempOut", 0);
-                    flueTempOut = Double.valueOf(vp.val);
-                    vp = XMLmv.getTag(xmlStr, "commonAirTemp", 0);
-                    commonAirTemp = Double.valueOf(vp.val);
-                    vp = XMLmv.getTag(xmlStr, "commonFuelTemp", 0);
-                    commonFuelTemp = Double.valueOf(vp.val);
-                    vp = XMLmv.getTag(xmlStr, "bTopBot", vp.endPos);
-                    boolean bTopBot = vp.val.equals("1");
-                    if (bTopBot != l2Furnace.bTopBot) {
-                        inError = true;
-                        errMsg += "Furnace Heating mode does not match ";
-                        bRetVal = false;
-                        break blk;
-                    }
-                    vp = XMLmv.getTag(xmlStr, "topZones", vp.endPos);
-                    bRetVal = takeZonesFromXML(false, vp.val);
-                    if (bRetVal) {
-                        if (bTopBot) {
-                            vp = XMLmv.getTag(xmlStr, "botZones", vp.endPos);
-                            bRetVal = takeZonesFromXML(false, vp.val);
-                        }
-                        if (bRetVal) {
-                            totFuel();
-                            vp = XMLmv.getTag(xmlStr, "airHeatExchProps", vp.endPos);
-                            if (vp.val.length() > 0) {
-                                airHeatExchProps = new HeatExchProps();
-                                if (!airHeatExchProps.takeDataFromXML(vp.val, fuelFiring, totalFuel)) {
-                                    bRetVal = false;
-                                    errMsg += "Reading air recuperator data";
-                                    break blk;
-                                }
-                            }
-                        }
-                    }
-                } catch (NumberFormatException e) {
-                    errMsg += "in Reading XML";
-                    bRetVal = false;
-                }
-            }
-        }
-        return bRetVal;
-    }
+//    public boolean takeFromXML(String xmlStr) {
+//        boolean bRetVal = true;
+//        ValAndPos vp;
+//        blk:
+//        {
+//            vp = XMLmv.getTag(xmlStr, "productionData", 0);
+//            production = new ProductionData(l2Furnace.controller, vp.val);
+//            if (production.inError) {
+//                bRetVal = false;
+//                errMsg += production.errMsg;
+//                break blk;
+//            }
+//            vp = XMLmv.getTag(xmlStr, "fuelFiring", 0);
+//            fuelFiring = new FuelFiring(l2Furnace.controller, vp.val);
+//            if (fuelFiring.inError) {
+//                bRetVal = false;
+//                errMsg += fuelFiring.errMsg;
+//                break blk;
+//            }
+//            if (!production.inError) {
+//                try {
+//                    vp = XMLmv.getTag(xmlStr, "flueTempOut", 0);
+//                    flueTempOut = Double.valueOf(vp.val);
+//                    vp = XMLmv.getTag(xmlStr, "commonAirTemp", 0);
+//                    commonAirTemp = Double.valueOf(vp.val);
+//                    vp = XMLmv.getTag(xmlStr, "commonFuelTemp", 0);
+//                    commonFuelTemp = Double.valueOf(vp.val);
+//                    vp = XMLmv.getTag(xmlStr, "bTopBot", vp.endPos);
+//                    boolean bTopBot = vp.val.equals("1");
+//                    if (bTopBot != l2Furnace.bTopBot) {
+//                        inError = true;
+//                        errMsg += "Furnace Heating mode does not match ";
+//                        bRetVal = false;
+//                        break blk;
+//                    }
+//                    vp = XMLmv.getTag(xmlStr, "topZones", vp.endPos);
+//                    bRetVal = takeZonesFromXML(false, vp.val);
+//                    if (bRetVal) {
+//                        if (bTopBot) {
+//                            vp = XMLmv.getTag(xmlStr, "botZones", vp.endPos);
+//                            bRetVal = takeZonesFromXML(false, vp.val);
+//                        }
+//                        if (bRetVal) {
+//                            totFuel();
+//                            vp = XMLmv.getTag(xmlStr, "airHeatExchProps", vp.endPos);
+//                            if (vp.val.length() > 0) {
+//                                airHeatExchProps = new HeatExchProps();
+//                                if (!airHeatExchProps.takeDataFromXML(vp.val, fuelFiring, totalFuel)) {
+//                                    bRetVal = false;
+//                                    errMsg += "Reading air recuperator data";
+//                                    break blk;
+//                                }
+//                            }
+//                        }
+//                    }
+//                } catch (NumberFormatException e) {
+//                    errMsg += "in Reading XML";
+//                    bRetVal = false;
+//                }
+//            }
+//        }
+//        return bRetVal;
+//    }
 
     public double totFuel() {
         totalFuel = totFuel(false);
@@ -314,21 +314,21 @@ public class FieldResults {
         return totalFuel;
     }
 
-    public StringBuilder dataInXML() {
-        StringBuilder xmlStr =
-                new StringBuilder(XMLmv.putTag("productionData", l2Furnace.productionData.dataInXML()));
-        xmlStr.append(XMLmv.putTag("fuelFiring", l2Furnace.commFuelFiring.dataInXML()));
-        xmlStr.append(XMLmv.putTag("flueTempOut", fmtTemp.format(flueTempOut)));
-        xmlStr.append(XMLmv.putTag("commonAirTemp", fmtTemp.format(commonAirTemp)));
-        xmlStr.append(XMLmv.putTag("commonFuelTemp", fmtTemp.format(commonFuelTemp)));
-        xmlStr.append(XMLmv.putTag("bTopBot", (l2Furnace.bTopBot) ? "1" : "0"));
-        xmlStr.append(XMLmv.putTag("topZones", zonesInXML(false)));
-        if (l2Furnace.bTopBot)
-            xmlStr.append(XMLmv.putTag("botZones", zonesInXML(true)));
-        if (airHeatExchProps != null)
-            xmlStr.append(XMLmv.putTag("airHeatExhProps", airHeatExchProps.dataInXML()));
-        return xmlStr;
-    }
+//    public StringBuilder dataInXML() {
+//        StringBuilder xmlStr =
+//                new StringBuilder(XMLmv.putTag("productionData", l2Furnace.productionData.dataInXML()));
+//        xmlStr.append(XMLmv.putTag("fuelFiring", l2Furnace.commFuelFiring.dataInXML()));
+//        xmlStr.append(XMLmv.putTag("flueTempOut", fmtTemp.format(flueTempOut)));
+//        xmlStr.append(XMLmv.putTag("commonAirTemp", fmtTemp.format(commonAirTemp)));
+//        xmlStr.append(XMLmv.putTag("commonFuelTemp", fmtTemp.format(commonFuelTemp)));
+//        xmlStr.append(XMLmv.putTag("bTopBot", (l2Furnace.bTopBot) ? "1" : "0"));
+//        xmlStr.append(XMLmv.putTag("topZones", zonesInXML(false)));
+//        if (l2Furnace.bTopBot)
+//            xmlStr.append(XMLmv.putTag("botZones", zonesInXML(true)));
+//        if (airHeatExchProps != null)
+//            xmlStr.append(XMLmv.putTag("airHeatExhProps", airHeatExchProps.dataInXML()));
+//        return xmlStr;
+//    }
 
     FieldZone[] getZones(boolean bBot) {
         return (bBot) ? botZones : topZones;

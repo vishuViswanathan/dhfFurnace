@@ -315,15 +315,18 @@ public class PerformanceGroup implements ActionListener{
         return retVal;
     }
 
-    double[] chInTempProfile;
+//    double[] chInTempProfile;
 
-    public int getChInTempProfile(ProductionData forProduction, Fuel withFuel, double[] chInTempProfile) {
-        Performance refP = getRefPerformance(forProduction, withFuel);
-        int retVal = 0;
-        if (refP != null)
-            retVal = refP.getChInTempProfile(chInTempProfile, forProduction.exitTemp);
-        return retVal;
-    }
+//    public int getChInTempProfile(ProductionData forProduction, Fuel withFuel, double[] chInTempProfile) {
+//        Performance refP = getRefPerformance(forProduction, withFuel);
+//        int retVal = 0;
+//        if (refP != null) {
+//            retVal = refP.getChInTempProfile(chInTempProfile, forProduction.exitTemp);
+//            if (retVal > 0)
+//                forProduction.setChEmmissCorrectionFactor(refP.chEmmCorrectionFactor);
+//        }
+//        return retVal;
+//    }
 
     public boolean isItToBeSaved() { // new data added
         return tobeSaved;
