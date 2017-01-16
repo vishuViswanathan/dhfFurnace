@@ -13,8 +13,6 @@ import mvUtils.display.FramedPanel;
 import mvUtils.display.InputControl;
 import mvUtils.display.MultiPairColPanel;
 import mvUtils.display.SimpleDialog;
-import mvUtils.file.ActInBackground;
-import mvUtils.file.WaitMsg;
 import org.opcfoundation.ua.builtintypes.DataValue;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -128,6 +126,7 @@ public class OpcSimulator implements InputControl, L2Interface {
         mainF.pack();
         mainF.setFocusable(true);
         mainF.toFront();
+        startDisplayUpdater();
 
 //        mainF.setVisible(true);
     }
@@ -162,7 +161,7 @@ public class OpcSimulator implements InputControl, L2Interface {
         int width = 580;
         FramedPanel fp = new FramedPanel(new BorderLayout());
 //        fp.add(new SizedLabel("From Level2", new Dimension(100, 40), true), BorderLayout.NORTH);
-        fp.add(new MultiPairColPanel("From Level2"), BorderLayout.NORTH);
+        fp.add(new MultiPairColPanel("From Level2 (DO NOT EDIT DATA)"), BorderLayout.NORTH);
         JScrollPane level2Pane = new JScrollPane();
         level2Pane.setPreferredSize(new Dimension(width + 40, 700));
         JPanel jp = new JPanel(new GridBagLayout());
@@ -608,6 +607,7 @@ public class OpcSimulator implements InputControl, L2Interface {
     }
 
     void close() {
+        stopDisplayUpdater();
         try {
             if (processZones != null)
                 for (OneSimulatorSection sec : processZones)
@@ -650,6 +650,52 @@ public class OpcSimulator implements InputControl, L2Interface {
                          }
                      }
                  });
+    }
+
+    Thread displayThread;
+    boolean displayON = false;
+    long displayUpdateInterval = 1000; // ms
+
+    void updateUIDisplay() {
+        for (OneSimulatorSection sec : processZones)
+            sec.updateUI();
+        for (OneSimulatorSection sec : level2Zones)
+            sec.updateUI();
+    }
+
+
+    public void startDisplayUpdater() {
+        displayON = true;
+        L2DisplayUpdater displayUpdater = new L2DisplayUpdater();
+        displayThread = new Thread(displayUpdater);
+        displayThread.start();
+        logTrace("Display updater started ...");
+    }
+
+    void stopDisplayUpdater() {
+        if (displayON) {
+            displayON = false;
+            try {
+                if (displayThread != null) displayThread.join(displayUpdateInterval * 5);
+            } catch (InterruptedException e) {
+                logError("Problem in stopping Display Updater");
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    class L2DisplayUpdater implements Runnable {
+        public void run() {
+            while (displayON) {
+                try {
+                    Thread.sleep(displayUpdateInterval);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                updateUIDisplay();
+            }
+        }
     }
 
     class SubAliveListener implements SubscriptionAliveListener {     // TODO This is common dummy class used everywhere to be made proper

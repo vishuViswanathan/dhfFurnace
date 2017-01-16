@@ -53,10 +53,10 @@ public class OneSimulatorParam extends OneDataGroup {
 
                 tag.setProcessData(getProcessData(tag.dataSource, "" + tag, tag.dataType, tag.access, tag.bSubscribe));
                 if (tag.bSubscribe && (subscription == null))
-                    throw new TagCreationException("" + tag, "Subscription is null");
+                    throw new TagCreationException(equipment, processElement, tag, "Subscription is null");
 
             } catch (Exception e) {
-                throw new TagCreationException("" + tag, "Data Point could not be created!\n" + e.getMessage());
+                throw new TagCreationException(equipment, processElement, tag, "Data Point could not be created!\n" + e.getMessage());
             }
         }
     }

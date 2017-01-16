@@ -23,7 +23,7 @@ public class OpcTag {
     }
 
     public TagWithDisplay getTagWithDisplay(L2ParamGroup.Parameter element, boolean rwForSimulator, InputControl ipc) {
-        return new TagWithDisplay(element, Tag.TagName.getEnum(name), !rwForSimulator, !rwForSimulator, "#,##0.000", ipc );
-//        return new TagWithDisplay(element, Tag.TagName.getEnum(name), rW, rW, "#,##0.000", ipc );
+        return new TagWithDisplay(element, Tag.TagName.getEnum(name), !rwForSimulator, false, "#,##0.000", ipc );
+//        return new TagWithDisplay(element, Tag.TagName.getEnum(name), !rwForSimulator, !rwForSimulator, "#,##0.000", ipc );
     }
 }

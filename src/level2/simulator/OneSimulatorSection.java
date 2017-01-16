@@ -48,8 +48,8 @@ public class OneSimulatorSection {
         this.source = opcSimulator.source;
         this.readWrite = rw;
         paramList = new LinkedHashMap<L2ParamGroup.Parameter, OneSimulatorParam>();
-        if (!readWrite)
-            subscription = source.createSubscription(new SubAliveListener(), new ZoneSubscriptionListener());
+//        if (!readWrite)
+//            subscription = source.createSubscription(new SubAliveListener(), new ZoneSubscriptionListener());
         createFromTagGroup(tagGrp);
     }
 
@@ -86,18 +86,11 @@ public class OneSimulatorSection {
 
     boolean addOneParameter(L2ParamGroup.Parameter element, Vector<TagWithDisplay> vTags) throws TagCreationException {
         boolean retVal = false;
-        String basePath = "";
-        try {
-            OneSimulatorParam param = new OneSimulatorParam(opcSimulator.source, opcSimulator.equipment,
-                    name, element.toString(),
-                    vTags, subscription);
-            basePath = name + "." + element;
-            paramList.put(element, param);
-            retVal = true;
-        } catch (TagCreationException e) {
-            e.setElement(basePath, "");
-            throw (e);
-        }
+        OneSimulatorParam param = new OneSimulatorParam(opcSimulator.source, opcSimulator.equipment,
+                name, element.toString(),
+                vTags, subscription);
+        paramList.put(element, param);
+        retVal = true;
         return retVal;
     }
 
@@ -158,9 +151,11 @@ public class OneSimulatorSection {
 
     class ZoneSubscriptionListener extends L2SubscriptionListener {
         public void onDataChange(Subscription subscription, MonitoredDataItem monitoredDataItem, DataValue dataValue) {
-            if (opcSimulator.uiReady)
+            if (opcSimulator.uiReady) {
+                System.out.println("Data Changed at " + System.nanoTime());
                 updateUI();
 //             String fromElement =  monitoredDataItem.toString();
+            }
         }
     }
 

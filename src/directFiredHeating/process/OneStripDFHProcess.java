@@ -52,17 +52,29 @@ public class OneStripDFHProcess {
     DFHTuningParams tuning;
     StripDFHProcessList existingList;
     Performance performance;
+    boolean bFieldCreated = false;
 
     private OneStripDFHProcess() {
 
     }
 
-    public OneStripDFHProcess(StripDFHProcessList existingList, String baseProcessName, Vector<ChMaterial> vChMaterial, InputControl inpC) {
+    public OneStripDFHProcess(StripDFHProcessList existingList, String baseProcessName, Vector<ChMaterial> vChMaterial) {
         this.existingList = existingList;
         this.dfHeating = existingList.dfHeating;
         tuning = dfHeating.getTuningParams();
         this.baseProcessName = baseProcessName;
         chMaterial = vChMaterial.get(0);
+    }
+
+    public OneStripDFHProcess(StripDFHProcessList existingList, String baseProcessName, double stripExitT, double thick, double width, double speed) {
+        this.bFieldCreated = true;
+        this.existingList = existingList;
+        this.dfHeating = existingList.dfHeating;
+        tuning = dfHeating.getTuningParams();
+        this.baseProcessName = baseProcessName;
+        maxExitZoneTemp = existingList.maxExitZoneTempFP;
+        minExitZoneTemp = existingList.minExitZoneTempFP;
+        tempDFHEntry = existingList.stripEntryTempFP;
     }
 
     public OneStripDFHProcess(DFHeating dfHeating, StripDFHProcessList existingList, String xmlStr) {
@@ -101,6 +113,7 @@ public class OneStripDFHProcess {
         c.hbrStripTemp = hbrStripTemp;
         c.existingList = existingList;
         c.performance = performance;
+        c.bFieldCreated = bFieldCreated;
         return c;
     }
 
@@ -292,6 +305,10 @@ public class OneStripDFHProcess {
                     if (vp.val.length() > 0)
                         hbrStripTemp = Double.valueOf(vp.val);
 
+                    vp = XMLmv.getTag(xmlStr, "bFieldCreated", 0);
+                    if (vp.val.length() > 0)
+                        bFieldCreated = vp.val.equalsIgnoreCase("1");
+
                     retVal = true;
                 } catch (NumberFormatException e) {
                     errMeg += "Some Number format error";
@@ -345,6 +362,7 @@ public class OneStripDFHProcess {
         xmlStr.append(XMLmv.putTag("rthExitTemp", "" + rthExitTemp));
         xmlStr.append(XMLmv.putTag("soakTemp", "" + soakTemp));
         xmlStr.append(XMLmv.putTag("hbrStripTemp", "" + hbrStripTemp));
+        xmlStr.append(XMLmv.putTag("bFieldCreated", "" + bFieldCreated));
         return xmlStr;
     }
 
@@ -585,7 +603,8 @@ public class OneStripDFHProcess {
         editorPanel.addItemPair(tfBaseProcessName);
         editorPanel.addItemPair(tfFullProcessID);
         editorPanel.addItem("Strip Parameters", true, GridBagConstraints.WEST);
-        editorPanel.addItemPair(cbChMaterial);
+        if (!bFieldCreated)
+            editorPanel.addItemPair(cbChMaterial);
         editorPanel.addItemPair(ntMinThickness);
         editorPanel.addItemPair(ntMaxThickness);
         editorPanel.addItemPair(ntMinWidth);
@@ -601,11 +620,14 @@ public class OneStripDFHProcess {
         editorPanel.addItem("<html><font color='red'>(Ensure Maximum speed is sufficient for Minimum Unit Output with thinnest strip)<html>");
         editorPanel.addBlank();
         editorPanel.addItem("DFH Temperature Parameters", true, GridBagConstraints.WEST);
-        editorPanel.addItemPair(ntTempDFHEntry);
+        if (!bFieldCreated)
+            editorPanel.addItemPair(ntTempDFHEntry);
         editorPanel.addItemPair(ntTempDFHExit);
-        editorPanel.addBlank();
-        editorPanel.addItemPair(ntMinExitZoneTemp);
-        editorPanel.addItemPair(ntMaxExitZoneTemp);
+        if (!bFieldCreated) {
+            editorPanel.addBlank();
+            editorPanel.addItemPair(ntMinExitZoneTemp);
+            editorPanel.addItemPair(ntMaxExitZoneTemp);
+        }
         editorPanel.addBlank();
         editorPanel.addItem("After-DFH Temperature Parameters", true, GridBagConstraints.WEST);
         editorPanel.addItemPair(ntRTHExitTemp);
@@ -706,22 +728,30 @@ public class OneStripDFHProcess {
 //                double thinUpperLimitX = ntThinUpperLimit.getData() / 1000;
                 ChMaterial chMaterialXX = (ChMaterial)cbChMaterial.getSelectedItem();
 //                ChMaterial chMaterialThinX = (ChMaterial) cbChMaterialThin.getSelectedItem();
+                if (maxExitZoneTempX > existingList.maxExitZoneTempFP)
+                    status.addErrorMsg("Max. Exit ZoneTemperature cannot be more than " + existingList.maxExitZoneTempFP +
+                        " set in 'L2 Basic Settings'");
+                if (minExitZoneTempX > existingList.minExitZoneTempFP)
+                    status.addErrorMsg("Min. Exit ZoneTemperature cannot be lower than " + existingList.minExitZoneTempFP +
+                            " set in 'L2 Basic Settings'");
                 if (maxExitZoneTempX <= minExitZoneTempX)
                     status.addErrorMsg("Max. Exit ZoneTemperature must be > Min. Exit Zone Temperature\n");
+                if (tempDFHExitX > existingList.maxStripExitTempFP )
+                    status.addErrorMsg("Strip DFH Exit Temperature cannot be more than " + existingList.maxStripExitTempFP +
+                            " set in 'L2 Basic Settings'");
                 if (tempDFHExitX >= minExitZoneTempX )
                     status.addErrorMsg("Min. Exit Zone Temperature must be > Strip Exit Temperature\n");
                 if (maxUnitOutputX < minUnitOutputX)
                     status.addErrorMsg(" Max. Unit Output must be >  Min. Unit Output\n");
+                if (maxThicknessX > existingList.maxStripThicknessFP)
+                    status.addErrorMsg("Max. Strip Thickness cannot be more than " + existingList.maxStripThicknessFP * 1000 +
+                            " set in 'L2 Basic Settings'");
                 if (maxThicknessX < minThicknessX)
                     status.addErrorMsg("Max. Thickness must be > Min. Thickness\n");
                 if (maxWidthX < minWidthX)
                     status.addErrorMsg("Max. Width must be > Min. Width\n");
                 if (maxSpeedX <= minSpeedX)
                     status.addErrorMsg("Max. Speed must be > Min. Speed\n");
-//                if (minThicknessX > thinUpperLimitX || maxThicknessX < thinUpperLimitX)
-//                    status.addErrorMsg("Mismatch in Strip Thickness data\n");
-//                if (minUnitOutputX / (minThicknessX * chMaterialThinX.density) > maxSpeedX)
-//                    status.addErrorMsg("Maximum strip speed is NOT sufficient to handle thinnest strip");
                 if (!status.inError) {
                     status = existingList.checkDuplication(this, baseProcessNameX, tempDFHExitX, minWidthX, maxWidthX,
                             minThicknessX, maxThicknessX);
