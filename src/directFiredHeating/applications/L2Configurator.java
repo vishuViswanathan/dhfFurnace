@@ -75,10 +75,10 @@ public class L2Configurator extends StripHeating {
                     "\n\nIt is the responsibility of the user to ensure data integrity among:" +
                     "\n      1) Profile including Fuel type " +
                     "\n      2) IP address of OPC server  '" + mL2Configuration.getText() + "'" +
-                    "\n      3) Fuel settings under '" + mL2Configuration.getText() + "'" +
+                    "\n      3) L2 Basic settings under '" + mL2Configuration.getText() + "'" +
                     "\n      4) DHFProcess List data under '" + mL2Configuration.getText() + "'" +
                     "\n      5) Performance Data under '" + perfMenu.getText() + "'" +
-                    "\n\nIt is suggested that the profile with Fuel is finalised before updating" +
+                    "\n\nIt is suggested that the profile and L2 Basic Setting are finalised before updating" +
                     "\nthe other data." +
                     "\n\nBefore exiting, ensure that the Furnace data is saved/updated through 'File' menu.");
         } catch (Exception e) {
