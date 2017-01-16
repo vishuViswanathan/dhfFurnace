@@ -175,12 +175,12 @@ public class UnitFurnace {
         double fceUnitArea;
         ch = furnace.productionData.charge.chMaterial;
         if (furnace.bTopBot && !bAddedTopSoak)
-            fceUnitArea = (furnace.width + 2 * height) * production.chPitch;
+            fceUnitArea = (furnace.fceWidth + 2 * height) * production.chPitch;
         else {
             if (furnace.controller.heatingMode == DFHeating.HeatingMode.TOPBOTSTRIP)
-                fceUnitArea = 2 * (furnace.width + height) * production.chPitch;  // take whole area of chamber since actually it is topBot fired
+                fceUnitArea = 2 * (furnace.fceWidth + height) * production.chPitch;  // take whole area of chamber since actually it is topBot fired
             else
-                fceUnitArea = (2 * (furnace.width + height) - production.charge.length) *
+                fceUnitArea = (2 * (furnace.fceWidth + height) - production.charge.length) *
                     production.chPitch;
         }
         psi = ((bBot)? furnace.chUAreaBot : ((bAddedTopSoak) ? furnace.chUAreaAS : furnace.chUAreaTop))/ fceUnitArea;
@@ -232,9 +232,9 @@ public class UnitFurnace {
 
     public void setgThick(double len) {
         if (furnace.controller.heatingMode == DFHeating.HeatingMode.TOPBOTSTRIP)
-            gThick = 0.55 * Math.pow(len * furnace.width * height / 2,(1.0/3));
+            gThick = 0.55 * Math.pow(len * furnace.fceWidth * height / 2,(1.0/3));
         else
-            gThick = 0.55 * Math.pow(len * furnace.width * height,(1.0/3));
+            gThick = 0.55 * Math.pow(len * furnace.fceWidth * height,(1.0/3));
     }
 
     void setHeight() {
