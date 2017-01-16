@@ -156,7 +156,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected boolean itsON = false;
     JPanel mainFrame;
     String reference = "Reference", fceTtitle = "Furnace", customer = "Customer";
-    protected double width = 10;
+    protected double fceWidth = 10;
     double excessAir = 0.1;
     public HeatingMode heatingMode;
     boolean bTopBot = true;
@@ -978,7 +978,14 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         cbHeatingMode.addActionListener(new HeatingModeListener());
         cbHeatingMode.setPreferredSize(new Dimension(200, 20));
 //        cbHeatingMode.setSelectedItem(HeatingMode.TOPONLY);
-        ntfWidth = new NumberTextField(this, width * 1000, 10, false, 500, 40000, "#,###", "Furnace Width (mm) ");
+        ntfWidth = new NumberTextField(this, fceWidth * 1000, 10, false, 500, 40000, "#,###", "Furnace Width (mm) ");
+        ntfWidth.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                fceWidth = ntfWidth.getData() / 1000;
+                furnace.setFceWidth(fceWidth);
+            }
+        });
         cbFuel = new JSPComboBox<Fuel>(jspConnection, fuelList);
         cbFuel.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -1921,8 +1928,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         furnaceFor = (DFHTuningParams.FurnaceFor) cbFceFor.getSelectedItem();
         tuningParams.setSelectedProc(furnaceFor);
 //        bTopBot = (cbHeatingType.getSelectedIndex() == 1);
-        width = ntfWidth.getData() / 1000;
-        furnace.setWidth(width);
+        fceWidth = ntfWidth.getData() / 1000;
+        furnace.setFceWidth(fceWidth);
         commFuel = (Fuel) cbFuel.getSelectedItem();
         excessAir = tfExcessAir.getData() / 100;
 
@@ -2033,7 +2040,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         tfReference.setText(reference);
         tfFceTitle.setText(fceTtitle);
         tfCustomer.setText(customer);
-        ntfWidth.setData(width * 1000);
+        ntfWidth.setData(fceWidth * 1000);
         tfExcessAir.setData(excessAir * 100);
 
         tfChWidth.setData(chWidth * 1000);
@@ -2250,7 +2257,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         }
 
         if (retVal) {
-            if ((chLength * nChargeRows) > width) {
+            if ((chLength * nChargeRows) > fceWidth) {
                 retVal &= false;
                 msg += nlSpace + "Check " + tfChLength.titleAndVal() +
                         ", Charge Rows " + nChargeRows + " and " + ntfWidth.titleAndVal();
@@ -2496,7 +2503,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                 XMLmv.putTag("customer", customer) + "\n" +
                 XMLmv.putTag("cbFceFor", "" + cbFceFor.getSelectedItem()) +
                 XMLmv.putTag("cbHeatingType", "" + cbHeatingMode.getSelectedItem()) + "\n" +
-                XMLmv.putTag("width", "" + width) +
+                XMLmv.putTag("width", "" + fceWidth) +
                 XMLmv.putTag("cbFuel", "" + cbFuel.getSelectedItem()) +
                 XMLmv.putTag("excessAir", "" + excessAir) + "\n" +
                 XMLmv.putTag("chargeData", chDataInXML()) + "\n" +
@@ -2595,7 +2602,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
                     try {
                         vp = XMLmv.getTag(acTData, "width", 0);
-                        width = Double.valueOf(vp.val);
+                        fceWidth = Double.valueOf(vp.val);
+                        furnace.setFceWidth(fceWidth);
                         vp = XMLmv.getTag(acTData, "excessAir", 0);
                         excessAir = Double.valueOf(vp.val);
                     } catch (Exception e) {
