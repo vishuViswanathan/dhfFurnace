@@ -36,17 +36,19 @@ public class L2ZoneParam extends OneDataGroup {
         super(source, equipment, processElement, subscription);
         processTagList = new Hashtable<Tag.TagName, Tag>();
         level2TagList = new Hashtable<Tag.TagName, Tag>();
+        ProcessData processData;
         for (Tag tag : tags) {
             try {
-                tag.setProcessData(getProcessData(tag.dataSource, "" + tag, tag.dataType, tag.access, tag.bSubscribe));
+                processData = getProcessData(tag.dataSource, "" + tag, tag.dataType, tag.access, tag.bSubscribe);
+                tag.setProcessData(processData);
                 if (tag.bSubscribe && (subscription == null))
-                    throw new TagCreationException("" + tag, "Subscription is null");
+                    throw new TagCreationException(equipment, processElement, tag, "Unable to subscribe");
                 if (tag.dataSource == ProcessData.Source.LEVEL2)
                     level2TagList.put(tag.tagName, tag);
                 else
                     processTagList.put(tag.tagName, tag);
             } catch (Exception e) {
-                throw new TagCreationException("" + tag, "Data Point could not be created!\n" + e.getMessage());
+                throw new TagCreationException(equipment, processElement, tag, "Data Point could not be Created/Connected !\n" + e.getMessage());
             }
         }
     }
@@ -63,7 +65,7 @@ public class L2ZoneParam extends OneDataGroup {
             else
                 processTagList.put(tag.tagName, tag);
         } catch (Exception e) {
-            throw new TagCreationException("" + tag, "Data Point could not be created!\n" + e.getMessage());
+            throw new TagCreationException(equipment, processElement, tag, "Data Point could not be created!\n" + e.getMessage());
         }
     }
 

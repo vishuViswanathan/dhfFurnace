@@ -315,6 +315,7 @@ public class Tag {
         return tagName.toString();
     }
 
+
     ProcessData.DataType getDataType(TagName forTagName) {
         ProcessData.DataType type = ProcessData.DataType.FLOAT;
         switch(forTagName) {

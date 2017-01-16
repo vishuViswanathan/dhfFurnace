@@ -56,7 +56,7 @@ public class Level2Expert extends L2DFHeating {
     protected void editStripDFHProcess() {
         if (dfhProcessList.addStripDFHProcess(parent()))
             showMessage("Strip DFH Process List updated\n" +
-                    "To make it effective in Level2 RUNTIME, the Perfromance Data must be updated to file\n" +
+                    "To make it effective in Level2 RUNTIME, the Performance Data must be updated to file\n" +
                     "       " + perfMenu.getText() + "->" + mISavePerformanceData.getText());
     }
 

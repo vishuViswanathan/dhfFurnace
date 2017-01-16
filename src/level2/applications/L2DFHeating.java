@@ -13,8 +13,6 @@ import directFiredHeating.process.OneStripDFHProcess;
 import mvUtils.display.*;
 import mvUtils.file.AccessControl;
 import mvUtils.file.FileChooserWithOptions;
-import mvUtils.math.BooleanWithStatus;
-import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import org.apache.log4j.Logger;
 import performance.stripFce.Performance;
@@ -30,7 +28,6 @@ import java.awt.event.ActionListener;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.Vector;
 
@@ -49,7 +46,7 @@ public class L2DFHeating extends StripHeating {
 
     public L2DisplayPageType l2DisplayNow = L2DisplayPageType.NONE;
 //    String fceDataLocation = "level2FceData\\";
-    String l2BasePath = "";
+//    protected String l2BasePath = "";
     String accessDataFile;
     String lockPath;
     File lockFile;
@@ -74,7 +71,7 @@ public class L2DFHeating extends StripHeating {
         bAtSite = true;
         bAllowProfileChange = false;
         userActionAllowed = false;
-        releaseDate = "20161207";
+        releaseDate = "20170113";
         onProductionLine = true;
         asApplication = true;
         this.equipment = equipment;
@@ -183,15 +180,100 @@ public class L2DFHeating extends StripHeating {
     }
 
     public boolean setItUp() {
+        l2SystemReady = false;
         modifyJTextEdit();
         fuelList = new Vector<Fuel>();
         vChMaterial = new Vector<ChMaterial>();
         setUIDefaults();
         mainF = new JFrame();
         mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-//        if (!asJNLP && (log == null)) {
-            startLog4j();
-//        }
+        startLog4j();
+        try {
+            l2AccessControl = new L2AccessControl(AccessControl.PasswordIntensity.LOW, accessDataFile, true);
+            mainF.setTitle("DFH Furnace " + l2AccessControl.getDescription(accessLevel) + " - " + releaseDate + testTitle);
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError("Could not find/load Access Data file :" + e.getMessage());
+        }
+
+        tuningParams = new DFHTuningParams(this, onProductionLine, 1, 5, 30, 1.12, 1, false, false);
+//        debug("Creating new Level2furnace");
+        l2Furnace = new L2DFHFurnace(this, false, false, lNameListener);
+        furnace = l2Furnace;
+        if (!testMachineID()) {
+            showError("Software key mismatch, Aborting ...");
+            justQuit();
+        }
+        furnace.setTuningParams(tuningParams);
+        tuningParams.bConsiderChTempProfile = true;
+        l2ProcessList = new L2ProcessList(this);
+        dfhProcessList = l2ProcessList;
+        createUIs(false); // without the default menuBar
+        if (getFuelAndCharge()) {
+            setDefaultSelections();
+            StatusWithMessage statL2FceFile = getL2FceFromFile();
+            if (statL2FceFile.getDataStatus() != DataStat.Status.WithErrorMsg) {
+                if (!onProductionLine || setupUaClient()) {
+                    if (!onProductionLine || l2Furnace.basicConnectionToLevel1(uaClient)) {
+                        StatusWithMessage status = l2Furnace.checkAccessLevel();
+                        if (status.getDataStatus() == DataStat.Status.OK) {
+                            furnace.setFceWidth(fceWidth);
+                            enableDataEdit();
+                            l2MenuSet = true;
+                            lockFile = new File(lockPath);
+                            getFieldPerformanceList();
+                            bProfileEdited = false;
+                            if (onProductionLine) {
+                                if (l2Furnace.makeAllConnections()) {   // createL2Zones()) {
+                                    connectProcessListToLevel1();
+                                    ErrorStatAndMsg connStat = checkConnection();
+                                    if (connStat.inError)
+                                        showError(connStat.msg);
+                                    else {
+                                        l2Furnace.initForLevel2Operation();
+                                        l2SystemReady = true;
+                                    }
+                                }
+                            } else
+                                l2SystemReady = true;
+                        } else
+                            showError(status.getErrorMessage());
+                    } else
+                        showError("Unable to start Level2 ERROR:001");
+                } else
+                    showError("Unable to connect to OPC server : ERROR:002");
+            } else
+                showError("Unable to load Furnace Profile : " + statL2FceFile.getErrorMessage());
+            if (l2SystemReady) {
+//                    lockFile = new File(lockPath);
+                displayIt();
+            }
+        } else
+            showError("Unable to load Fuel and/or Charge Material Specifications");
+        logInfo("Java Version :" + System.getProperty("java.version"));
+        if (l2SystemReady) {
+            DataWithStatus stat = markIAmON();
+            if (stat.getStatus() == DataStat.Status.OK) {
+                sendProcessListToLevel1();
+            } else {
+                showError(stat.errorMessage);
+                l2SystemReady = false;
+            }
+        }
+        if (!l2SystemReady) {
+            exitFromLevel2();
+        }
+        return l2SystemReady;
+    }
+
+    public boolean setItUpOLD() {   // TODO to be removed in RELEASE
+        modifyJTextEdit();
+        fuelList = new Vector<Fuel>();
+        vChMaterial = new Vector<ChMaterial>();
+        setUIDefaults();
+        mainF = new JFrame();
+        mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        startLog4j();
         try {
             l2AccessControl = new L2AccessControl(AccessControl.PasswordIntensity.LOW, accessDataFile, true);
             mainF.setTitle("DFH Furnace " + l2AccessControl.getDescription(accessLevel) + " - " + releaseDate + testTitle);
@@ -217,7 +299,7 @@ public class L2DFHeating extends StripHeating {
                         if (!onProductionLine || l2Furnace.basicConnectionToLevel1(uaClient)) {
                             StatusWithMessage status = l2Furnace.checkAccessLevel();
                             if (status.getDataStatus() == DataStat.Status.OK) {
-                                furnace.setWidth(width);
+                                furnace.setFceWidth(fceWidth);
                                 enableDataEdit();
                                 l2MenuSet = true;
                                 lockFile = new File(lockPath);
@@ -1187,12 +1269,12 @@ public class L2DFHeating extends StripHeating {
         if (stat.getStatus() != DataStat.Status.OK) {
             showError(stat.errorMessage);
         }
-
         close();
     }
 
     public void exitFromLevel2() {
         if (canClose()) {
+            logInfo("L2DFHeating.1281: Can be closed");
             justQuit();
         }
     }

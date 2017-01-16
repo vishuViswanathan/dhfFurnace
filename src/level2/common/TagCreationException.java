@@ -11,10 +11,7 @@ import net.sf.antcontrib.logic.Throw;
  */
 public class TagCreationException extends Exception {
     String tagName;
-    String element;
-    String equipment;
     String tagMsg;
-    String elementMsg;
 
     public TagCreationException() {
         super();
@@ -24,26 +21,12 @@ public class TagCreationException extends Exception {
         super(cause);
     }
 
-    public TagCreationException(String tagName, String message) {
-        this.tagName = tagName;
+    public TagCreationException(String equipment, String processElement, Tag tag, String message) {
+        tagName = equipment + "." + tag.dataSource + "." + processElement + "." + tag.tagName;
         this.tagMsg = message;
     }
 
-    public void setElement(String element, String addMsg) {
-        this.element = element;
-        tagMsg += ": " + addMsg;
-    }
-
-    public void setEquipment(String equipment, String addMsg) {
-        this.equipment = equipment;
-        tagMsg += ": " + addMsg;
-    }
-
-    public void setMessage(String msg) {
-        tagMsg = msg;
-    }
-
     public String getMessage() {
-        return equipment + "." + element + "." + tagName + "::" + tagMsg;
+        return tagName + ":\n" + tagMsg;
     }
 }

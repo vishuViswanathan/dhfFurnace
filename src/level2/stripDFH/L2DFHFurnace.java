@@ -85,8 +85,9 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     Hashtable<MonitoredDataItem, Tag> monitoredTags;
     boolean monitoredTagsReady = false;
     public L2DFHeating l2DFHeating;
-    public boolean basicsSet = false;
+//    public boolean basicsSet = false;
     boolean itIsRuntime = false;
+    boolean processListSetOnLevel1 = false;
 
     long displayUpdateInterval = 1000; // 1 sec
 
@@ -107,15 +108,16 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     }
 
     public boolean makeAllConnections() {
+        boolean retVal = false;
         if (createBasicZone())
             if (createStripZone())
                 if (createRecuParam())
                     if (createCommonDFHZ()) {
-                        createL2Zones();
-                        basicsSet = true;
+                        if (createL2Zones())
+                            retVal = true;
                     }
 //        enableSubscriptions(false);
-        return basicsSet;
+        return retVal;
     }
 
     Thread displayThread;
@@ -259,6 +261,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
 
     public boolean createInternalZone() {
         boolean retVal = false;
+        String processElement = "Internal.Performance";
         internalZone = new L2ParamGroup(this, "Internal");
         updaterChangeSub = source.createTMSubscription("Updater Status",new SubAliveListener(), new UpdaterChangeListener());
         logDebug("updaterChangeSub created");
@@ -266,10 +269,12 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                 performanceChanged = new Tag(L2ParamGroup.Parameter.Performance, Tag.TagName.Ready, true, itIsRuntime),
                 performanceNoted = new Tag(L2ParamGroup.Parameter.Performance, Tag.TagName.Noted, true, !itIsRuntime)};
         try {
-            performanceStat = new ReadyNotedBothL2(source, equipment, "Internal.Performance", performanceTags, updaterChangeSub);
+            performanceStat = new ReadyNotedBothL2(source, equipment, processElement, performanceTags, updaterChangeSub);
             performanceStat.setReadWriteStat(!itIsRuntime);
         } catch (TagCreationException e) {
-            e.printStackTrace();
+            showError("Some Tags could not be created: " + e.getMessage());
+            return false;
+//            e.printStackTrace();
         }
         readyNotedParamList.add(performanceStat);
         internalZone.addOneParameter(L2ParamGroup.Parameter.Performance, performanceStat);
@@ -394,6 +399,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             retVal = true;
         } catch (TagCreationException e) {
             showError("Recuperator connection to Level1 :" + e.getMessage());
+            retVal = false;
         }
         return retVal;
     }
@@ -499,7 +505,6 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             hbExit = new L2OneParameterZone(this, "HBExit", " HB Strip Exit", L2ParamGroup.Parameter.Temperature, "#,###", true);
 //            updateUIDisplay();
         } catch (TagCreationException e) {
-            e.setEquipment(equipment, "Creating L2 Zones");
             showError("Error in " + descriptiveName + " - " + e.getMessage());
             retVal = false;
         }
@@ -509,11 +514,15 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     public void processListToLevel1Updated(int count) {
         tagProcessCount.setValue(count);
         tagProcessListReady.setValue(true);
+        processListSetOnLevel1 = true;
     }
 
     public void clearProcessList() {
-        logInfo("Process List cleared");
-        processListToLevel1Updated(0);
+        if (processListSetOnLevel1) {
+            logInfo("Process List cleared");
+            processListToLevel1Updated(0);
+            processListSetOnLevel1 = false;
+        }
     }
 
     void updateUIDisplay() {
@@ -1180,10 +1189,11 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         public void run() {
             setFieldDataBeingHandled();
             boolean response = getYesNoResponseFromLevel1("Confirm that Strip Size Data is updated", 20);
-            logTrace("L2 " + ((response) ? "Responded " : "did not Respond ") + "to Confirm-Strip-Data query");
+//            logTrace("L2 " + ((response) ? "Responded " : "did not Respond ") + "to Confirm-Strip-Data query");
             if ((response) && (l2YesNoQuery.getValue(Tag.TagName.Response).booleanValue)) {
                 boolean canContinue = true;
-                FieldResults theFieldResults = new FieldResults(L2DFHFurnace.this, true);
+                FieldResults theFieldResults = new FieldResults(L2DFHFurnace.this, true,
+                        (l2DFHeating.accessLevel == L2AccessControl.AccessLevel.EXPERT));
                 ErrorStatAndMsg dataOkForFieldResults = new ErrorStatAndMsg();
                 if (theFieldResults.inError) {
                     canContinue = false;

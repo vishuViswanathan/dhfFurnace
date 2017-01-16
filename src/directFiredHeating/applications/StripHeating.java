@@ -34,6 +34,7 @@ public abstract class StripHeating extends DFHeating {
     protected String profileCodeTag = "profileCode";
     protected DecimalFormat profileCodeFormat = new DecimalFormat("000000");
     boolean associatedDataLoaded = false;
+    protected String l2BasePath = "";
 
     protected void setTestData() {
 //        super.setTestData();
@@ -203,6 +204,9 @@ public abstract class StripHeating extends DFHeating {
                 String promptFile = (profileCodeChanged) ?
                         (profileCode + " FurnaceProfile." + profileFileExtension) :
                         profileFileName;
+//                String testingDir = l2BasePath + "\\level2FceData";
+//                logInfo("setting default Folder to " + testingDir);
+//                fileDlg.setDirectory(testingDir);
                 logInfo("setting default Folder to " + fceDataLocation);
                 fileDlg.setDirectory(fceDataLocation);
                 fileDlg.setFile(promptFile);
