@@ -53,7 +53,7 @@ import java.util.Vector;
 public class DFHFurnace {
     boolean bAutoTopOnlySoak = true;
     static public int MAXSECTIONS = 6;
-    double width;
+    double fceWidth;
     public boolean bTopBot;
     boolean bAddTopSoak = false;
     protected Vector<FceSection> topSections, botSections;
@@ -164,8 +164,12 @@ public class DFHFurnace {
                 sec.changeAirTemp(newTemp);
     }
 
-    public void setWidth(double width) {
-        this.width = width;
+    public void setFceWidth(double fceWidth) {
+        this.fceWidth = fceWidth;
+    }
+
+    public double getFceWidth() {
+        return fceWidth;
     }
 
     public double holdingWt;  // in kg

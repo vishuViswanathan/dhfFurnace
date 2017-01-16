@@ -957,7 +957,7 @@ public class FceSection {
                             hEnd = hBig + slope * slotLen;
                             totLen += slotLen;
                             theSlot = new UnitFurnace(sSec, bRecuType, slotLen, totLen,
-                                    furnace.width, hBig, hEnd, controller.furnaceFor);
+                                    furnace.fceWidth, hBig, hEnd, controller.furnaceFor);
                             endTime += theSlot.delTime;
                             theSlot.setEndTme(endTime);
                             iSlot++;

@@ -955,16 +955,16 @@ public class FceSubSection {
         chEndWallArea = 0;
         dischEndWallArea = 0;
         if (dischEndSub)
-            dischEndWallArea = furnace.width * endHeight;
+            dischEndWallArea = furnace.fceWidth * endHeight;
         if (chEndSub)
-            chEndWallArea = furnace.width * stHeight;
+            chEndWallArea = furnace.fceWidth * stHeight;
         if (section.botSection) {
-            roofArea = length * furnace.width;
-            hearthArea = Math.sqrt(Math.pow(length, 2) + Math.pow((stHeight - endHeight), 2)) * furnace.width;
+            roofArea = length * furnace.fceWidth;
+            hearthArea = Math.sqrt(Math.pow(length, 2) + Math.pow((stHeight - endHeight), 2)) * furnace.fceWidth;
         }
         else {
-            hearthArea = length * furnace.width;
-            roofArea = Math.sqrt(Math.pow(length, 2) + Math.pow((stHeight - endHeight), 2)) * furnace.width;
+            hearthArea = length * furnace.fceWidth;
+            roofArea = Math.sqrt(Math.pow(length, 2) + Math.pow((stHeight - endHeight), 2)) * furnace.fceWidth;
         }
     }
 
