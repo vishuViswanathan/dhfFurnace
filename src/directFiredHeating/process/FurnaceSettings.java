@@ -296,9 +296,9 @@ public class FurnaceSettings   {
             rbConsiderFieldZoneTempForLossCorrection =
                     new JRadioButton("Take Field Zone Temp For Loss Check", considerFieldZoneTempForLossCorrection);
             editorPanel.addItemPair(ntFuelSegments);
-            editorPanel.addBlank();
+//            editorPanel.addBlank();
             editorPanel.addItemPair(ntSpeedCheckInterval);
-            editorPanel.addBlank();
+//            editorPanel.addBlank();
             editorPanel.addItem(rbConsiderFieldZoneTempForLossCorrection);
             editorPanel.addBlank();
             double max, min, td;
