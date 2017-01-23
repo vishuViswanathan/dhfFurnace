@@ -1219,7 +1219,7 @@ public class DFHFurnace {
                 else
                     setChEmmissCorrectionFactor(1.0);
 
-                System.out.println("DFHFurnace.1218: chEmmfactor = "  + productionData.chEmmissCorrectionFactor); // TODO remove on RELEASE
+//                System.out.println("DFHFurnace.1222: chEmmfactor = "  + productionData.chEmmissCorrectionFactor); // TODO remove on RELEASE
 
                 theSection = vSec.get(iLastSec);  // the last fired section
                 theSlot = theSection.getLastSlot();
