@@ -1362,7 +1362,7 @@ public class DFHFurnace {
                         }
                     }
                     else
-                        firstZoneInRev(bBot);
+                        allOk = firstZoneInRev(bBot);
                 }
             }
             if (allOk) {
@@ -1779,6 +1779,135 @@ public class DFHFurnace {
 
     boolean firstZoneInRev(boolean bBot) {
         boolean bRetVal = true;
+        FceEvaluator.EvalStat lastResponse, response;
+        String statusHead;
+        Vector<FceSection> vSec;
+        int[] fired;
+        if (bBot) {
+            fired = botFiredSections;
+            vSec = botSections;
+            statusHead = "Bottom Zone ";
+        } else {
+            fired = topFiredSections;
+            vSec = topSections;
+            statusHead = "Top Zone ";
+        }
+        int iFirstFiredSec = fired[0];
+        FceSection sec, firstFsec, prevSec, entrySec;
+        entrySec = vSec.get(0);
+        double tempGZ1Assume;
+
+        double trialDeltaT = (tuningParams.suggested1stCorrection > 0) ?
+                tuningParams.suggested1stCorrection : 10;
+        firstFsec = vSec.get(iFirstFiredSec);
+        tempGZ1Assume = firstFsec.getLastSlotGasTemp();
+        if (tempGZ1Assume <= 0)
+            tempGZ1Assume = firstFsec.getEnteringGasTemp();
+        if (bBot && bRecalculBot)
+            tempGZ1Assume = tempGZ1Bot;
+        if (!bBot && bRecalculTop)
+            tempGZ1Assume = tempGZ1Top;
+        boolean bTrial1 = true;
+        boolean redoIt = false;
+        lastResponse = FceEvaluator.EvalStat.OK;
+        response = FceEvaluator.EvalStat.OK;
+        boolean done = false;
+        boolean loopBack = false;
+        double tmNow, tmLast = 0;
+        double diff, lastDiff = 0;
+        double tgNow, tgLast = 0;
+        double reqdChTempM = productionData.entryTemp;
+        while (!done && canRun()) {
+            redoIt = false;
+            firstFsec.setLastSlotGasTemp(tempGZ1Assume);
+            for (int s = iFirstFiredSec; s >= 0; s--) {
+                showStatus(statusHead + (s + 1));
+                sec = vSec.get(s);
+                response = sec.oneSectionInRev();
+                if (response != FceEvaluator.EvalStat.OK) {
+                    if (response != lastResponse) {
+                        lastResponse = response;
+                        trialDeltaT = (tuningParams.suggested1stCorrection > 0) ?
+                                tuningParams.suggested1stCorrection : 10;
+                    }
+                    if (response == FceEvaluator.EvalStat.TOOHIGHGAS) {
+                        trialDeltaT *= 2;
+                        tempGZ1Assume -= trialDeltaT;
+                        loopBack = true;
+                        break;
+                    } else if (response == FceEvaluator.EvalStat.TOOLOWGAS) {
+                        break;
+                    } else {
+                        showError("firstZoneInRev: Unknown response from oneSectionInRev() for " + statusHead + s);
+                        redoIt = true;
+                        break;
+                    }
+                }
+                if (s > 0) {
+                    prevSec = vSec.get(s - 1);
+                    prevSec.copyFromNextSection(sec);
+                    if (tuningParams.bSectionalFlueExh) {
+                        prevSec.fluePassThrough = 0;
+                    } else {
+                        FlueCompoAndQty netFlue = flueFromDEnd(bBot, s - 1);
+                        prevSec.passFlueCompAndQty.noteValues(netFlue);
+                        prevSec.fluePassThrough = netFlue.flow;
+                    }
+                } else {
+                    if (!tuningParams.bSectionalFlueExh) {
+                        flueFromDEnd(bBot, s - 1);
+                    }
+                }
+            }
+
+            if (loopBack || redoIt) {
+                loopBack = false;
+                continue;
+            }
+            if (response != lastResponse) {
+                lastResponse = response;
+                trialDeltaT = (tuningParams.suggested1stCorrection > 0) ?
+                        tuningParams.suggested1stCorrection : 10;
+            }
+            if (response == FceEvaluator.EvalStat.TOOLOWGAS) {
+                tempGZ1Assume += 10;
+                continue;
+            }
+            tmNow = entrySec.chEntryTemp();
+            diff = tmNow - reqdChTempM;
+
+//showError("WAITING TO CONTINUE tmNow = " + tmNow);
+            if (Math.abs(diff) <= 1 * tuningParams.errorAllowed)
+                break;
+            if (bTrial1) {
+                tgLast = tempGZ1Assume;
+                tmLast = tmNow;
+                tempGZ1Assume += (diff < 0) ? (-trialDeltaT) : trialDeltaT;
+                bTrial1 = false;
+            } else {
+                tgNow = tempGZ1Assume;
+                tempGZ1Assume = tgNow + (tgNow - tgLast) / (tmNow - tmLast) * (reqdChTempM - tmNow);
+                if (Double.isNaN(tempGZ1Assume)) {
+                    showError("Some problem in getting to charge entry temperature\n" +
+                    "     Try with reduced losses in the first section ...");
+                    bRetVal = false;
+                    break;
+                }
+                tgLast = tgNow;
+                tmLast = tmNow;
+            }
+            lastDiff = diff;
+        }
+        if (bRetVal) {
+            entrySec.setEntryChTemps(reqdChTempM, reqdChTempM, reqdChTempM);
+            entrySec.showEntryResults();
+        }
+        return bRetVal;
+    }
+
+
+    boolean firstZoneInRevBEFORWE20170127(boolean bBot) {    // TODO to be removed (have replaced this with 20161130
+        boolean bRetVal = true;
         double correctionForToooLowGas = tuningParams.correctionForTooLowGas;
         if (correctionForToooLowGas <= 0)
             correctionForToooLowGas = 10;
@@ -1829,27 +1958,27 @@ public class DFHFurnace {
                 sec = vSec.get(s);
                 response = sec.oneSectionInRev();
                 if (response != FceEvaluator.EvalStat.OK) {
-                    if (response != lastResponse) {
-                        lastResponse = response;
-//                        trialDeltaT = (tuningParams.suggested1stCorrection > 0) ?
-//                                tuningParams.suggested1stCorrection : 10;
-                        trialDeltaT = tuningParams.suggested1stCorrection;
-                    }
                     if (response == FceEvaluator.EvalStat.TOOHIGHGAS) {
-                        trialDeltaT *= 2;
+                        if (response == lastResponse)
+                            trialDeltaT *= 2;
                         tempGZ1Assume -= trialDeltaT;
                         loopBack = true;
                         break;
                     } else if (response == FceEvaluator.EvalStat.TOOLOWGAS) {
-                        tempGZ1Assume += correctionForToooLowGas; // 10;
+                        if (response == lastResponse)
+                            trialDeltaT *= 2;
+                        tempGZ1Assume += trialDeltaT; 
                         loopBack = true;
                         break;
-//                        break;
                     } else {
                         showError("firstZoneInRev: Unknown response from oneSectionInRev() for " + statusHead + s);
                         redoIt = true;
                         break;
                     }
+                }
+                if (response != lastResponse) {
+                    lastResponse = response;
+                    trialDeltaT = tuningParams.suggested1stCorrection;
                 }
                 if (s > 0) {
                     prevSec = vSec.get(s - 1);
@@ -1870,18 +1999,9 @@ public class DFHFurnace {
 
             if (loopBack || redoIt) {
                 loopBack = false;
-                bTrial1 = true;
+//                bTrial1 = true;
                 continue;
             }
-//            if (response != lastResponse) {
-//                lastResponse = response;
-//                trialDeltaT = (tuningParams.suggested1stCorrection > 0) ?
-//                        tuningParams.suggested1stCorrection : 10;
-//            }
-//            if (response == FceEvaluator.EvalStat.TOOLOWGAS) {
-//                tempGZ1Assume += correctionForToooLowGas; // 10;
-//                continue;
-//            }
             tmNow = entrySec.chEntryTemp();
             diff = tmNow - reqdChTempM;
 
@@ -1895,16 +2015,6 @@ public class DFHFurnace {
             } else {
                 tgNow = tempGZ1Assume;
                 tempGZ1Assume = tgNow + (tgNow - tgLast) / (tmNow - tmLast) * (reqdChTempM - tmNow);
-////                tempGZ1Assume = tgLast + (tgNow - tgLast) / (tmNow - tmLast) * (reqdChTempM - tmLast);
-//                double TgLast4 = Math.pow(tgLast + 273, 4);
-//                double TgNow4 = Math.pow(tgNow + 273, 4);
-//                double TmLast4 = Math.pow(tmLast + 273, 4);
-//                double TmNow4 = Math.pow(tmNow + 273, 4);
-//                double TmReqd4 = Math.pow(reqdChTempM + 273, 4);
-////                double TgAssume4 = TgLast4 + (TgNow4 - TgLast4) / (TmNow4 - TmLast4) * (TmReqd4 - TmLast4);
-//                double TgAssume4 = TmNow4 + (TgNow4 - TmNow4) / (TmNow4 - TmLast4) * (TmReqd4 - TmLast4);
-//                tempGZ1Assume = Math.pow(TgAssume4, 0.25) - 273;
-
                 tgLast = tgNow;
                 tmLast = tmNow;
             }
@@ -2958,7 +3068,7 @@ public class DFHFurnace {
         cell = r.createCell(0);
         cell.setCellStyle(styles.csHeader1);
         cell.setCellValue("FURNACE LOSS DETAILS");
-        Row headRow = sheet.createRow(3);
+//        Row headRow = sheet.createRow(3);
         int topRow = 4;
         int col = 1;
         FceSubSection.xlLossRowHead(sheet, styles, topRow, col);

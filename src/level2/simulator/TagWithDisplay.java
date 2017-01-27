@@ -32,6 +32,7 @@ public class TagWithDisplay extends Tag implements ActionListener, FocusListener
     JTextField booleanStatus;
     JComboBox<String> comboBox;
     boolean uiReady = false;
+    boolean isBeingEdited = false;
 
     public TagWithDisplay(L2ParamGroup.Parameter element, TagName tagName, boolean rw, boolean subscribe,
                           String formatStr, InputControl controller) {
@@ -88,6 +89,7 @@ public class TagWithDisplay extends Tag implements ActionListener, FocusListener
                 displayComponent = textArea;
                 break;
         }
+        displayComponent.addFocusListener(new UIEditListener());
         uiReady = true;
     }
 
@@ -144,7 +146,7 @@ public class TagWithDisplay extends Tag implements ActionListener, FocusListener
     }
 
     public void updateUI() {
-        if (uiReady) {
+        if (uiReady && !isBeingEdited) {
             ProcessValue pv = getValue();
             switch (dataType) {
                 case BOOLEAN:
@@ -161,6 +163,18 @@ public class TagWithDisplay extends Tag implements ActionListener, FocusListener
                     textArea.setText(pv.stringValue);
                     break;
             }
+        }
+    }
+
+    class UIEditListener implements FocusListener {
+        @Override
+        public void focusGained(FocusEvent e) {
+            isBeingEdited = true;
+        }
+
+        @Override
+        public void focusLost(FocusEvent e) {
+            isBeingEdited = false;
         }
     }
 }

@@ -57,6 +57,11 @@ public class JSPchMaterial extends ChMaterial implements JSPObject {
         return dataCollected;
     }
 
+    @Override
+    public void unCollectData() {
+        dataCollected = false;
+    }
+
     public boolean collectData(JSPConnection jspConnection) {
         if (!dataCollected) {
 //            debug("in collectData()");

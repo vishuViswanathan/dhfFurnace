@@ -9,6 +9,7 @@ import directFiredHeating.process.StripDFHProcessList;
 import directFiredHeating.stripDFH.StripFurnace;
 import mvUtils.display.DataStat;
 import mvUtils.display.StatusWithMessage;
+import mvUtils.jsp.JSPObject;
 import tmiOnly.GetSoftwareKey;
 
 import javax.swing.*;
@@ -45,6 +46,8 @@ public class L2Configurator extends StripHeating {
         createLocalMenuItems();
     }
 
+    Fuel lastSelected = null;
+
     public boolean setItUp() {
         modifyJTextEdit();
         fuelList = new Vector<Fuel>();
@@ -69,6 +72,25 @@ public class L2Configurator extends StripHeating {
             setDefaultSelections();
             setTestData();
             switchPage(DFHDisplayPageType.INPUTPAGE);
+            if (asJNLP) {
+                cbFuel.addActionListener(e -> {
+                    Fuel nowSelected = (Fuel) cbFuel.getSelectedItem();
+//                    showMessage("Fuel " + nowSelected);
+                    if (nowSelected != null) {
+                        if (lastSelected != null) {
+                            if (decide("Change of Fuel", "The Fuel has been changed. The earlier selection will be Deleted" +
+                                    "\nEnsure that there are no Performance data with earlier fuel")) {
+                                ((JSPObject) lastSelected).unCollectData();
+                                lastSelected = nowSelected;
+                            } else {
+                                cbFuel.setSelectedItem(lastSelected);
+                                ((JSPObject) nowSelected).unCollectData();
+                            }
+                        } else
+                            lastSelected = nowSelected;
+                    }
+                });
+            }
             displayIt();
 
             showMessage("The furnace has to be of " + HeatingMode.TOPBOTSTRIP + " for " + DFHTuningParams.FurnaceFor.STRIP +

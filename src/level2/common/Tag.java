@@ -100,6 +100,7 @@ public class Tag {
         Y9("y9"),
         Y10("y10"),
         Count("count"),
+        EntryTemp("entryTemp"),
         ExitTemp("exitTemp"),
         Wmin("Wmin"),
         Wmax("Wmax"),

@@ -3,16 +3,13 @@ package level2.fieldResults;
 import FceElements.heatExchanger.HeatExchProps;
 import basic.*;
 import directFiredHeating.DFHTuningParams;
-import directFiredHeating.FceSection;
 import level2.common.L2ParamGroup;
 import level2.common.Tag;
 import level2.stripDFH.L2DFHFurnace;
 import directFiredHeating.process.OneStripDFHProcess;
 import mvUtils.display.*;
 import mvUtils.math.DoubleMV;
-import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
-import performance.stripFce.OneZone;
 
 import javax.swing.*;
 import java.awt.*;
@@ -52,46 +49,18 @@ public class FieldResults {
             topZones = new FieldZone[l2Furnace.nBotActiveSecs];
     }
 
-    public void takeFromCalculations() {
-        production = new ProductionData(l2Furnace.productionData);
-//        setCommonData(l2Furnace.chTempIN, l2Furnace.chTempOUT, l2Furnace.flueTempOUT, l2Furnace.commonAirTemp);
-        setCommonData(l2Furnace.flueTempOUT, l2Furnace.commonAirTemp, l2Furnace.commFuelFiring.fuelTemp);
-        FceSection oneSec;
-        OneZone oneZone;
-        int nSec = l2Furnace.nTopActiveSecs;
-        for (int z = 0; z < nSec; z++) {
-            oneSec = l2Furnace.getOneSection(false, z);
-            oneZone = oneSec.getZonePerfData();
-            addZoneResult(false, z, oneZone.fceTemp, oneZone.fuelFlow, l2Furnace.commonAirTemp, 1.0);
-            // TODO the air fuel ratio is taken as 1.0 here in createOneFieldResults()
-        }
-        if (l2Furnace.bTopBot) {
-            nSec = l2Furnace.nBotActiveSecs;
-            for (int z = 0; z < nSec; z++) {
-                oneSec = l2Furnace.getOneSection(true, z);
-                oneZone = oneSec.getZonePerfData();
-                addZoneResult(false, z, oneZone.fceTemp, oneZone.fuelFlow, l2Furnace.commonAirTemp, 1.0);
-                // the air fuel ratio is taken as 1.0 here in createOneFieldResults()
-            }
-        }
-        airHeatExchProps = l2Furnace.getAirHeatExchProps();
+    public FieldResults(L2DFHFurnace l2Furnace, boolean withStripData) {
+        this(l2Furnace, withStripData, false);
     }
 
-//    public FieldResults(L2DFHFurnace l2Furnace, String xmlStr) {
-//        this(l2Furnace);
-//        if (!takeFromXML(xmlStr)) {
-//            inError = true;
-//        }
-//    }
-
-    public FieldResults(L2DFHFurnace l2Furnace, boolean withStripData) {
+    public FieldResults(L2DFHFurnace l2Furnace, boolean withStripData, boolean allowNewProcess) {
         this(l2Furnace);
         inError = false;
         errMsg = "";
         if (takeZonalData()) {
             if (takeRecuData(l2Furnace.getRecuperatorZ())) {
                 if (withStripData) {
-                    ErrorStatAndMsg stripResponse = takeStripData(l2Furnace.getStripZone());
+                    ErrorStatAndMsg stripResponse = takeStripData(l2Furnace.getStripZone(), allowNewProcess);
                     if (stripResponse.inError) {
                         inError = true;
                         errMsg += stripResponse.msg;
@@ -107,7 +76,7 @@ public class FieldResults {
         }
     }
 
-    ErrorStatAndMsg takeStripData(L2ParamGroup stripZone) {
+    ErrorStatAndMsg takeStripData(L2ParamGroup stripZone, boolean allowNewProcess) {
         ErrorStatAndMsg retVal = new ErrorStatAndMsg();
         double stripExitT = stripZone.getValue(L2ParamGroup.Parameter.Temperature, Tag.TagName.PV).floatValue;
         double width = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Width).floatValue, 3) / 1000; // m
@@ -116,6 +85,14 @@ public class FieldResults {
         String forProcess = stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.BaseProcess).stringValue.trim(); // TODO what happens for Fresh Field Performance
         stripDFHProc = l2Furnace.l2DFHeating.getStripDFHProcess(forProcess, stripExitT, width, thick);
         l2Furnace.logTrace("forProcess " + forProcess + ", " + stripExitT +  ", " + width + ", " + thick);
+         if (stripDFHProc == null) {
+             if (allowNewProcess && l2Furnace.l2DFHeating.decide("Data From Field", "Process does not Exist. DO you want to create a new one?")) {
+                 DataWithStatus<OneStripDFHProcess> newProcess = l2Furnace.createNewNewProcess(stripExitT, thick, width,
+                         speed, forProcess);
+                 if (newProcess.getStatus() == DataStat.Status.OK)
+                     stripDFHProc = newProcess.getValue();
+             }
+         }
         if (stripDFHProc != null) {
             if (l2Furnace.isRefPerformanceAvailable(stripDFHProc, thick)) {
                 production = new ProductionData(stripDFHProc.baseProcessName);
@@ -135,8 +112,9 @@ public class FieldResults {
                     retVal.addErrorMsg("Could not ascertain Charge Material for " +
                             forProcess + " with strip Thickness " + thick);
             }
-            else
+            else {
                 retVal.addErrorMsg("Reference performance is NOT available");
+            }
         } else
             retVal.addErrorMsg("Could not ascertain Process data " + forProcess);
         return retVal;
@@ -157,10 +135,10 @@ public class FieldResults {
     }
 
     boolean takeRecuData(L2ParamGroup recu) {
-        commonAirTemp = recu.getValue(L2ParamGroup.Parameter.AirFlow, Tag.TagName.Temperature).floatValue;
+        commonAirTemp = recu.getValue(L2ParamGroup.Parameter.AirFlow, Tag.TagName.ExitTemp).floatValue;
         commonFuelTemp = 30; // TODO  commonFuelTemp set as 30
         double excessAir = 0.05; // TODO excess air for fuelFiring is taken as 5%
-        flueAtRecu = recu.getValue(L2ParamGroup.Parameter.Flue, Tag.TagName.Temperature).floatValue;
+        flueAtRecu = recu.getValue(L2ParamGroup.Parameter.Flue, Tag.TagName.EntryTemp).floatValue;
         fuelFiring = l2Furnace.getFuelFiring(false, excessAir, commonAirTemp, commonFuelTemp);
         return true;
     }
@@ -188,15 +166,15 @@ public class FieldResults {
         return retVal;
     }
 
-    public void setCommonData(double flueTempOut, double airTemp, double fuelTemp) {
-        this.flueTempOut = flueTempOut;
-        this.commonAirTemp = airTemp;
-        this.commonFuelTemp = fuelTemp;
-    }
+//    public void setCommonData(double flueTempOut, double airTemp, double fuelTemp) {
+//        this.flueTempOut = flueTempOut;
+//        this.commonAirTemp = airTemp;
+//        this.commonFuelTemp = fuelTemp;
+//    }
 
-    public void addZoneResult(boolean bBot, int zNum, double fceTemp, double fuelFlow, double airTemp, double afRatio) {
-        getZones(bBot)[zNum] = new FieldZone(l2Furnace, bBot, zNum, fceTemp, fuelFlow, airTemp, afRatio);
-    }
+//    public void addZoneResult(boolean bBot, int zNum, double fceTemp, double fuelFlow, double airTemp, double afRatio) {
+//        getZones(bBot)[zNum] = new FieldZone(l2Furnace, bBot, zNum, fceTemp, fuelFlow, airTemp, afRatio);
+//    }
 
     /**
      * Compares the calculation results with the Field data and works our the lossFactor to be applied to
@@ -350,30 +328,30 @@ public class FieldResults {
         return totFuel;
     }
 
-    boolean takeZonesFromXML(boolean bBot, String xmlStr) throws NumberFormatException {
-        boolean retVal = true;
-        FieldZone[] zones = getZones(bBot);
-        ValAndPos vp;
-        vp = XMLmv.getTag(xmlStr, "nZones", 0);
-        int nZones = Integer.valueOf(vp.val);
-        if (nZones == ((bBot) ? l2Furnace.nBotActiveSecs : l2Furnace.nTopActiveSecs)) {
-            for (int z = 0; z < nZones; z++) {
-                vp = XMLmv.getTag(xmlStr, "frZ#" + ("" + z).trim(), vp.endPos);
-                zones[z] = new FieldZone(l2Furnace, bBot, z, vp.val);
-                if (!zones[z].bValid) {
-                    inError = true;
-                    errMsg += zones[z].errMsg;
-                    retVal = false;
-                    break;
-                }
-            }
-        } else {
-            inError = true;
-            errMsg += "Number of " + ((bBot) ? "Bottom" : "Top") + " zones does not match";
-            retVal = false;
-        }
-        return retVal;
-    }
+//    boolean takeZonesFromXML(boolean bBot, String xmlStr) throws NumberFormatException {
+//        boolean retVal = true;
+//        FieldZone[] zones = getZones(bBot);
+//        ValAndPos vp;
+//        vp = XMLmv.getTag(xmlStr, "nZones", 0);
+//        int nZones = Integer.valueOf(vp.val);
+//        if (nZones == ((bBot) ? l2Furnace.nBotActiveSecs : l2Furnace.nTopActiveSecs)) {
+//            for (int z = 0; z < nZones; z++) {
+//                vp = XMLmv.getTag(xmlStr, "frZ#" + ("" + z).trim(), vp.endPos);
+//                zones[z] = new FieldZone(l2Furnace, bBot, z, vp.val);
+//                if (!zones[z].bValid) {
+//                    inError = true;
+//                    errMsg += zones[z].errMsg;
+//                    retVal = false;
+//                    break;
+//                }
+//            }
+//        } else {
+//            inError = true;
+//            errMsg += "Number of " + ((bBot) ? "Bottom" : "Top") + " zones does not match";
+//            retVal = false;
+//        }
+//        return retVal;
+//    }
 
     public boolean getDataFromUser() {
         FieldResultsDlg dlg = new FieldResultsDlg(true);

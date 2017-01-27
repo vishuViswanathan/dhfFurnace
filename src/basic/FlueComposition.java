@@ -429,6 +429,9 @@ public class FlueComposition extends Fluid {
     public static double alphaGasBasic(double temp1, double temp2, XYArray emmXYCO2, XYArray emmXYH2O, boolean withCorrection) {
         double retVal = 1;
         boolean done = false;
+        double T1_4, T2_4;
+        T1_4 = Math.pow(temp1 + 273, 4);
+        T2_4 = Math.pow(temp2 + 273, 4);
         while (!done) {
             if ((temp1 < -273) || (temp2 < -273)) {
                 retVal = 1;
@@ -446,10 +449,9 @@ public class FlueComposition extends Fluid {
             eH2O_1 = emmXYH2O.getYat(temp1) * 0.01;
             eCO2_2 = emmXYCO2.getYat(temp2) * 0.01;
             eH2O_2 = emmXYH2O.getYat(temp2) * 0.01;
-            double T1_4, T2_4;
             double qCO2_1, qH2O_1, qCO2_2, qH2O_2, factorH2O, factorCO2;
-            T1_4 = Math.pow(temp1 + 273, 4);
-            T2_4 = Math.pow(temp2 + 273, 4);
+//            T1_4 = Math.pow(temp1 + 273, 4);
+//            T2_4 = Math.pow(temp2 + 273, 4);
             qCO2_1 = eCO2_1 * SPECIAL.stefenBoltz * T1_4;
             qCO2_2 = eCO2_2 * SPECIAL.stefenBoltz * T2_4;
             qH2O_1 = eH2O_1 * SPECIAL.stefenBoltz * T1_4;
@@ -477,6 +479,7 @@ public class FlueComposition extends Fluid {
             retVal = (qCO2 + qH2O) / (temp1 - temp2);
              done = true;
         }
+//        double effectiveEmiss = retVal * (temp1 - temp2)/ (SPECIAL.stefenBoltz * (T1_4 - T2_4));
         return retVal;
     }
 

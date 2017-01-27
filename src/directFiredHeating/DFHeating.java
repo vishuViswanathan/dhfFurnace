@@ -148,7 +148,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = "JNLP 20170109";
+    protected String releaseDate = "JNLP 20170127";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -1560,6 +1560,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         for (ChMaterial oneMat: vChMaterial)
             if (matName.equalsIgnoreCase(oneMat.name)) {
                 chMat = oneMat;
+                if (chMat instanceof JSPObject)
+                    ((JSPObject)chMat).collectData(jspConnection);
                 break;
             }
         return chMat;
@@ -1570,6 +1572,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         for (Fuel fuel: fuelList)
             if (fuelName.equalsIgnoreCase(fuel.name)) {
                 selFuel = fuel;
+                if (fuel instanceof JSPObject)
+                    ((JSPObject)fuel).collectData(jspConnection);
                 break;
             }
         return selFuel;

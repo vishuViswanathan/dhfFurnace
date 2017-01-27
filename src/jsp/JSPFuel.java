@@ -57,6 +57,11 @@ public class JSPFuel extends Fuel implements JSPObject {
         setID(id);
     }
 
+    @Override
+    public void unCollectData() {
+        dataCollected = false;
+    }
+
     public boolean isDataCollected() {
         return dataCollected;
     }

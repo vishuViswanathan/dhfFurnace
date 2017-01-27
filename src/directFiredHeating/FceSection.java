@@ -745,14 +745,14 @@ public class FceSection {
 
 
 
-    void copyFromNextSection(FceSection nextSec) {
+    void copyFromNextSection(FceSection nextSec) {  // TODO param nextSec to be removed
         UnitFurnace slotFrom, slotTo;
         slotTo = vUnitFurnaces.get(lastSlot);
         slotFrom = vUnitFurnaces.get(lastSlot + 1);
         slotTo.copyChTemps(slotFrom);
     }
 
-    void copyFromPrevSection(FceSection prevSec) {
+    void copyFromPrevSection(FceSection prevSec) {  // TODO param prevSec to be removed
         UnitFurnace slotFrom, slotTo;
         slotTo = vUnitFurnaces.get(firstSlot - 1);
         slotFrom = vUnitFurnaces.get(firstSlot - 2);

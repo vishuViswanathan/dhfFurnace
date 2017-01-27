@@ -35,7 +35,7 @@ public class OneStripDFHProcess {
     public double tempDFHExit = 620;
     double maxExitZoneTemp = 1050;
     double minExitZoneTemp = 900;
-    double thinUpperLimit = 0.0004;   // in m
+//    double thinUpperLimit = 0.0004;   // in m
     public double maxThickness = 0.0015;  // m
     public double minThickness = 0.0001; //m
     public double maxSpeed = 120 * 60; // m/h
@@ -63,18 +63,7 @@ public class OneStripDFHProcess {
         this.dfHeating = existingList.dfHeating;
         tuning = dfHeating.getTuningParams();
         this.baseProcessName = baseProcessName;
-        chMaterial = vChMaterial.get(0);
-    }
-
-    public OneStripDFHProcess(StripDFHProcessList existingList, String baseProcessName, double stripExitT, double thick, double width, double speed) {
-        this.bFieldCreated = true;
-        this.existingList = existingList;
-        this.dfHeating = existingList.dfHeating;
-        tuning = dfHeating.getTuningParams();
-        this.baseProcessName = baseProcessName;
-        maxExitZoneTemp = existingList.maxExitZoneTempFP;
-        minExitZoneTemp = existingList.minExitZoneTempFP;
-        tempDFHEntry = existingList.stripEntryTempFP;
+        chMaterial = existingList.vChMaterial.get(0);
     }
 
     public OneStripDFHProcess(DFHeating dfHeating, StripDFHProcessList existingList, String xmlStr) {
@@ -83,6 +72,32 @@ public class OneStripDFHProcess {
         tuning = dfHeating.getTuningParams();
         if (!takeDataFromXML(xmlStr))
             inError = true;
+    }
+
+    public OneStripDFHProcess(StripDFHProcessList existingList, String baseProcessName, double tempDFHExit, double thick,
+                              double width, double speed) {
+        inError = true;
+        this.bFieldCreated = true;
+        this.existingList = existingList;
+        this.dfHeating = existingList.dfHeating;
+        tuning = dfHeating.getTuningParams();
+        this.baseProcessName = baseProcessName;
+        chMaterial = existingList.materialForFieldProcess;
+        tempDFHEntry = existingList.stripEntryTempFP;
+        this.tempDFHExit = tempDFHExit;
+        maxWidth = Math.min(Math.round(width * 100 * tuning.widthOverRange) / 100, existingList.maxStripWidthFP);
+        dfHeating.logInfo(String.format("width %5.3f, overange %5.3f, maxStripWidthFP %5.3f", width, tuning.widthOverRange,
+                existingList.maxStripWidthFP));
+        minWidth = existingList.absMinStripWidth;
+        maxThickness = existingList.maxStripThicknessFP;
+        minThickness = existingList.minStripThicknessFP;
+        double nowUnitProduction = chMaterial.density * thick * speed;
+        maxUnitOutput = nowUnitProduction * tuning.unitOutputOverRange;
+        minUnitOutput = maxUnitOutput * 0.5;
+        maxSpeed = existingList.maxStripSpeedFP;
+        minSpeed = existingList.minExitZoneTempFP;
+        maxExitZoneTemp = existingList.maxExitZoneTempFP;
+        minExitZoneTemp = existingList.minExitZoneTempFP;
     }
 
     public OneStripDFHProcess createCopy() {
@@ -119,10 +134,6 @@ public class OneStripDFHProcess {
 
     public Performance getPerformance() {
         return performance;
-    }
-
-    boolean isItThinMaterial(double thickness) {
-        return (thickness <= thinUpperLimit);
     }
 
     public StatusWithMessage deletePerformance(Performance p) {
@@ -541,8 +552,8 @@ public class OneStripDFHProcess {
         return retVal;
     }
 
-    public DataListEditorPanel getEditPanel(Vector<ChMaterial> vChMaterial, InputControl inpC, DataHandler dataHandler,
-                                            boolean editable, boolean startEditable) {
+    public JPanel dataPanel(String title, InputControl inpC) {
+        MultiPairColPanel editorPanel = new MultiPairColPanel(title);
         dataFieldList = new Vector<NumberTextField>();
         NumberTextField ntf;
         tfBaseProcessName = new XLTextField(baseProcessName, 10);
@@ -550,7 +561,7 @@ public class OneStripDFHProcess {
         tfFullProcessID = new XLTextField(this.toString(), 30);
         tfFullProcessID.setName("Full Process ID");
         tfFullProcessID.setEditable(false);
-        cbChMaterial = new JSPComboBox<>(dfHeating.jspConnection, vChMaterial);
+        cbChMaterial = new JSPComboBox<>(dfHeating.jspConnection, existingList.vChMaterial);
         cbChMaterial.setName("Select Strip Material");
         cbChMaterial.setSelectedItem(chMaterial);
         ntf = ntTempDFHEntry = new NumberTextField(inpC, tempDFHEntry, 6, false, 0, 300,
@@ -598,7 +609,6 @@ public class OneStripDFHProcess {
         dataFieldList.add(ntf);
         dataFieldList.add(ntf);
 
-        DataListEditorPanel editorPanel = new DataListEditorPanel("Strip Process Data", dataHandler, editable, editable);
         // if editable, it is also deletable
         editorPanel.addItemPair(tfBaseProcessName);
         editorPanel.addItemPair(tfFullProcessID);
@@ -633,6 +643,13 @@ public class OneStripDFHProcess {
         editorPanel.addItemPair(ntRTHExitTemp);
         editorPanel.addItemPair(ntSoakTemp);
         editorPanel.addItemPair(ntHBRStriptemp);
+        return editorPanel;
+    }
+
+    public DataListEditorPanel getEditPanel(InputControl inpC, DataHandler dataHandler,
+                                            boolean editable, boolean startEditable) {
+        DataListEditorPanel editorPanel = new DataListEditorPanel("Strip Process Data", dataHandler, editable, editable);
+        editorPanel.addItem(dataPanel("", inpC));
         editorPanel.setVisible(true, startEditable);
         return editorPanel;
     }

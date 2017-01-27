@@ -56,7 +56,7 @@ public class L2DFHZone extends L2ParamGroup {
                 new Tag(Parameter.FuelFlow, Tag.TagName.PV, false, true, fuelFlowFmt),
                 new Tag(Parameter.FuelFlow, Tag.TagName.Auto, false, false),
                 new Tag(Parameter.FuelFlow, Tag.TagName.Remote, false, false),
-                new Tag(Parameter.FuelFlow, Tag.TagName.Span, false, false, fuelFlowFmt),
+//                new Tag(Parameter.FuelFlow, Tag.TagName.Span, false, false, fuelFlowFmt),
                 new Tag(Parameter.FuelFlow, Tag.TagName.SP, false, false, fuelFlowFmt),
                 new Tag(Parameter.FuelFlow, Tag.TagName.SP, true, false, fuelFlowFmt)};
 

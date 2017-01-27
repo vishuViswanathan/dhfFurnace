@@ -389,11 +389,12 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         recuperatorZ = new L2ParamGroup(this, "Recuperator");
         try {
             Tag[] recuFlueTags = {
-                    new Tag(L2ParamGroup.Parameter.Flue, Tag.TagName.Temperature, false, false)};
+                    new Tag(L2ParamGroup.Parameter.Flue, Tag.TagName.EntryTemp, false, false),
+                    new Tag(L2ParamGroup.Parameter.Flue, Tag.TagName.ExitTemp, false, false)};
             recuperatorZ.addOneParameter(L2ParamGroup.Parameter.Flue, recuFlueTags);
             noteMonitoredTags(recuFlueTags);
             Tag[] recuAirTags = {
-                    new Tag(L2ParamGroup.Parameter.AirFlow, Tag.TagName.Temperature, false, false)};
+                    new Tag(L2ParamGroup.Parameter.AirFlow, Tag.TagName.ExitTemp, false, false)};
             recuperatorZ.addOneParameter(L2ParamGroup.Parameter.AirFlow, recuAirTags);
             noteMonitoredTags(recuAirTags);
             retVal = true;
@@ -1056,6 +1057,11 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         } else
             logInfo("eval for Performance table is null");
         return retVal;
+    }
+
+    public DataWithStatus<OneStripDFHProcess> createNewNewProcess(double stripExitT, double thick, double width,
+                                                                  double speed, String baseProcessName) {
+        return l2DFHeating.dfhProcessList.addFieldProcess(baseProcessName, stripExitT, thick, width, speed);
     }
 
     synchronized void resetFieldDataBeingHandled() {
