@@ -471,7 +471,7 @@ public class UnitFurnace {
                     debug("GAS temp Out of range <" + tg + ">, still continuing ..." + errCount++);
                     if (errCount > 1000) {
                         errMsg("GAS temp Out of range <" + tg + ">. Aborting after many trials <" + errCount + ">");
-                        furnace.abortIt();
+                        furnace.abortIt("Unable to evaluate alpha and wall Temperature in UnitFurnace");
                     }
                 }
             }
@@ -515,7 +515,7 @@ public class UnitFurnace {
                         errMsg("TOO many iterations! in Finding Alpha (fcTalpha)." +
                                 "\n gasTemp =" + tg + ", Charge Surface Temp = " + two + "\nAborting after many trials");
                         
-                        furnace.abortIt();
+                        furnace.abortIt("Unable to evaluate alpha in UnitFurnace");
                         break;
                     }
                     else {
@@ -642,7 +642,7 @@ public class UnitFurnace {
 //                errMsg("TOO many iterations! in Finding Alpha (gasTFromFceTandChT). Aborting after many trials");
                 errMsg("TOO many iterations! in Finding Alpha (gasTFromFceTandChT)." +
                         "\n Fce Temp =" + tempO1 + ", Charge Surface Temp = " + two + "\nAborting after many trials");
-                furnace.abortIt();
+                furnace.abortIt("Unable to evaluate Gas Temperature from Wall and Cgarge Temperature in UnitFurnace");
                 break;
             }
             // find alphaOW

@@ -148,7 +148,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = "JNLP 20170127";
+    protected String releaseDate = "JNLP 20170130";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -459,6 +459,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             mISaveToXL.setEnabled(false);
         }
         tuningParams.enableDataEntry(ena && bAllowProfileChange);
+        userTunePanel.setEnabled(ena && !onProductionLine);
         disableSomeUIs();
     }
 
@@ -1654,6 +1655,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         jp.addItemPair("Common Fuel Heated in Recu", cBFuelHeatByRecu);
         jp.addItemPair(ntDeltaTFuelFromRecu);
         jp.addItemPair("Air Recu is after Fuel Recu", cBAirAfterFuel);
+        jp.addItem("<html><font color='red'>The above details are for Recuperator Heat Balance." +
+                "<p>Even if Recu's are not enabled, the air and flue preheat" +
+                "<p>temperatures under 'Calculate' block will be respected</html>");
+
         return jp;
     }
 
@@ -2317,7 +2322,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             mainF.toFront();
             debug(msg);
         } else {
-            if (bAirHeatedByRecu && !bFuelHeatedByRecu && !furnace.checkExistingRecu()) {
+//            if (bAirHeatedByRecu && !bFuelHeatedByRecu && !furnace.checkExistingRecu()) {
+            if (!bFuelHeatedByRecu && !furnace.checkExistingRecu()) {
                     furnace.newRecu();
             }
         }
@@ -2474,14 +2480,14 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return furnaceFor;
     }
 
-    public void abortingCalculation() {
+    public void abortingCalculation(String reason) {
         evaluator = null;
         enableDataEntry(true);
         enableDefineMenu(true);
         enableResultsMenu(false);
         enableFileMenu(true);
         enablePerfMenu(true);
-        showError("ABORTING CALCULATION!");
+        showError("ABORTING CALCULATION!\n" + reason);
         switchPage(DFHDisplayPageType.INPUTPAGE);
         parent().toFront();
     }

@@ -118,7 +118,7 @@ public class FceEvaluator implements Runnable, ThreadController{
                 Object src = e.getSource();
 //                String cmd =  e.getActionCommand();
                 if (src == pbAbort)
-                    abortCalculation();
+                    abortCalculation("Aborted by User");
             }
         };
         mainFp = new FramedPanel(new BorderLayout());
@@ -156,8 +156,8 @@ public class FceEvaluator implements Runnable, ThreadController{
         return paused;
     }
 
-    public void abortIt() {
-        abortCalculation();
+    public void abortIt(String reason) {
+        abortCalculation(reason);
     }
 
     public boolean healthyExit() {
@@ -168,10 +168,10 @@ public class FceEvaluator implements Runnable, ThreadController{
         return aborted;
     }
 
-    void abortCalculation() {
+    void abortCalculation(String reason) {
         run= false;
         aborted = true;
-        control.abortingCalculation();
+        control.abortingCalculation(reason);
     }
 
     void resumeCalculation() {
@@ -290,7 +290,7 @@ public class FceEvaluator implements Runnable, ThreadController{
                     showProgress();
                 evaluate();
             } else
-                control.abortingCalculation();
+                control.abortingCalculation("Unable to initialise in FceEvaluator");
             done = true;
             control.setBusyInCalculation(false);
             if (doneListener != null)

@@ -20,5 +20,5 @@ public interface ThreadController {
     void setProgressGraph(String title1, String title2, JPanel panel);
     void setMainTitle(String title);
     void setCalculTitle(String title);
-    void abortIt();
+    void abortIt(String reason);
 }

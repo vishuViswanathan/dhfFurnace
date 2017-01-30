@@ -592,21 +592,22 @@ public class DFHFurnace {
                         allOk = evalTopOrBottomWithOnlyWallRadiation(true, bStart, addMsg);
                 }
                 bStart = false;
-                if (allOk && bTopBot && canRun()) {
-                    double rmsDiff = getGratioStat();
-                    boolean resp = false;
-                    if (rmsDiff > 0.005) {
-                        resp = decide("Top and Bottom Heating",
-                                "Heat Share Error of Top and Bottom is " + (new DecimalFormat("#0.00")).format(rmsDiff * 100) +
-                                        "%, Do you want to recalculate with Correction?");
-                        controller.parent().toFront();
-                    }
-                    if (resp) {
-                        combiData.noteCorrection();
-                    } else
-                        reDo = false;
-                } else
-                    reDo = false;
+                reDo = false;
+//                if (allOk && bTopBot && canRun()) {
+//                    double rmsDiff = getGratioStat();
+//                    boolean resp = false;
+//                    if (rmsDiff > 0.005) {
+//                        resp = decide("Top and Bottom Heating",
+//                                "Heat Share Error of Top and Bottom is " + (new DecimalFormat("#0.00")).format(rmsDiff * 100) +
+//                                        "%, Do you want to recalculate with Correction?");
+//                        controller.parent().toFront();
+//                    }
+//                    if (resp) {
+//                        combiData.noteCorrection();
+//                    } else
+//                        reDo = false;
+//                } else
+//                    reDo = false;
             }
 
             if (allOk && canRun() && bDisplayResults) {
@@ -707,7 +708,7 @@ public class DFHFurnace {
             return true;
         } else {
             if (canRun())
-                controller.abortingCalculation();
+                controller.abortingCalculation("Some Error in Calculation in DFHFurnace 01");
             setDisplayResults(true);
             return false;
         }
@@ -733,7 +734,7 @@ public class DFHFurnace {
             retVal = true;
         } else {
             if (canRun())
-                controller.abortingCalculation();
+                controller.abortingCalculation("Some Error in Calculation in DFHFurnace 02");
         }
         if (bDisplayResults)
             enablePeformMenu(true);
@@ -915,11 +916,15 @@ public class DFHFurnace {
 
     boolean redoWithRecuResults() {
         if (existingHeatExch != null) {
-            double calculAirTempAtBurner = airRecu.heatedTempOut - controller.deltaTAirFromRecu;
-            if (Math.abs(calculAirTempAtBurner - controller.airTemp) > 1) {     // recalculate
-                double correctedAirTempAtBurner = calculAirTempAtBurner; //(controller.airTemp + calculAirTempAtBurner) / 2;
-                changeAirTemp(correctedAirTempAtBurner);
-                return true;
+            if (controller.bAirHeatedByRecu) {
+                double calculAirTempAtBurner = airRecu.heatedTempOut - controller.deltaTAirFromRecu;
+                if (Math.abs(calculAirTempAtBurner - controller.airTemp) > 1) {     // recalculate
+                    double correctedAirTempAtBurner = calculAirTempAtBurner; //(controller.airTemp + calculAirTempAtBurner) / 2;
+                    changeAirTemp(correctedAirTempAtBurner);
+                    return true;
+                }
+            } else {
+                existingHeatExch = null;
             }
         }
         return false;
@@ -1007,8 +1012,8 @@ public class DFHFurnace {
         return (bDisplayResults) ? master.isRunOn() : true;
     }
 
-    void abortIt() {
-        master.abortIt();
+    void abortIt(String reason) {
+        master.abortIt(reason);
     }
 
     boolean bUnableToUsePerfData = false;
@@ -1837,9 +1842,11 @@ public class DFHFurnace {
                         break;
                     } else if (response == FceEvaluator.EvalStat.TOOLOWGAS) {
                         break;
-                    } else {
+                    }
+                    else {
                         showError("firstZoneInRev: Unknown response from oneSectionInRev() for " + statusHead + s);
-                        redoIt = true;
+                        redoIt = false;
+                        bRetVal = false;
                         break;
                     }
                 }
@@ -1860,43 +1867,47 @@ public class DFHFurnace {
                 }
             }
 
-            if (loopBack || redoIt) {
-                loopBack = false;
-                continue;
-            }
-            if (response != lastResponse) {
-                lastResponse = response;
-                trialDeltaT = (tuningParams.suggested1stCorrection > 0) ?
-                        tuningParams.suggested1stCorrection : 10;
-            }
-            if (response == FceEvaluator.EvalStat.TOOLOWGAS) {
-                tempGZ1Assume += 10;
-                continue;
-            }
-            tmNow = entrySec.chEntryTemp();
-            diff = tmNow - reqdChTempM;
+            if (bRetVal) {
+                if (loopBack || redoIt) {
+                    loopBack = false;
+                    continue;
+                }
+                if (response != lastResponse) {
+                    lastResponse = response;
+                    trialDeltaT = (tuningParams.suggested1stCorrection > 0) ?
+                            tuningParams.suggested1stCorrection : 10;
+                }
+                if (response == FceEvaluator.EvalStat.TOOLOWGAS) {
+                    tempGZ1Assume += 10;
+                    continue;
+                }
+                tmNow = entrySec.chEntryTemp();
+                diff = tmNow - reqdChTempM;
 
 //showError("WAITING TO CONTINUE tmNow = " + tmNow);
-            if (Math.abs(diff) <= 1 * tuningParams.errorAllowed)
-                break;
-            if (bTrial1) {
-                tgLast = tempGZ1Assume;
-                tmLast = tmNow;
-                tempGZ1Assume += (diff < 0) ? (-trialDeltaT) : trialDeltaT;
-                bTrial1 = false;
-            } else {
-                tgNow = tempGZ1Assume;
-                tempGZ1Assume = tgNow + (tgNow - tgLast) / (tmNow - tmLast) * (reqdChTempM - tmNow);
-                if (Double.isNaN(tempGZ1Assume)) {
-                    showError("Some problem in getting to charge entry temperature\n" +
-                    "     Try with reduced losses in the first section ...");
-                    bRetVal = false;
+                if (Math.abs(diff) <= 1 * tuningParams.errorAllowed)
                     break;
+                if (bTrial1) {
+                    tgLast = tempGZ1Assume;
+                    tmLast = tmNow;
+                    tempGZ1Assume += (diff < 0) ? (-trialDeltaT) : trialDeltaT;
+                    bTrial1 = false;
+                } else {
+                    tgNow = tempGZ1Assume;
+                    tempGZ1Assume = tgNow + (tgNow - tgLast) / (tmNow - tmLast) * (reqdChTempM - tmNow);
+                    if (Double.isNaN(tempGZ1Assume)) {
+                        showError("Some problem in getting to charge entry temperature\n" +
+                                "     Try with reduced losses in the first section ...");
+                        bRetVal = false;
+                        break;
+                    }
+                    tgLast = tgNow;
+                    tmLast = tmNow;
                 }
-                tgLast = tgNow;
-                tmLast = tmNow;
+                lastDiff = diff;
             }
-            lastDiff = diff;
+            else
+                break;
         }
         if (bRetVal) {
             entrySec.setEntryChTemps(reqdChTempM, reqdChTempM, reqdChTempM);
@@ -2139,12 +2150,15 @@ public class DFHFurnace {
         spHeatCons = heatFromComb / productionData.production;
         effChHeatVsFuel = (chHeatOUT - chHeatIN) / heatFromComb;
         effChHeatAndLossVsFuel = ((chHeatOUT - chHeatIN) + totLosses) / heatFromComb;
-        if (prepareRecuBalance()) {
-            heatSummary = heatSummaryPanel();
-            return true;
-        }
-        else
-            return false;
+        prepareRecuBalance();
+        heatSummary = heatSummaryPanel();
+        return true;
+//        if (prepareRecuBalance()) {
+//            heatSummary = heatSummaryPanel();
+//            return true;
+//        }
+//        else
+//            return false;
     }
 
     FlueCompoAndQty flueAfterRecu;
@@ -2152,9 +2166,23 @@ public class DFHFurnace {
     protected Recuperator airRecu = null, fuelRecu = null;
 
     boolean checkExistingRecu() {
-        return (existingHeatExch != null &&
-                (perfBaseReady || chTempProfAvailable ||
-                        decide("Existing Recuperator", " Do you want to use the existing Air Recuperator ?")));
+        boolean retVal = false;
+        if (existingHeatExch != null) {
+            if (controller.bAirHeatedByRecu) {
+                retVal = perfBaseReady || chTempProfAvailable ||
+                        decide("Existing Recuperator", " Do you want to use the existing Air Recuperator ?");
+
+            }
+            else {
+                showMessage("DELETING Existing Recuperator Data, \n" +
+                                "since the Common Air Recuperator has been de-selected");
+                existingHeatExch = null;
+            }
+        }
+        return retVal;
+//        return (controller.bAirHeatedByRecu && existingHeatExch != null &&
+//                (perfBaseReady || chTempProfAvailable ||
+//                        decide("Existing Recuperator", " Do you want to use the existing Air Recuperator ?")));
     }
 
     public void newRecu() {
@@ -4038,7 +4066,7 @@ public class DFHFurnace {
         firedCount(false);
         if (bTopBot)
             firedCount(true);
-        if (chTempProfAvailable || perfBaseReady)
+        if (chTempProfAvailable || perfBaseReady || tuningParams.bBaseOnZonalTemperature)
             return true;
         boolean bRetVal = showZoneDataMsgIfRequired(caller, false);
         if (bRetVal && bTopBot)
