@@ -225,7 +225,7 @@ public class L2StripZone extends L2ParamGroup {
                             }else
                                 status.setErrorMessage("Running Strip: Unable to set recommended speed" + responseSpeed.errorMessage);
                         } else
-                            status.setErrorMessage("Running Strip: Unable to get recommended speed: " + speedData.errorMessage);
+                            status.setErrorMessage("Running Strip: Unable to get recommended speed: " + speedData.getErrorMessage());
                     } else
                         status.setErrorMessage("Running Strip: Unable to calculate recommended capacity from reference");
                 }
@@ -283,7 +283,7 @@ public class L2StripZone extends L2ParamGroup {
                                     if (responseTempSp.valid) {
                                         setValue(L2ParamGroup.Parameter.Next, Tag.TagName.Ready, true);
                                         if (speedStatus == DataStat.Status.WithInfoMsg)
-                                            status.setInfoMessage(speedData.infoMessage);
+                                            status.setInfoMessage(speedData.getInfoMessage());
                                     } else
                                         status.setErrorMessage("Unable to set Strip Exit Temperature : " + responseTempSp.errorMessage);
                                 } else
@@ -291,7 +291,7 @@ public class L2StripZone extends L2ParamGroup {
                             }else
                                 status.setErrorMessage("Unable to set recommended speed" + responseSpeed.errorMessage);
                         } else
-                            status.setErrorMessage("Unable to get recommended speed: " + speedData.errorMessage);
+                            status.setErrorMessage("Unable to get recommended speed: " + speedData.getErrorMessage());
                     } else
                         status.setErrorMessage("Unable to calculate recommended capacity from reference");
                 }

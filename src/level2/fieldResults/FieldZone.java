@@ -108,8 +108,8 @@ public class FieldZone {
                 calculatedFlueTempOut / calculatedFceTemp * frFceTemp :
                 calculatedFlueTempOut;
 
-        l2Furnace.logInfo(String.format("FieldZone.111: frAirTemp %4.0f, frFceTemp %4.0f, frFlueTempOut %4.0f, calculatedFceTemp %4.0f, calculatedFlueTempOut %4.0f, ",
-                frAirTemp, frFceTemp, frFlueTempOut, calculatedFceTemp, calculatedFlueTempOut));
+//        l2Furnace.logInfo(String.format("FieldZone.111: frAirTemp %4.0f, frFceTemp %4.0f, frFlueTempOut %4.0f, calculatedFceTemp %4.0f, calculatedFlueTempOut %4.0f, ",
+//                frAirTemp, frFceTemp, frFlueTempOut, calculatedFceTemp, calculatedFlueTempOut));
 
         double frNetFuelHeat = frFuelFlow * zonalFuelFiring.netUsefulFromFuel(frFlueTempOut, frAirTemp);
 //        double frHeatFromPassingFlue = passingFlue.flow *

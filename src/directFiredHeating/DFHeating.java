@@ -148,7 +148,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = "JNLP 20170130";
+    protected String releaseDate = "JNLP 20170208";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -459,8 +459,15 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             mISaveToXL.setEnabled(false);
         }
         tuningParams.enableDataEntry(ena && bAllowProfileChange);
-        userTunePanel.setEnabled(ena && !onProductionLine);
+        enableUserTunePanel(ena);
+//        if (!onProductionLine)
+//            userTunePanel.setEnabled(ena);
         disableSomeUIs();
+    }
+
+    protected void enableUserTunePanel(boolean ena) {
+        if (!onProductionLine)
+            userTunePanel.setEnabled(ena);
     }
 
     protected void setTestData() {
@@ -1777,9 +1784,9 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     public DataWithStatus<OneStripDFHProcess> getDFHProcess(Performance forThisPerformance) {
-        logInfo("in getDFHProcess in DFHeating");
+//        logInfo("in getDFHProcess in DFHeating");
         DataWithStatus<OneStripDFHProcess> retVal = dfhProcessList.getDFHProcess(forThisPerformance) ;
-        logInfo("retVal status =" + retVal.getDataStatus() + ", values = " + retVal.getValue());
+//        logInfo("retVal status =" + retVal.getDataStatus() + ", values = " + retVal.getValue());
         return retVal;
     }
 
@@ -1789,6 +1796,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
     public OneStripDFHProcess getStripDFHProcess(String forProc) {
         return dfhProcessList.getDFHProcess(forProc.trim().toUpperCase());
+    }
+
+    public boolean removeTheProcess(OneStripDFHProcess theProcess)  {
+        return dfhProcessList.removeTheProcess(theProcess);
     }
 
     public OneStripDFHProcess getStripDFHProcess(StripProcessAndSize theStrip) {

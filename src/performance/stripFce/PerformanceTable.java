@@ -341,9 +341,7 @@ public class PerformanceTable {
         double selWidth = baseP.chLength;
 
         if (tableSelP == null) {
-//            double baseW = baseP.chLength;
             double minW = tempT.getMinRowHead();
-//            double baseS = baseP.speed;
             double minS = tempT.getMinColHead();
             FocusListener li = new FocusListener() {
                 public void focusGained(FocusEvent e) {
@@ -354,10 +352,9 @@ public class PerformanceTable {
 
                 }
             };
-//            ntWidth = new NumberTextField(control, maxW, 6, false, minW, maxW, tempT.rowHeadFmtStr, "Selected Width (m)");
             ntWidth = new NumberTextField(control, selWidth, 6, false, minW, maxW, tempT.rowHeadFmtStr, "Selected Width (m)");
             ntWidth.addFocusListener(li);
-            ntOutput = new NumberTextField(control, maxS, 6, false, minS, maxS, tempT.colHeadFmtStr, "Selected output Factor");
+            ntOutput = new NumberTextField(control, 1.0, 6, false, minS, maxS, tempT.colHeadFmtStr, "Selected output Factor");
             ntOutput.addFocusListener(li);
             ntThick = new NumberTextField(control, baseP.chThick * 1000, 6, false, 0.01, 10.0, "#0.00", "Select thickness (mm)");
             ntThick.addFocusListener(li);
@@ -375,13 +372,14 @@ public class PerformanceTable {
             innerP.addItemPair("", buttGetData);
             tableSelP.add(new JLabel("Performance Data For "), BorderLayout.NORTH);
             tableSelP.add(innerP, BorderLayout.CENTER);
-//            tableSelP.add(buttGetData, BorderLayout.EAST);
         }
         else {
             ntWidth.setData(selWidth);
-            ntOutput.setData(maxS);
+            ntOutput.setData(1.0);
+//            ntOutput.setData(maxS);
             ntThick.setData(baseP.chThick * 1000);
         }
+        showSelDataSet();  // 20170108
         return tableSelP;
     }
 

@@ -134,7 +134,7 @@ public class Level2Installer extends L2DFHeating {
             }
         }
         else
-            retVal.addErrorMessage(pathStatus.errorMessage);
+            retVal.addErrorMessage(pathStatus.getErrorMessage());
         return retVal;
     }
 

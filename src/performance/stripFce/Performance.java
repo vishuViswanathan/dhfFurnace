@@ -513,6 +513,7 @@ public class Performance {
     }
 
     boolean isProcessNameComparable(String nowProcessName) {
+//        msgOnTerminal(String.format("Performance.516:: compare [%s] with [%s]", nowProcessName, processName)); // TODO remove on RELEASE
         return nowProcessName.equalsIgnoreCase(processName);
     }
 
@@ -520,7 +521,9 @@ public class Performance {
         boolean bComparable = isProcessNameComparable(nowProcessName);
         bComparable &= chMaterial.equals(nowChMaterial);
         bComparable &= isExitTempComparable(nowExitTemp, allowance);
-        //(Math.abs(exitTemp() - nowExitTemp) < allowance);
+//        if (!bComparable)
+//            msgOnTerminal(String.format("Performance.526::Failed comparing [%s] with Process %s, chMat %s, exitT %4.0f",
+//                    toString(), nowProcessName, nowChMaterial.toString(), nowExitTemp));    // TODO remove on RELEASE
         return bComparable;
     }
 
@@ -546,8 +549,9 @@ public class Performance {
                 bComparable &= (Math.abs((unitOutput - (withProduction.production / nowCharge.length)) / unitOutput) < 0.01);
             if ((compTypeFlags & EXITTEMP) == EXITTEMP)   // allow 1 deg difference
                 bComparable &= isExitTempComparable(withProduction.exitTemp, exitTAllowance);
-//          bComparable &= (Math.abs(exitTemp() - withProduction.exitTemp) < exitTAllowance);
         }
+//        if (!bComparable)
+//            msgOnTerminal("Performance.557:: Failed comparing [" + this + "] with " + withProduction);    // TODO remove on RELEASE
         return bComparable;
     }
 
@@ -670,10 +674,14 @@ public class Performance {
 
     public String toString() {
         DecimalFormat tempFmt = new DecimalFormat("#,##0");
-        if (chMaterial != null)
-            return chMaterial +
-                ", size " + (chLength* 1000) + " x " + (chThick * 1000) +  " to " + tempFmt.format(exitTemp()) +
-                " at " + (output / 1000) + " t/h with " + fuelName + " as fuel";
+        if (chMaterial != null) {
+            String str = String.format("Material: %s, size %4.0f mm x %5.3f mm to %4.0f C at %4.2f t/h (%4.1f mpm) and fuel %s",
+                    chMaterial, (chLength * 1000), (chThick * 1000), exitTemp(), (output / 1000), (speed / 60), fuelName);
+            return (str);
+//            return chMaterial +
+//                    ", size " + (chLength * 1000) + " x " + (chThick * 1000) + " to " + tempFmt.format(exitTemp()) +
+//                    " at " + (output / 1000) + " t/h(" + (speed / 60) + "mpm )with " + fuelName + " as fuel";
+        }
         else
             return super.toString();
     }
@@ -929,6 +937,7 @@ public class Performance {
 
     void greyPerformanceP() {
         perfSummaryPanel.removeAll();
+        fuelFlowProfilePanel.removeAll();        // 20170108
         perfSummaryPanel.updateUI();
     }
 
@@ -989,7 +998,7 @@ public class Performance {
         JPanel outerP = new JPanel(new BorderLayout());
         MultiPairColPanel pan = new MultiPairColPanel("");
         addItemPair(pan, Params.DATE);
-        addItemPair(pan, Params.PROCESSNAME);
+        addItem(pan, Params.PROCESSNAME);
         addItemPair(pan, Params.CHMATERIAL);
         addItemPair(pan, Params.CHEMMFACTOR, 1, "0.000");
         addItemPair(pan, Params.CHTEMPOUT, 1, "#,##0 C");
@@ -1008,6 +1017,10 @@ public class Performance {
 
     void addItemPair(MultiPairColPanel pan, Params param) {
         pan.addItemPair("" + param + ": ", getStringParam(param), false);
+    }
+
+    void addItem(MultiPairColPanel pan, Params param) {
+        pan.addItem(getStringParam(param));
     }
 
     void addItemPair(MultiPairColPanel pan, Params param, double factor, String format) {
@@ -1057,6 +1070,10 @@ public class Performance {
     void showMessage(String msg) {
         JOptionPane.showMessageDialog(controller.parent(), msg, "FOR INFORMATION", JOptionPane.INFORMATION_MESSAGE);
         controller.parent().toFront();
+    }
+
+    void msgOnTerminal(String msg) {
+        System.out.println(msg);
     }
 
 }

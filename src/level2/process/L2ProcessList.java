@@ -30,7 +30,6 @@ public class L2ProcessList extends StripDFHProcessList{
         boolean retVal = false;
         try {
             for (int p = 0; p < maxListLenFP; p++) {
-                System.out.println(String.format("Process%02d", (p + 1)));
                 processZones.add(new L2DFHProcessZone(l2Furnace, String.format("Process%02d", (p + 1)),
                         String.format("DFH Process %02d", (p + 1))));
             }
@@ -61,12 +60,16 @@ public class L2ProcessList extends StripDFHProcessList{
     public int sendListToLevel1() {
         int p = 0;
         for (OneStripDFHProcess oneP: list) {
-            if (processZones.get(p).sendToLevel1(oneP))
-                p++;
-            else {
-                p = 0;
-                break;
+            if (oneP.isPerformanceAvailable()) {
+                if (processZones.get(p).sendToLevel1(oneP))
+                    p++;
+                else {
+                    p = 0;
+                    break;
+                }
             }
+            else
+                l2Furnace.showError("Process " + oneP + " is not sent to Level1 since performance data is not available");
         }
         return p;
     }

@@ -85,7 +85,7 @@ public class OneStripDFHProcess {
         chMaterial = existingList.materialForFieldProcess;
         tempDFHEntry = existingList.stripEntryTempFP;
         this.tempDFHExit = tempDFHExit;
-        maxWidth = Math.min(Math.round(width * 100 * tuning.widthOverRange) / 100, existingList.maxStripWidthFP);
+        maxWidth = Math.min(0.01 * Math.round(width * 100 * tuning.widthOverRange), existingList.maxStripWidthFP);
         dfHeating.logInfo(String.format("width %5.3f, overange %5.3f, maxStripWidthFP %5.3f", width, tuning.widthOverRange,
                 existingList.maxStripWidthFP));
         minWidth = existingList.absMinStripWidth;
@@ -130,6 +130,10 @@ public class OneStripDFHProcess {
         c.performance = performance;
         c.bFieldCreated = bFieldCreated;
         return c;
+    }
+
+    public boolean isPerformanceAvailable() {
+        return performance != null;
     }
 
     public Performance getPerformance() {
@@ -228,7 +232,7 @@ public class OneStripDFHProcess {
                     response.setValue(speed, "Restricted by Minimum Process Speed");
                 } else {
                     if (status == DataStat.Status.WithInfoMsg)
-                        response.setValue(speed, response.infoMessage);   // if it had any infoMessage, it ic forwarded
+                        response.setValue(speed, response.getInfoMessage());   // if it had any infoMessage, it ic forwarded
                     else
                         response.setValue(speed);
                 }
@@ -648,7 +652,9 @@ public class OneStripDFHProcess {
 
     public DataListEditorPanel getEditPanel(InputControl inpC, DataHandler dataHandler,
                                             boolean editable, boolean startEditable) {
-        DataListEditorPanel editorPanel = new DataListEditorPanel("Strip Process Data", dataHandler, editable, editable);
+        String title = "<html>Strip Process Data" +
+                (((isPerformanceAvailable()) ? "" : " <font color='red'>(No Performance Data)") + "</html>");
+        DataListEditorPanel editorPanel = new DataListEditorPanel(title, dataHandler, editable, editable);
         editorPanel.addItem(dataPanel("", inpC));
         editorPanel.setVisible(true, startEditable);
         return editorPanel;
@@ -665,7 +671,7 @@ public class OneStripDFHProcess {
 
 
     public String getFullProcessID() {
-        return getFullProcessID(baseProcessName, tempDFHExit, minWidth, maxWidth, minThickness, maxThickness);
+        return  getFullProcessID(baseProcessName, tempDFHExit, minWidth, maxWidth, minThickness, maxThickness);
     }
 
     public static String getFullProcessID(String baseProcessNameX, double  exitTempX, double minWidthX, double maxWidthX,
@@ -679,6 +685,7 @@ public class OneStripDFHProcess {
 
     public String toString() {
         return getFullProcessID();
+//        return ((isPerformanceAvailable()) ? "*" : "")  + getFullProcessID();
     }
 
     public ErrorStatAndMsg doesItOverlap(OneStripDFHProcess withThis) {
@@ -762,11 +769,19 @@ public class OneStripDFHProcess {
                     status.addErrorMsg(" Max. Unit Output must be >  Min. Unit Output\n");
                 if (maxThicknessX > existingList.maxStripThicknessFP)
                     status.addErrorMsg("Max. Strip Thickness cannot be more than " + existingList.maxStripThicknessFP * 1000 +
-                            " set in 'L2 Basic Settings'");
+                            "mm set in 'L2 Basic Settings'");
                 if (maxThicknessX < minThicknessX)
                     status.addErrorMsg("Max. Thickness must be > Min. Thickness\n");
+                if (maxWidthX > existingList.maxStripWidthFP)
+                    status.addErrorMsg("Max. Strip width cannot be more than " + existingList.maxStripWidthFP * 1000 +
+                            "mm set in 'L2 Basic Settings'");
+                if (minWidthX < existingList.absMinStripWidth)
+                    status.addErrorMsg("Min. Strip width cannot be less than " + existingList.absMinStripWidth * 1000 + "mm");
                 if (maxWidthX < minWidthX)
                     status.addErrorMsg("Max. Width must be > Min. Width\n");
+                if (maxSpeedX > existingList.maxStripSpeedFP)
+                    status.addErrorMsg("Max. Strip speed cannot be more than " + existingList.maxStripSpeedFP / 60 +
+                            "mpm set in 'L2 Basic Settings'");
                 if (maxSpeedX <= minSpeedX)
                     status.addErrorMsg("Max. Speed must be > Min. Speed\n");
                 if (!status.inError) {

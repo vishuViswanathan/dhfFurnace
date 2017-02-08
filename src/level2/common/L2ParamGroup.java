@@ -99,10 +99,6 @@ public class L2ParamGroup {
      */
     public L2ParamGroup(L2Interface l2Interface, String groupName, Subscription subscription) {
         this (l2Interface, groupName, "", subscription);
-//        this.l2Interface = l2Interface;
-//        this.groupName = groupName;
-//        this.subscription = subscription;
-//        paramList = new Hashtable<Parameter, L2ZoneParam>();
     }
 
     public L2ParamGroup(L2Interface l2Interface, String groupName, String descriptiveName) {

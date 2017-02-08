@@ -11,6 +11,7 @@ import mvUtils.mvXML.XMLmv;
 import performance.stripFce.Performance;
 import performance.stripFce.StripProcessAndSize;
 
+import javax.sound.sampled.DataLine;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -68,7 +69,7 @@ public class StripDFHProcessList {
         absMaxStripWidth = dfHeating.furnace.getFceWidth() - wallToStripMin * 2;
         maxStripWidthFP = (maxStripWidthFP == 0) ? absMaxStripWidth - 50 :
                 new DoubleRange(absMinStripWidth, absMaxStripWidth).limitedValue(maxStripWidthFP);
-        cbProcess = new JComboBox<>(list);
+//        cbProcess = new JComboBox<>(list);
         cbProcess.setPreferredSize(new Dimension(300, 20));
         cbMaterial = new JSPComboBox<>(dfHeating.jspConnection, dfHeating.vChMaterial);
         ntMaxStripSpeed =
@@ -201,27 +202,78 @@ public class StripDFHProcessList {
 
     public DataWithStatus<OneStripDFHProcess> addFieldProcess(String baseName, double stripExitT, double thick, double width, double speed) {
         DataWithStatus<OneStripDFHProcess> retVal = new DataWithStatus<>();
-        if (stripExitT <= maxStripExitTempFP) {
-            if (thick <= maxStripThicknessFP && thick >= minStripThicknessFP) {
-                if (width <= maxStripWidthFP) {
-                    if (speed <= maxStripSpeedFP) {
-                        OneStripDFHProcess theProcess = new OneStripDFHProcess(this, baseName, stripExitT,
-                                thick, width, speed);
-                        OneComponentDialog dlg = new OneComponentDialog(dfHeating, "Creating New Process",
-                                theProcess.dataPanel("", dfHeating));
-                        dlg.setVisible(true);
+        String title = "Creating New Field Process";
+        if (list.size() < maxListLenFP) {
+            if (stripExitT <= maxStripExitTempFP) {
+                if (thick <= maxStripThicknessFP && thick >= minStripThicknessFP) {
+                    if (width <= maxStripWidthFP) {
+                        if (speed <= maxStripSpeedFP) {
+                            OneStripDFHProcess theProcess = new OneStripDFHProcess(this, baseName, stripExitT,
+                                    thick, width, speed);
+                            OneComponentDialog dlg = new OneComponentDialog(dfHeating, title,
+                                    theProcess.dataPanel("", dfHeating), new NewProcessDataHandler(theProcess));
+                            dlg.setVisible(true);
+                            if (dlg.isOk()) {
+                                ErrorStatAndMsg stat = theProcess.noteDataFromUI();
+                                if (stat.inError)
+                                    showError(title, "Error in Process data :" + stat.msg);
+                                else {
+                                    addOneDFHProcess(theProcess);
+                                    retVal.setValue(theProcess);
+                                }
+                            }
+                            else
+                                retVal.setErrorMessage("Process Data not Entered");
+                        } else
+                            retVal.addErrorMessage(String.format("Strip Speed is more than the limit %4.3f mpm", maxStripSpeedFP / 60));
                     } else
-                        retVal.addErrorMessage(String.format("Strip Speed is more than the limit %4.3f mpm", maxStripSpeedFP / 60));
+                        retVal.addErrorMessage(String.format("Strip Width is more than the limit %4.0f mm", maxStripWidthFP * 1000));
                 } else
-                    retVal.addErrorMessage(String.format("Strip Width is more than the limit %#,##0f mm", maxStripWidthFP * 1000));
-            }
-            else
-                retVal.addErrorMessage(String.format("Strip Thickness is outside the range %4.3f to %4.3f mm",
-                        minStripThicknessFP * 1000, maxStripThicknessFP * 1000));
+                    retVal.addErrorMessage(String.format("Strip Thickness is outside the range %4.3f to %4.3f mm",
+                            minStripThicknessFP * 1000, maxStripThicknessFP * 1000));
+            } else
+                retVal.addErrorMessage(String.format("Strip DFH-Exit Temperature is more than the limit %4.0f C", maxStripExitTempFP));
         }
-        else
-            retVal.addErrorMessage(String.format("Strip DFH-Exit Temperature is more than the limit %4.0f C",maxStripExitTempFP));
+        else {
+            retVal.setErrorMessage("The process List is already full, cannot add any more");
+//            showError(title, retVal.getErrorMessage() );
+        }
         return retVal;
+    }
+
+    class NewProcessDataHandler implements DataHandler {
+        OneStripDFHProcess newProc;
+        NewProcessDataHandler(OneStripDFHProcess newProc) {                     
+            this.newProc = newProc;
+        }
+        @Override
+        public ErrorStatAndMsg checkData() {
+            ErrorStatAndMsg stat = newProc.checkData();
+            if (stat.inError) {
+                showError("New Process Data", stat.msg);
+            }
+            return stat;
+        }
+
+        @Override
+        public boolean saveData() {
+            return false;
+        }
+
+        @Override
+        public void deleteData() {
+
+        }
+
+        @Override
+        public void resetData() {
+
+        }
+
+        @Override
+        public void cancel() {
+
+        }
     }
 
     public boolean viewStripDFHProcess(Window parent) {
@@ -273,7 +325,6 @@ public class StripDFHProcessList {
 
     public DataWithStatus<OneStripDFHProcess> getDFHProcess(Performance p) {
         DataWithStatus<OneStripDFHProcess> retVal = new DataWithStatus<>();
-        dfHeating.logInfo("getDFHProcess in StripDFHProcessList lis = " + list);
         for (OneStripDFHProcess proc:list) {
             ErrorStatAndMsg reply =  proc.performanceOkForProcess(p);
             if (!reply.inError) {
@@ -334,24 +385,27 @@ public class StripDFHProcessList {
             vp = XMLmv.getTag(xmlStr, "pNum", 0);
             try {
                 int pNum = Integer.valueOf(vp.val);
-                for (int p = 0; p < pNum; p++) {
-                    vp = XMLmv.getTag(xmlStr, "StripP" + ("" + (p + 1)).trim(), vp.endPos);
-                    OneStripDFHProcess oneProc = new OneStripDFHProcess(dfHeating, this, vp.val);
-                    if (oneProc.inError) {
+                if (pNum <= maxListLenFP) {
+                    for (int p = 0; p < pNum; p++) {
+                        vp = XMLmv.getTag(xmlStr, "StripP" + ("" + (p + 1)).trim(), vp.endPos);
+                        OneStripDFHProcess oneProc = new OneStripDFHProcess(dfHeating, this, vp.val);
+                        if (oneProc.inError) {
                             dfHeating.showError("In reading StripDFHProc: \n" + oneProc.errMeg);
-                        retVal = false;
-                        break oneBlk;
+                            retVal = false;
+                            break oneBlk;
+                        } else {
+                            ErrorStatAndMsg stat = checkDuplication(oneProc);
+                            if (stat.inError)
+                                dfHeating.showError("Skipping process '" + oneProc.getFullProcessID() + "' in Reading Process List\n" +
+                                        stat.msg);
+                            else
+                                addAProcess(oneProc); // was list.add(oneProc);
+                        }
                     }
-                    else {
-                        ErrorStatAndMsg stat = checkDuplication(oneProc);
-                        if (stat.inError)
-                            dfHeating.showError("Skipping process '" + oneProc.getFullProcessID() + "' in Reading Process List\n" +
-                                    stat.msg);
-                        else
-                            list.add(oneProc);
-                    }
+                    retVal = true;
                 }
-                retVal = true;
+                else
+                    showError("Collecting Processes", "Too many processes (must max " + maxListLenFP + ")");
             } catch (NumberFormatException e) {
                 dfHeating.showError("Error in Number of StripDFHProc");
                 break oneBlk;
@@ -392,8 +446,28 @@ public class StripDFHProcessList {
             }
         }
         if (newOne)
-            list.add(oneProcess);
+            newOne = addAProcess(oneProcess);    // was list.add(oneProcess);
         return newOne;
+    }
+
+    boolean addAProcess(OneStripDFHProcess process) {
+        boolean retVal = false;
+        if (list.size() < maxListLenFP) {
+            list.add(process);
+            retVal = true;
+        }
+        else
+            showError("Adding to Process List", "No space in the ProcessList");
+        return retVal;
+    }
+
+    public boolean removeTheProcess(OneStripDFHProcess oneProcess) {
+        boolean retVal = false;
+        if (list.contains(oneProcess)) {
+            list.remove(oneProcess);
+            retVal = true;
+        }
+        return retVal;
     }
 
     ErrorStatAndMsg checkDuplication(OneStripDFHProcess skipThis, String baseProcessNameX, double  exitTempX, double minWidthX, double maxWidthX,
@@ -485,8 +559,9 @@ public class StripDFHProcessList {
             bListBeingChanged = true;
             jcbExisting.removeAllItems();
             for (OneStripDFHProcess p: list)
-                jcbExisting.addItem(p.getFullProcessID());
-            if (editable)
+                jcbExisting.addItem(p.toString());
+//                jcbExisting.addItem(p.getFullProcessID());
+            if (editable && list.size() < maxListLenFP)
                 jcbExisting.addItem(enterNew);
             bListBeingChanged = false;
         }
@@ -562,7 +637,7 @@ public class StripDFHProcessList {
                     }
                     if (canBeSaved) {
                         if (itsNew) {
-                            list.add(selectedProcess);
+                            addAProcess(selectedProcess); // was  list.add(selectedProcess);
                         }
                         populateJcbExisting();
 //                        jcbExisting.setSelectedItem(selectedProcess.getFullProcessID());

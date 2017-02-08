@@ -149,27 +149,6 @@ public class ProductionData {
         return bRetVal;
     }
 
-//    public StringBuilder dataInXML() {
-//        StringBuilder xmlStr = new StringBuilder(XMLmv.putTag("processName", processName));
-//        xmlStr.append(XMLmv.putTag("charge", charge.dataInXML()));
-//        xmlStr.append(XMLmv.putTag("chEmmissCorrectionFactor", chEmmissCorrectionFactor));
-//        xmlStr.append(XMLmv.putTag("bottShadow", bottShadow));
-//        xmlStr.append(XMLmv.putTag("chPitch", chPitch));
-//        xmlStr.append(XMLmv.putTag("production", production));
-//        xmlStr.append(XMLmv.putTag("entryTemp", entryTemp));
-//        xmlStr.append(XMLmv.putTag("exitTemp", exitTemp));
-//        xmlStr.append(XMLmv.putTag("deltaTemp", deltaTemp));
-//        xmlStr.append(XMLmv.putTag("nChargeRows", nChargeRows));
-//        xmlStr.append(XMLmv.putTag("dischZoneFceTemp", exitZoneFceTemp));
-//        xmlStr.append(XMLmv.putTag("minDischZoneTemp", minExitZoneTemp));
-//
-//        return xmlStr;
-//    }
-
-    public String getErrString() {
-        return errString;
-    }
-
     public boolean allOK() {
         boolean bRetVal = true;
         if (chPitch < charge.width) {
@@ -179,7 +158,9 @@ public class ProductionData {
         return bRetVal;
     }
 
-    public String chargeAndSize() {
-        return "" + charge;
+    public String toString() {
+        return (String.format("Process: %s; output: %5.2f; Charge(%s); exitT: %4.0f",
+                processName, production, charge.toString(), exitTemp));
     }
+
   }

@@ -94,10 +94,10 @@ public class FceEvaluator implements Runnable, ThreadController{
         bShowProgress = true;
     }
 
-    public FceEvaluator(DFHeating control, DFHFurnace furnace, double calculStep) {
-        this(control, null, furnace, calculStep);
-        bShowProgress = false;
-    }
+//    public FceEvaluator(DFHeating control, DFHFurnace furnace, double calculStep) {
+//        this(control, null, furnace, calculStep);
+//        bShowProgress = false;
+//    }
 
     public void addDoneListener(CalculationsDoneListener listener) {
         doneListener = listener;
@@ -110,9 +110,44 @@ public class FceEvaluator implements Runnable, ThreadController{
     LocalControl locCtrl;
     JLabel mainTitle;
     JLabel calculTitle;
+    JLabel subActionTitle;
+    String subAction = "";
 
     JPanel progressPanel;
     boolean init() {
+        localControl = new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Object src = e.getSource();
+                if (src == pbAbort)
+                    abortCalculation("Aborted by User");
+            }
+        };
+        mainFp = new FramedPanel(new BorderLayout());
+        locCtrl = new LocalControl();
+        JPanel titleOuter = new JPanel(new BorderLayout());
+        JPanel titleP = new JPanel();
+        titleP.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        mainTitle = new JLabel("Main Title") ;
+        titleP.add(mainTitle, gbc);
+        gbc.gridy++;
+        calculTitle = new JLabel("TOP SECTIONS ...");
+        titleP.add(calculTitle, gbc);
+        titleOuter.add(titleP, BorderLayout.CENTER);
+        if (subAction.length() > 0) {
+            subActionTitle = new JLabel("Main Calculation");
+            titleOuter.add(subActionTitle, BorderLayout.EAST);
+        }
+        mainFp.add(titleOuter, BorderLayout.NORTH);
+        mainFp.add(locCtrl, BorderLayout.SOUTH);
+        progressPanel = progressPanel();
+        mainFp.add(progressPanel, BorderLayout.CENTER);
+        return furnace.getReadyToCalcul(calculStep);
+    }
+
+    boolean initOLD() {
         localControl = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Object src = e.getSource();
@@ -138,7 +173,7 @@ public class FceEvaluator implements Runnable, ThreadController{
         progressPanel = progressPanel();
         mainFp.add(progressPanel, BorderLayout.CENTER);
 //        if (baseP == null)
-            return furnace.getReadyToCalcul(calculStep);
+        return furnace.getReadyToCalcul(calculStep);
 //        else
 //            return true;
     }
@@ -206,6 +241,10 @@ public class FceEvaluator implements Runnable, ThreadController{
 
     public void setMainTitle(String title) {
         mainTitle.setText(title);
+    }
+
+    public void setSubActionTitle(String subAction) {
+        subActionTitle.setText(subAction);   
     }
 
     JPanel progressPanel() {

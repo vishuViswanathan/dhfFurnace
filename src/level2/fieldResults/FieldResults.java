@@ -33,7 +33,7 @@ public class FieldResults {
     public double commonFuelTemp;
     HeatExchProps airHeatExchProps;
     public boolean inError = false;
-    public String errMsg = "FieldResults:";
+    public String errMsg = "";
     FieldZone[] topZones;
     FieldZone[] botZones;
     double totalFuel = 0;
@@ -85,38 +85,48 @@ public class FieldResults {
         String forProcess = stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.BaseProcess).stringValue.trim(); // TODO what happens for Fresh Field Performance
         stripDFHProc = l2Furnace.l2DFHeating.getStripDFHProcess(forProcess, stripExitT, width, thick);
         l2Furnace.logTrace("forProcess " + forProcess + ", " + stripExitT +  ", " + width + ", " + thick);
-         if (stripDFHProc == null) {
-             if (allowNewProcess && l2Furnace.l2DFHeating.decide("Data From Field", "Process does not Exist. DO you want to create a new one?")) {
-                 DataWithStatus<OneStripDFHProcess> newProcess = l2Furnace.createNewNewProcess(stripExitT, thick, width,
-                         speed, forProcess);
-                 if (newProcess.getStatus() == DataStat.Status.OK)
-                     stripDFHProc = newProcess.getValue();
-             }
-         }
-        if (stripDFHProc != null) {
-            if (l2Furnace.isRefPerformanceAvailable(stripDFHProc, thick)) {
-                production = new ProductionData(stripDFHProc.baseProcessName);
-                DataWithStatus<ChMaterial> chMatSat = stripDFHProc.getChMaterial(thick);
-                if (chMatSat.valid) {
-                    ChMaterial chMat = chMatSat.getValue();
-                    Charge ch = new Charge(chMat, width, 1.0, thick, 0.1, Charge.ChType.SOLID_RECTANGLE);
-                    production.charge = ch;
-                    production.chPitch = 1.0;
-                    production.production =  chMat.density * width * speed * thick; //output;
-                    production.exitTemp = stripExitT;
-                    production.exitZoneFceTemp = topZones[topZones.length - 1].frFceTemp;
-                    production.minExitZoneTemp = stripDFHProc.getMinExitZoneTemp();
+        boolean nowCreated = false;
+        if (stripDFHProc == null) {
+            if (allowNewProcess) {
+                if (l2Furnace.l2DFHeating.decide("Data From Field", "Process does not Exist. DO you want to create a new one?")) {
+                    DataWithStatus<OneStripDFHProcess> getNew = l2Furnace.createNewNewProcess(stripExitT, thick, width,
+                            speed, forProcess);
+                    if (getNew.getStatus() == DataStat.Status.OK) {
+                        stripDFHProc = getNew.getValue();
+                        nowCreated = true;
+                    } else
+                        retVal.addErrorMsg(getNew.getErrorMessage());
+                }
+                else
+                    retVal.addErrorMsg("Process creation declined");
+            }
+        }
+        if (!retVal.inError) {
+            if (stripDFHProc != null) {
+//                if (l2Furnace.isRefPerformanceAvailable(stripDFHProc, thick) || nowCreated) {
+                if (stripDFHProc.isPerformanceAvailable() || nowCreated) {
+                    production = new ProductionData(stripDFHProc.baseProcessName);
+                    DataWithStatus<ChMaterial> chMatSat = stripDFHProc.getChMaterial(thick);
+                    if (chMatSat.valid) {
+                        ChMaterial chMat = chMatSat.getValue();
+                        Charge ch = new Charge(chMat, width, 1.0, thick, 0.1, Charge.ChType.SOLID_RECTANGLE);
+                        production.charge = ch;
+                        production.chPitch = 1.0;
+                        production.production = chMat.density * width * speed * thick; //output;
+                        production.exitTemp = stripExitT;
+                        production.exitZoneFceTemp = topZones[topZones.length - 1].frFceTemp;
+                        production.minExitZoneTemp = stripDFHProc.getMinExitZoneTemp();
 //                    DFHTuningParams tune = l2Furnace.tuningParams;
 //                    tune.setPerfTurndownSettings(stripDFHProc.minOutputFactor(), stripDFHProc.minWidthFactor());
-                } else
-                    retVal.addErrorMsg("Could not ascertain Charge Material for " +
-                            forProcess + " with strip Thickness " + thick);
-            }
-            else {
-                retVal.addErrorMsg("Reference performance is NOT available");
-            }
-        } else
-            retVal.addErrorMsg("Could not ascertain Process data " + forProcess);
+                    } else
+                        retVal.addErrorMsg("Could not ascertain Charge Material for " +
+                                forProcess + " with strip Thickness " + thick);
+                } else {
+                    retVal.addErrorMsg("Reference performance is NOT available");
+                }
+            } else
+                retVal.addErrorMsg("Could not get matching Process data while taking strip for Field process " + forProcess);
+        }
         return retVal;
     }
 

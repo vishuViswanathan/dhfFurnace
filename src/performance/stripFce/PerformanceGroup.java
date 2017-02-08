@@ -410,13 +410,10 @@ public class PerformanceGroup implements ActionListener{
 
         listTable = new JTable(new MyTableModel());
         listTable.getSelectionModel().addListSelectionListener(new RowListener());
-//        listTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         listTable.setPreferredScrollableViewportSize(new Dimension(700, 50));
         TableColumnModel colModel = listTable.getColumnModel();
         DefaultTableCellRenderer rightRenderer = new DefaultTableCellRenderer();
         rightRenderer.setHorizontalAlignment( JLabel.RIGHT );
-
-//        colModel.getSelectionModel().addListSelectionListener(new ColumnListener());
 
         colModel.getColumn(0).setPreferredWidth(10);
         colModel.getColumn(1).setPreferredWidth(200);
@@ -431,8 +428,6 @@ public class PerformanceGroup implements ActionListener{
         listPanel.add(new JLabel("Performance Base List"));
         JScrollPane sP = new JScrollPane(listTable);
         sP.setBackground(SystemColor.lightGray);
-//        sP.setPreferredSize(new Dimension(listTable.getPreferredSize().width, 100));
-//        sP.setSize(sP.getPreferredSize());
         innerP = new JPanel();
         innerP.setLayout(new BoxLayout(innerP, BoxLayout.Y_AXIS));
         innerP.add(sP);
@@ -440,9 +435,7 @@ public class PerformanceGroup implements ActionListener{
         JPanel dummyP = new JPanel();
         dummyP.setPreferredSize(new Dimension(700, 600));
         innerP.add(dummyP); // a dummy
-//        innerP.add(deleteB);
         listPanel.add(innerP);
-//        outerP.setPreferredSize(new Dimension(800, 500));
         listPanel.updateUI();
         return listPanel;
     }
@@ -460,24 +453,12 @@ public class PerformanceGroup implements ActionListener{
         innerP.updateUI();
     }
 
-//    void showSelectedPerfTable() {
-//        innerP.remove(perfDataPLoc);
-//        JPanel detPerfP = new JPanel(new BorderLayout());
-//
-//        detPerfP.add(refPerformance.get(listTable.getSelectedRow()).perfTableP(), BorderLayout.CENTER);
-//        detPerfP.add(buttonP, BorderLayout.SOUTH);
-//        innerP.add(detPerfP, perfDataPLoc) ;
-//        innerP.updateUI();
-//    }
-
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == deleteB)  {
             int selPerf = listTable.getSelectedRow();
              if (selPerf >= 0) {
                 if (decide("Deletion of Performance Data", "The Selected Performance Data will be DELETED permanently")) {
                     deletePerformance(selPerf);
-//                    getListPanel();
-//                    listPanel.updateUI();
                     if (!isValid())
                         controller.clearPerformBase();
                 }

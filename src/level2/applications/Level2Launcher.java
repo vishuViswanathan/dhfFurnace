@@ -91,7 +91,7 @@ public class Level2Launcher {
                 retVal.addErrorMessage(e.getMessage());
             }
         } else
-            retVal.addErrorMessage(pathStatus.errorMessage);
+            retVal.addErrorMessage(pathStatus.getErrorMessage());
         return retVal;
     }
 
@@ -108,7 +108,7 @@ public class Level2Launcher {
                     status.addErrorMessage(e.getMessage());
                 }
             } else
-                status.addErrorMessage(pathStatus.errorMessage);
+                status.addErrorMessage(pathStatus.getErrorMessage());
         }
         if (status.getDataStatus() == DataStat.Status.OK) {
             status = l2AccessControl.authenticate(forLevel);
@@ -345,7 +345,7 @@ public class Level2Launcher {
             } else
                 showError("One of level2 Runtime/ Installer is running");
         } else
-            showError(stat.errorMessage);
+            showError(stat.getErrorMessage());
     }
 
     void launchUpdater() {
@@ -371,11 +371,11 @@ public class Level2Launcher {
                     } else
                         showError("One of level2 Updater/ Expert/ Installer is running");
                 } else
-                    showError(stat.errorMessage);
+                    showError(stat.getErrorMessage());
             } else
                 showError("Level2 RUNTIME is not ON");
         } else
-            showError(stat.errorMessage);
+            showError(stat.getErrorMessage());
     }
 
     void launchExpert() {
@@ -401,11 +401,11 @@ public class Level2Launcher {
                     } else
                         showError("One of level2 Updater/ Expert/ Installer is running");
                 } else
-                    showError(stat.errorMessage);
+                    showError(stat.getErrorMessage());
             } else
                 showError("Level2 RUNTIME is not ON");
         } else
-            showError(stat.errorMessage);
+            showError(stat.getErrorMessage());
     }
 
     void launchInstaller() {
