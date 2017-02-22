@@ -566,16 +566,7 @@ public class UnitFurnace {
                 alphaEGWplusCov = alphaEGW + alphaConv; // added convection
             }
             tempO = tempO1;
-//            alpha = alphaEGWplusCov + aOWeffective / (aGOplusConv + psi * aOWeffective) *
-//                    (aGOplusConv - tuning.wallLoss / (tg - two));
-//            alphaAbsorption = alphaEGOW / (aGOplusConv + psi * aOWeffective) *
-//                                (aGOplusConv - tuning.wallLoss / (tg - two));
-//            alphaTOW = psi * aOWeffective + alphaEGWplusCov * (tg - two) / (tempO - two);
-            // from knowing tempO
-//  20141106 17:00 has be refined
-          alpha = alphaEGWplusCov + aOWeffective * (tempO - two) / (tg - two);
-//          System.out.println(String.format("alpha %5.2f, alphaEGWplusCov %5.2f, duetoWall %5.2f",
-//                  alpha, alphaEGWplusCov,  aOWeffective * (tempO - two) / (tg - two)));
+            alpha = alphaEGWplusCov + aOWeffective * (tempO - two) / (tg - two);
             alphaAbsorption = alphaEGOW * (tempO - two) / (tg - two);
 
             alphaTOW = alpha * (tg - two) / (tempO - two);
@@ -759,7 +750,6 @@ public class UnitFurnace {
 
     public FceEvaluator.EvalStat evalInRev(boolean bLastSlot, UnitFurnace prevSlot, double tRate) {
         FceEvaluator.EvalStat retVal = FceEvaluator.EvalStat.OK;
-
         double tWMassume = 0, tWMrevised = 0, diff;
         double chHeat = 0, totheat;
         double tempGB = 0;

@@ -1074,7 +1074,7 @@ public class DFHFurnace {
         smoothenCurve = ena;
     }
 
-    String getMainTitle() {
+    protected String getMainTitle() {
         Charge ch = productionData.charge;
         String title;
         if (controller.furnaceFor == DFHTuningParams.FurnaceFor.STRIP)
@@ -1099,7 +1099,7 @@ public class DFHFurnace {
         double flueTemp = 0;
         String title;
         String add2ToTilte = "";
-        String addToTitle = " ..." + addMsg;
+        String addToTitle = " " + addMsg;
         if (bBot) {
             vSec = botSections;
             fired = botFiredSections;
@@ -1111,7 +1111,9 @@ public class DFHFurnace {
             fired = topFiredSections;
             nFiredSecs = nTopFired;
             progressGraph = topTrends;
-            title = topBotName(false) + "Zones";
+            if (bTopBot)
+                title = "Top Zones";
+            else title = "";
         }
         iFirstFiredSection = fired[0];
         iLastFiredSection = fired[nFiredSecs - 1];

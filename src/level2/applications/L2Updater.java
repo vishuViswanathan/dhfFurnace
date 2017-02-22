@@ -1,5 +1,6 @@
 package level2.applications;
 
+import directFiredHeating.DFHeating;
 import directFiredHeating.accessControl.L2AccessControl;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
@@ -56,8 +57,8 @@ public class L2Updater extends L2DFHeating{
 
     public void performanceTableDone() {
         switchPage(L2DisplayPageType.PROCESS);
+        enableFileMenu(true);
     }
-
 
     public void enableDataEdit() {
     }
@@ -90,24 +91,25 @@ public class L2Updater extends L2DFHeating{
 
     protected JMenu createPerformanceMenu() {
         definePerformanceMenu();
-        perfMenu.add(mIShowPerfBase);
-        perfMenu.add(new JSeparator());
-        JLabel blank = new JLabel("") ;
-        blank.setPreferredSize(new Dimension(100, 20));
-        perfMenu.add(blank);
-        perfMenu.add(new JSeparator());
+//        perfMenu.add(mIShowPerfBase);
+//        perfMenu.add(new JSeparator());
+//        JLabel blank = new JLabel("") ;
+//        blank.setPreferredSize(new Dimension(100, 20));
+//        perfMenu.add(blank);
+//        perfMenu.add(new JSeparator());
         perfMenu.add(mISavePerformanceData);
         return perfMenu;
     }
 
-    protected void showPerfMenu(boolean show) {
-    }
-
+//    protected void showPerfMenu(boolean show) {
+//    }
+//
     synchronized public void enablePerfMenu(boolean ena) {
+        super.enablePerfMenu(ena);
     }
 
-    public boolean canClose() {
-        return true;
-    }
+//    public boolean canClose() {
+//        return true;
+//    }
 
  }

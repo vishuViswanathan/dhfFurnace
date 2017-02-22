@@ -4,6 +4,8 @@ import basic.ChMaterial;
 import basic.ProductionData;
 import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
+import directFiredHeating.FceEvaluator;
+import directFiredHeating.ResultsReadyListener;
 import directFiredHeating.process.OneStripDFHProcess;
 import directFiredHeating.stripDFH.SampleStripFurnace;
 import mvUtils.display.*;
@@ -392,6 +394,15 @@ public abstract class StripHeating extends DFHeating {
     protected ProductionData defineProduction() {
         return new ProductionData(getDFHProcess());
     }
+
+    public FceEvaluator calculateFce(boolean bResetLossFactor, ResultsReadyListener resultsReadyListener, String subAction) {
+        FceEvaluator eval = calculateFce(bResetLossFactor, resultsReadyListener);
+        if (eval != null)
+            eval.setSubActionTitle(subAction);
+        return eval;
+    }
+
+
 
     class L2MenuListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {

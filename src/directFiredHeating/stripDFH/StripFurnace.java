@@ -1,10 +1,8 @@
 package directFiredHeating.stripDFH;
 
+import basic.Charge;
 import basic.Observations;
-import directFiredHeating.DFHFurnace;
-import directFiredHeating.DFHeating;
-import directFiredHeating.FceEvaluator;
-import directFiredHeating.FceSection;
+import directFiredHeating.*;
 import mvUtils.display.DataStat;
 import mvUtils.display.StatusWithMessage;
 import performance.stripFce.Performance;
@@ -23,31 +21,12 @@ public class StripFurnace extends DFHFurnace {
         super(dfHeating, bTopBot, bAddTopSoak, listener);
     }
 
-//    public boolean linkPerformanceWithProcess() {
-//        boolean retVal = true;
-//        StatusWithMessage response =  performBase.linkPerformanceWithProcess();
-//        DataStat.Status status = response.getDataStatus();
-//        if (status == DataStat.Status.WithErrorMsg) {
-//            showError("Reading Performance Data: " + response.getErrorMessage());
-//            retVal = false;
-//        }
-//        else if (status == DataStat.Status.WithInfoMsg) {
-//            showMessage("Checking Performance Data: " + response.getInfoMessage());
-//        }
-//        return retVal;
-//    }
-
     public boolean takePerformanceFromXML(String xmlStr) {
         return takePerformanceFromXML(xmlStr, true, false);
     }
 
     public StatusWithMessage addPerformance(Performance p) {
         return addPerformance(p, -1);
-//        StatusWithMessage stat =  p.linkToProcess();
-//        if (stat.getDataStatus() == DataStat.Status.OK)
-//            return super.addPerformance(p);
-//        else
-//            return stat;
     }
 
     public StatusWithMessage addPerformance(Performance p, int atLoc) {
@@ -58,6 +37,12 @@ public class StripFurnace extends DFHFurnace {
             return stat;
     }
 
+    protected String getMainTitle() {
+        Charge ch = productionData.charge;
+        String title = String.format("%s:  Strip %4.0f x %4.2f at %5.2f t/h",
+                    productionData.processName, ch.getLength() * 1000, ch.getHeight() * 1000, productionData.production / 1000);
+        return title;
+    }
 
 
     protected boolean createPerfBase() {

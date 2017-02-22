@@ -29,23 +29,27 @@ import java.nio.channels.FileLock;
 public class Level2Launcher {
     int textFieldWidth = 400;
     JButton launchRuntime = new JButton("Runtime Module");
-    String runtimeDetails = "Level2 Runtime is the basic Level2\n" +
-            "This is to be started for Level2 control of the process. After starting, there is no operator action required";
+    String runtimeDetails = "<html>Level2 Runtime is the basic Level2" +
+            "<p>This is to be started for Level2 control of the process. " +
+            "After starting, there is no operator action required</html>";
     JButton launchUpdater = new JButton("Updater Module");
-    String updatetDetails = "This has to be started, whenever it is required to update the furnace performance data from " +
+    String updatetDetails =
+            "<html>This has to be started, whenever it is required to update the furnace performance data from " +
             "the field results. The data based on the field results will overwrite the existing. For the updated data " +
             "to be used in the Runtime module, it will be necessary to save the Performance Data to the disc. " +
             "If the Runtime module is already up and running, the updated data saved in the disc will be automatically " +
             "reflected Runtime module." +
-            "\n\nFrom this module access control of the Runtime module can be set." +
-            "\n\nAt any time one can run either the Updater Module or the Expert Module. Accordingly it may be necessary " +
-            "to exit from the Expert Module, if it is already running";
+            "<p>From this module access control of the Runtime module can be set." +
+            "<p>At any time one can run either the Updater Module or the Expert Module. Accordingly it may be necessary " +
+            "to exit from the Expert Module, if it is already running." +
+            "<p>The necessary pre-condition is that Runtime Module must be ON</html>";
     JButton launchExpert = new JButton("Expert Module");
-    String expertDetails = "This module handles the field Performance Update similar to the Updater Module. " +
-            "Additionally one can change the basic Process data and add new Processes. " +
-            "\n\nFrom this module access control of the Updater module can be set." +
-            "\n\nAt any time one can run either the Expert Module or the Updater Module. Accordingly it may be necessary " +
-            "to exit from the Updater Module, if it is already running";
+    String expertDetails = "<html>This module handles the field Performance Update similar to the Updater Module. " +
+            "Additionally one can add new Processes based on Field Results and create corresponding Performance Data. " +
+            "<p>From this module access control of the Updater module can be set." +
+            "<p>At any time one can run either the Expert Module or the Updater Module. Accordingly it may be necessary " +
+            "to exit from the Updater Module, if it is already running." +
+            "<p>The necessary pre-condition is that Runtime Module must be ON</html>";
     JButton launchInstaller = new JButton("Install Level2");
     String installerDetails = "Apart from installing the Level2, the access control of Expert Module can be set";
 

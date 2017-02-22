@@ -9,6 +9,7 @@ import com.prosysopc.ua.ServiceException;
 import com.prosysopc.ua.client.MonitoredDataItem;
 import com.prosysopc.ua.client.Subscription;
 import com.prosysopc.ua.client.SubscriptionAliveListener;
+import com.sun.org.apache.bcel.internal.generic.L2D;
 import directFiredHeating.*;
 import directFiredHeating.accessControl.L2AccessControl;
 import directFiredHeating.stripDFH.StripFurnace;
@@ -1231,7 +1232,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                                     if (productionData != null)
                                         logInfo("l2DFHFurnace.1228: productionData.chEmmissCorrectionFactor = " + productionData.chEmmissCorrectionFactor);
 
-                                    FceEvaluator eval1 = l2DFHeating.calculateFce(true, null);
+                                    FceEvaluator eval1 = l2DFHeating.calculateFce(true, null, "From Model");
                                     if (eval1 != null) {
                                         try {
                                             eval1.awaitThreadToExit();
@@ -1239,7 +1240,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                                                 boolean proceed = true;
                                                 if (proceed && theFieldResults.adjustForFieldResults()) { // was (adjustForFieldResults()) {
                                                 logTrace("L2DFHFurnace.1237: Recalculating after fuel flow adjustments");
-                                                    FceEvaluator eval2 = l2DFHeating.calculateFce(false, null); // without reset the loss Factors
+                                                    FceEvaluator eval2 = l2DFHeating.calculateFce(false, null, "With Field Fuel Flow"); // without reset the loss Factors
                                                     if (eval2 != null) {
                                                         eval2.awaitThreadToExit();
                                                         logTrace("L2DFHFurnace.1241: eval2 completed" );
@@ -1248,6 +1249,10 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                                                             if (addFieldBasedPerformanceToPerfBase()) {
                                                                 logInfo("l2DFHFurnace.1280: productionData.chEmmissCorrectionFactor = " + productionData.chEmmissCorrectionFactor);
                                                                 l2DFHeating.showMessage("Field Performance", "Save updated Performance to file from Performance Menu" );
+                                                            }
+                                                            else {
+                                                                addErrorMsg("Performance Data is rejected Level2 user");
+                                                                showError("Performance Data is rejected Level2 user");
                                                             }
                                                         } else {
                                                             if (eval2.isAborted())
@@ -1297,6 +1302,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             }
             bConsiderPresetChInTempProfile = false;
             resetFieldDataBeingHandled();
+            l2DFHeating.switchPage(L2DFHeating.L2DisplayPageType.PROCESS);
         }
 
         void addErrorMsg(String msg) {

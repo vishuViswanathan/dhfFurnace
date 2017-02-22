@@ -148,7 +148,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = "JNLP 20170208";
+    protected String releaseDate = "JNLP 20170217";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -1377,7 +1377,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         boolean goAhead = true;
         if (furnace != null && furnace.isPerformanceToBeSaved())
             goAhead = decide("Unsaved Performance Data", "Some Performance data have been collected\n" +
-                    "Do you want to ABANDON them and exit?");
+                    "Do you want to ABANDON them and exit?", false);
         return goAhead;
     }
 
@@ -1642,7 +1642,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         jp.addItemPair(tfAirTemp);
         jp.addItemPair(tfFuelTemp);
         jp.addItemPair(tfCalculStep);
-        jp.addItemPair("", pbCalculate);
+//        jp.addItemPair("", pbCalculate);
+        jp.addItem(pbCalculate);
         return jp;
     }
 
@@ -2378,6 +2379,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         enableResultsMenu(false);
         enableCalculStat();
         Thread evalThread = new Thread(evaluator = new FceEvaluator(this, slate, furnace, calculStep, baseP, doneListener));
+        evaluator.setSubActionTitle("Evaluating Performance Table");
         enablePauseCalcul();
         evalThread.start();
         evaluator.noteYourThread(evalThread);

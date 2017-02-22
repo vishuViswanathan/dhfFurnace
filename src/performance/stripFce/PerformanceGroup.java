@@ -108,7 +108,6 @@ public class PerformanceGroup implements ActionListener{
         boolean requiresInterpolCheck = false;
         int foundAt = getIndexOfSimilarPerformance(performance);
         if (foundAt >= 0) {
-//            Performance existingP = refPerformance.get(foundAt);
             MoreOrLess.CompareResult compareResult =
                     MoreOrLess.compare(refPerformance.get(foundAt).dateOfResult, performance.dateOfResult);
             boolean overWrite = true;
@@ -154,10 +153,6 @@ public class PerformanceGroup implements ActionListener{
         return bNoted;
     }
 
-//    private BooleanWithStatus linkWithProcess(Performance p) {
-//        return p.dfhProcess.notePerformance(p);
-//    }
-
     public void markToBeSaved(boolean tobeSaved) {
         this.tobeSaved = tobeSaved;
     }
@@ -165,32 +160,6 @@ public class PerformanceGroup implements ActionListener{
     public boolean isValid() {
         return (refPerformance.size() > 0);
     }
-
-//    public StatusWithMessage linkPerformanceWithProcess() {
-//        StatusWithMessage retVal = new StatusWithMessage();
-//        Vector<Performance> updatedRefPerf = new Vector<>();
-//        for (Performance p:refPerformance) {
-//            DataWithStatus<OneStripDFHProcess> response = controller.getDFHProcess(p);
-//            DataStat.Status responseStat = response.getStatus();
-//            if (responseStat == DataStat.Status.OK) {
-//                p.dfhProcess = response.getValue();
-//                updatedRefPerf.add(p);
-//                p.linkToProcess();
-//            }
-//            else {
-//                retVal.addInfoMessage("Unable to get Process definition for Performance:\n   " + p +
-//                ".\n The performance Data is deleted");
-//                if (responseStat == DataStat.Status.WithInfoMsg)
-//                    retVal.addInfoMessage("\n     " + response.getInfoMessage());
-//            }
-//        }
-//        refPerformance = updatedRefPerf;
-//        if (refPerformance.size() <= 0) {
-//            retVal.addErrorMessage(retVal.getInfoMessage());
-//            retVal.addErrorMessage("All performance data deleted!");
-//        }
-//        return retVal;
-//    }
 
     int checkIfDuplicate(Performance performance)   {
         int foundAt = -1;
@@ -225,6 +194,7 @@ public class PerformanceGroup implements ActionListener{
         if (foundAt >= 0) {
             refPerformance.remove(foundAt);
             refPerformance.add(foundAt, performance);
+            tobeSaved = true;
             retVal = true;
         }
         return retVal;

@@ -307,18 +307,20 @@ public class L2DFHeating extends StripHeating {
     }
 
     public void switchPage(L2DisplayPageType l2Display) {
-        switch (l2Display) {
-            case PROCESS:
-                slate.setViewportView(l2Furnace.getFurnaceProcessPanel());
-                l2DisplayNow = l2Display;
-                break;
-            case LEVEL2:
-                slate.setViewportView(l2Furnace.getFurnaceLevel2Panel());
-                l2DisplayNow = l2Display;
-                break;
-            default:
-                l2DisplayNow = L2DisplayPageType.NONE;
-        }
+//        if (l2DisplayNow != l2Display) {
+            switch (l2Display) {
+                case PROCESS:
+                    slate.setViewportView(l2Furnace.getFurnaceProcessPanel());
+                    l2DisplayNow = l2Display;
+                    break;
+                case LEVEL2:
+                    slate.setViewportView(l2Furnace.getFurnaceLevel2Panel());
+                    l2DisplayNow = l2Display;
+                    break;
+                default:
+                    l2DisplayNow = L2DisplayPageType.NONE;
+            }
+//        }
     }
 
     boolean l2MenuSet = false;
@@ -1108,7 +1110,6 @@ public class L2DFHeating extends StripHeating {
         mShowCalculation.setEnabled(busy);
         super.setBusyInCalculation(busy);
     }
-
 
     void informLevel2Ready() {
         if (onProductionLine)

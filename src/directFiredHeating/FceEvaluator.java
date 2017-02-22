@@ -110,8 +110,7 @@ public class FceEvaluator implements Runnable, ThreadController{
     LocalControl locCtrl;
     JLabel mainTitle;
     JLabel calculTitle;
-    JLabel subActionTitle;
-    String subAction = "";
+    JLabel subActionTitle = new JLabel("Model Evaluation   ");
 
     JPanel progressPanel;
     boolean init() {
@@ -136,10 +135,7 @@ public class FceEvaluator implements Runnable, ThreadController{
         calculTitle = new JLabel("TOP SECTIONS ...");
         titleP.add(calculTitle, gbc);
         titleOuter.add(titleP, BorderLayout.CENTER);
-        if (subAction.length() > 0) {
-            subActionTitle = new JLabel("Main Calculation");
-            titleOuter.add(subActionTitle, BorderLayout.EAST);
-        }
+        titleOuter.add(subActionTitle, BorderLayout.EAST);
         mainFp.add(titleOuter, BorderLayout.NORTH);
         mainFp.add(locCtrl, BorderLayout.SOUTH);
         progressPanel = progressPanel();
@@ -224,12 +220,8 @@ public class FceEvaluator implements Runnable, ThreadController{
 
     JLabel showCount;
     JLabel status;
-//    GraphPanel proGraph;
 
     public void setProgressGraph(String title1, String title2, JPanel panel) {
-//        GridBagConstraints gbc = new GridBagConstraints();
-//        gbc.gridx = 0;
-//        gbc.gridy = 0;
         progressPanel.add(panel,  BorderLayout.CENTER);
         setMainTitle(title1);
         setCalculTitle(title2);
@@ -244,12 +236,11 @@ public class FceEvaluator implements Runnable, ThreadController{
     }
 
     public void setSubActionTitle(String subAction) {
-        subActionTitle.setText(subAction);   
+        subActionTitle.setText(subAction + "   ");
     }
 
     JPanel progressPanel() {
         JPanel fp = new JPanel(new BorderLayout());
-//        furnace.getReadyToCalcul(calculStep);
         status = new JLabel("Start");
         fp.add(status, BorderLayout.SOUTH);
         return fp;

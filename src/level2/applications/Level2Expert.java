@@ -111,7 +111,12 @@ public class Level2Expert extends L2DFHeating {
         return defineFurnaceMenu;
     }
 
-    public boolean canClose() {
-        return true;
+    public void performanceTableDone() {
+        switchPage(L2DisplayPageType.PROCESS);
+        enableDataEdit();
     }
+
+//    public boolean canClose() {
+//        return true;
+//    }
 }
