@@ -695,6 +695,10 @@ public class FceSection {
                 sub.setLossFactor(lossFactor);
     }
 
+    public double getLossFactor() {
+        return subSections.get(0).lossFactor;
+    }
+
     public void resetLossFactor() {
         setLossFactor(1.0);
     }

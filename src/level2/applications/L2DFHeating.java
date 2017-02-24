@@ -220,18 +220,26 @@ public class L2DFHeating extends StripHeating {
                             furnace.setFceWidth(fceWidth);
                             enableDataEdit();
                             l2MenuSet = true;
-                            lockFile = new File(lockPath);
-                            getFieldPerformanceList();
                             bProfileEdited = false;
+                            lockFile = new File(lockPath);
+                            ErrorStatAndMsg fieldDataStat =  getFieldPerformanceList();
+                            if (fieldDataStat.inError) {
+                                if (onProductionLine)
+                                    showError("Unable to load saved Field Performance Data\n      ABORTING");
+                                else
+                                    showError("Unable to load saved Field Performance Data\n      IGNORING it");
+                            }
                             if (onProductionLine) {
-                                if (l2Furnace.makeAllConnections()) {   // createL2Zones()) {
-                                    connectProcessListToLevel1();
-                                    ErrorStatAndMsg connStat = checkConnection();
-                                    if (connStat.inError)
-                                        showError(connStat.msg);
-                                    else {
-                                        l2Furnace.initForLevel2Operation();
-                                        l2SystemReady = true;
+                                if (!fieldDataStat.inError)  {
+                                    if (l2Furnace.makeAllConnections()) {   // createL2Zones()) {
+                                        connectProcessListToLevel1();
+                                        ErrorStatAndMsg connStat = checkConnection();
+                                        if (connStat.inError)
+                                            showError(connStat.msg);
+                                        else {
+                                            l2Furnace.initForLevel2Operation();
+                                            l2SystemReady = true;
+                                        }
                                     }
                                 }
                             } else
@@ -496,35 +504,24 @@ public class L2DFHeating extends StripHeating {
     public boolean savePerformanceDataToFile() {
         boolean retVal = false;
         if (isProfileCodeOK()) {
-            FileChooserWithOptions fileDlg = new FileChooserWithOptions("Save Performance Data",
-                    "Performance Data (*." + performanceExtension + ")", performanceExtension);
-            fileDlg.setSelectedFile(new File(profileCode + " performanceData." + performanceExtension));
-            fileDlg.setCurrentDirectory(new File(fceDataLocation));
-            fileDlg.setStartWithString(profileCode);
-            if (currentView != null)
-                fileDlg.setFileSystemView(currentView);
-            if (fileDlg.showSaveDialog(parent()) == JFileChooser.APPROVE_OPTION) {
-                File file = fileDlg.getSelectedFile();
-                if (fileDlg.isItDuplicate()) {
-                    String fName = file.getAbsolutePath();
-                    markThisFileAsBak(file);
-                    file = new File(fName);
-                }
-                deleteParticularFiles("" + fceDataLocation, profileCode, performanceExtension);
-                try {
-                    BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(file));
-                    oStream.write(("# Performance Data saved on " + dateFormat.format(new Date()) + " \n\n").getBytes());
-                    oStream.write((profileCodeInXML() + stripDFHProcessListInXML() + furnace.performanceInXML()).getBytes());
-                    oStream.close();
-                    furnace.performanceIsSaved();
-                    retVal = true;
-                } catch (FileNotFoundException e) {
-                    showError("File " + file + " NOT found!");
-                } catch (IOException e) {
-                    showError("Some IO Error in writing to file " + file + "!");
-                }
+            File file = new File(fceDataLocation + profileCode + " performanceData." + performanceExtension);
+            if (file.exists()) {
+                markThisFileAsBak(file);
+                file = new File(fceDataLocation + profileCode + " performanceData." + performanceExtension);
             }
-            currentView = fileDlg.getFileSystemView();
+            deleteParticularFiles("" + fceDataLocation, profileCode, performanceExtension);
+            try {
+                BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(file));
+                oStream.write(("# Performance Data saved on " + dateFormat.format(new Date()) + " \n\n").getBytes());
+                oStream.write((profileCodeInXML() + stripDFHProcessListInXML() + furnace.performanceInXML()).getBytes());
+                oStream.close();
+                furnace.performanceIsSaved();
+                retVal = true;
+            } catch (FileNotFoundException e) {
+                showError("File " + file + " NOT found!");
+            } catch (IOException e) {
+                showError("Some IO Error in writing to file " + file + "!");
+            }
         } else {
             showError("Save Profile before saving DFH Process List");
         }
@@ -618,7 +615,8 @@ public class L2DFHeating extends StripHeating {
                             }
                         }
                     } else
-                        showError("mismatch in Performance Data file");
+                        showError("Mismatch in Performance Data file ...\n" +
+                                "File: " + file.getAbsolutePath());
                 }
                 iStream.close();
             } else
@@ -1182,6 +1180,17 @@ public class L2DFHeating extends StripHeating {
             logInfo("L2DFHeating.1281: Can be closed");
             justQuit();
         }
+    }
+
+    public boolean canClose() {
+        boolean goAhead = true;
+        if (furnace != null && furnace.isPerformanceToBeSaved())
+            goAhead = decide("Unsaved Performance Data", "<html>Some Performance/ Process data have been modified." +
+                    "<br />To save the updated data, choose NO now and then Save Field Peformance Data " +
+                    "with <b><font color='blue'>" + mISavePerformanceData.getText()  + "</font></b> " +
+                            "from <b><font color='blue'>" + perfMenu.getText() + "</font></b> menu."  +
+                    "<br /><br /><font color = 'red'>Selecting YES now will ABANDON collected Performance data.</font></html>", false);
+        return goAhead;
     }
 
     class L2MenuListener implements ActionListener, MenuListener {

@@ -74,7 +74,7 @@ public class DFHFurnace {
     Vector<Double> vTopSlotTempOLast,  vBotSlotTempOLast;
     public DFHTuningParams tuningParams;
     public MultiColData topTResults, botTResults;
-    ThreadController master;
+    FceEvaluator masterEvaluator;
     boolean bRecalculBot, bRecalculTop;
     double tempGZ1Bot, tempGZ1Top; // old value for recalculation
     LossListWithVal topLossValList, botLossValList, combiLossValList;
@@ -636,10 +636,10 @@ public class DFHFurnace {
         return chStatus;
     }
 
-    synchronized public boolean evaluate(ThreadController master, boolean bShowResults) {
+    synchronized public boolean evaluate(FceEvaluator master, boolean bShowResults) {
         enablePeformMenu(false);
         setDisplayResults(bShowResults);
-        this.master = master;
+        this.masterEvaluator = master;
         inPerfTableMode = false;
         tuningParams.takeValuesFromUI();
         DFHResult.Type switchDisplayto = DFHResult.Type.HEATSUMMARY;
@@ -718,10 +718,10 @@ public class DFHFurnace {
         this.bDisplayResults = bShowResults;
     }
 
-    public boolean evaluate(ThreadController master, double forOutput, double stripWidth) {
+    public boolean evaluate(FceEvaluator master, double forOutput, double stripWidth) {
         boolean retVal = false;
         enablePeformMenu(false);
-        this.master = master;
+        this.masterEvaluator = master;
         tempProductionData = new ProductionData(productionData);
         Charge rC = tempProductionData.charge;
         productionData.charge.setSize(stripWidth, rC.width, rC.height);   // crC.length is strip width
@@ -1009,11 +1009,11 @@ public class DFHFurnace {
     TrendsPanel progressGraph;
 
     public boolean canRun() {
-        return (bDisplayResults) ? master.isRunOn() : true;
+        return (bDisplayResults) ? masterEvaluator.isRunOn() : true;
     }
 
     void abortIt(String reason) {
-        master.abortIt(reason);
+        masterEvaluator.abortIt(reason);
     }
 
     boolean bUnableToUsePerfData = false;
@@ -1074,15 +1074,19 @@ public class DFHFurnace {
         smoothenCurve = ena;
     }
 
+    protected String getProcessName() {
+        return productionData.charge.chMaterial.toString();
+    }
+
     protected String getMainTitle() {
         Charge ch = productionData.charge;
         String title;
         if (controller.furnaceFor == DFHTuningParams.FurnaceFor.STRIP)
-            title = String.format("%s, Strip %4.0f x %4.2f at %5.2f t/h",
-                    ch.chMaterial.name, ch.getLength() * 1000, ch.getHeight() * 1000, productionData.production / 1000);
+            title = String.format("Strip %4.0f x %4.2f at %5.2f t/h",
+                    ch.getLength() * 1000, ch.getHeight() * 1000, productionData.production / 1000);
         else
-            title = String.format("%s, Size %5.0f x %5.0f x %5.0f at %5.2f t/h",
-                    ch.chMaterial.name, ch.getWidth() * 1000, ch.getHeight() * 1000, ch.getLength() * 1000, productionData.production / 1000);
+            title = String.format("Size %5.0f x %5.0f x %5.0f at %5.2f t/h",
+                    ch.getWidth() * 1000, ch.getHeight() * 1000, ch.getLength() * 1000, productionData.production / 1000);
         return title;
     }
 
@@ -1130,7 +1134,7 @@ public class DFHFurnace {
         double chTempProfileFactor = 1;    // for correction if (honorLastZoneMinFceTemp)
         double chInTempReqd;
         if (bDisplayResults && (tuningParams.bSlotProgress || tuningParams.bSectionProgress))
-            master.setProgressGraph(mainTitle, title + add2ToTilte + addToTitle, progressGraph);
+            masterEvaluator.setProgressGraph(getProcessName(), mainTitle, title + add2ToTilte + addToTitle, progressGraph);
         String statusHead = (bBot) ? "Bottom Zone " : "Top Zone ";
         FceEvaluator.EvalStat response;
         double szTemp = 0;
@@ -1379,13 +1383,13 @@ public class DFHFurnace {
                     evalInterSlotRadiation(bBot);
                     bFirstTime = false;
                     addToTitle = " (With Internal Radiation) ..." + addMsg;
-                    master.setCalculTitle(title + add2ToTilte + addToTitle);
+                    masterEvaluator.setCalculTitle(title + add2ToTilte + addToTitle);
                 } else {
                     if (bFirstTime && tuningParams.bAutoTempForLosses) {
                         redoLosses(bBot);
                         bFirstTime = false;
                         addToTitle = " (with Re-calculated Losses) ..." + addMsg;
-                        master.setCalculTitle(title + add2ToTilte + addToTitle);
+                        masterEvaluator.setCalculTitle(title + add2ToTilte + addToTitle);
                     } else
                         break;
                 }
@@ -1419,7 +1423,7 @@ public class DFHFurnace {
         FceSection theSection;
         String mainTitle = getMainTitle();
         if (bDisplayResults && (tuningParams.bSlotProgress || tuningParams.bSectionProgress))
-            master.setProgressGraph(mainTitle, title + add2ToTilte + addToTitle, progressGraph);
+            masterEvaluator.setProgressGraph(getProcessName(), mainTitle, title + add2ToTilte + addToTitle, progressGraph);
         String statusHead = (bBot) ? "Bottom Zone " : "Top Zone ";
         FceEvaluator.EvalStat response;
         while (allOk && canRun()) {
@@ -2042,7 +2046,7 @@ public class DFHFurnace {
 
     void showStatus(String msg) {
         if (bDisplayResults)
-            master.showStatus(msg);
+            masterEvaluator.showStatus(msg);
     }
 
     double getCommonFuelUsed(boolean bBot) {
@@ -4373,6 +4377,15 @@ public class DFHFurnace {
 
     public boolean takePerformanceFromXML(String xmlStr) {
         return takePerformanceFromXML(xmlStr, false, false);
+    }
+
+    public boolean markPerfTobeSaved(boolean tobeSaved) {
+        if (performBase != null) {
+            performBase.markToBeSaved(tobeSaved);
+            return true;
+        }
+        else
+            return false;
     }
 
     public boolean takePerformanceFromXML(String xmlStr, boolean readPerfTable, boolean append) {

@@ -4,6 +4,7 @@ import basic.*;
 import directFiredHeating.DFHFurnace;
 import directFiredHeating.DFHTuningParams;
 import directFiredHeating.DFHeating;
+import directFiredHeating.FceEvaluator;
 import directFiredHeating.process.OneStripDFHProcess;
 import display.*;
 import mvUtils.display.*;
@@ -35,6 +36,7 @@ public class Performance {
         PROCESSNAME("Process name"),
         CHMATERIAL("Charge Material"),
         CHEMMFACTOR("Charge Emmissvity Factor"),
+        LOSSFACTOR("Loss Factor"),
         STRIPWIDTH("Strip Width"),
         STRIPTHICK("Strip Thickness"),
         STRIPSPEED("Strip Speed"),
@@ -393,7 +395,7 @@ public class Performance {
         return perfTable;
     }
 
-    public boolean createPerfTable(ThreadController master) {
+    public boolean createPerfTable(FceEvaluator master) {
 //        controller.setTableFactors(this);
         boolean allOk = false;
         StatusWithMessage settingStat = setLimits();
@@ -673,14 +675,15 @@ public class Performance {
     }
 
     public String toString() {
-        DecimalFormat tempFmt = new DecimalFormat("#,##0");
         if (chMaterial != null) {
-            String str = String.format("Material: %s, size %4.0f mm x %5.3f mm to %4.0f C at %4.2f t/h (%4.1f mpm) and fuel %s",
+            String str;
+            if (dfhProcess != null)
+                str = String.format("Process %s, Strip %4.0f mm x %5.3f mm to %4.0f C at %4.2f t/h (%4.1f mpm)",
+                    dfhProcess.toString(), (chLength * 1000), (chThick * 1000), exitTemp(), (output / 1000), (speed / 60));
+            else
+                str = String.format("Material: %s, size %4.0f mm x %5.3f mm to %4.0f C at %4.2f t/h (%4.1f mpm) and fuel %s",
                     chMaterial, (chLength * 1000), (chThick * 1000), exitTemp(), (output / 1000), (speed / 60), fuelName);
             return (str);
-//            return chMaterial +
-//                    ", size " + (chLength * 1000) + " x " + (chThick * 1000) + " to " + tempFmt.format(exitTemp()) +
-//                    " at " + (output / 1000) + " t/h(" + (speed / 60) + "mpm )with " + fuelName + " as fuel";
         }
         else
             return super.toString();
@@ -999,7 +1002,6 @@ public class Performance {
         MultiPairColPanel pan = new MultiPairColPanel("");
         addItemPair(pan, Params.DATE);
         addItem(pan, Params.PROCESSNAME);
-        addItemPair(pan, Params.CHMATERIAL);
         addItemPair(pan, Params.CHEMMFACTOR, 1, "0.000");
         addItemPair(pan, Params.CHTEMPOUT, 1, "#,##0 C");
         addItemPair(pan, Params.FUEL);

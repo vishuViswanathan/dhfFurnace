@@ -1306,6 +1306,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         enableDataEdit();
     }
 
+    public boolean markPerfTobeSaved(boolean tobeSaved) {
+        return furnace.markPerfTobeSaved(tobeSaved);
+    }
+
     public void enableDataEdit() {
         enableDataEntry(true);
         enableFileMenu(true);
@@ -1376,7 +1380,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     public boolean canClose() {
         boolean goAhead = true;
         if (furnace != null && furnace.isPerformanceToBeSaved())
-            goAhead = decide("Unsaved Performance Data", "Some Performance data have been collected\n" +
+            goAhead = decide("Unsaved Performance Data", "Some Performance/ Process data have been collected\n" +
                     "Do you want to ABANDON them and exit?", false);
         return goAhead;
     }

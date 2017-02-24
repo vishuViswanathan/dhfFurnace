@@ -55,9 +55,10 @@ public class Level2Expert extends L2DFHeating {
 
     protected void editStripDFHProcess() {
         if (dfhProcessList.addStripDFHProcess(parent()))
-            showMessage("Strip DFH Process List updated\n" +
-                    "To make it effective in Level2 RUNTIME, the Performance Data must be updated to file\n" +
-                    "       " + perfMenu.getText() + "->" + mISavePerformanceData.getText());
+            showMessage("<html>Strip DFH Process List is modified" +
+                    "<br />To make it effective in Level2 RUNTIME, the Performance Data must be updated to file" +
+                    "<br />with <b><font color= 'blue' >" + mISavePerformanceData.getText() + "</font></b>" +
+                    " from <b><font color = 'blue'>" + perfMenu.getText() + "</font></b> menu</html>");
     }
 
 
@@ -78,9 +79,8 @@ public class Level2Expert extends L2DFHeating {
 
     protected JMenu createFileMenu() {
         defineFileMenu();
-//        fileMenu = new JMenu("File");
-        fileMenu.add(mIUpdateFurnace);
-        fileMenu.addSeparator();
+//        fileMenu.add(mIUpdateFurnace);
+//        fileMenu.addSeparator();
         fileMenu.add(mIExit);
         return fileMenu;
     }

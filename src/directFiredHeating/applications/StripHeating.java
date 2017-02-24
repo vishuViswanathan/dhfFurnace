@@ -184,6 +184,8 @@ public abstract class StripHeating extends DFHeating {
         furnace.deletePerformance(p);
     }
 
+
+
     protected boolean saveFurnaceWithNowProfileCode() {
         changeProfileCode = false;
         saveFceToFile(true);
@@ -273,9 +275,13 @@ public abstract class StripHeating extends DFHeating {
 
     protected void editStripDFHProcess() {
         if (dfhProcessList.addStripDFHProcess(parent()))
-            showMessage("Strip DFh Process List updated\n" +
-                    "To make it permanent, the furnace data must be updated\n" +
-                    "       " + fileMenu.getText() + "->" + mIUpdateFurnace.getText());
+            showMessage("<html>Strip DFH Process List is modified" +
+                    "<br />To make it permanent, the furnace data must be updated" +
+                    "<br />with <b><font color= 'blue' >" + mIUpdateFurnace.getText() + "</font></b>" +
+                    " from <b><font color = 'blue'>" + fileMenu.getText() + "</font></b> menu</html>");
+//            showMessage("Strip DFh Process List updated\n" +
+//                    "To make it permanent, the furnace data must be updated\n" +
+//                    "       " + fileMenu.getText() + "->" + mIUpdateFurnace.getText());
     }
 
     void viewStripDFHProcess() {

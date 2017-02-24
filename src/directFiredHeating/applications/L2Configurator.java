@@ -55,6 +55,7 @@ public class L2Configurator extends StripHeating {
         dfhProcessList = new StripDFHProcessList(this);
         setUIDefaults();
         mainF = new JFrame();
+        mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         try {
             accessControl = new OfflineAccessControl(asJNLP, mainF);
             mainF.setTitle("DFH Furnace - L2 Configurator - " + releaseDate + testTitle);

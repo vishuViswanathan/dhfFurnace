@@ -1234,6 +1234,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
 
                                     FceEvaluator eval1 = l2DFHeating.calculateFce(true, null, "From Model");
                                     if (eval1 != null) {
+                                        showMessage("Field Data is being Processed");
                                         try {
                                             eval1.awaitThreadToExit();
                                             if (eval1.healthyExit()) {
@@ -1302,6 +1303,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             }
             bConsiderPresetChInTempProfile = false;
             resetFieldDataBeingHandled();
+
             l2DFHeating.switchPage(L2DFHeating.L2DisplayPageType.PROCESS);
         }
 

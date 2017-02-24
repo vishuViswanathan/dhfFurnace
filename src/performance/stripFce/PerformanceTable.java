@@ -216,7 +216,8 @@ public class PerformanceTable {
             if (allOk) {
                 int zNum = 0;
                 for (ZonalTable tz : zonalTablesT) {
-                    OneZone oneZone = new OneZone(false, baseP.topZones.get(zNum).bRecuType);
+//                    OneZone oneZone = new OneZone(false, baseP.topZones.get(zNum).bRecuType);
+                    OneZone oneZone = new OneZone(baseP.topZones.get(zNum));
                     allOk = tz.fillInterpolatedZoneData(oneZone, width, outputFactor);
                     if (!allOk)
                         break;
@@ -227,7 +228,8 @@ public class PerformanceTable {
                     zNum = 0;
                     if (zonalTablesB != null)
                         for (ZonalTable bz : zonalTablesB) {
-                            OneZone oneZone = new OneZone(true, baseP.botZones.get(zNum).bRecuType);
+//                            OneZone oneZone = new OneZone(true, baseP.botZones.get(zNum).bRecuType);
+                            OneZone oneZone = new OneZone(baseP.botZones.get(zNum));
                             allOk = bz.fillInterpolatedZoneData(oneZone, width, outputFactor);
                             if (!allOk)
                                 break;

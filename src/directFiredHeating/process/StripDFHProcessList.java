@@ -644,6 +644,7 @@ public class StripDFHProcessList {
                         response = EditResponse.Response.SAVE;
                         edited = true;
                     }
+                    dfHeating.markPerfTobeSaved(true);
                 }
                 else {
                     oldProc.copyTo(selectedProcess);

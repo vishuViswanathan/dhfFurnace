@@ -1,7 +1,6 @@
 package directFiredHeating;
 
 import basic.ProductionData;
-import display.ThreadController;
 import mvUtils.display.FramedPanel;
 import performance.stripFce.Performance;
 
@@ -17,9 +16,9 @@ import java.awt.event.ActionListener;
  * Time: 2:53 PM
  * To change this template use File | Settings | File Templates.
  */
-public class FceEvaluator implements Runnable, ThreadController{
-    CalculationsDoneListener doneListener;
-    public static enum EvalStat {
+public class FceEvaluator implements Runnable {
+    private CalculationsDoneListener doneListener;
+    public enum EvalStat {
         OK("OK"),
         TOOLOWGAS("Too Low Gas Temperature"),
         TOOHIGHGAS("Too High Gas Temperature"),
@@ -48,14 +47,11 @@ public class FceEvaluator implements Runnable, ThreadController{
     boolean jobDone = false;
 
     DFHFurnace furnace;
-    JPanel jpFceSummary, jpSecWiseSummary, jpTabResults, jpTrends;
     ActionListener localControl;
     boolean run = true;
-    boolean paused = false;
     DFHeating control;
     JScrollPane slate;
     FramedPanel mainFp;
-    int passCount = 0;
     public boolean stopped = false;
     double calculStep;
     ProductionData production;
@@ -108,6 +104,7 @@ public class FceEvaluator implements Runnable, ThreadController{
     }
 
     LocalControl locCtrl;
+    JLabel materialTitle = new JLabel("Material");
     JLabel mainTitle;
     JLabel calculTitle;
     JLabel subActionTitle = new JLabel("Model Evaluation   ");
@@ -135,6 +132,7 @@ public class FceEvaluator implements Runnable, ThreadController{
         calculTitle = new JLabel("TOP SECTIONS ...");
         titleP.add(calculTitle, gbc);
         titleOuter.add(titleP, BorderLayout.CENTER);
+        titleOuter.add(materialTitle, BorderLayout.WEST);
         titleOuter.add(subActionTitle, BorderLayout.EAST);
         mainFp.add(titleOuter, BorderLayout.NORTH);
         mainFp.add(locCtrl, BorderLayout.SOUTH);
@@ -143,49 +141,7 @@ public class FceEvaluator implements Runnable, ThreadController{
         return furnace.getReadyToCalcul(calculStep);
     }
 
-    boolean initOLD() {
-        localControl = new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                Object src = e.getSource();
-//                String cmd =  e.getActionCommand();
-                if (src == pbAbort)
-                    abortCalculation("Aborted by User");
-            }
-        };
-        mainFp = new FramedPanel(new BorderLayout());
-        locCtrl = new LocalControl();
-        JPanel titleP = new JPanel();
-        titleP.setLayout(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        mainTitle = new JLabel("Main Title") ;
-        titleP.add(mainTitle, gbc);
-        gbc.gridy++;
-        calculTitle = new JLabel("TOP SECTIONS ...");
-        titleP.add(calculTitle, gbc);
-        mainFp.add(titleP, BorderLayout.NORTH);
-        mainFp.add(locCtrl, BorderLayout.SOUTH);
-        progressPanel = progressPanel();
-        mainFp.add(progressPanel, BorderLayout.CENTER);
-//        if (baseP == null)
-        return furnace.getReadyToCalcul(calculStep);
-//        else
-//            return true;
-    }
-
-    JButton pbAbort = new JButton("Abort Calculation");
-
-    void pauseCalculation() {
-        paused = true;
-    }
-
-    boolean checkPaused() {
-        if (paused) {
-            control.pausingCalculation(paused);
-        }
-        return paused;
-    }
+    private JButton pbAbort = new JButton("Abort Calculation");
 
     public void abortIt(String reason) {
         abortCalculation(reason);
@@ -205,30 +161,25 @@ public class FceEvaluator implements Runnable, ThreadController{
         control.abortingCalculation(reason);
     }
 
-    void resumeCalculation() {
-        paused = false;
-        control.pausingCalculation(paused);
-    }
-
     public boolean isRunOn() {
         return run;
     }
 
-    public boolean isPauseOn() {
-        return paused;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    JLabel showCount;
     JLabel status;
 
-    public void setProgressGraph(String title1, String title2, JPanel panel) {
+    public void setProgressGraph(String material, String title1, String title2, JPanel panel) {
         progressPanel.add(panel,  BorderLayout.CENTER);
+        setMaterialTitle(material);
         setMainTitle(title1);
         setCalculTitle(title2);
     }
 
     public void setCalculTitle(String title) {
         calculTitle.setText(title);
+    }
+
+    public void setMaterialTitle(String material) {
+        materialTitle.setText(material);
     }
 
     public void setMainTitle(String title) {
@@ -246,42 +197,10 @@ public class FceEvaluator implements Runnable, ThreadController{
         return fp;
     }
 
-    public JPanel getJpFceSummary() {
-        return jpFceSummary;
-    }
-
-    public JPanel getJpSecWiseSummary() {
-        return jpSecWiseSummary;
-    }
-
-    public JPanel getJpTabResults() {
-        return jpTabResults;
-    }
-
-    public JPanel getJpTrends() {
-        return jpTrends;
-    }
-
     public void showStatus(String msg) {
         status.setText(msg);
     }
-    boolean bFirstRun = true;
 
-    public void updateGraph() {
-/*
-        if (bFirstRun) {
-            bFirstRun = false;
-            try {
-                Thread.sleep(500);
-                proGraph.showGraph();
-            } catch (InterruptedException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-            }
-        }
-        else
-            proGraph.showGraph();
-*/
-     }
     void evaluate() {
         if (baseP != null)
             jobDone = baseP.createPerfTable(this);
@@ -292,11 +211,6 @@ public class FceEvaluator implements Runnable, ThreadController{
 
     public boolean isJobDone() {
         return jobDone;
-    }
-
-    void restart() {
-        run = true;
-        // .....
     }
 
     public boolean done = false;

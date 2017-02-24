@@ -108,9 +108,15 @@ public class Level2Installer extends L2DFHeating {
             if (decide("Field Performance Data", "<html>Field-updated Performance Data File is available" +
                     "<br />   Do you want load this, overwriting Data with the Furnace Profile</html>")) {
                 if (loadThePerformanceList(file)) {
-                    if (markThisFileAsBak(file))
-                        showMessage("Field Performance Data", "<html>Combined the Field Performance with the data with Furnace Profile." +
-                                "<br />The existing Field-updated Performance file is marked as *.bak</html>");
+                    if (markThisFileAsBak(file)) {
+                        showMessage("Field Performance Data", "<html>Combined the Field Performance data with Furnace Profile." +
+                                "<br />The existing Field Performance file is marked as *.bak." +
+                                "<br />Before exiting the application, ensure to Update the furnace file " +
+                                "with <b><font color='blue'>" + mIUpdateFurnace.getText()  + "</font></b> " +
+                                "from <b><font color='blue'>" + fileMenu.getText() + "</font></b> " +
+                                "menu.</html>");
+                        markPerfTobeSaved(true);
+                    }
                     else
                         showError("Unable to rename the perfData file to *.bak");
                 }
@@ -165,6 +171,18 @@ public class Level2Installer extends L2DFHeating {
         mAccessControl.add(mRuntimeAccess);
         return mAccessControl;
     }
+
+    public boolean canClose() {
+        boolean goAhead = true;
+        if (furnace != null && furnace.isPerformanceToBeSaved())
+            goAhead = decide("Unsaved Performance Data", "<html>Some Performance/ Process data have been collected." +
+                    "<br />To save the updated data, choose NO now and then Update the furnace file " +
+                    "with <b><font color='blue'>" + mIUpdateFurnace.getText()  + "</font></b> " +
+                    "from <b><font color='blue'>" + fileMenu.getText() + "</font></b> menu."  +
+                    "<br /><br /><font color = 'red'>Selecting YES now will ABANDON collected Performance data.</font></html>", false);
+        return goAhead;
+    }
+
 
     protected JMenu createPerformanceMenu() {
         definePerformanceMenu();

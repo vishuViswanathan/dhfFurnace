@@ -37,13 +37,9 @@ public class StripFurnace extends DFHFurnace {
             return stat;
     }
 
-    protected String getMainTitle() {
-        Charge ch = productionData.charge;
-        String title = String.format("%s:  Strip %4.0f x %4.2f at %5.2f t/h",
-                    productionData.processName, ch.getLength() * 1000, ch.getHeight() * 1000, productionData.production / 1000);
-        return title;
+    protected String getProcessName() {
+        return productionData.processName;
     }
-
 
     protected boolean createPerfBase() {
         performBase = new PerformanceGroup(this, tuningParams);
