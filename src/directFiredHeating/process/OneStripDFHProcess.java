@@ -436,23 +436,23 @@ public class OneStripDFHProcess {
         double unitOutput = p.unitOutput;
         double exitTemp = p.exitTemp();
         ErrorStatAndMsg retVal = new ErrorStatAndMsg(false, "");
-        if (exitTempInRange(exitTemp)) {
-            DataWithStatus<ChMaterial> chMat = getChMaterial(chThick);
-            if (chMat.valid) {
-                ChMaterial mat = chMat.getValue();
-                if (chMaterial.equalsIgnoreCase(mat.name)) {
-                    ErrorStatAndMsg stat = performanceOkForProcess(chWidth, unitOutput);
-                    if (stat.inError)
-                        retVal.add(stat);
-                }
-                else
-                    retVal.addErrorMsg("Charge Material mismatch: required '" + chMat.getValue() + "'");
-            }
-            else
-                retVal.addErrorMsg("Unable to get Charge materil for " + chThick * 1000 + "mm thick strip from Process Data");
-        }
-        else
-            retVal.addErrorMsg("Exit Temperature not in range, required " + tempDFHExit + " +- " + tuning.exitTempTolerance);
+        if (p.processName.equalsIgnoreCase(getFullProcessID())) {
+            if (exitTempInRange(exitTemp)) {
+                DataWithStatus<ChMaterial> chMat = getChMaterial(chThick);
+                if (chMat.valid) {
+                    ChMaterial mat = chMat.getValue();
+                    if (chMaterial.equalsIgnoreCase(mat.name)) {
+                        ErrorStatAndMsg stat = performanceOkForProcess(chWidth, unitOutput);
+                        if (stat.inError)
+                            retVal.add(stat);
+                    } else
+                        retVal.addErrorMsg("Charge Material mismatch: required '" + chMat.getValue() + "'");
+                } else
+                    retVal.addErrorMsg("Unable to get Charge materil for " + chThick * 1000 + "mm thick strip from Process Data");
+            } else
+                retVal.addErrorMsg("Exit Temperature not in range, required " + tempDFHExit + " +- " + tuning.exitTempTolerance);
+        } else
+            retVal.addErrorMsg("Process name doesnot match");
         return retVal;
     }
 

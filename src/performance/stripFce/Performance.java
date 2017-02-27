@@ -142,6 +142,14 @@ public class Performance {
         });
     }
 
+    public double getLossFactor(int sec, boolean bBot) {
+        if (bBot)
+            return botZones.get(sec).lossFactor;
+        else
+            return topZones.get(sec).lossFactor;
+
+    }
+
     public Performance(ProductionData production, Fuel fuel, double airTemp, Vector<OneZone> topZones,
                         Vector<OneZone> botZones, GregorianCalendar dateOfResult,
                         DFHFurnace furnace) {

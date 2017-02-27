@@ -6,7 +6,6 @@ import appReporting.Reporter;
 import basic.*;
 import directFiredHeating.process.FurnaceSettings;
 import directFiredHeating.process.OneStripDFHProcess;
-import display.*;
 import mvUtils.display.TimedMessage;
 import mvUtils.display.TrendsPanel;
 import mvUtils.display.VScrollSync;
@@ -295,6 +294,14 @@ public class DFHFurnace {
         if (bTopBot)
             for (FceSection sec : botSections)
                 sec.resetLossFactor();
+    }
+
+    private void setLossFactor(Performance refP) {
+        for (int s = 0; s < nTopActiveSecs; s++)
+            topSections.get(s).setLossFactor(refP.getLossFactor(s, false));
+        if (bTopBot)
+            for (int s = 0; s < nBotActiveSecs; s++)
+                topSections.get(s).setLossFactor(refP.getLossFactor(s, true));
     }
 
     public void resetChEmmissCorrectionFactor() {
@@ -1192,18 +1199,20 @@ public class DFHFurnace {
                     chTempProfileFactor = 1.0;  // reset to default. This is for respecting exit zone minimum temperature
                     honorLastZoneMinFceTemp = false;
                     if (!skipReferenceDataCheck) {
+                        Performance refP = performBase.getRefPerformance(productionData, commFuelFiring.fuel);
                         if (bConsiderPresetChInTempProfile) {
                             chInTempProfile = presetChInTempProfileTop;
                             setChEmmissCorrectionFactor(chEmmFactorForPresetTempProfile);
                         }
                         else {
-                            Performance refP = performBase.getRefPerformance(productionData, commFuelFiring.fuel);
+//                            Performance refP = performBase.getRefPerformance(productionData, commFuelFiring.fuel);
                             if (refP != null) {
                                 chInTempProfile = refP.getChInTempProfile(productionData.exitTemp);
                                 setChEmmissCorrectionFactor(refP.chEmmCorrectionFactor);
                             }
                         }
                         if (chInTempProfile != null && chInTempProfile.length == nTopActiveSecs) {
+//                            setLossFactor(refP);
                             if (inPerfTableMode)
                                 considerChTempProfile = true;
                             else {

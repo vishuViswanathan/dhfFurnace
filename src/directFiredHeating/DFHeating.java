@@ -1789,9 +1789,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     public DataWithStatus<OneStripDFHProcess> getDFHProcess(Performance forThisPerformance) {
-//        logInfo("in getDFHProcess in DFHeating");
         DataWithStatus<OneStripDFHProcess> retVal = dfhProcessList.getDFHProcess(forThisPerformance) ;
-//        logInfo("retVal status =" + retVal.getDataStatus() + ", values = " + retVal.getValue());
         return retVal;
     }
 
