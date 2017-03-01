@@ -607,6 +607,10 @@ public class UnitFurnace {
         return (gasT - two) * s152 * (1 - tau) / tau;
     }
 
+    public void setEW(double chTemp) {
+        eW = ch.getEmiss(chTemp) * production.chEmmissCorrectionFactor;
+    }
+
     double gasTFromFceTandChT(double tempO1, double two) {
         double tempOresult;
         FlueComposition radFlue = fceSec.totFlueCompAndQty.flueCompo;
@@ -627,6 +631,16 @@ public class UnitFurnace {
         alphaGOW = radFlue.alphaGas(tempO1, two, gThick) * tuning.emmFactor;
         alphaEGOW = alphaGOW * eO;
         double alphaConv = (bRecuType) ? tuning.alphaConvRecu : tuning.alphaConvFired;
+        if (tuning.noGasRadiationToCharge) {
+            aOWeffective = alphaEOW + alphaConv;  // gas absorption neglected  but convection added (for Testing only)
+            aOWforTempO = aOWeffective;
+        }
+        else {
+            aOWeffective = alphaEOW - alphaEGOW;  // subtracted gas absorption
+//                aOWforTempO = alphaEOW; // gas absorption not considers since it is not at the wall
+            aOWforTempO = alphaEOW - ((tuning.bNoGasAbsorptionInWallBalance) ? 0 : alphaEGOW); // gas absorption not considers since it is not at the wall
+        }
+        aOWeffective = (aOWeffective > 0) ? aOWeffective : 0;     // 20170125 limited to >= 0
         while (!done && furnace.canRun()) {
             loopCount--;
             if (loopCount <= 0) {
@@ -644,16 +658,16 @@ public class UnitFurnace {
             // find revised furnace temperature
             aGOplusConv = alphaEGO + alphaConv; // added convection
 
-            if (tuning.noGasRadiationToCharge) {
-                aOWeffective = alphaEOW + alphaConv;  // gas absorption neglected  but convection added (for Testing only)
-                aOWforTempO = aOWeffective;
-            }
-            else {
-                aOWeffective = alphaEOW - alphaEGOW;  // subtracted gas absorption
-//                aOWforTempO = alphaEOW; // gas absorption not considers since it is not at the wall
-                aOWforTempO = alphaEOW - ((tuning.bNoGasAbsorptionInWallBalance) ? 0 : alphaEGOW); // gas absorption not considers since it is not at the wall
-            }
-            aOWeffective = (aOWeffective > 0) ? aOWeffective : 0;     // 20170125 limited to >= 0
+//            if (tuning.noGasRadiationToCharge) {
+//                aOWeffective = alphaEOW + alphaConv;  // gas absorption neglected  but convection added (for Testing only)
+//                aOWforTempO = aOWeffective;
+//            }
+//            else {
+//                aOWeffective = alphaEOW - alphaEGOW;  // subtracted gas absorption
+////                aOWforTempO = alphaEOW; // gas absorption not considers since it is not at the wall
+//                aOWforTempO = alphaEOW - ((tuning.bNoGasAbsorptionInWallBalance) ? 0 : alphaEGOW); // gas absorption not considers since it is not at the wall
+//            }
+//            aOWeffective = (aOWeffective > 0) ? aOWeffective : 0;     // 20170125 limited to >= 0
 
             tempOresult = (tempGAssume * aGOplusConv + psi * two * aOWforTempO - tuning.wallLoss) /
                     (aGOplusConv + psi * aOWforTempO);
@@ -683,7 +697,7 @@ public class UnitFurnace {
 
     double chargeSurfTemp(double tg, double twm) {
         double twoAssume, twoRevised, diff, alpha;
-        eW = ch.getEmiss(twm) * production.chEmmissCorrectionFactor;
+        setEW(twm); // 20170227 eW = ch.getEmiss(twm) * production.chEmmissCorrectionFactor;      // not used here
         twoAssume = twm + 20;
         boolean done = false;
         while (!done  && furnace.canRun()) {
@@ -770,11 +784,11 @@ public class UnitFurnace {
             }
 
             if (bLastSlot) {
-                eW = ch.getEmiss(tempWmean) * production.chEmmissCorrectionFactor;
+                setEW(tempWmean); // 20170227  eW = ch.getEmiss(tempWmean) * production.chEmmissCorrectionFactor;
                 chargeSurfTemp(tempG, tempWmean);
             }
 
-            prevSlot.eW = ch.getEmiss(tWMassume) * production.chEmmissCorrectionFactor;
+            prevSlot.setEW(tWMassume);  // 20170227 prevSlot.eW = ch.getEmiss(tWMassume) * production.chEmmissCorrectionFactor;
             two = prevSlot.chargeSurfTemp(tempGB, tWMassume);
             if (furnace.canRun()) {
                 if ((tempGB - two)/(tempG - tempWO) < 0) {
@@ -786,7 +800,7 @@ public class UnitFurnace {
                 twoAvg = (two + tempWO) / 2;
                 tgAvg = twoAvg + lmDiff;
                 twmAvg = (tWMassume + tempWmean) / 2;
-                eW = ch.getEmiss(twmAvg) * production.chEmmissCorrectionFactor;
+                setEW(twmAvg); // 20170227  eW = ch.getEmiss(twmAvg) * production.chEmmissCorrectionFactor;
                 alpha = fceTempAndAlpha(tgAvg, twoAvg);
                 tau = evalTau(alpha, ch.getTk(twmAvg), ((bAddedTopSoak) ? furnace.effectiveChThickAS : furnace.effectiveChThick) * gRatio);
                 tWMrevised = chargeEndTemp(tgAvg, tempWmean,
@@ -888,13 +902,13 @@ public class UnitFurnace {
             totheat = chHeat + totLosses(); //losses;
             tempGE = (bRecuType) ? gasTempAfterHeat(prevSlot.tempG, fceSec.passFlueCompAndQty, totheat) : prevSlot.tempG;
 
-            eW = ch.getEmiss(tWMassume) * production.chEmmissCorrectionFactor;
+            setEW(tWMassume); // 20170227  eW = ch.getEmiss(tWMassume) * production.chEmmissCorrectionFactor;
             two = chargeSurfTemp(tempGEforCharge, tWMassume);
             lmDiff = SPECIAL.lmtd((tempGEforCharge - two), (prevSlot.tempG - prevSlot.tempWO));
             twoAvg = (two + prevSlot.tempWO) / 2;
             tgAvg = twoAvg + lmDiff;
             twmAvg = (tWMassume + prevSlot.tempWmean) / 2;
-            eW = ch.getEmiss(twmAvg) * production.chEmmissCorrectionFactor;
+            setEW(twmAvg); // 20170227  eW = ch.getEmiss(twmAvg) * production.chEmmissCorrectionFactor;
             alpha = fceTempAndAlpha(tgAvg, twoAvg);
             tau = evalTau(alpha, ch.getTk(twmAvg), ((bAddedTopSoak) ? furnace.effectiveChThickAS : furnace.effectiveChThick)* gRatio);
             tWMrevised = chargeEndTemp(tgAvg, prevSlot.tempWmean,

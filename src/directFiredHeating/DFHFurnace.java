@@ -1150,7 +1150,7 @@ public class DFHFurnace {
             if (bTopBot && !bBot && bAddTopSoak) {
                 theSection = addedTopSoak;
                 theSlot = theSection.getLastSlot();
-                theSlot.eW = ch.getEmiss(tempWOEnd);
+                theSlot.setEW(tempWOEnd);  // 20170227 theSlot.eW = ch.getEmiss(tempWOEnd);
                 theSlot.tempG = gasTforChargeT(theSlot, tempWOEnd, productionData.deltaTemp); // theSlot.gasTforChargeT(tempWOEnd, production.deltaTemp);
                 if (bStart) {
                     szTemp = theSlot.tempG;
@@ -1175,7 +1175,7 @@ public class DFHFurnace {
                 theSlot = theSection.getLastSlot();
                 temWOreqd = addedTopSoak.chEntrySurfTemp();
                 deltaTempReqd = addedTopSoak.chEntryDeltaT();
-                theSlot.eW = ch.getEmiss(temWOreqd);
+                theSlot.setEW(temWOreqd);  // 20170227 theSlot.eW = ch.getEmiss(temWOreqd);
                 theSlot.tempG = gasTforChargeT(theSlot, temWOreqd, deltaTempReqd); // theSlot.gasTforChargeT(temWOreqd, deltaTempReqd);
                 if (bStart)
                     setStartTProf(theSlot.tempG, bBot);
@@ -1187,7 +1187,7 @@ public class DFHFurnace {
                 temWOreqd = results.getYat(2, changeOverPt);
                 deltaTempReqd = temWOreqd - results.getYat(3, changeOverPt);
                 double tempWMean = results.getYat(4, changeOverPt);
-                theSlot.eW = ch.getEmiss(tempWMean);
+                theSlot.setEW(tempWMean); // 20170227 theSlot.eW = ch.getEmiss(tempWMean);
                 theSlot.tempG = gasTforChargeT(theSlot, temWOreqd, deltaTempReqd);// theSlot.gasTforChargeT(temWOreqd, deltaTempReqd);
                 if (bStart)
                     setStartTProf(theSlot.tempG, bBot);
@@ -1243,7 +1243,7 @@ public class DFHFurnace {
 
                 theSection = vSec.get(iLastSec);  // the last fired section
                 theSlot = theSection.getLastSlot();
-                theSlot.eW = ch.getEmiss(tempWOEnd);
+                theSlot.setEW(tempWOEnd); // 20170227  theSlot.eW = ch.getEmiss(tempWOEnd);
                 if (honorLastZoneMinFceTemp)
                     theSlot.tempG = theSlot.gasTFromFceTandChT(controller.minExitZoneFceTemp, tempWOEnd);
                 else {
