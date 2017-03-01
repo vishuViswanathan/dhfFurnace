@@ -124,7 +124,7 @@ public class UnitFceArray {
                     totAlpha.addData(u, uf.dpTotAlpha);
                     alphaWall.addData(u, uf.dpAlphaWall);
                     alphaGas.addData(u, uf.dpAlphaGas);
-                    alphaAbsorb.addData(u, uf.dpAlphaAbsorb);
+//                    alphaAbsorb.addData(u, uf.dpAlphaAbsorb);
 //                    chargeHeat.addData(u, uf.dpChargeHeat);
 //                    heatToCharge.addData(u, uf.dpHeatToCharge);
 //                    heatFromWall.addData(u, uf.dpHeatFromWall);

@@ -34,16 +34,16 @@ public class UnitFurnace {
     public double tempWO, tempWcore, tempWmean, tempG, tempO;
     public double tempOMean, tempWOMean;
     protected double chargeHeat = 0;
-    double heatToCharge, heatFromWall, heatFromGas, heatAbsorbed;
+    double heatToCharge, heatFromWall, heatFromGas;
     public MultiColDataPoint dpTempWO = null, dpTempWcore = null, dpTempWmean, dpTempG, dpTempO, dpEndTime;
-    public MultiColDataPoint dpTotAlpha, dpAlphaGas, dpAlphaWall, dpAlphaAbsorb;
+    public MultiColDataPoint dpTotAlpha, dpAlphaGas, dpAlphaWall;
     public MultiColDataPoint dpChargeHeat, dpHeatToCharge, dpHeatFromWall, dpHeatFromGas, dpHeatAbsorbed;
     protected double gRatio;
     boolean bNoShare = true;  // no coresponding bottom zone
     double s152;
     double alphaGasPart, alphaWallPart, alphaTOW;
     double alphaAbsorption;
-    double aEOW, aEGOW;
+//    double aEOW, aEGOW;
     double slotRadOut, slotRadIn, slotRadNetOut;
     UnitFurnace pEntryNei, pExitNei;
     Vector<RadToNeighbors> radSrc, radSink;
@@ -93,7 +93,6 @@ public class UnitFurnace {
         dpTotAlpha = new MultiColDataPoint();
         dpAlphaGas = new MultiColDataPoint();
         dpAlphaWall = new MultiColDataPoint();
-        dpAlphaAbsorb = new MultiColDataPoint();
         dpChargeHeat = new MultiColDataPoint();
     }
 
@@ -481,12 +480,101 @@ public class UnitFurnace {
         return alpha;
     }
 
-//    double fcTalpha(double tg) {
-//        return fcTalpha(tg, tempWO);
-//    }
+    private double alphaOWEffective(double tO, double two, double eWnow) {
+        double epsilonOW, alphaOW;
+        FlueComposition radFlue = fceSec.totFlueCompAndQty.flueCompo;
+        epsilonOW = 1 / (1 / eWnow + psi * (1 / eO - 1));
+        if (tO == two)
+            alphaOW = SPECIAL.stefenBoltz * (Math.pow(tO + 273, 4) - Math.pow(tO - 1 + 273, 4)) / 1;
+        else
+            alphaOW = SPECIAL.stefenBoltz * (Math.pow(tO + 273, 4) - Math.pow(two + 273, 4)) / (tO - two);
 
+        double alphaEOW = alphaOW * epsilonOW;
+        double alphaGOW = radFlue.alphaGas(tO, two, gThick) * tuning.emmFactor;
+        double alphaEGOW = alphaGOW * eO;
+        double effValue = alphaEOW  - alphaEGOW;
+        return (effValue > 0) ? effValue : 0;
+//        double fraction = (alphaOW - alphaEGOW) / alphaOW;
+//        debug("fraction = " + fraction);
+//        if (fraction < 0)
+//            debug("fraction is < 0 in alphaOWEffective");
+//        return fraction * alphaEOW;
+    }
 
     double fcTalpha(double tg, double two) {
+        double alpha = 0;
+        double alphaGO, alphaEGO; // between gas and wall
+        double diff;
+        double aGOplusConv = 0, aOWeffective = 0, alphaEGWplusCov = 0;
+        double alphaConv = (bRecuType) ? tuning.alphaConvRecu : tuning.alphaConvFired;
+        FlueComposition radFlue = fceSec.totFlueCompAndQty.flueCompo;
+        if (tg < -273 || two < -273) {
+            alpha = 1;
+            tempO = (tg + two) / 2;
+        } else {
+            double tempOAssume, tempO1 = 0;
+            tempOAssume = (tg + two) / 2; //   Starting assumption for Fce temp
+            int nowTrialSet = 2;
+            double adjustmentFactor = 0.5;
+            int maxLoopCount = 2000;
+            int loopCount = maxLoopCount;
+            boolean done = false;
+            while (!done && furnace.canRun()) {
+                loopCount--;
+                if (loopCount < 0) {
+                    if (nowTrialSet < 0) {
+                        errMsg("TOO many iterations! in Finding Alpha (fcTalpha)." +
+                                "\n gasTemp =" + tg + ", Charge Surface Temp = " + two + "\nAborting after many trials");
+
+                        furnace.abortIt("Unable to evaluate alpha in UnitFurnace");
+                        break;
+                    }
+                    else {
+                        nowTrialSet--;
+                        adjustmentFactor *= 0.5;
+                        loopCount = maxLoopCount;
+                    }
+                }
+                alphaGO = radFlue.alphaGas(tg, tempOAssume, gThick) * tuning.gasWallHTMultipler * tuning.emmFactor;
+                alphaEGO = alphaGO * eO;
+
+                // find revised furnace temperature
+                aGOplusConv = alphaEGO + alphaConv; // added convection
+                aOWeffective = alphaOWEffective(tempOAssume, two, eW);
+                tempO1 = (tg * aGOplusConv + psi * two * aOWeffective - tuning.wallLoss) /
+                        (aGOplusConv + psi * aOWeffective);
+                diff = tempO1 - tempOAssume;
+                if (Math.abs(diff) <= 0.1 * tuning.errorAllowed)
+                    done = true;
+                else
+                    tempOAssume += diff * adjustmentFactor; //  (tempOAssume + tempO1) / 2;
+            }
+            // result reached
+            double alphaGW, alphaEGW;
+            if (tuning.noGasRadiationToCharge)
+                alphaEGWplusCov = 0;
+            else {
+                alphaGW = radFlue.alphaGas(tg, two, gThick) * tuning.emmFactor;
+                alphaEGW = alphaGW * eW;
+                alphaEGWplusCov = alphaEGW + alphaConv; // added convection
+            }
+            tempO = tempO1;
+            alpha = alphaEGWplusCov + aOWeffective * (tempO - two) / (tg - two);
+            alphaTOW = alpha * (tg - two) / (tempO - two);
+
+
+            alphaGasPart = alphaEGWplusCov;
+            alphaWallPart = alpha - alphaGasPart;
+        }
+        if (tuning.bOnTest) {
+            heatToCharge = chargeArea * alpha * (tg - two) ;
+            heatFromWall = chargeArea * aOWeffective * (tempO - two);
+            heatFromGas = chargeArea * alphaEGWplusCov * (tg - two);
+        }
+        return alpha;
+    }
+
+    double fcTalphaOLD(double tg, double two) {   // TODO to be removed
         double alpha = 0;
         double alphaOW, alphaEOW = 0; // between wall and charge
         double alphaGOW = 0, alphaEGOW = 0; //gas absorption between wall and charge
@@ -574,15 +662,12 @@ public class UnitFurnace {
 
             alphaGasPart = alphaEGWplusCov;
             alphaWallPart = alpha - alphaGasPart;
-
-            aEGOW = alphaEGOW;
-            aEOW = alphaEOW;
         }
         if (tuning.bOnTest) {
             heatToCharge = chargeArea * alpha * (tg - two) ;
             heatFromWall = chargeArea * alphaEOW * (tempO - two);
             heatFromGas = chargeArea * alphaEGWplusCov * (tg - two);
-            heatAbsorbed = chargeArea * alphaEGOW * (tempO - two);
+//            heatAbsorbed = chargeArea * alphaEGOW * (tempO - two);
         }
         return alpha;
     }
@@ -612,6 +697,49 @@ public class UnitFurnace {
     }
 
     double gasTFromFceTandChT(double tempO1, double two) {
+        double tempOresult;
+        FlueComposition radFlue = fceSec.totFlueCompAndQty.flueCompo;
+        double tempGAssume;
+        tempGAssume = tempO1 + (tempO1 - two) / 2; //   Starting assumption for Gas temp
+        double alphaOW, alphaEOW = 0; // between wall and charge
+        double alphaGOW = 0, alphaEGOW = 0; //gas absorption between wall and charge
+        double alphaGO, alphaEGO; // between gas and wall
+        double diff;
+        double aGOplusConv = 0, aOWeffective = 0;
+        double aOWforTempO; // for tempO based on heat balance at wall
+        int loopCount = 5000;
+        boolean done = false;
+        double alphaConv = (bRecuType) ? tuning.alphaConvRecu : tuning.alphaConvFired;
+        aOWeffective = alphaOWEffective(tempO1, two, eW);
+        while (!done && furnace.canRun()) {
+            loopCount--;
+            if (loopCount <= 0) {
+//                errMsg("TOO many iterations! in Finding Alpha (gasTFromFceTandChT). Aborting after many trials");
+                errMsg("TOO many iterations! in Finding Alpha (gasTFromFceTandChT)." +
+                        "\n Fce Temp =" + tempO1 + ", Charge Surface Temp = " + two + "\nAborting after many trials");
+                furnace.abortIt("Unable to evaluate Gas Temperature from Wall and Cgarge Temperature in UnitFurnace");
+                break;
+            }
+            // find alphaOW
+
+            alphaGO = radFlue.alphaGas(tempGAssume, tempO1, gThick) * tuning.gasWallHTMultipler * tuning.emmFactor;
+            alphaEGO = alphaGO * eO;
+
+            // find revised furnace temperature
+            aGOplusConv = alphaEGO + alphaConv; // added convection
+
+            tempOresult = (tempGAssume * aGOplusConv + psi * two * aOWeffective - tuning.wallLoss) /
+                    (aGOplusConv + psi * aOWeffective);
+            diff = tempOresult - tempO1;
+            if (Math.abs(diff) <= 0.1 * tuning.errorAllowed)
+                done = true;
+            else
+                tempGAssume -= diff / 2;
+        }
+        return tempGAssume;
+    }
+
+    double gasTFromFceTandChTOLD(double tempO1, double two) {
         double tempOresult;
         FlueComposition radFlue = fceSec.totFlueCompAndQty.flueCompo;
 //        FlueComposition radFlue = flueCompoAndQty.flueCompo;
@@ -877,7 +1005,6 @@ public class UnitFurnace {
             dpTotAlpha.updateVal(getAlpha());
             dpAlphaGas.updateVal(alphaGasPart);
             dpAlphaWall.updateVal(alphaWallPart);
-            dpAlphaAbsorb.updateVal(alphaAbsorption);
         }
     }
 
