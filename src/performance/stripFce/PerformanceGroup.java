@@ -192,10 +192,23 @@ public class PerformanceGroup implements ActionListener{
         boolean retVal = false;
         int foundAt = getIndexOfSimilarPerformance(performance);
         if (foundAt >= 0) {
-            refPerformance.remove(foundAt);
-            refPerformance.add(foundAt, performance);
-            tobeSaved = true;
-            retVal = true;
+            deletePerformance(foundAt);
+//            refPerformance.remove(foundAt);
+            StatusWithMessage stat = furnace.addPerformance(performance, -1);
+            if (stat.getDataStatus() == DataStat.Status.OK)   {
+//            addPerformance(performance, foundAt);
+//            refPerformance.add(foundAt, performance);
+                tobeSaved = true;
+                retVal = true;
+            }
+            else {
+                showError("Unable to replace the existing Performance data");
+                controller.logError("PerformanceGroup.replaceExistingPerformance: Unable to replace the existing Performance data: " + stat.getErrorMessage());
+            }
+        }
+        else {
+            showError("Could not locate existing Performance data");
+            controller.logError("PerformanceGroup.replaceExistingPerformance: Could not locate existing Performance data");
         }
         return retVal;
     }
@@ -334,7 +347,7 @@ public class PerformanceGroup implements ActionListener{
                 if (nRefP > 0) {
                     Performance p;
                     if (nRefP < 100) {
-                        for (int refP = 0; refP <nRefP; refP ++)  {
+                        for (int refP = 0; refP <nRefP; refP++)  {
                             vp = XMLmv.getTag(xmlStr, "RefP" + ("" + refP).trim(), vp.endPos);
                             p = new Performance(furnace);
                             if (p.takeDataFromXML(vp.val, readPerfTable)) {
@@ -514,9 +527,11 @@ public class PerformanceGroup implements ActionListener{
 
     void showError(String msg){
         (new TimedMessage("In Performance Data", msg, TimedMessage.ERROR, controller.parent(), 5000)).show();
+        controller.logError("PerformanceGroup: " + msg);
     }
 
     void showMessage(String msg) {
         (new TimedMessage("In Performance Data", msg, TimedMessage.INFO, controller.parent(), 3000)).show();
+        controller.logInfo("PerformanceGroup: " + msg);
     }
 }

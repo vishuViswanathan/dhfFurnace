@@ -179,12 +179,15 @@ public class StripDFHProcessList {
     }
 
     public boolean addStripDFHProcess(Window parent) {
+        return addStripDFHProcess(parent, true);
+    }
+    public boolean addStripDFHProcess(Window parent, boolean allowAdd) {
         boolean redo = true;
         OneStripDFHProcess lastSelectedP = null;
         EditResponse.Response lastResponse = EditResponse.Response.EXIT;
         boolean edited = false;
         do {
-            AddProcessDlg dlg = new AddProcessDlg(this, true);
+            AddProcessDlg dlg = new AddProcessDlg(this, true, allowAdd);
             dlg.setLocationRelativeTo(parent);
             if (lastResponse == EditResponse.Response.RESET)
                 dlg.setSelectedP(lastSelectedP);
@@ -512,14 +515,20 @@ public class StripDFHProcessList {
         OneStripDFHProcess selectedProcess;
         DataListEditorPanel editorPanel;
         boolean editable = false;
+        boolean addable = false;
         EditResponse.Response response;
         boolean edited = false;
 
-        AddProcessDlg(StripDFHProcessList pListManager, boolean editable) {
+        AddProcessDlg(StripDFHProcessList pListManager, boolean editable, boolean addable) {
             this.pListManager = pListManager;
             this.editable = editable;
+            this.addable = addable;
             setModal(true);
             init();
+        }
+
+        AddProcessDlg(StripDFHProcessList pListManager, boolean editable) {
+            this(pListManager, editable, true);
         }
 
         void init() {
@@ -561,7 +570,7 @@ public class StripDFHProcessList {
             for (OneStripDFHProcess p: list)
                 jcbExisting.addItem(p.toString());
 //                jcbExisting.addItem(p.getFullProcessID());
-            if (editable && list.size() < maxListLenFP)
+            if (editable && addable && list.size() < maxListLenFP)
                 jcbExisting.addItem(enterNew);
             bListBeingChanged = false;
         }

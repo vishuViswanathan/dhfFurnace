@@ -1032,11 +1032,11 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                 logTrace("eval for Performance table is completed");
                 if (eval.healthyExit()) {
                     logTrace("eval for Performance table had healthy exit");
-                    if (replace)
-                        performBase.replaceExistingPerformance(perform);
+                    if (replace) {
+                        retVal = performBase.replaceExistingPerformance(perform);
+                    }
                     else
-                        performBase.noteBasePerformance(perform);
-                    retVal = true;
+                        retVal = performBase.noteBasePerformance(perform);
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -1231,8 +1231,13 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                                     logTrace("L2DFHFurnace.1226: Evaluating From Model");
                                     if (productionData != null)
                                         logInfo("l2DFHFurnace.1228: productionData.chEmmissCorrectionFactor = " + productionData.chEmmissCorrectionFactor);
-
-                                    FceEvaluator eval1 = l2DFHeating.calculateFce(true, null, "From Model");
+                                    boolean resetLossFactors = true;
+                                    if (theFieldResults.stripDFHProc.isPerformanceAvailable()) {
+                                        controller.takeValuesFromUI();
+                                        setLossFactor(theFieldResults.stripDFHProc.getPerformance());
+                                        resetLossFactors = false;
+                                    }
+                                    FceEvaluator eval1 = l2DFHeating.calculateFce(resetLossFactors, null, "From Model");
                                     if (eval1 != null) {
                                         showMessage("Field Data is being Processed");
                                         try {
@@ -1275,6 +1280,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                                         }
                                     } else
                                         showError("Unable to do Calculation from Model" );
+                                    resetLossFactor();
                                 }
                             } else
                                 showError("Facing some problem in evaluating strip emissivity factor" );

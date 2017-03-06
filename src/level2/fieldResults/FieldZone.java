@@ -108,17 +108,25 @@ public class FieldZone {
                 calculatedFlueTempOut / calculatedFceTemp * frFceTemp :
                 calculatedFlueTempOut;
 
-//        l2Furnace.logInfo(String.format("FieldZone.111: frAirTemp %4.0f, frFceTemp %4.0f, frFlueTempOut %4.0f, calculatedFceTemp %4.0f, calculatedFlueTempOut %4.0f, ",
-//                frAirTemp, frFceTemp, frFlueTempOut, calculatedFceTemp, calculatedFlueTempOut));
-
         double frNetFuelHeat = frFuelFlow * zonalFuelFiring.netUsefulFromFuel(frFlueTempOut, frAirTemp);
-//        double frHeatFromPassingFlue = passingFlue.flow *
-//                (zonalFuelFiring.flueHeatPerUFuel(passingFlue.temperature, frFlueTempOut));
         Fluid flue = zonalFuelFiring.flue;
         double frHeatFromPassingFlue = passingFlue.flow *
                 flue.deltaHeat(passingFlue.temperature, frFlueTempOut);
         double frLosses = frNetFuelHeat + frHeatFromPassingFlue - heatToCharge;
-        lossFactor = frLosses / calculatedLosses;
+//        lossFactor = frLosses / calculatedLosses;
+        l2Furnace.logTrace("lossFactor original = " + sec.getLossFactor());    // TODO to be removed on RELEASE
+        lossFactor = sec.getLossFactor() * (frLosses / calculatedLosses);
+        // limit LossFactor
+        if (lossFactor < 0.2) {
+            l2Furnace.logError("FieldZone.compareResults: " + sec.sectionName() + " lossFactor = " + lossFactor);
+            lossFactor = 0.2;
+        }
+        else if (lossFactor > 10) {
+            l2Furnace.logError("FieldZone.compareResults: " + sec.sectionName() + " lossFactor = " + lossFactor);
+            lossFactor = 10;
+        }
+
+        l2Furnace.logTrace("lossFactor modified = " + lossFactor);     // TODO to be removed on RELEASE
         passingFlue.flow += frFuelFlow * zonalFuelFiring.unitFlueFlow();
         passingFlue.temperature = frFlueTempOut;
         return passingFlue;

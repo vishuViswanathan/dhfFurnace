@@ -689,10 +689,11 @@ public class FceSection {
         return retVal;
     }
 
-    public void setLossFactor(double lossFactor) {
+    public boolean setLossFactor(double lossFactor) {
         for (FceSubSection sub: subSections)
             if (sub.isActive())
                 sub.setLossFactor(lossFactor);
+        return !(lossFactor == 1.0);
     }
 
     public double getLossFactor() {

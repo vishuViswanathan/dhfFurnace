@@ -296,12 +296,14 @@ public class DFHFurnace {
                 sec.resetLossFactor();
     }
 
-    private void setLossFactor(Performance refP) {
+    protected boolean setLossFactor(Performance refP) {
+        boolean someFactorIsNot1 = false; // true if any lossFactor is not 0
         for (int s = 0; s < nTopActiveSecs; s++)
-            topSections.get(s).setLossFactor(refP.getLossFactor(s, false));
+            someFactorIsNot1 |= topSections.get(s).setLossFactor(refP.getLossFactor(s, false));
         if (bTopBot)
             for (int s = 0; s < nBotActiveSecs; s++)
-                topSections.get(s).setLossFactor(refP.getLossFactor(s, true));
+                someFactorIsNot1 |= botSections.get(s).setLossFactor(refP.getLossFactor(s, true));
+        return someFactorIsNot1;
     }
 
     public void resetChEmmissCorrectionFactor() {
@@ -1212,10 +1214,13 @@ public class DFHFurnace {
                             }
                         }
                         if (chInTempProfile != null && chInTempProfile.length == nTopActiveSecs) {
-//                            setLossFactor(refP);
                             if (inPerfTableMode)
                                 considerChTempProfile = true;
                             else {
+                                if (controller.isOnManualCalculation()) {
+                                    if (setLossFactor(refP))
+                                        debug("Setting LossFactors from Performance Data, some Factors are not 1.0");
+                                }
                                 if (!userActionAllowed())
                                     considerChTempProfile = true;
                                 else

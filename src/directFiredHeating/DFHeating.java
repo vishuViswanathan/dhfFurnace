@@ -243,6 +243,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     public double ambTemp = 30, airTemp = 500, fuelTemp = 30;
     protected NumberTextField tfCalculStep, tfAmbTemp, tfAirTemp, tfFuelTemp;
     protected JButton pbCalculate;
+    boolean bManualCalculation = false;
     protected MultiPairColPanel mpCalcul;
     double deltaTflue = 50, deltaTAirFromRecu = 50, maxFlueAtRecu = 800;
     double deltaTFuelFromRecu = 30;
@@ -1076,6 +1077,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         pbCalculate = new JButton("Calculate");
         pbCalculate.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                bManualCalculation = true;
                 calculateFce();
             }
         });
@@ -2444,6 +2446,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             } else
                 showError("Earlier Calculation is still ON!");
         }
+        else
+            bManualCalculation = false;
         return evaluator;
     }
 
@@ -2496,6 +2500,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     public void abortingCalculation(String reason) {
+        bManualCalculation = false;
         evaluator = null;
         enableDataEntry(true);
         enableDefineMenu(true);
@@ -2928,6 +2933,11 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     public void setResultsReady(boolean bReady) {
         bResultsReady = bReady;
         freshResults = bReady;
+        bManualCalculation = false;
+    }
+
+    public boolean isOnManualCalculation() {
+        return bManualCalculation;
     }
 
     public void resultsReady(Observations observations) {
