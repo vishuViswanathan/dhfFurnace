@@ -816,16 +816,9 @@ public class DFHFurnace {
 //    }
 
     public StatusWithMessage addPerformance(Performance p) {
-        return addPerformance(p, -1);
-//        performBase.addPerformance(p);
-//        return new StatusWithMessage();
-    }
-
-    public StatusWithMessage addPerformance(Performance p, int atLoc) {
-        performBase.addPerformance(p, atLoc);
+        performBase.addPerformance(p);
         return new StatusWithMessage();
     }
-
 
     protected boolean createPerfBase() {
         performBase = new PerformanceGroup(this, tuningParams);

@@ -96,13 +96,6 @@ public class PerformanceGroup implements ActionListener{
         refPerformance.add(p);
     }
 
-    public void addPerformance(Performance p, int atLoc) {
-        if (atLoc >= 0)
-            refPerformance.set(atLoc, p);
-        else
-            addPerformance(p);
-    }
-
     public boolean noteBasePerformance(Performance performance, boolean fromXML) {
         boolean bNoted = false;
         boolean requiresInterpolCheck = false;
@@ -119,7 +112,7 @@ public class PerformanceGroup implements ActionListener{
             }
             if (overWrite)  {
                 deletePerformance(foundAt);
-                StatusWithMessage addResponse = furnace.addPerformance(performance, -1);
+                StatusWithMessage addResponse = furnace.addPerformance(performance);
                 DataStat.Status status = addResponse.getDataStatus();
                 if (status == DataStat.Status.OK) {
                     bNoted = true;
@@ -194,7 +187,7 @@ public class PerformanceGroup implements ActionListener{
         if (foundAt >= 0) {
             deletePerformance(foundAt);
 //            refPerformance.remove(foundAt);
-            StatusWithMessage stat = furnace.addPerformance(performance, -1);
+            StatusWithMessage stat = furnace.addPerformance(performance);
             if (stat.getDataStatus() == DataStat.Status.OK)   {
 //            addPerformance(performance, foundAt);
 //            refPerformance.add(foundAt, performance);

@@ -26,15 +26,10 @@ public class StripFurnace extends DFHFurnace {
     }
 
     public StatusWithMessage addPerformance(Performance p) {
-        return addPerformance(p, -1);
-    }
-
-    public StatusWithMessage addPerformance(Performance p, int atLoc) {
-        controller.logInfo("in StripFurnace.#33, addPerformance ");
         StatusWithMessage stat =  p.linkToProcess();
         if (stat.getDataStatus() != DataStat.Status.WithErrorMsg) {
             controller.logInfo("Linked Performance and process");
-            return super.addPerformance(p, atLoc);
+            return super.addPerformance(p);
         }
         else {
             if (stat.getDataStatus() == DataStat.Status.WithInfoMsg)
@@ -43,7 +38,7 @@ public class StripFurnace extends DFHFurnace {
         }
     }
 
-    protected String getProcessName() {
+     protected String getProcessName() {
         return productionData.processName;
     }
 
