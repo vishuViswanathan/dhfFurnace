@@ -7,7 +7,6 @@ import level2.common.L2ParamGroup;
 import level2.stripDFH.L2DFHZone;
 import level2.common.Tag;
 import mvUtils.display.*;
-import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import performance.stripFce.OneZone;
 
@@ -43,26 +42,12 @@ public class FieldZone {
         this.l2Furnace = l2Furnace;
         this.sec = sec;
         this.zNum = sec.secNum;
-//        this.zonalFuelFiring = new FuelFiring(l2Furnace.commFuelFiring, false);
     }
 
     public FieldZone(L2DFHFurnace l2Furnace, boolean bBot, int zNum) {
         this(l2Furnace, l2Furnace.getOneSection(bBot, zNum));
     }
 
-//    public FieldZone(L2DFHFurnace l2Furnace, boolean bBot, int zNum, double fceTemp, double fuelFlow,
-//                     double airTemp, double afRatio) {
-//        this(l2Furnace, bBot, zNum);
-//        setValues(fceTemp, fuelFlow, airTemp, afRatio);
-//        testValidity();
-//    }
-
-//    public FieldZone(L2DFHFurnace l2Furnace, boolean bBot, int zNum, String xmlStr) throws NumberFormatException {
-//        this(l2Furnace, bBot, zNum);
-//        takeFromXML(xmlStr);
-//        testValidity();
-//    }
-//
     public FieldZone(L2DFHFurnace l2Furnace, boolean bBot, int zNum, L2DFHZone oneZone) {
         this(l2Furnace, bBot, zNum);
         takeFromL2Zone(oneZone);
@@ -104,29 +89,32 @@ public class FieldZone {
         double calculatedFlueTempOut = sec.getTempFlueOut();
         double calculatedFceTemp = oneZone.fceTemp;
         // assuming same ratio between the flueOutTemp and FceTemp calculated frFlueTempOut
-        double frFlueTempOut = (l2Furnace.furnaceSettings.considerFieldZoneTempForLossCorrection) ?
+        double frFlueTempOut = (l2Furnace.considerFieldZoneTempForLossCorrection()) ?
                 calculatedFlueTempOut / calculatedFceTemp * frFceTemp :
                 calculatedFlueTempOut;
-
+//         l2Furnace.logTrace("FieldZone.95: considerFieldZoneTempForLossCorrection = " + l2Furnace.considerFieldZoneTempForLossCorrection());
         double frNetFuelHeat = frFuelFlow * zonalFuelFiring.netUsefulFromFuel(frFlueTempOut, frAirTemp);
         Fluid flue = zonalFuelFiring.flue;
         double frHeatFromPassingFlue = passingFlue.flow *
                 flue.deltaHeat(passingFlue.temperature, frFlueTempOut);
         double frLosses = frNetFuelHeat + frHeatFromPassingFlue - heatToCharge;
 //        lossFactor = frLosses / calculatedLosses;
-        l2Furnace.logTrace("lossFactor original = " + sec.getLossFactor());    // TODO to be removed on RELEASE
+//        l2Furnace.logTrace("FieldZone.102: lossFactor original = " + sec.getLossFactor());    // TODO to be removed on RELEASE
         lossFactor = sec.getLossFactor() * (frLosses / calculatedLosses);
         // limit LossFactor
-        if (lossFactor < 0.2) {
+        double minLossCorrectionFactor = l2Furnace.getMinLossCorrectionFactor();
+        double maxLossCorrectionFactor = l2Furnace.getMaxLossCorrectionFactor();
+        if (lossFactor < minLossCorrectionFactor) {
             l2Furnace.logError("FieldZone.compareResults: " + sec.sectionName() + " lossFactor = " + lossFactor);
-            lossFactor = 0.2;
+            lossFactor = minLossCorrectionFactor;
         }
-        else if (lossFactor > 10) {
+        else if (lossFactor > maxLossCorrectionFactor) {
             l2Furnace.logError("FieldZone.compareResults: " + sec.sectionName() + " lossFactor = " + lossFactor);
-            lossFactor = 10;
+            lossFactor = maxLossCorrectionFactor;
         }
 
-        l2Furnace.logTrace("lossFactor modified = " + lossFactor);     // TODO to be removed on RELEASE
+//        l2Furnace.logTrace("lossFactor modified = " + lossFactor);     // TODO to be removed on RELEASE
+
         passingFlue.flow += frFuelFlow * zonalFuelFiring.unitFlueFlow();
         passingFlue.temperature = frFlueTempOut;
         return passingFlue;
@@ -142,7 +130,6 @@ public class FieldZone {
         this.frFuelFlow = fuelFlow;
         this.frAirTemp = airTemp;
         this.frAfRatio = afRatio;
-//        zonalFuelFiring.setTemperatures(frAirTemp, frFceTemp);
     }
 
     public StringBuilder dataInXML() {
@@ -152,20 +139,6 @@ public class FieldZone {
         xmlStr.append(XMLmv.putTag("frAfRatio", frAfRatio));
         return xmlStr;
     }
-
-//    public boolean takeFromXML(String xmlStr) throws NumberFormatException {
-//        ValAndPos vp;
-//        vp = XMLmv.getTag(xmlStr, "frFceTemp", 0);
-//        double fceTemp = Double.valueOf(vp.val);
-//        vp = XMLmv.getTag(xmlStr, "frFuelFlow", 0);
-//        double fuelFlow = Double.valueOf(vp.val);
-//        vp = XMLmv.getTag(xmlStr, "frAirTemp", 0);
-//        double airTemp = Double.valueOf(vp.val);
-//        vp = XMLmv.getTag(xmlStr, "frAfRatio", 0);
-//        double afRatio = Double.valueOf(vp.val);
-//        setValues(fceTemp, fuelFlow, airTemp, afRatio);
-//        return true;
-//    }
 
     public String toString() {
         return " Field Zone - " + zNum;

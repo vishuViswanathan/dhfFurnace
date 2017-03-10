@@ -8,8 +8,6 @@ import mvUtils.mvXML.XMLmv;
 import mvUtils.math.DoubleRange;
 
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -29,13 +27,11 @@ public class FurnaceSettings   {
     String opcIP = "opc.tcp://127.0.0.1:49320";
     DoubleRange[] zoneFuelRange;
     DoubleRange totFuelRange;
-    public int speedCheckInterval = 30; // in s
+//    public int speedCheckInterval = 30; // in s
     public String errMsg = "Error reading Furnace Settings :";
     public boolean inError = false;
     double maxTurndown = 10;
-//    double fuelTurnDown = 7;
     public int fuelCharSteps = 5;
-    public boolean considerFieldZoneTempForLossCorrection = false;
     // @@@@@@@@@@@@@@ REMEMBER to modify backup() and restore(), for any change in
     // data structure
 
@@ -46,7 +42,6 @@ public class FurnaceSettings   {
     public FurnaceSettings(DFHeating dfHeating, Vector<FceSection> activeSections) {
         this(dfHeating);
         fuelCharSteps = 7;
-        considerFieldZoneTempForLossCorrection = false;
         zoneFuelRange = new DoubleRange[activeSections.size()];
         int i = 0;
         for (FceSection sec: activeSections) {
@@ -90,31 +85,12 @@ public class FurnaceSettings   {
         return retVal;
     }
 
-    /*
-    void setMaxSpeed(double maxSpeed) {
-        this.maxSpeed = maxSpeed;
-    }
-
-    void setFuelRanges(double[] fuelRange) {
-        zoneFuelRange = new DoubleRange[fuelRange.length];
-        double oneMax;
-        double oneMin;
-        for (int z = 0; z < fuelRange.length; z++) {
-            oneMax = fuelRange[z];
-            oneMin = oneMax / fuelTurnDown;
-            DoubleRange oneRange = new DoubleRange(oneMin, oneMax);
-            zoneFuelRange[z] = oneRange;
-        }
-        setTotalRange();
-    }
-*/
-
     void setTotalRange() {
         double totMax = 0;
         double totMin  = 0;
-        for (int z = 0; z < zoneFuelRange.length; z++) {
-            totMax += zoneFuelRange[z].max;
-            totMin += zoneFuelRange[z].min;
+        for (DoubleRange aZoneFuelRange : zoneFuelRange) {
+            totMax += aZoneFuelRange.max;
+            totMin += aZoneFuelRange.min;
         }
         totFuelRange = new DoubleRange(totMin, totMax);
     }
@@ -136,39 +112,30 @@ public class FurnaceSettings   {
         boolean retVal = false;
         ValAndPos vp;
         errMsg = "Furnace Settings - Reading data:";
-        aBlock: {
-            try {
-//                vp = XMLmv.getTag(xmlStr, "maxSpeed", 0);
-//                maxSpeed = Double.valueOf(vp.val);
-                vp = XMLmv.getTag(xmlStr, "opcIP", 0);
-                if (vp.val.length() > 5)
-                    opcIP = vp.val.trim();
-                vp = XMLmv.getTag(xmlStr, "fuelCharSteps", 0);
-                fuelCharSteps = Integer.valueOf(vp.val);
-                vp = XMLmv.getTag(xmlStr, "speedCheckInterval", 0);
-                if (vp.val.length() > 0)
-                    speedCheckInterval = Integer.valueOf(vp.val);
-                vp = XMLmv.getTag(xmlStr, "considerFieldZoneTempForLossCorrection", 0);
-                considerFieldZoneTempForLossCorrection = (vp.val.equals("1"));
-                vp = XMLmv.getTag(xmlStr, "fuelRanges", 0);
-                retVal = takeFuelRangesFromXML(vp.val);
-                if (retVal)
-                    setTotalRange();
-            } catch (NumberFormatException e) {
-                errMsg += "Some Number format error";
-                inError = true;
-                break aBlock;
-            }
+        try {
+            vp = XMLmv.getTag(xmlStr, "opcIP", 0);
+            if (vp.val.length() > 5)
+                opcIP = vp.val.trim();
+            vp = XMLmv.getTag(xmlStr, "fuelCharSteps", 0);
+            fuelCharSteps = Integer.valueOf(vp.val);
+//            vp = XMLmv.getTag(xmlStr, "speedCheckInterval", 0);
+//            if (vp.val.length() > 0)
+//                speedCheckInterval = Integer.valueOf(vp.val);
+            vp = XMLmv.getTag(xmlStr, "fuelRanges", 0);
+            retVal = takeFuelRangesFromXML(vp.val);
+            if (retVal)
+                setTotalRange();
+        } catch (NumberFormatException e) {
+            errMsg += "Some Number format error";
+            inError = true;
         }
         return retVal;
     }
 
     public StringBuffer dataInXML() {
-//        StringBuffer xmlStr = new StringBuffer(XMLmv.putTag("maxSpeed", maxSpeed));
         StringBuffer xmlStr = new StringBuffer(XMLmv.putTag("opcIP", opcIP));
         xmlStr.append(XMLmv.putTag("fuelCharSteps", "" + fuelCharSteps));
-        xmlStr.append(XMLmv.putTag("speedCheckInterval", "" + speedCheckInterval));
-        xmlStr.append(XMLmv.putTag("considerFieldZoneTempForLossCorrection", considerFieldZoneTempForLossCorrection));
+//        xmlStr.append(XMLmv.putTag("speedCheckInterval", "" + speedCheckInterval));
         xmlStr.append(XMLmv.putTag("fuelRanges", fuelRangesInXML()));
         return xmlStr;
     }
@@ -226,8 +193,7 @@ public class FurnaceSettings   {
         for (int i = 0; i < zoneFuelRange.length; i++)
             backup.zoneFuelRange[i] = new DoubleRange(zoneFuelRange[i]);
         backup.fuelCharSteps = fuelCharSteps;
-        backup.considerFieldZoneTempForLossCorrection = considerFieldZoneTempForLossCorrection;
-        backup.speedCheckInterval = speedCheckInterval;
+//        backup.speedCheckInterval = speedCheckInterval;
         return backup;
     }
 
@@ -235,8 +201,7 @@ public class FurnaceSettings   {
         for (int i = 0; i < zoneFuelRange.length; i++)
             zoneFuelRange[i] = new DoubleRange(from.zoneFuelRange[i]);
         fuelCharSteps = from.fuelCharSteps;
-        considerFieldZoneTempForLossCorrection = from.considerFieldZoneTempForLossCorrection;
-        speedCheckInterval = from.speedCheckInterval;
+//        speedCheckInterval = from.speedCheckInterval;
     }
 
     public StatusWithMessage checkFuelFlowInRange(int secNumber, double fuelFlow) {
@@ -261,13 +226,10 @@ public class FurnaceSettings   {
         DataListEditorPanel editorPanel;
         boolean editable = false;
         EditResponse.Response response;
-//        NumberTextField ntMaxSpeed;
-        NumberTextField ntSpeedCheckInterval;
+//        NumberTextField ntSpeedCheckInterval;
         NumberTextField ntFuelSegments;
-        JRadioButton rbConsiderFieldZoneTempForLossCorrection;
         NumberTextField[] ntRangeMax;
         NumberTextField[] ntRangeMin;
-//        NumberTextField[] ntTurnDown;
         int nZones;
         boolean edited = false;
         FurnaceSettings backup;
@@ -278,7 +240,6 @@ public class FurnaceSettings   {
             backup = getBackup();
             init();
         }
-
 
         void init() {
             ipc = dfHeating;
@@ -291,17 +252,12 @@ public class FurnaceSettings   {
             });
             editorPanel = new DataListEditorPanel("Furnace Fuel Settings", this, true);
             ntFuelSegments = new NumberTextField(ipc, fuelCharSteps, 6, false, 3, 10, "##", "Fuel Characteristics-steps");
-            ntSpeedCheckInterval = new NumberTextField(ipc, speedCheckInterval, 6, true, 10, 60000, "#,##0", "Speed Check Interval (s)");
+//            ntSpeedCheckInterval = new NumberTextField(ipc, speedCheckInterval, 6, true, 10, 60000, "#,##0", "Speed Check Interval (s)");
 
-            rbConsiderFieldZoneTempForLossCorrection =
-                    new JRadioButton("Take Field Zone Temp For Loss Check", considerFieldZoneTempForLossCorrection);
             editorPanel.addItemPair(ntFuelSegments);
-//            editorPanel.addBlank();
-            editorPanel.addItemPair(ntSpeedCheckInterval);
-//            editorPanel.addBlank();
-            editorPanel.addItem(rbConsiderFieldZoneTempForLossCorrection);
+//            editorPanel.addItemPair(ntSpeedCheckInterval);
             editorPanel.addBlank();
-            double max, min, td;
+            double max, min;
             nZones = dfHeating.furnace.nTopActiveSecs;
             ntRangeMax = new NumberTextField[nZones];
             ntRangeMin = new NumberTextField[nZones];
@@ -309,20 +265,15 @@ public class FurnaceSettings   {
             for (int z = 0; z < nZones; z++) {
                 max = zoneFuelRange[z].max;
                 min = zoneFuelRange[z].min;
-                td = (zoneFuelRange[z].min > 0) ? max / (zoneFuelRange[z].min) : 1;
                 String zHead = "Zone #" + ("" + (z + 1)).trim();
                 ntRangeMax[z] = new NumberTextField(ipc, max, 6, false, 0, 5000, "#,###.00", "Fuel Range Max");
                 ntRangeMin[z] = new NumberTextField(ipc, min, 6, false, 0, 5000, "#,###.00", "Fuel Range Min");
-//                ntTurnDown[z] = new NumberTextField(ipc, td, 6, false, 1, 20, "##.00", "Fuel flow turn-down");
                 editorPanel.addGroup();
                 editorPanel.addItemPair(zHead, "", true);
                 editorPanel.addItemPair(ntRangeMax[z]);
                 editorPanel.addItemPair(ntRangeMin[z]);
-//                editorPanel.addItemPair(ntTurnDown[z]);
             }
             editorPanel.closeGroup();
-            JPanel fieldProcessDataPanel = dfHeating.dfhProcessList.dataPanel();
-            editorPanel.addItem(fieldProcessDataPanel);
             editorPanel.setVisible(true);
             add(editorPanel);
             pack();
@@ -333,8 +284,7 @@ public class FurnaceSettings   {
          }
 
         public ErrorStatAndMsg checkData() {
-//            if (ntMaxSpeed.inError || ntFuelSegments.inError)
-           if (ntFuelSegments.inError || ntSpeedCheckInterval.inError)
+           if (ntFuelSegments.inError) //  || ntSpeedCheckInterval.inError)
                 return new ErrorStatAndMsg(true, "Data out of Range");
             else {
                 ErrorStatAndMsg errorStat = new ErrorStatAndMsg(false, "Error:");
@@ -345,8 +295,6 @@ public class FurnaceSettings   {
         }
 
         ErrorStatAndMsg checkZoneData(int zNum) {
-//            if (ntRangeMax[zNum].inError || ntTurnDown[zNum].inError)
-//                return new ErrorStatAndMsg(true, "Data Out of range for Zone #" + ("" + zNum).trim());
             ErrorStatAndMsg retVal = new ErrorStatAndMsg();
             if (ntRangeMax[zNum].inError || ntRangeMin[zNum].inError)
                 retVal.addErrorMsg("Data Out of range for Zone #" + ("" + (zNum + 1)).trim());
@@ -363,10 +311,8 @@ public class FurnaceSettings   {
         }
 
         public boolean saveData() {
-//            maxSpeed = ntMaxSpeed.getData();
             fuelCharSteps = (int)ntFuelSegments.getData();
-            speedCheckInterval = (int)ntSpeedCheckInterval.getData();
-            considerFieldZoneTempForLossCorrection = rbConsiderFieldZoneTempForLossCorrection.isSelected();
+//            speedCheckInterval = (int)ntSpeedCheckInterval.getData();
             for (int z = 0; z < nZones; z++) {
                 zoneFuelRange[z].max = ntRangeMax[z].getData();
                 zoneFuelRange[z].min = ntRangeMin[z].getData();
@@ -396,22 +342,16 @@ public class FurnaceSettings   {
             if (backup != null)
                 restoreFrom(backup);
             edited = false;
-//            ntMaxSpeed.setData(maxSpeed);
             ntFuelSegments.setData(fuelCharSteps);
-            ntSpeedCheckInterval.setData(speedCheckInterval);
+//            ntSpeedCheckInterval.setData(speedCheckInterval);
             double max, min;
             for (int z = 0; z < nZones; z++) {
                 max = zoneFuelRange[z].max;
                 min =  zoneFuelRange[z].min;
                 ntRangeMax[z].setData(max);
                 ntRangeMin[z].setData(min);
-
-//                td = (zoneFuelRange[z].min > 0) ? max / (zoneFuelRange[z].min) : 1;
-//                ntTurnDown[z].setData(td);
             }
             editorPanel.resetAll();
-//            editorPanel.setVisible(false);
-//            editorPanel.setVisible(true);
             dfHeating.dfhProcessList.resetUI();
         }
 
@@ -422,5 +362,4 @@ public class FurnaceSettings   {
              setVisible(false);
          }
     }
-
 }
