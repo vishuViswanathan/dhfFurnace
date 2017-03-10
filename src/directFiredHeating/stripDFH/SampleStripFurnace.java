@@ -959,7 +959,7 @@ public class SampleStripFurnace {
             "</DFHeating>\n" +
             "<FuelSettings><opcIP>opc.tcp://127.0.0.1:49320</opcIP>\n" +
             "<fuelCharSteps>5</fuelCharSteps>\n" +
-            "<speedCheckInterval>10</speedCheckInterval>\n" +
+            "<speedCheckInterval>20</speedCheckInterval>\n" +
             "<considerFieldZoneTempForLossCorrection>0</considerFieldZoneTempForLossCorrection>\n" +
             "<fuelRanges><nFuelRange>5</nFuelRange>\n" +
             "<zfr#1><max>0.0</max>\n" +
