@@ -22,7 +22,8 @@ public class FceEvaluator implements Runnable {
         OK("OK"),
         TOOLOWGAS("Too Low Gas Temperature"),
         TOOHIGHGAS("Too High Gas Temperature"),
-        DONTKNOW("Dont know");
+        DONTKNOW("Dont know"),
+        ABORT("Aborted");
 
         private final String errName;
 
@@ -156,9 +157,11 @@ public class FceEvaluator implements Runnable {
     }
 
     void abortCalculation(String reason) {
-        run= false;
-        aborted = true;
-        control.abortingCalculation(reason);
+        if (control.decide("ABORTING CALCULATIONS", "Proceed with Aborting Calculation")) {
+            run = false;
+            aborted = true;
+            control.abortingCalculation(reason);
+        }
     }
 
     public boolean isRunOn() {
@@ -207,6 +210,7 @@ public class FceEvaluator implements Runnable {
         else
             jobDone = furnace.evaluate(this, bShowProgress);
         stopped = true;
+//        System.out.println("FceEvaluator.210:  stopped");
     }
 
     public boolean isJobDone() {

@@ -2507,7 +2507,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         enableResultsMenu(false);
         enableFileMenu(true);
         enablePerfMenu(true);
-        showError("ABORTING CALCULATION!\n" + reason);
+//        showError("ABORTING CALCULATION!\n" + reason);
         switchPage(DFHDisplayPageType.INPUTPAGE);
         parent().toFront();
     }
@@ -3049,6 +3049,11 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     public static void logInfo(String msg) {
         if (log != null)
             log.info("DFHeating:" + msg);
+    }
+
+    public void logTrace(String msg) {
+        if (log != null)
+            log.trace("DFHeating:" + msg);
     }
 
     void showMessage(String msg, int forTime) {

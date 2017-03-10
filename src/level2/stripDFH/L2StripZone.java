@@ -64,7 +64,7 @@ public class L2StripZone extends L2ParamGroup {
         monitoredTags = new Hashtable<MonitoredDataItem, Tag>();
         processTags = new Vector<Tag>();
         l2Tags = new Vector<Tag>();;
-        nNaps = Math.max(1, l2DFHeating.l2Furnace.furnaceSettings.speedCheckInterval * 1000 / (int) oneNapInterval);
+        nNaps = Math.max(1, l2DFHeating.dfhProcessList.speedCheckInterval * 1000 / (int) oneNapInterval);
         createStripParam();
         createNowStripTempProcessDisplay();
         createNowStripTempLevel2Display();
@@ -202,17 +202,14 @@ public class L2StripZone extends L2ParamGroup {
         StripProcessAndSize theStrip = null;
         if (l2Furnace.level2Enabled) {
             theStrip = getNowStripData();
-            l2Furnace.logTrace("Running strip with Process:" + theStrip.processBaseName);
+//            l2Furnace.logTrace("L2StripZone.206: Running strip with Process:" + theStrip.processBaseName);
             OneStripDFHProcess oneProcess = l2DFHeating.getStripDFHProcess(theStrip);
             if (oneProcess != null) {
-//                DataWithStatus<Performance> refP = l2Furnace.getBasePerformance(oneProcess, theStrip.thickness);
-//                if (refP.valid) {
-//                    theStrip.refP = refP.getValue();
                 Performance refP = oneProcess.getPerformance();
                 if (refP != null) {
                     theStrip.refP = refP;
                     double output = l2Furnace.getOutputWithFurnaceTemperatureStatus( theStrip.refP, theStrip.width, theStrip.thickness);
-                    l2Furnace.logTrace("Running Strip capacity Based On temperature= " + (output / 1000) + "t/h");
+//                    l2Furnace.logTrace("L2StripZone.216: Running Strip capacity Based On temperature= " + (output / 1000) + "t/h");
                     if (output > 0) {
                         DataWithStatus<Double> speedData = oneProcess.getRecommendedSpeed(output, theStrip.width, theStrip.thickness);
                         DataStat.Status speedStatus = speedData.getStatus();
@@ -253,9 +250,7 @@ public class L2StripZone extends L2ParamGroup {
         StripProcessAndSize theStrip = null;
         if (l2Furnace.level2Enabled) {
             theStrip = getNextStripData();
-            l2Furnace.logTrace("new strip with Process:" + theStrip.processBaseName);
-//            OneStripDFHProcess oneProcess = l2DFHeating.getStripDFHProcess(theStrip.process);
-            l2Furnace.logTrace("Strip: " + theStrip);
+//            l2Furnace.logTrace("L2StripZone.259: Strip: " + theStrip);
             OneStripDFHProcess oneProcess = l2DFHeating.getStripDFHProcess(theStrip);
             if (oneProcess != null) {
                 theStrip.setTheProcess(oneProcess);
@@ -266,12 +261,12 @@ public class L2StripZone extends L2ParamGroup {
                 if (refP != null) {
                     theStrip.refP = refP;
                     double output = l2Furnace.getOutputWithFurnaceTemperatureStatus(theStrip.refP, theStrip.width, theStrip.thickness);
-//                    l2Furnace.logTrace("l2StripZone.268: capacity Based On temperature= " + (output / 1000) + "t/h");
+                    l2Furnace.logTrace("l2StripZone.268: capacity Based On temperature= " + (output / 1000) + "t/h");
                     if (output > 0) {
                         DataWithStatus<Double> speedData = oneProcess.getRecommendedSpeed(output, theStrip.width, theStrip.thickness);
                         DataStat.Status speedStatus = speedData.getStatus();
                         if (speedStatus != DataStat.Status.WithErrorMsg) {
-                            l2Furnace.logTrace("l2StripZone.273: Speed (limited) Based On temperature= " + speedData.getValue() / 60 + "mpm");
+                            l2Furnace.logTrace("l2StripZone.275: Speed (limited) Based On temperature= " + speedData.getValue() / 60 + "mpm");
                             ProcessValue responseSpeed = setValue(L2ParamGroup.Parameter.Next, Tag.TagName.SpeedNow,
                                     (float)(speedData.getValue() / 60));
                             if (responseSpeed.valid) {
@@ -554,7 +549,7 @@ public class L2StripZone extends L2ParamGroup {
         SpeedUpdater speedUpdater = new SpeedUpdater();
         speedThread = new Thread(speedUpdater);
         speedThread.start();
-        l2Furnace.logTrace("Strip speed updater started ...");
+        l2Furnace.logTrace("L2StripZone.559: Strip speed updater started ...");
     }
 
     public void stopSpeedUpdater() {

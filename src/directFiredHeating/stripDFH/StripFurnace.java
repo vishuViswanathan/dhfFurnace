@@ -28,12 +28,12 @@ public class StripFurnace extends DFHFurnace {
     public StatusWithMessage addPerformance(Performance p) {
         StatusWithMessage stat =  p.linkToProcess();
         if (stat.getDataStatus() != DataStat.Status.WithErrorMsg) {
-            controller.logInfo("Linked Performance and process");
+//            controller.logInfo("StripFurnace.31: Linked Performance and process");
             return super.addPerformance(p);
         }
         else {
             if (stat.getDataStatus() == DataStat.Status.WithInfoMsg)
-                controller.logInfo("StripFurnace.addPerformance:" + stat.getInfoMessage());
+                controller.logInfo("StripFurnace.36: StripFurnace.addPerformance:" + stat.getInfoMessage());
             return stat;
         }
     }

@@ -478,7 +478,9 @@ public class DFHFurnace {
             skipReferenceDataCheck = false;
             boolean bFirstTime = true;
             while (true) {
+//                controller.logTrace("DFHFurnace.481: in while(true) with reDo = " + reDo);
                 while (allOk && reDo) {
+//                    controller.logTrace("DFHFurnace.483: in while(allOk && reDo) with reDo = " + reDo);
                     allOk = false;
                     if (tuningParams.bEvalBotFirst && !bAddTopSoak) {
                         if (bTopBot)
@@ -526,7 +528,7 @@ public class DFHFurnace {
                     } else
                         reDo = false;
                 }
-
+//                controller.logTrace("DFHFurnace.531: Exited from while (allOk && reDo)  with reDo = " + reDo);
                 if (allOk && canRun() && prepareHeatBalance()) {
                     topTrendsP = getTrendsPanel(false);
                     if (bTopBot) {
@@ -545,6 +547,7 @@ public class DFHFurnace {
                         continue;
                     }
                 }
+//                controller.logTrace("DFHFurnace.550: exiting while(true)");
                 break;
             }
             if  (allOk & canRun()) {
@@ -1142,6 +1145,7 @@ public class DFHFurnace {
         double szTemp = 0;
 
         while (allOk && canRun()) {
+//            controller.logTrace("DFHFurnace.1148 (evalTopOrBottom): in while(allOk && canRun()");
             if (bTopBot && !bBot && bAddTopSoak) {
                 theSection = addedTopSoak;
                 theSlot = theSection.getLastSlot();
@@ -1379,8 +1383,11 @@ public class DFHFurnace {
 
                         }
                     }
-                    else
+                    else {
+//                        controller.logTrace("DFHFurnace.1187 (evalTopOrBottom): before firstZoneInRev");
                         allOk = firstZoneInRev(bBot);
+//                        controller.logTrace("DFHFurnace.1189 (evalTopOrBottom): afer firstZoneInRev");
+                    }
                 }
             }
             if (allOk) {
@@ -1402,6 +1409,7 @@ public class DFHFurnace {
                 }
             }
         }
+//        controller.logTrace("DFHFurnace.1409 (evalTopOrBottom): exited while(allOk && canRun()");
         if (allOk && smoothenCurve && tuningParams.bSmoothenCurve) {
             smoothenProfile(bBot);
         }
@@ -1857,7 +1865,7 @@ public class DFHFurnace {
                         break;
                     }
                     else {
-                        showError("firstZoneInRev: Unknown response from oneSectionInRev() for " + statusHead + s);
+//                        showError("firstZoneInRev: Unknown response from oneSectionInRev() for " + statusHead + s);
                         redoIt = false;
                         bRetVal = false;
                         break;
@@ -4994,6 +5002,7 @@ public class DFHFurnace {
     }
 
     public void showMessage(String msg) {
+        controller.logInfo("DFHFurnace.4997: " + msg);
         (new TimedMessage("In DFHFurnace", msg, TimedMessage.INFO, controller.parent(), 3000)).show();
     }
 

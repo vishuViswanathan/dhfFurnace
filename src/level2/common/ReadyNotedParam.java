@@ -26,12 +26,13 @@ public class ReadyNotedParam extends L2ZoneParam {
 
     public boolean isNewData(Tag theTag) {
         boolean retVal = false;
-        if ((theTag.tagName == Tag.TagName.Ready) && isReadyNotedRead)
+        if ((theTag.tagName == Tag.TagName.Ready) && isReadyNotedRead) {
             if (getValue(Tag.TagName.Ready).booleanValue) {
                 getAllValues();
                 retVal = true;
             } else
                 setValue(Tag.TagName.Noted, false);
+        }
         else if ((theTag.tagName == Tag.TagName.Noted) && isReadyNotedWrite) {
             if (getValue(Tag.TagName.Noted).booleanValue)
                 setValue(Tag.TagName.Ready, false);

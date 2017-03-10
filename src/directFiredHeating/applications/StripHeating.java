@@ -13,7 +13,6 @@ import mvUtils.jnlp.JNLPFileHandler;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import performance.stripFce.Performance;
-import sun.misc.Perf;
 
 import javax.swing.*;
 import java.awt.*;
@@ -39,7 +38,6 @@ public abstract class StripHeating extends DFHeating {
     protected String l2BasePath = "";
 
     protected void setTestData() {
-//        super.setTestData();
         StatusWithMessage status = takeProfileDataFromXML(SampleStripFurnace.xmlStr);
         if (status.getDataStatus() == DataStat.Status.WithErrorMsg)
             showError(status.getErrorMessage());
@@ -113,7 +111,6 @@ public abstract class StripHeating extends DFHeating {
     }
 
     protected ErrorStatAndMsg isChargeInFceOK() {
-//        ErrorStatAndMsg retVal = super.isChargeInFceOK();
         ErrorStatAndMsg retVal = new ErrorStatAndMsg();
         if (tfProduction.isInError()) {
             retVal.addErrorMsg("\n   " + tfProduction.getName());
@@ -176,10 +173,6 @@ public abstract class StripHeating extends DFHeating {
         return retVal;
     }
 
-//    protected boolean  linkPerformanceWithProcess() {
-//        return furnace.linkPerformanceWithProcess();
-//    }
-
     public void deletePerformance(Performance p) {
         furnace.deletePerformance(p);
     }
@@ -208,9 +201,6 @@ public abstract class StripHeating extends DFHeating {
                 String promptFile = (profileCodeChanged) ?
                         (profileCode + " FurnaceProfile." + profileFileExtension) :
                         profileFileName;
-//                String testingDir = l2BasePath + "\\level2FceData";
-//                logInfo("setting default Folder to " + testingDir);
-//                fileDlg.setDirectory(testingDir);
                 logInfo("setting default Folder to " + fceDataLocation);
                 fileDlg.setDirectory(fceDataLocation);
                 fileDlg.setFile(promptFile);
@@ -279,9 +269,6 @@ public abstract class StripHeating extends DFHeating {
                     "<br />To make it permanent, the furnace data must be updated" +
                     "<br />with <b><font color= 'blue' >" + mIUpdateFurnace.getText() + "</font></b>" +
                     " from <b><font color = 'blue'>" + fileMenu.getText() + "</font></b> menu</html>");
-//            showMessage("Strip DFh Process List updated\n" +
-//                    "To make it permanent, the furnace data must be updated\n" +
-//                    "       " + fileMenu.getText() + "->" + mIUpdateFurnace.getText());
     }
 
     void viewStripDFHProcess() {
@@ -296,17 +283,18 @@ public abstract class StripHeating extends DFHeating {
         }
     }
 
-    void createFceSetting() {
+    private void fuelRangeSettings() {
         if (furnace.showEditFceSettings(true)) {
             showMessage("Furnace Fuel Data is modified\n" +
-                    "To be effective in Level2 RUNTIME:\n" +
-                    "    1) Save data to file with " + fileMenu.getText() + "->" + mIUpdateFurnace.getText() + "\n" +
-                    "    2) Restart Level2 RUNTIME, if already running");
+                    "Make sure to Save data to file with " + fileMenu.getText() + "->" + mIUpdateFurnace.getText());
         }
     }
 
-    void setMaterialForFieldProcess() {
-        dfhProcessList.setMaterialForFieldProcess();
+    private void fieldDataSettings() {
+        if (dfhProcessList.showFieldDataSettingsEditData(true, this.parent())) {
+            showMessage("Settings for Field Data have been modified\n" +
+                    "Make sure to Save data to file with " + fileMenu.getText() + "->" + mIUpdateFurnace.getText());
+        }
     }
 
     //    JMenu mL2FileMenu;
@@ -316,8 +304,8 @@ public abstract class StripHeating extends DFHeating {
     protected JMenuItem mIOPCServerIP;
     protected JMenuItem mIEditDFHStripProcess;
     protected JMenuItem mIViewDFHStripProcess;
-    protected JMenuItem mICreateFceSettings;
-//    protected JMenuItem mIBaseMatrialForFieldProcess;
+    protected JMenuItem mISettingsForFuelRange;
+    protected JMenuItem mISettingsForFieldData;
 
     protected void disableCompare() {
     }
@@ -326,14 +314,14 @@ public abstract class StripHeating extends DFHeating {
         super.createAllMenuItems();
         L2MenuListener li = new L2MenuListener();
         mIOPCServerIP = new JMenuItem("Set OPC server IP");
-        mICreateFceSettings = new JMenuItem("View/Edit L2 Basic Settings");
+        mISettingsForFuelRange = new JMenuItem("View/ Edit Fuel Range Settings");
+        mISettingsForFieldData = new JMenuItem("View/ Edit Basic Process Settings");
         mIEditDFHStripProcess = new JMenuItem("Add/Edit StripDFHProcess List");
         mIViewDFHStripProcess = new JMenuItem("View StripDFHProcess List");
-//        mIBaseMatrialForFieldProcess = new JMenuItem("Set Material For Field Process");
         mIOPCServerIP.addActionListener(li);
-        mICreateFceSettings.addActionListener(li);
+        mISettingsForFuelRange.addActionListener(li);
+        mISettingsForFieldData.addActionListener(li);
         mIViewDFHStripProcess.addActionListener(li);
-//        mIBaseMatrialForFieldProcess.addActionListener(li);
         mIEditDFHStripProcess.addActionListener(li);
         mIUpdateFurnace = new JMenuItem("Update Furnace");
         mIUpdateFurnace.addActionListener(li);
@@ -341,7 +329,6 @@ public abstract class StripHeating extends DFHeating {
 
     protected JMenu createDefineFurnaceMenu() {
         defineDefineFurnaceMenu();
-//        defineFurnaceMenu = new JMenu("DefineFurnace");
         defineFurnaceMenu.add(mIInputData);
         defineFurnaceMenu.add(mIOpData);
         return defineFurnaceMenu;
@@ -349,7 +336,6 @@ public abstract class StripHeating extends DFHeating {
 
     protected JMenu createPerformanceMenu() {
         definePerformanceMenu();
-//        perfMenu = new JMenu("Performance");
         perfMenu.add(mICreatePerfBase);
         perfMenu.add(mIAddToPerfBase);
         perfMenu.addSeparator();
@@ -367,14 +353,12 @@ public abstract class StripHeating extends DFHeating {
         if (!onProductionLine) {
             mL2Configuration.add(mIOPCServerIP);
             mL2Configuration.addSeparator();
-            mL2Configuration.add(mICreateFceSettings);
+            mL2Configuration.add(mISettingsForFuelRange);
+            mL2Configuration.add(mISettingsForFieldData);
             mL2Configuration.addSeparator();
         }
         mL2Configuration.add(mIViewDFHStripProcess);
         mL2Configuration.add(mIEditDFHStripProcess);
-//        mL2Configuration.addSeparator();
-//        if (!onProductionLine)
-//            mL2Configuration.add(mIBaseMatrialForFieldProcess);
         mL2Configuration.setEnabled(true);
         return mL2Configuration;
     }
@@ -392,7 +376,6 @@ public abstract class StripHeating extends DFHeating {
     }
 
     protected boolean updateFurnace() {
-//        linkPerformanceWithProcess();
         saveFurnaceWithNowProfileCode();
         return true;
     }
@@ -408,8 +391,6 @@ public abstract class StripHeating extends DFHeating {
         return eval;
     }
 
-
-
     class L2MenuListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             Object caller = e.getSource();
@@ -419,13 +400,12 @@ public abstract class StripHeating extends DFHeating {
                 viewStripDFHProcess();
             else if (caller == mIEditDFHStripProcess)
                 editStripDFHProcess();
-            else if (caller == mICreateFceSettings)
-                createFceSetting();
-//            else if (caller == mIBaseMatrialForFieldProcess)
-//                setMaterialForFieldProcess();
+            else if (caller == mISettingsForFuelRange)
+                fuelRangeSettings();
+            else if (caller == mISettingsForFieldData)
+                fieldDataSettings();
             else if (caller == mIOPCServerIP)
                 setOPCIP();
         }
     }
-
 }

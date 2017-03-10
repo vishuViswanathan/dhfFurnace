@@ -2119,8 +2119,9 @@ public class FceSection {
         double chSecMeanReqd = entryTemp + deltaTreqd / 2;
         double deltaTnow;
         double trialDeltaT = controller.tuningParams.suggested1stCorrection;
+        int trials = 0;
         while (!done) {
-
+            trials++;
             bLastSlot = true;
             theSlot = vUnitFurnaces.get(lastSlot);
             for (int slot = lastSlot; slot >= firstSlot; slot--) {
@@ -2141,6 +2142,8 @@ public class FceSection {
                 break;
             nowTempG = lastUnit.tempG;
             nowEntryTemp = vUnitFurnaces.get(firstSlot - 1).tempWmean;
+            if (trials > 100)
+                controller.logError("FceSection.2146 (oneSectionInRev): Trials  = " + trials);
             if (Math.abs(nowEntryTemp - entryTemp)  < 0.2)
                 done = true;
             else {

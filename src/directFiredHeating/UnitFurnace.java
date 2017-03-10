@@ -891,7 +891,7 @@ public class UnitFurnace {
     }
 
     public FceEvaluator.EvalStat evalInRev(boolean bLastSlot, UnitFurnace prevSlot, double tRate) {
-        FceEvaluator.EvalStat retVal = FceEvaluator.EvalStat.OK;
+        FceEvaluator.EvalStat retVal = FceEvaluator.EvalStat.DONTKNOW;
         double tWMassume = 0, tWMrevised = 0, diff;
         double chHeat = 0, totheat;
         double tempGB = 0;
@@ -939,13 +939,15 @@ public class UnitFurnace {
                 }
                 diff = tWMassume - tWMrevised;
 
-                if (Math.abs(diff) < 0.5 * tuning.errorAllowed)
+                if (Math.abs(diff) < 0.5 * tuning.errorAllowed) {
+                    retVal = FceEvaluator.EvalStat.OK;
                     done = true;
+                }
                 else
                     tWMassume = tWMassume + (tWMrevised - tWMassume) / 4;
             }
             else
-                retVal = FceEvaluator.EvalStat.DONTKNOW;
+                retVal = FceEvaluator.EvalStat.ABORT;
         }
         if (furnace.canRun() && (retVal == FceEvaluator.EvalStat.OK)) {
             // temperature with in limits
@@ -1009,6 +1011,7 @@ public class UnitFurnace {
     }
 
     public FceEvaluator.EvalStat evalInFwd(boolean bFirstSlot, UnitFurnace prevSlot) {
+        FceEvaluator.EvalStat retVal = FceEvaluator.EvalStat.DONTKNOW;
         if (furnace.bBaseOnOnlyWallRadiation)
             return evalWithWallRadiationInFwd(bFirstSlot, prevSlot);
         double deltaT;
@@ -1041,8 +1044,10 @@ public class UnitFurnace {
             tWMrevised = chargeEndTemp(tgAvg, prevSlot.tempWmean,
                     g * gRatio * ch.avgSpHt(tWMassume, prevSlot.tempWmean), alpha, false);
             diff = tWMassume - tWMrevised;
-            if (Math.abs(diff) <= 0.5 * tuning.errorAllowed)
+            if (Math.abs(diff) <= 0.5 * tuning.errorAllowed) {
+                retVal = FceEvaluator.EvalStat.OK;
                 done = true;
+            }
             else
                 tWMassume = (bRecuType) ? (tWMassume + tWMrevised) / 2 : tWMrevised;
         }
@@ -1055,7 +1060,7 @@ public class UnitFurnace {
 //        showOneResult(iSlot)
         showResult();
         deltaT = (tempWmean - prevSlot.tempWmean) / delTime;
-        return FceEvaluator.EvalStat.OK;
+        return retVal;
     }
 
     /**

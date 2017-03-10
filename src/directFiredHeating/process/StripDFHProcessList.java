@@ -11,7 +11,6 @@ import mvUtils.mvXML.XMLmv;
 import performance.stripFce.Performance;
 import performance.stripFce.StripProcessAndSize;
 
-import javax.sound.sampled.DataLine;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -29,7 +28,6 @@ public class StripDFHProcessList {
     public Vector<ChMaterial> vChMaterial;
     InputControl inpC;
     protected Vector<OneStripDFHProcess> list;
-    StripDFHProcessList me;
     protected JComboBox<OneStripDFHProcess> cbProcess;
     protected int maxListLenFP = 10;
     ChMaterial materialForFieldProcess;
@@ -44,6 +42,12 @@ public class StripDFHProcessList {
     protected double maxStripWidthFP = 1.8;
     protected double absMaxStripWidth = 0;
     protected double absMinStripWidth = 0.3;
+    public boolean considerFieldZoneTempForLossCorrection = true;
+    public boolean considerFieldZoneTempForStripTempProfile = true;
+    public double minLossCorrectionFactor = 0.2;
+    public double maxLossCorrectionFactor = 10;
+    public int speedCheckInterval = 30; // in s
+
     JSPComboBox<ChMaterial> cbMaterial;
     NumberTextField ntMaxStripSpeed;
     NumberTextField ntStripEntryTemp;
@@ -54,7 +58,11 @@ public class StripDFHProcessList {
     NumberTextField ntMaxStripWidth;
     NumberTextField ntMaxStripThickness;
     NumberTextField ntMinStripThickness;
-
+    private JRadioButton rbConsiderFieldZoneTempForLossCorrection;
+    private JRadioButton rbConsiderFieldZoneTempForStripTempProfile;
+    private NumberTextField ntMinLossCorrectionFactor;
+    private NumberTextField ntMaxLossCorrectionFactor;
+    NumberTextField ntSpeedCheckInterval;
 
     public StripDFHProcessList(StripHeating dfHeating) {
         this.vChMaterial = dfHeating.vChMaterial;
@@ -87,28 +95,30 @@ public class StripDFHProcessList {
         ntMaxStripWidth =
                 new NumberTextField(dfHeating, maxStripWidthFP * 1000, 6, false, absMinStripWidth * 1000, absMaxStripWidth * 1000,
                         "#,#00", "Maximum Strip Width (mm)");
+        ntSpeedCheckInterval =
+                new NumberTextField(dfHeating, speedCheckInterval, 6, true, 10, 60000, "#,##0", "Speed Check Interval (s)");
         ntMinStripThickness =
                 new NumberTextField(dfHeating, minStripThicknessFP * 1000, 6, false, 0.01, 5.0, "##0.000", "Minimum Strip Thickness (mm)");
         ntMaxStripThickness =
                 new NumberTextField(dfHeating, maxStripThicknessFP * 1000, 6, false, 0.01, 5.0, "##0.000", "Maximum Strip Thickness (mm)");
-    }
-
-    public void setMaterialForFieldProcess() {
-        JSPComboBox<ChMaterial> cbMaterial = new JSPComboBox<>(dfHeating.jspConnection, dfHeating.vChMaterial);
-//        if (materialForFieldProcess != null)
-            cbMaterial.setSelectedItem(materialForFieldProcess);
-        OneComponentDialog dlg = new OneComponentDialog(dfHeating, "Material for Field Process", cbMaterial);
-        dlg.setVisible(true);
-        if (dlg.isOk()) {
-            materialForFieldProcess = (ChMaterial)(cbMaterial.getSelectedItem());
-        }
+        rbConsiderFieldZoneTempForStripTempProfile =
+                new JRadioButton("Take Field Zone Temp For Strip Temp Profile", considerFieldZoneTempForStripTempProfile);
+        rbConsiderFieldZoneTempForLossCorrection =
+                new JRadioButton("Take Field Zone Temp For Loss Correction Factor", considerFieldZoneTempForLossCorrection);
+        ntMinLossCorrectionFactor =
+                new NumberTextField(dfHeating, minLossCorrectionFactor, 6, false, 0.01, 1.0, "##0.000", "Minimum-Limit of Loss Correction Factor");
+        ntMaxLossCorrectionFactor =
+                new NumberTextField(dfHeating, maxLossCorrectionFactor, 6, false, 1.0, 30.0, "##0.000", "Maximum-Limit of Loss Correction Factor");
     }
 
     public JPanel dataPanel() {
         prepareUI();
-        MultiPairColPanel mp = new MultiPairColPanel("Settings for Field Process");
+        MultiPairColPanel mp = new MultiPairColPanel("");
         resetUI();
-        mp.addItemPair("Material for Field Process", cbMaterial);
+        mp.addItemPair(ntMaxProcess);
+        mp.addGroup();
+        mp.addItem("Limits of Process Parameters");
+        mp.addBlank();
         mp.addItemPair(ntMaxStripSpeed);
         mp.addItemPair(ntMaxStripWidth);
         mp.addItemPair(ntMinStripThickness);
@@ -117,7 +127,18 @@ public class StripDFHProcessList {
         mp.addItemPair(ntMaxStripExitTemp);
         mp.addItemPair(ntMinExitZoneTemp);
         mp.addItemPair(ntMaxExitZoneTemp);
-        mp.addItemPair(ntMaxProcess);
+        mp.closeGroup();
+        mp.addGroup();
+        mp.addItem("Settings for Field Process");
+        mp.addBlank();
+        mp.addItemPair("Material for Field Process", cbMaterial);
+        mp.addItem(rbConsiderFieldZoneTempForStripTempProfile);
+        mp.addItem(rbConsiderFieldZoneTempForLossCorrection);
+        mp.addItemPair(ntMinLossCorrectionFactor);
+        mp.addItemPair(ntMaxLossCorrectionFactor);
+        mp.addBlank();
+        mp.addItemPair(ntSpeedCheckInterval);
+        mp.closeGroup();
         return mp;
     }
 
@@ -137,7 +158,9 @@ public class StripDFHProcessList {
         boolean retVal = cbMaterial.getSelectedItem() != null &&
                 !(ntMaxStripSpeed.inError ||ntMaxStripWidth.inError || ntMinStripThickness.inError ||
                         ntMaxStripThickness.inError|| ntMaxStripExitTemp.inError ||
-                        ntMaxExitZoneTemp.inError || ntMaxProcess.inError || ntStripEntryTemp.inError || ntMinExitZoneTemp.inError);
+                        ntMaxExitZoneTemp.inError || ntMaxProcess.inError || ntStripEntryTemp.inError || ntMinExitZoneTemp.inError ||
+                        ntMinLossCorrectionFactor.inError || ntMaxLossCorrectionFactor.inError ||
+                        ntSpeedCheckInterval.inError);
         if (retVal) {
             materialForFieldProcess = (ChMaterial)cbMaterial.getSelectedItem();
             maxStripSpeedFP = ntMaxStripSpeed.getData() * 60;
@@ -149,6 +172,11 @@ public class StripDFHProcessList {
             maxExitZoneTempFP = ntMaxExitZoneTemp.getData();
             minExitZoneTempFP = ntMinExitZoneTemp.getData();
             maxListLenFP = (int)ntMaxProcess.getData();
+            considerFieldZoneTempForStripTempProfile = rbConsiderFieldZoneTempForStripTempProfile.isSelected();
+            considerFieldZoneTempForLossCorrection = rbConsiderFieldZoneTempForLossCorrection.isSelected();
+            minLossCorrectionFactor = ntMinLossCorrectionFactor.getData();
+            maxLossCorrectionFactor = ntMaxLossCorrectionFactor.getData();
+            speedCheckInterval = (int)ntSpeedCheckInterval.getData();
         }
         return retVal;
     }
@@ -383,7 +411,19 @@ public class StripDFHProcessList {
             vp = XMLmv.getTag(xmlStr, "maxListLenFP", 0);
             if (vp.val.length() > 0)
                 maxListLenFP = Integer.valueOf(vp.val);
-
+            vp = XMLmv.getTag(xmlStr, "considerFieldZoneTempForStripTempProfile", 0);
+            considerFieldZoneTempForStripTempProfile = (vp.val.length() <= 0) || vp.val.equals("1");
+            vp = XMLmv.getTag(xmlStr, "considerFieldZoneTempForLossCorrection", 0);
+            considerFieldZoneTempForLossCorrection = (vp.val.length() <= 0) || vp.val.equals("1");
+            vp = XMLmv.getTag(xmlStr, "minLossCorrectionFactor", 0);
+            if (vp.val.length() > 0)
+                minLossCorrectionFactor = Double.valueOf(vp.val);
+            vp = XMLmv.getTag(xmlStr, "maxLossCorrectionFactor", 0);
+            if (vp.val.length() > 0)
+                maxLossCorrectionFactor = Double.valueOf(vp.val);
+            vp = XMLmv.getTag(xmlStr, "speedCheckInterval", 0);
+            if (vp.val.length() > 0)
+                speedCheckInterval = Integer.valueOf(vp.val);
 
             vp = XMLmv.getTag(xmlStr, "pNum", 0);
             try {
@@ -416,7 +456,7 @@ public class StripDFHProcessList {
         }
         cbProcess.updateUI();
         cbProcess.setSelectedIndex(-1); // un-select
-        dfHeating.logInfo("Got " + list.size() + " processes");
+        dfHeating.logInfo("StripDFHProcessList.459: Got " + list.size() + " processes");
         return retVal;
     }
 
@@ -433,11 +473,24 @@ public class StripDFHProcessList {
         xmlStr.append(XMLmv.putTag("maxExitZoneTempFP", maxExitZoneTempFP));
         xmlStr.append(XMLmv.putTag("minExitZoneTempFP", minExitZoneTempFP));
         xmlStr.append(XMLmv.putTag("maxListLenFP", maxListLenFP));
+        xmlStr.append(XMLmv.putTag("considerFieldZoneTempForStripTempProfile", considerFieldZoneTempForStripTempProfile));
+        xmlStr.append(XMLmv.putTag("considerFieldZoneTempForLossCorrection", considerFieldZoneTempForLossCorrection));
+        xmlStr.append(XMLmv.putTag("minLossCorrectionFactor", minLossCorrectionFactor));
+        xmlStr.append(XMLmv.putTag("maxLossCorrectionFactor", maxLossCorrectionFactor));
+        xmlStr.append(XMLmv.putTag("speedCheckInterval", speedCheckInterval));
         xmlStr.append(XMLmv.putTag("pNum", list.size()));
         int pNum = 0;
         for (OneStripDFHProcess oneProc: list)
             xmlStr.append(XMLmv.putTag("StripP" + ("" + ++pNum).trim(), oneProc.dataInXML().toString()) + "\n");
         return xmlStr;
+    }
+
+    public double getMinLossCorrectionFactor() {
+        return minLossCorrectionFactor;
+    }
+
+    public double getMaxLossCorrectionFactor() {
+        return maxLossCorrectionFactor;
     }
 
     public boolean addOneDFHProcess(OneStripDFHProcess oneProcess) {
@@ -504,6 +557,75 @@ public class StripDFHProcessList {
         SimpleDialog.showError(title, msg);
     }
 
+    public boolean showFieldDataSettingsEditData(boolean bEdit, Window parent)  {
+        FieldDataSettingsDlg dlg = new FieldDataSettingsDlg(bEdit);
+        dlg.setLocationRelativeTo(parent);
+        dlg.setVisible(true);
+        return dlg.edited;
+    }
+
+    class FieldDataSettingsDlg extends JDialog implements DataHandler {
+        DataListEditorPanel editorPanel;
+        boolean editable = false;
+        EditResponse.Response response;
+        boolean edited = false;
+
+        FieldDataSettingsDlg(boolean editable) {
+            this.editable = editable;
+            setModal(true);
+            init();
+        }
+
+        void init() {
+            addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    response = EditResponse.Response.EXIT;
+                    super.windowClosing(e);
+                }
+            });
+            editorPanel = new DataListEditorPanel("Basic Process Settings", this, true);
+            JPanel fieldProcessDataPanel = dataPanel();
+            editorPanel.addItem(fieldProcessDataPanel);
+            editorPanel.setVisible(true);
+            add(editorPanel);
+            pack();
+        }
+
+        EditResponse.Response getResponse() {
+            return response;
+        }
+
+        public ErrorStatAndMsg checkData() {
+            // Data is not checked for Field Data Settings
+            return new ErrorStatAndMsg();
+        }
+
+        public boolean saveData() {
+            edited = false;
+            if (takeFromUI())
+                edited = true;
+            else
+                dfHeating.showError("Error in Data for Field Process", this);
+            return edited;
+        }
+
+        public void deleteData() {
+            edited = true;
+        }
+
+        public void resetData() {
+            edited = false;
+            editorPanel.resetAll();
+            resetUI();
+        }
+
+        public void cancel() {
+            response = EditResponse.Response.EXIT;
+            setVisible(false);
+        }
+    }
+
     class AddProcessDlg extends JDialog implements DataHandler{
         boolean bListBeingChanged = false;
         JComboBox jcbExisting;
@@ -542,11 +664,9 @@ public class StripDFHProcessList {
             JPanel outerP = new JPanel(new BorderLayout());
             jcbExisting = new JComboBox();
             populateJcbExisting();
-            jcbExisting.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    if (!bListBeingChanged)
-                        getSelectedProcess();
-                }
+            jcbExisting.addActionListener(e -> {
+                if (!bListBeingChanged)
+                    getSelectedProcess();
             });
             JPanel p = new JPanel();
             p.add(jcbExisting);
@@ -602,7 +722,6 @@ public class StripDFHProcessList {
         }
 
         public boolean saveData() {
-            boolean canBeSaved = false;
             boolean itsNew = true;
             String errMsg = "";
             OneStripDFHProcess oldProc = selectedProcess.createCopy();
@@ -610,7 +729,7 @@ public class StripDFHProcessList {
             Vector<Performance> performancesToDelete = new Vector<>();
             Vector<Performance> performancesToRedoTable = new Vector<>();
             if (!dataStat.inError) {
-                canBeSaved = true;
+                boolean canBeSaved = true;
                 for (OneStripDFHProcess process : list) {
                     if (process == selectedProcess) {
                         StatusWithMessage statusWithMessage = process.checkPerformanceDataState();
