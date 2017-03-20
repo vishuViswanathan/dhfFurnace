@@ -92,10 +92,13 @@ public class OpcSimulator implements InputControl, L2Interface {
     Vector<OneSimulatorSection> processZones;
     Vector<OneSimulatorSection> level2Zones;
     boolean uiReady = false;
+    protected String releaseDate = "20170315";
+
 
     public OpcSimulator(String urlID) {
         modifyJTextEdit();
         mainF = new JFrame();
+        mainF.setTitle("Level1 Simulatior " + releaseDate);
         mainF.addWindowListener(new WinListener());
         mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         mainF.setSize(new Dimension(800, 600));

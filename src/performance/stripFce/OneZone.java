@@ -157,7 +157,7 @@ public class OneZone {
             vp = XMLmv.getTag(xmlStr, "losses", 0);
             losses = (vp.val.length() > 1) ? Double.valueOf(vp.val): 0;
             vp = XMLmv.getTag(xmlStr, "lossFactor", 0);
-            lossFactor = (vp.val.length() > 0) ? Double.valueOf(vp.val): 0;
+            lossFactor = (vp.val.length() > 0) ? Double.valueOf(vp.val): 1;
             getNetHeatDueToFuel();
             vp = XMLmv.getTag(xmlStr, "combustHeat", 0);
             fuelCombustionHeat = (vp.val.length() > 1) ? Double.valueOf(vp.val): 0;

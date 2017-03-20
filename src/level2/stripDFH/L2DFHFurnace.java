@@ -1321,12 +1321,17 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             if (l2DFHeating.isL2SystemReady() &&
                     ((accessLevel == L2AccessControl.AccessLevel.UPDATER) || (accessLevel == L2AccessControl.AccessLevel.EXPERT))) {
                 Tag theTag = monitoredTags.get(monitoredDataItem);
-                if (fieldDataParams.isNewData(theTag))   // the data will be already read if new data
-                    if (theTag == tagFieldDataReady) {
-                        if (!theTag.getValue().booleanValue)  // look again after getAllValues in isNewData()
-                            logError("L2DFHFurnace.1328: value is false");
-                        handleFieldData();
-                    }
+                logTrace("L2DFHFurnace.1324: FieldDataListener heard something");
+                if (fieldDataParams.isItAMember(theTag)) {
+                    if (fieldDataParams.isNewData(theTag))   // the data will be already read if new data
+                        if (theTag == tagFieldDataReady) {
+                            if (!theTag.getValue().booleanValue)  // look again after getAllValues in isNewData()
+                                logError("L2DFHFurnace.1328: value is false");
+                            handleFieldData();
+                        }
+                }
+                else
+                    logError("L2DSFHFurnace.1334: theTag is not a member of fieldDataParams");
             }
         }
     }

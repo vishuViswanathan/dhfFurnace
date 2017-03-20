@@ -4523,7 +4523,7 @@ public class DFHFurnace {
 //    }
 
     void debug(String msg) {
-        System.out.println("DFHFurnace: " + msg);
+        if (!controller.asJNLP)  System.out.println("DFHFurnace: " + msg);
     }
 
     boolean xlRecuSummary(Sheet sheet, ExcelStyles styles) {

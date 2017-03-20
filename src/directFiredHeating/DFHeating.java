@@ -35,10 +35,12 @@ import java.awt.Font;
 import java.awt.event.*;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
+import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
+import java.security.AccessControlException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -148,7 +150,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = "JNLP 20170217";
+    protected String releaseDate = "JNLP 20170314";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -1112,6 +1114,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                 enableRecuSequence();
             }
         });
+        debug("DFHEating.1117 : SwingUtilities.isEventDispatchThread() =" + SwingUtilities.isEventDispatchThread());
     }
 
     protected void enablePrintResultsMenu(boolean ena) {
@@ -1501,6 +1504,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             titleAndFceCommon = panel;
         }
         cbFuel.updateUI();
+        debug("DFHEating.1507: SwingUtilities.isEventDispatchThread() = " +SwingUtilities.isEventDispatchThread());
         return titleAndFceCommon;
     }
 
@@ -1923,10 +1927,12 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     public static void debug(String msg) {
-        if (log != null)
-            log.debug("DFHeating:" + msg);
-        else
-            System.out.println("DFHeating: " + msg);
+        if (!asJNLP) {
+            if (log != null)
+                log.debug("DFHeating:" + msg);
+            else
+                System.out.println("DFHeating: " + msg);
+        }
     }
 
     public Fuel getSelectedFuel() {
@@ -3466,56 +3472,62 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     void printIt(ResultPanel rP) {
         JComponent editorPane = rP.getPanel();
         DFHResult.Type type = rP.getType();
-        PrinterJob printJob = PrinterJob.getPrinterJob();
-        PrintHandler target;
-        int pagesN = 1;
-        if (type == DFHResult.Type.ALLBALANCES || type == DFHResult.Type.ALLtempTRENDS) {
-            Vector<PanelAndName> printPages;
-            if (type == DFHResult.Type.ALLBALANCES) {
-                printPages = heatBalances;
-                pagesN = heatBalances.size();
-            } else {
-                printPages = allTrends;
-                pagesN = allTrends.size();
-            }
-            target = new PrintHandler();
-            PanelAndName pAndName;
-            for (int p = 0; p < pagesN; p++) {
-                JPanel jp = new JPanel(new BorderLayout());
-                jp.setBackground(Color.WHITE);
-                jp.add(printTitleP(), BorderLayout.NORTH);
-                pAndName = printPages.get(p);
-                jp.add(pAndName.jp, BorderLayout.CENTER);
-                target.addPage(jp);
-                switchPage(jp);
-                if (pagesN > 1)
-                    showMessage("Adding Page '" + pAndName.name + "'");
-            }
-        } else {
-            JPanel jp = new JPanel(new BorderLayout());
-            jp.add(printTitleP(), BorderLayout.NORTH);
-            switchPage(jp);
-            jp.add(editorPane, BorderLayout.CENTER);
-            target = new PrintHandler(jp);
-        }
-        printJob.setPrintable(target);
-        PrintRequestAttributeSet aset = new HashPrintRequestAttributeSet();
-        aset.add(new PageRanges(1, pagesN));
+        PrinterJob printJob;
         try {
-            if (printJob.printDialog(aset)) {
-                parent().toFront();
-                printJob.print();
+            printJob = PrinterJob.getPrinterJob();
+            PrintHandler target;
+            int pagesN = 1;
+            if (type == DFHResult.Type.ALLBALANCES || type == DFHResult.Type.ALLtempTRENDS) {
+                Vector<PanelAndName> printPages;
+                if (type == DFHResult.Type.ALLBALANCES) {
+                    printPages = heatBalances;
+                    pagesN = heatBalances.size();
+                } else {
+                    printPages = allTrends;
+                    pagesN = allTrends.size();
+                }
+                target = new PrintHandler();
+                PanelAndName pAndName;
+                for (int p = 0; p < pagesN; p++) {
+                    JPanel jp = new JPanel(new BorderLayout());
+                    jp.setBackground(Color.WHITE);
+                    jp.add(printTitleP(), BorderLayout.NORTH);
+                    pAndName = printPages.get(p);
+                    jp.add(pAndName.jp, BorderLayout.CENTER);
+                    target.addPage(jp);
+                    switchPage(jp);
+                    if (pagesN > 1)
+                        showMessage("Adding Page '" + pAndName.name + "'");
+                }
             } else {
-                debug("print permission not granted");
-                parent().toFront();
+                JPanel jp = new JPanel(new BorderLayout());
+                jp.add(printTitleP(), BorderLayout.NORTH);
+                switchPage(jp);
+                jp.add(editorPane, BorderLayout.CENTER);
+                target = new PrintHandler(jp);
             }
-        } catch (java.lang.SecurityException e) {
-            debug("" + e);
-            showError("Unable to print!");
+            printJob.setPrintable(target);
+            PrintRequestAttributeSet aset = new HashPrintRequestAttributeSet();
+            aset.add(new PageRanges(1, pagesN));
+            try {
+                if (printJob.printDialog(aset)) {
+                    parent().toFront();
+                    printJob.print();
+                } else {
+                    debug("print permission not granted");
+                    parent().toFront();
+                }
+            } catch (java.lang.SecurityException e) {
+                debug("" + e);
+                showError("Unable to print!");
+            } catch (Exception e) {
+                debug("" + e);
+                showError("Unable to print!");
+            }
         } catch (Exception e) {
-            debug("" + e);
-            showError("Unable to print!");
+            showError("Request for Printer permission could not be obtained");
         }
+
     }
 
     void invalidateResults() {
@@ -3824,30 +3836,23 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected void modifyJTextEdit() {
         KeyboardFocusManager.getCurrentKeyboardFocusManager()
                 .addPropertyChangeListener("permanentFocusOwner", new PropertyChangeListener() {
-
                     public void propertyChange(final PropertyChangeEvent e) {
-
                         if (e.getOldValue() instanceof JTextField) {
                             SwingUtilities.invokeLater(new Runnable() {
-
                                 public void run() {
                                     JTextField oldTextField = (JTextField) e.getOldValue();
                                     oldTextField.setSelectionStart(0);
                                     oldTextField.setSelectionEnd(0);
                                 }
                             });
-
                         }
-
                         if (e.getNewValue() instanceof JTextField) {
                             SwingUtilities.invokeLater(new Runnable() {
-
                                 public void run() {
                                     JTextField textField = (JTextField) e.getNewValue();
                                     textField.selectAll();
                                 }
                             });
-
                         }
                     }
                 });
@@ -4302,6 +4307,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                     switchPage(DFHDisplayPageType.REGENSTUDY);
                 break menuBlk;
             }
+//            debug("DFHEating.4316 : SwingUtilities.isEventDispatchThread() =" + SwingUtilities.isEventDispatchThread());
         } // actionPerformed
     } // class MenuActions
 
@@ -4508,7 +4514,16 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 //        PropertyConfigurator.configureAndWatch(DFHeating.class
 //                .getResource("log.properties").getFile(), 5000);
         if (DFHeating.parseCmdLineArgs(args)) {
-            DFHeating trHeat = new DFHeating(true);
+//            try {
+//                SwingUtilities.invokeLater(new Runnable() {
+//                    @Override
+//                    public void run() {
+                        DFHeating trHeat = new DFHeating(true);
+//                    }
+//                });
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
         }
     }
 
