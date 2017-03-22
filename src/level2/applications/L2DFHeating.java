@@ -26,6 +26,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.Date;
@@ -71,7 +72,7 @@ public class L2DFHeating extends StripHeating {
         bAtSite = true;
         bAllowProfileChange = false;
         userActionAllowed = false;
-        releaseDate = "20170314";
+        releaseDate = "20170320";
         onProductionLine = true;
         asApplication = true;
         this.equipment = equipment;
@@ -315,6 +316,24 @@ public class L2DFHeating extends StripHeating {
     }
 
     public void switchPage(L2DisplayPageType l2Display) {
+        if (SwingUtilities.isEventDispatchThread())
+            switchToSelectedPage(l2Display);
+        else {
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    public void run() {
+                        switchToSelectedPage(l2Display);
+                    }
+                });
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void switchToSelectedPage(L2DisplayPageType l2Display) {
 //        if (l2DisplayNow != l2Display) {
             switch (l2Display) {
                 case PROCESS:

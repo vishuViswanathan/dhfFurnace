@@ -40,6 +40,7 @@ import java.awt.print.PrinterJob;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.security.AccessControlException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -150,7 +151,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = "JNLP 20170314";
+    protected String releaseDate = "JNLP 20170320";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -397,7 +398,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
              opPage = OperationPage();
              slate.setViewportView(inpPage);
              mainAppPanel.add(slate, BorderLayout.CENTER);
-             switchPage(DFHDisplayPageType.INPUTPAGE);
+//             switchPage(DFHDisplayPageType.INPUTPAGE);
              cbHeatingMode.setSelectedItem(HeatingMode.TOPONLY);
              cbFceFor.setSelectedItem(furnaceFor);
              cbFuel.setSelectedItem(commFuel);
@@ -631,9 +632,28 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected void updateDisplay(DFHDisplayPageType page) {
         if (lastDisplayPage == page)
             switchPage(page);
-    }
+   }
 
     protected void switchPage(DFHDisplayPageType page) {
+//        debug("DFHEating.638: SwingUtilities.isEventDispatchThread() = " + SwingUtilities.isEventDispatchThread());
+        if (SwingUtilities.isEventDispatchThread())
+            switchToSelectedPage(page);
+        else {
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    public void run() {
+                        switchToSelectedPage(page);
+                    }
+                });
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void switchToSelectedPage(DFHDisplayPageType page) {
         boolean done = true;
         switch (page) {
             case INPUTPAGE:
@@ -659,7 +679,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                     slate.setViewportView(furnace.fceProfTFM.lossPramsPanel());
                 break;
             case FUELMIX:
-//                fuelMixP = Fuel.mixedFuelPanel(this, fuelList);
+                //                fuelMixP = Fuel.mixedFuelPanel(this, fuelList);
                 slate.setViewportView(fuelMixP);
                 break;
             case REGENSTUDY:
@@ -677,6 +697,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                 break;
         }
         lastDisplayPage = (done) ? page : null;
+//        debug("DFHEating.699: SwingUtilities.isEventDispatchThread() = " + SwingUtilities.isEventDispatchThread());
     }
 
     void switchPage(Component c) {
@@ -1114,7 +1135,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                 enableRecuSequence();
             }
         });
-        debug("DFHEating.1117 : SwingUtilities.isEventDispatchThread() =" + SwingUtilities.isEventDispatchThread());
+//        debug("DFHEating.1117 : SwingUtilities.isEventDispatchThread() =" + SwingUtilities.isEventDispatchThread());
     }
 
     protected void enablePrintResultsMenu(boolean ena) {
@@ -1504,7 +1525,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             titleAndFceCommon = panel;
         }
         cbFuel.updateUI();
-        debug("DFHEating.1507: SwingUtilities.isEventDispatchThread() = " +SwingUtilities.isEventDispatchThread());
+//        debug("DFHEating.1507: SwingUtilities.isEventDispatchThread() = " +SwingUtilities.isEventDispatchThread());
         return titleAndFceCommon;
     }
 
