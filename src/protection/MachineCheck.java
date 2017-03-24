@@ -1,6 +1,5 @@
 package protection;
 
-import directFiredHeating.DFHFurnace;
 import directFiredHeating.DFHeating;
 import mvUtils.display.StatusWithMessage;
 
@@ -85,6 +84,6 @@ public class MachineCheck {
     }
 
     void debug(String msg)  {
-        DFHeating.debug("MachineCheck: " + msg);
+        DFHeating.debugLocal("MachineCheck: " + msg);
     }
 }

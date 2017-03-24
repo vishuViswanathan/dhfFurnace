@@ -539,6 +539,9 @@ public class Level2Launcher {
         }
     }
 
+    void debug(String msg) {
+        System.out.println(msg);
+    }
 
     public static void main(String[] args) {
         Level2Launcher launcher = new Level2Launcher();

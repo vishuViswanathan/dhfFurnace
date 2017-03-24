@@ -12,11 +12,11 @@ import java.util.Locale;
 public class DFHeatingITA extends DFHeating {
 
     public DFHeatingITA() {
-        debug("ITA release 10.01 20130315");
+        debugLocal("ITA release 10.01 20130315");
         locale = Locale.getDefault(); // creates Locale class object by getting the default locale.
         locale = Locale.ITALY;
         Locale.setDefault(locale);
-        debug("Locale is " + locale);
+        debugLocal("Locale is " + locale);
     }
 }
 

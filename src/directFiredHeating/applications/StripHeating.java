@@ -37,6 +37,9 @@ public abstract class StripHeating extends DFHeating {
     boolean associatedDataLoaded = false;
     protected String l2BasePath = "";
 
+    protected StripHeating() {
+        super();
+    }
     protected void setTestData() {
         StatusWithMessage status = takeProfileDataFromXML(SampleStripFurnace.xmlStr);
         if (status.getDataStatus() == DataStat.Status.WithErrorMsg)
@@ -250,7 +253,7 @@ public abstract class StripHeating extends DFHeating {
 
 
     protected boolean createProfileCode() {
-        debug("changeProfileCode: " + changeProfileCode);
+        debugLocal("changeProfileCode: " + changeProfileCode);
         if (changeProfileCode || (profileCode.length() < 1)) {
             profileCode = profileCodeFormat.format(Math.random() * 999999.0);
             return true;

@@ -780,7 +780,7 @@ public class L2DFHeating extends StripHeating {
                 uaClient = new TMuaClient(uaServerURI);
                 l2debug("Before uaClient.connect");
                 uaClient.connect();
-                l2debug("uaClient is Connected");
+//                l2debug("uaClient is Connected");
                 retVal = uaClient.isConnected();
             } catch (Exception e) {
                 showError("Exception :" + e.getMessage());
