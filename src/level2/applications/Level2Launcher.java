@@ -130,38 +130,40 @@ public class Level2Launcher {
         boolean newKey = false;
         MachineCheck mc = new MachineCheck();
         String machineId = mc.getMachineID();
-        String key = getKeyFromFile();
-        do {
-            if (key.length() < 5) {
-                key = getKeyFromUser(machineId);
-                newKey = true;
-            }
-            if (key.length() > 5) {
-                StatusWithMessage keyStatus = mc.checkKey(key);
-                boolean tryAgain = false;
-                switch (keyStatus.getDataStatus()) {
-                    case WithErrorMsg:
-                        showError(keyStatus.getErrorMessage());
-                        break;
-                    case WithInfoMsg:
-                        boolean response = decide("Software key", "There is some problem in the saved key\n"
-                                + " Do you want to delete the earlier key data and enter the key manually?");
-                        if (response) {
-                            key = "";
-                            tryAgain = true;
-                        }
-                        break;
-                    default:
-                        keyOK = true;
-                        break;
+        if (machineId.length() > 2) {
+            String key = getKeyFromFile();
+            do {
+                if (key.length() < 5) {
+                    key = getKeyFromUser(machineId);
+                    newKey = true;
                 }
-                if (tryAgain)
-                    continue;
-                if (keyOK && newKey)
-                    saveKeyToFile(key);
-            }
-            break;
-        } while (true);
+                if (key.length() > 5) {
+                    StatusWithMessage keyStatus = mc.checkKey(key);
+                    boolean tryAgain = false;
+                    switch (keyStatus.getDataStatus()) {
+                        case WithErrorMsg:
+                            showError(keyStatus.getErrorMessage());
+                            break;
+                        case WithInfoMsg:
+                            boolean response = decide("Software key", "There is some problem in the saved key\n"
+                                    + " Do you want to delete the earlier key data and enter the key manually?");
+                            if (response) {
+                                key = "";
+                                tryAgain = true;
+                            }
+                            break;
+                        default:
+                            keyOK = true;
+                            break;
+                    }
+                    if (tryAgain)
+                        continue;
+                    if (keyOK && newKey)
+                        saveKeyToFile(key);
+                }
+                break;
+            } while (true);
+        }
         return keyOK;
     }
 
@@ -340,6 +342,7 @@ public class Level2Launcher {
                     new WaitMsg(mainF, "Starting Level2Runtime. Please wait ...", new ActInBackground() {
                         public void doInBackground() {
                             L2DFHeating l2 = new L2Runtime("Furnace");
+                            l2.setLoadTesting(loadTesting);
                             System.out.println("RUNTIME: l2.l2SystemReady = " + l2.l2SystemReady);
                             if (l2.l2SystemReady)
                                 quit();
@@ -366,6 +369,7 @@ public class Level2Launcher {
                             new WaitMsg(mainF, "Starting Level2Updater. Please wait ...", new ActInBackground() {
                                 public void doInBackground() {
                                     L2DFHeating l2 = new L2Updater("Furnace", true);
+                                    l2.setLoadTesting(loadTesting);
                                     System.out.println("EXPERT: l2.l2SystemReady = " + l2.l2SystemReady);
                                     if (l2.l2SystemReady)
                                         quit();
@@ -396,6 +400,7 @@ public class Level2Launcher {
                             new WaitMsg(mainF, "Starting Level2Expert. Please wait ...", new ActInBackground() {
                                 public void doInBackground() {
                                     L2DFHeating l2 = new Level2Expert("Furnace", true);
+                                    l2.setLoadTesting(loadTesting);
                                     System.out.println("EXPERT: l2.l2SystemReady = " + l2.l2SystemReady);
                                     if (l2.l2SystemReady)
                                         quit();
@@ -543,7 +548,18 @@ public class Level2Launcher {
         System.out.println(msg);
     }
 
+    static boolean loadTesting = false;
+
+    static protected void parseCmdLineArgs(String[] args) {
+        for (int a = 0; a < args.length; a++) {
+            if (args[a].trim().equalsIgnoreCase("-loadTesting"))
+                loadTesting = true;
+        }
+    }
+
+
     public static void main(String[] args) {
+        parseCmdLineArgs(args);
         Level2Launcher launcher = new Level2Launcher();
     }
 }

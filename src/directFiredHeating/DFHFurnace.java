@@ -605,21 +605,6 @@ public class DFHFurnace {
                 }
                 bStart = false;
                 reDo = false;
-//                if (allOk && bTopBot && canRun()) {
-//                    double rmsDiff = getGratioStat();
-//                    boolean resp = false;
-//                    if (rmsDiff > 0.005) {
-//                        resp = decide("Top and Bottom Heating",
-//                                "Heat Share Error of Top and Bottom is " + (new DecimalFormat("#0.00")).format(rmsDiff * 100) +
-//                                        "%, Do you want to recalculate with Correction?");
-//                        controller.parent().toFront();
-//                    }
-//                    if (resp) {
-//                        combiData.noteCorrection();
-//                    } else
-//                        reDo = false;
-//                } else
-//                    reDo = false;
             }
 
             if (allOk && canRun() && bDisplayResults) {

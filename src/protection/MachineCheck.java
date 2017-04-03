@@ -17,19 +17,23 @@ import java.net.UnknownHostException;
  */
 public class MachineCheck {
     public String getMachineID() {
+        String retVal = "";
         try {
             InetAddress ip = InetAddress.getLocalHost();
 //            debug("Current IP address : " + ip.getHostAddress());
             NetworkInterface network = NetworkInterface.getByInetAddress(ip);
 
             byte[] mac = network.getHardwareAddress();
-            return produceIDString(mac);
+            if (mac == null)
+                debug("Could not get mac");
+            else
+                retVal = produceIDString(mac);
         } catch (UnknownHostException e) {
-            e.printStackTrace();
+            debug("Host no known");
         } catch (SocketException e){
-       		e.printStackTrace();
+            debug("Socket error");
        	}
-        return "";
+        return retVal;
     }
 
     String produceIDString(byte[] mac) {

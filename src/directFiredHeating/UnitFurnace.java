@@ -1070,6 +1070,7 @@ public class UnitFurnace {
      * @return
      */
     public FceEvaluator.EvalStat evalWithWallRadiationInFwd(boolean bFirstSlot, UnitFurnace prevSlot) {
+        FceEvaluator.EvalStat status = FceEvaluator.EvalStat.OK;
         double deltaT;
         double tWMassume, tWMrevised = 0, diff;
         double chHeat = 0;
@@ -1093,12 +1094,18 @@ public class UnitFurnace {
                 done = true;
             else
                 tWMassume = (bRecuType) ? (tWMassume + tWMrevised) / 2 : tWMrevised;
+            if (tWMassume >= (tempO - 0.0001)) {
+                status = FceEvaluator.EvalStat.ABORT;
+                break;
+            }
         }
-        tempWO = two;
-        tempWmean = tWMrevised;
-        chargeHeat = chHeat;
-        showResult();
-        return FceEvaluator.EvalStat.OK;
+        if (status == FceEvaluator.EvalStat.OK) {
+            tempWO = two;
+            tempWmean = tWMrevised;
+            chargeHeat = chHeat;
+            showResult();
+        }
+        return status;
     }
 
 

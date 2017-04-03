@@ -84,6 +84,7 @@ public class OpcSimulator implements InputControl, L2Interface {
            }
      }
 
+    String urlID;
     JFrame mainF;
     TMuaClient source;
     static String uaServerURI;
@@ -92,10 +93,11 @@ public class OpcSimulator implements InputControl, L2Interface {
     Vector<OneSimulatorSection> processZones;
     Vector<OneSimulatorSection> level2Zones;
     boolean uiReady = false;
-    protected String releaseDate = "20170315";
+    protected String releaseDate = "20170329";
 
 
     public OpcSimulator(String urlID) {
+        this.urlID = urlID;
         modifyJTextEdit();
         mainF = new JFrame();
         mainF.setTitle("Level1 Simulatior " + releaseDate);
@@ -105,6 +107,15 @@ public class OpcSimulator implements InputControl, L2Interface {
         mainF.setVisible(true);
         mainF.toFront();
         monitoredTags = new Hashtable<MonitoredDataItem, Tag>();
+//        if (setupUaClient(urlID))
+//            if (loadSimulator()) {
+//                showThem();
+//                uiReady = true;
+//                createL2Messages();
+//            }
+    }
+
+    void proceed() {
         if (setupUaClient(urlID))
             if (loadSimulator()) {
                 showThem();
@@ -123,6 +134,7 @@ public class OpcSimulator implements InputControl, L2Interface {
     void showThem() {
 //        setDisabledColor(Color.DARK_GRAY);
         JPanel mainP= new JPanel(new BorderLayout());
+        addLoadTestPanel(mainP);
         mainP.add(getProcessPane(), BorderLayout.WEST);
         mainP.add(getLevel2Pane(), BorderLayout.EAST);
         mainF.add(mainP);
@@ -132,6 +144,10 @@ public class OpcSimulator implements InputControl, L2Interface {
         startDisplayUpdater();
 
 //        mainF.setVisible(true);
+    }
+
+    protected void addLoadTestPanel(JPanel mainP) {
+
     }
 
     JComponent getProcessPane() {
@@ -780,8 +796,14 @@ public class OpcSimulator implements InputControl, L2Interface {
     }
 
     public static void main(String[] args) {
+        OpcSimulator opcS = null;
         if (args.length > 0) {
-            OpcSimulator opcS = new OpcSimulator(args[0]);
+            if (args.length == 1)
+                opcS = new OpcSimulator(args[0]);
+            else if (args[1].equalsIgnoreCase("-loadTester"))
+                opcS = new LoadTester(args[0]);
         }
+        if (opcS != null)
+            opcS.proceed();
     }
 }

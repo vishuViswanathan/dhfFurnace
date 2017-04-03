@@ -141,6 +141,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 //    static public boolean bAllowEditDFHProcess = false;
     static public boolean bL2Configurator = false;
     static public boolean bAtSite = false;
+    public boolean loadTesting = false;
     protected String profileFileExtension = "dfhDat";
     protected String profileFileName = "FurnaceProfile." + profileFileExtension;
     protected long maxSizeOfProfileFile = (long)1e6;
@@ -287,6 +288,12 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         this.asApplication = asApplication;
         debugLocal("as Application");
         init();
+    }
+
+    public void setLoadTesting(boolean ena) {
+        loadTesting = ena;
+        if (ena)
+            showMessage("Load Testing is ON");
     }
 
     protected void setUIDefaults() {
@@ -2010,7 +2017,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         ambTemp = tfAmbTemp.getData();
         airTemp = tfAirTemp.getData();
 
-//        showMessage("Start Air preheat = " + airTemp);    // TODO remove in RELEASE
+//        showMessage("Start Air preheat = " + airTemp);    // TODO-remove in RELEASE
 
         fuelTemp = tfFuelTemp.getData();
         calculStep = tfCalculStep.getData() / 1000;
@@ -2407,7 +2414,9 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     public FceEvaluator calculateForPerformanceTable(Performance baseP, CalculationsDoneListener doneListener) {
         enableResultsMenu(false);
         enableCalculStat();
-        Thread evalThread = new Thread(evaluator = new FceEvaluator(this, slate, furnace, calculStep, baseP, doneListener));
+        Thread evalThread = new Thread(
+                evaluator = new FceEvaluator(this, slate, furnace, calculStep, baseP, doneListener),
+                "Evaluator");
         evaluator.setSubActionTitle("Evaluating Performance Table");
         enablePauseCalcul();
         evalThread.start();
@@ -2427,7 +2436,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
      *
      * @param resultsReadyListener
      */
-    public FceEvaluator calculateFce(ResultsReadyListener resultsReadyListener, boolean bShowResults, boolean bResetLossFactor, boolean bCheckData) { // TODO 20160622 is bCheckData required
+    public FceEvaluator calculateFce(ResultsReadyListener resultsReadyListener, boolean bShowResults, boolean bResetLossFactor, boolean bCheckData) { // TODO-check 20160622 is bCheckData required
         if (bShowResults) {
             initPrintGroups();
             enableResultsMenu(false);
@@ -4518,9 +4527,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                         asJNLP = true;
                         jspConnection = new JSPConnection();
                         break;
-//                    case L2CONFURATOR:
-//                        bL2Configurator = true;
-//                        break;
                     case DEBUGMSG:
                         showDebugMessages = true;
                         break;

@@ -250,7 +250,7 @@ public class L2StripZone extends L2ParamGroup {
         StripProcessAndSize theStrip = null;
         if (l2Furnace.level2Enabled) {
             theStrip = getNextStripData();
-//            l2Furnace.logTrace("L2StripZone.259: Strip: " + theStrip);
+            l2Furnace.logTrace("L2StripZone.253: Strip: " + theStrip);
             OneStripDFHProcess oneProcess = l2DFHeating.getStripDFHProcess(theStrip);
             if (oneProcess != null) {
                 theStrip.setTheProcess(oneProcess);

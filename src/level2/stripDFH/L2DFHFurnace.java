@@ -774,7 +774,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             int trials = 0;
             setChEmmissCorrectionFactor(refP.chEmmCorrectionFactor);
 //            logTrace("L2DFHFurnace.824: chEmmCorrectionFactor = " + refP.chEmmCorrectionFactor);
-            while (!done) {
+            while (!done && trials < 1000) {
 //                logTrace("L2DfhFurnace.778: in the loop " + trials + ", " + outputAssumed);
                 trials++;
                 chStatus.output = outputAssumed;
@@ -793,8 +793,12 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                     break;
                 }
             }
-            resetChEmmissCorrectionFactor();
+            if (trials < 1000) {
+                resetChEmmissCorrectionFactor();
 //            logTrace("L2DFHFurnace.797: Trials in getOutputWithFurnaceStatus = " + trials);
+            }
+            else
+                outputAssumed = -1;
         } else
             logInfo("L2DFHFurnace.847: Facing problem in creating calculation steps");
 //        logTrace("L2DFHFurnace.785: Nano seconds for calculation = " + (System.nanoTime() - stTimeNano));
@@ -824,19 +828,19 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                 if (chStatus.isValid()) {
                     nowExitTemp = chStatus.tempWM;
                     diff = exitTempRequired - nowExitTemp;
-//                    logTrace(String.format("L2DfhFurnace.827: nowExitTemp %3.2f, diff %3.4f, chEmmissCorrectionFactor %3.3f", nowExitTemp, diff, chEmmissCorrectionFactor));
+                    logTrace(String.format("L2DfhFurnace.827: nowExitTemp %3.2f, diff %3.4f, chEmmissCorrectionFactor %3.3f", nowExitTemp, diff, chEmmissCorrectionFactor));
                     if (Math.abs(diff) < tempAllowance)
                         done = true;
                     else {
-//                        logTrace(String.format("L2DfhFurnace.831: exitTempRequired %3.3f, chInTemp %3.3f, nowExitTemp %3.3f",
-//                                exitTempRequired, chInTemp, nowExitTemp));
+                        logTrace(String.format("L2DfhFurnace.831: exitTempRequired %3.3f, chInTemp %3.3f, nowExitTemp %3.3f",
+                                exitTempRequired, chInTemp, nowExitTemp));
                         chEmmissCorrectionFactor = chEmmissCorrectionFactor * (exitTempRequired - chInTemp) / (nowExitTemp - chInTemp);
                         if (chEmmissCorrectionFactor > 2 || chEmmissCorrectionFactor < 0.1)
                             break;
                     }
                 }
                 else {
-                    showError("setEmmissFactorBasedOnFieldResults:" +
+                    logError("setEmmissFactorBasedOnFieldResults:" +
                             "processInFurnace returned with error!");
                     break;
                 }
@@ -959,7 +963,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             if (similarOne != null) {
 //                logTrace("L2DFHFurnace.1009: Similar performance already available");
                 replace = true;
-                goAhead = l2DFHeating.decide("Similar performance already available",
+                goAhead = (l2DFHeating.loadTesting) || l2DFHeating.decide("Similar performance already available",
                         "Existing performance:\n" + similarOne.toString() +
                                 "\n    Do you want to over-write Performance Data?");
             }
@@ -1206,7 +1210,11 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
 //                                                            logTrace("L2DFHFurnace.1205: eval2 had healthy exit" );
                                                             if (addFieldBasedPerformanceToPerfBase()) {
 //                                                                logTrace("l2DFHFurnace.1207: productionData.chEmmissCorrectionFactor = " + productionData.chEmmissCorrectionFactor);
-                                                                l2DFHeating.showMessage("Field Performance", "Save updated Performance to file from Performance Menu" );
+                                                                if (l2DFHeating.loadTesting)
+                                                                    informProcessDataModified();
+                                                                else
+                                                                    l2DFHeating.showMessage("Field Performance", "Save updated Performance to file from Performance Menu" );
+
                                                             }
                                                             else {
                                                                 addErrorMsg("Performance Data is rejected Level2 user");
@@ -1230,12 +1238,16 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                                         } catch (InterruptedException e) {
                                             e.printStackTrace();
                                         }
-                                    } else
-                                        showError("Unable to do Calculation from Model" );
+                                    } else {
+                                        showError("Unable to do Calculation from Model");
+                                        addErrorMsg("Unable to do Calculation from Model");
+                                    }
                                     resetLossFactor();
                                 }
-                            } else
-                                showError("Facing some problem in evaluating strip emissivity factor" );
+                            } else {
+                                showError("Facing some problem in evaluating strip emissivity factor");
+                                addErrorMsg("Facing some problem in evaluating strip emissivity factor");
+                            }
                             resetChEmmissCorrectionFactor();
                         }
                         setCurveSmoothening(false);
