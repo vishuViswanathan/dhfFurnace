@@ -26,6 +26,9 @@ public class FurnaceSettings   {
     DFHeating dfHeating;
     String opcIP = "opc.tcp://127.0.0.1:49320";
     DoubleRange[] zoneFuelRange;
+    DoubleRange[] zonalFuelLimits; // for data error checking
+    public DoubleRange temperatureRange =  new DoubleRange(0, 1600);
+    public DoubleRange stripSpeedRange = new DoubleRange(0, 1000);
     DoubleRange totFuelRange;
 //    public int speedCheckInterval = 30; // in s
     public String errMsg = "Error reading Furnace Settings :";
@@ -59,6 +62,14 @@ public class FurnaceSettings   {
         takeDataFromXML(xmlStr);
     }
 
+    public DoubleRange getTemperatureRange() {
+        return temperatureRange;
+    }
+
+    public DoubleRange getFuelFlowLimits(int sec) {
+        return zonalFuelLimits[sec];
+    }
+
     public String getOPCip() {
         return opcIP;
     }
@@ -82,9 +93,19 @@ public class FurnaceSettings   {
         }
         else
             retVal.addErrorMessage("Mismatch in Zone count");
+        if (retVal.getDataStatus() == DataStat.Status.OK)
+            setZonalFlowLimits();
         return retVal;
     }
 
+    void setZonalFlowLimits() {
+        int nSec = dfHeating.furnace.getActiveSections(false).size();
+        zonalFuelLimits = new DoubleRange[nSec];
+        for (int i = 0; i < nSec ; i++) {
+            zonalFuelLimits[i] = new DoubleRange(0, zoneFuelRange[i].max * 1.5);
+        }
+    }
+                                                                 
     void setTotalRange() {
         double totMax = 0;
         double totMin  = 0;
@@ -123,8 +144,10 @@ public class FurnaceSettings   {
 //                speedCheckInterval = Integer.valueOf(vp.val);
             vp = XMLmv.getTag(xmlStr, "fuelRanges", 0);
             retVal = takeFuelRangesFromXML(vp.val);
-            if (retVal)
+            if (retVal) {
                 setTotalRange();
+                retVal = (checkIntegrity().getDataStatus() == DataStat.Status.OK);
+            }
         } catch (NumberFormatException e) {
             errMsg += "Some Number format error";
             inError = true;

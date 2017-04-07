@@ -1,5 +1,6 @@
 package level2.fieldResults;
 
+import TMopcUa.ProcessValue;
 import basic.*;
 import directFiredHeating.FceSection;
 import level2.stripDFH.L2DFHFurnace;
@@ -50,21 +51,44 @@ public class FieldZone {
 
     public FieldZone(L2DFHFurnace l2Furnace, boolean bBot, int zNum, L2DFHZone oneZone) {
         this(l2Furnace, bBot, zNum);
-        takeFromL2Zone(oneZone);
-        testValidity();
+        bValid = takeFromL2Zone(oneZone);
+        if (bValid)
+            testValidity();
     }
 
-    void takeFromL2Zone(L2DFHZone oneZone) {
-        double fceTemp = oneZone.getValue(L2ParamGroup.Parameter.Temperature, Tag.TagName.PV).floatValue;
-        double fuelFlow = oneZone.getValue(L2ParamGroup.Parameter.FuelFlow, Tag.TagName.PV).floatValue;
-        double airTemp = oneZone.getValue(L2ParamGroup.Parameter.AirFlow, Tag.TagName.Temperature).floatValue;
-        double afRatio;
-        if (frFuelFlow > 0)
-            afRatio = oneZone.getValue(L2ParamGroup.Parameter.AirFlow, Tag.TagName.PV).floatValue /
-                    frFuelFlow;
+    boolean takeFromL2Zone(L2DFHZone oneZone) {
+        boolean retVal = false;
+        ProcessValue pv;
+        pv = oneZone.getValue(L2ParamGroup.Parameter.Temperature, Tag.TagName.PV);
+        if (pv.valid) {
+            double fceTemp = pv.floatValue;
+            pv = oneZone.getValue(L2ParamGroup.Parameter.FuelFlow, Tag.TagName.PV);
+            if (pv.valid) {
+                double fuelFlow = pv.floatValue;
+                pv = oneZone.getValue(L2ParamGroup.Parameter.AirFlow, Tag.TagName.Temperature);
+                if (pv.valid) {
+                    double airTemp = pv.floatValue;
+                    double afRatio = 0;
+                    if (fuelFlow > 0) {
+                        pv = oneZone.getValue(L2ParamGroup.Parameter.AirFlow, Tag.TagName.PV);
+                        if (pv.valid) {
+                            afRatio = oneZone.getValue(L2ParamGroup.Parameter.AirFlow, Tag.TagName.PV).floatValue /
+                                    frFuelFlow;
+                        } else
+                            afRatio = 1.0;
+                    }
+                    setValues(fceTemp, fuelFlow, airTemp, afRatio);
+                    retVal = true;
+                }
+                else
+                    errMsg = "Probably the Zone Air Temperature is out of Range";
+            }
+            else
+                errMsg = "Probably the Zone Fuel Flow is out of Range";
+        }
         else
-            afRatio = 1.0;
-        setValues(fceTemp, fuelFlow, airTemp, afRatio);
+            errMsg = "Probably the Zone Temperature is out of Range";
+        return retVal;
     }
 
     public void copyTempAtTCtoSection() {

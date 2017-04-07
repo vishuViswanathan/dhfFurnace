@@ -1,6 +1,7 @@
 package level2.applications;
 
 import directFiredHeating.accessControl.L2AccessControl;
+import level2.common.ReadyNotedParam;
 import mvUtils.display.DataStat;
 import mvUtils.display.DataWithStatus;
 import mvUtils.display.ErrorStatAndMsg;

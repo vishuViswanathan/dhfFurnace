@@ -1,6 +1,5 @@
 package level2.stripDFH;
 
-import FceElements.heatExchanger.HeatExchProps;
 import TMopcUa.ProcessValue;
 import TMopcUa.TMSubscription;
 import TMopcUa.TMuaClient;
@@ -51,7 +50,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     ReadyNotedParam fieldDataParams;
     ReadyNotedParam processListParams;
     ReadyNotedParam fuelCharParams;
-    ReadyNotedBothL2 performanceStat;
+//    ReadyNotedBothL2 performanceStat;
     ReadyNotedBothL2 processDataStat;
     ReadyNotedParam l2YesNoQuery;
     ReadyNotedParam l2DataQuery;
@@ -227,7 +226,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         }
     }
 
-    Tag performanceChanged, performanceNoted;
+//    Tag performanceChanged, performanceNoted;
     Tag processDataChanged, processDataNoted;
 
     public boolean createInternalZone() {
@@ -235,20 +234,19 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         String processElement = "Internal.Performance";
         internalZone = new L2ParamGroup(this, "Internal");
         updaterChangeSub = source.createTMSubscription("Updater Status",new SubAliveListener(), new UpdaterChangeListener());
-//        logDebug("L2DFHFurnace.238: updaterChangeSub created");
-        Tag[] performanceTags = {
-                performanceChanged = new Tag(L2ParamGroup.Parameter.Performance, Tag.TagName.Ready, true, itIsRuntime),
-                performanceNoted = new Tag(L2ParamGroup.Parameter.Performance, Tag.TagName.Noted, true, !itIsRuntime)};
-        try {
-            performanceStat = new ReadyNotedBothL2(source, equipment, processElement, performanceTags, updaterChangeSub);
-            performanceStat.setReadWriteStat(!itIsRuntime);
-        } catch (TagCreationException e) {
-            showError("Some Tags could not be created: " + e.getMessage());
-            return false;
-        }
-        readyNotedParamList.add(performanceStat);
-        internalZone.addOneParameter(L2ParamGroup.Parameter.Performance, performanceStat);
-        noteMonitoredTags(performanceTags);
+//        Tag[] performanceTags = {
+//                performanceChanged = new Tag(L2ParamGroup.Parameter.Performance, Tag.TagName.Ready, true, itIsRuntime),
+//                performanceNoted = new Tag(L2ParamGroup.Parameter.Performance, Tag.TagName.Noted, true, !itIsRuntime)};
+//        try {
+//            performanceStat = new ReadyNotedBothL2(source, equipment, processElement, performanceTags, updaterChangeSub);
+//            performanceStat.setReadWriteStat(!itIsRuntime);
+//        } catch (TagCreationException e) {
+//            showError("Some Tags could not be created: " + e.getMessage());
+//            return false;
+//        }
+//        readyNotedParamList.add(performanceStat);
+//        internalZone.addOneParameter(L2ParamGroup.Parameter.Performance, performanceStat);
+//        noteMonitoredTags(performanceTags);
 
         Tag[] processDataTags = {
                 processDataChanged = new Tag(L2ParamGroup.Parameter.ProcessData, Tag.TagName.Ready, true, itIsRuntime),
@@ -434,10 +432,38 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         return retVal;
     }
 
-    public void initForLevel2Operation() {
+    public void resetForLevel2Operation(boolean starting) {
+        if (itIsRuntime) {
+            for (ReadyNotedParam p: readyNotedParamList)
+                p.initStatus();
+            stripZone.resetForLevel2Operation();
+            if (starting) {
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                level2Enabled = informLevel2Ready();
+                logInfo("Level2 is disabled from Level1");
+            }
+            else {
+                informLevel2IsOff();
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        else
+            level2Enabled = tagLevel2Enabled.getValue().booleanValue;
+
+    }
+
+    public void resetForLevel2OperationOLD() {  // TODO-remove
         for (ReadyNotedParam p: readyNotedParamList)
             p.initStatus();
-        stripZone.initForLevel2Operation();
+        stripZone.resetForLevel2Operation();
         try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
@@ -634,6 +660,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     boolean l2DisplayON = false;
 
     public boolean prepareForDisconnection() {
+        resetForLevel2Operation(false);
         stopDisplayUpdater();
         stripZone.stopSpeedUpdater();
         try {
@@ -752,7 +779,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         tuningParams.setSelectedProc(controller.furnaceFor);
         FieldResults fieldData = new FieldResults(this, false);
         if (fieldData.inError)   {
-            logInfo("L2DfhFurnace..755: Facing some problem in reading furnace field data: " + fieldData.errMsg);
+            logError("L2DfhFurnace..755: Facing some problem in reading furnace field data: " + fieldData.errMsg);
         }
         else {
             outputAssumed = getOutputWithFurnaceTemperatureStatus(fieldData, chStatus, refP, exitTempRequired);
@@ -953,7 +980,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
 
     boolean addFieldBasedPerformanceToPerfBase() {
         Performance perform = getPerformance();
-        logInfo("L2DFHFurnace.1002: Performance = " + perform);   // TODO tobe removed on RELEASE
+        logTrace("L2DFHFurnace.1002: Performance = " + perform);   // TODO tobe removed on RELEASE
         boolean retVal = false;
         boolean goAhead = true;
         boolean replace = false;
@@ -1381,7 +1408,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                 Tag theTag = monitoredTags.get(monitoredDataItem);
                 if (processDataStat.isNewData(theTag)) {
                     if (itIsRuntime && (theTag == processDataChanged) && theTag.getValue().booleanValue) {
-                        logTrace("L2DfhFurnace.1359: Process data Changed");
+                        logTrace("L2DfhFurnace.1384: Process data Changed");
                         processDataStat.setAsNoted(true);
                         l2DFHeating.handleModifiedProcessData();
                     }
@@ -1398,11 +1425,15 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                 level2Enabled = theTag.getValue().booleanValue;
                 informLevel2Ready();
                 if (level2Enabled)
-                    logInfo("L2DfhFurnace.1376: Level2 has been Enabled!");
+                    logInfo("L2DfhFurnace.1417: Level2 is enabled from Level1");
                 else
-                    l2DFHeating.showMessage("Level2 has been disabled!");
+                    logInfo("L2DfhFurnace.1419: Level2 is disabled from Level1");
             }
         }
+    }
+
+    void informLevel2IsOff() {
+        basicZone.setValue(L2ParamGroup.Parameter.L2Stat, Tag.TagName.Ready, false);
     }
 
     public boolean informLevel2Ready() {

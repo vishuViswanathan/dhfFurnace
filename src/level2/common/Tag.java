@@ -110,8 +110,6 @@ public class Tag {
 //        Process("process"),
         BaseProcess("baseProcess"),
         Msg("msg");
-
-
         private final String name;
 
         TagName(String name) {
@@ -158,6 +156,10 @@ public class Tag {
     ProcessValue value = new ProcessValue();
     Component displayComponent;
     DecimalFormat format;
+    float minLimit;
+    float maxLimit;
+    boolean limited = false;
+
 
     public Tag(L2ParamGroup.Parameter element, TagName tagName, boolean rw, boolean bSubscribe) {
         this(element, tagName, rw, bSubscribe, "#,###.00");
@@ -175,12 +177,23 @@ public class Tag {
         if (displayComponent != null) {
             displayComponent.setEnabled(false);
         }
-
     }
 
     public Tag(L2ParamGroup.Parameter element, TagName tagName, boolean rw, boolean bSubscribe, String[] onOffString) {
         this(element, tagName, rw, bSubscribe, "#,##.00");
         noteFormat(onOffString);
+    }
+
+    public Tag(L2ParamGroup.Parameter element, TagName tagName, boolean rw, boolean bSubscribe, String fmtStr,
+               float minLmit, float maxLimit) {
+        this(element, tagName, rw, bSubscribe, fmtStr);
+        setValueLimits(minLmit, maxLimit);
+    }
+
+    void setValueLimits(float min, float max) {
+        minLimit = min;
+        maxLimit = max;
+        limited = true;
     }
 
     String fmtStr;
@@ -214,7 +227,7 @@ public class Tag {
                 break;
             default:
                 format = new DecimalFormat(fmtStr);
-                datW = (int)(fmtStr.length()* 0.7);
+                datW = (int)(Math.max("#,##0.00".length(), fmtStr.length())* 0.7);
                 break;
         }
     }
@@ -269,6 +282,8 @@ public class Tag {
 
     public void setProcessData(ProcessData processData) {
         this.processData = processData;
+        if (limited)
+            processData.limitFloatValue(minLimit, maxLimit);
     }
 
     public boolean isMonitored() {
@@ -376,7 +391,12 @@ public class Tag {
                 ((JTextArea)displayComponent).setText(getValue().stringValue);
                 break;
             default:
-                ((JTextField)displayComponent).setText(format.format(getValue().floatValue));
+                ProcessValue pv = getValue();
+                ((JTextField)displayComponent).setText(format.format(pv.floatValue));
+                if (pv.valid)
+                    displayComponent.setBackground(Color.WHITE);
+                else
+                    displayComponent.setBackground(Color.red);
                 break;
         }
     }

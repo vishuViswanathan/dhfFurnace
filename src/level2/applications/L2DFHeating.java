@@ -238,7 +238,7 @@ public class L2DFHeating extends StripHeating {
                                         if (connStat.inError)
                                             showError(connStat.msg);
                                         else {
-                                            l2Furnace.initForLevel2Operation();
+                                            l2Furnace.resetForLevel2Operation(true);
                                             l2SystemReady = true;
                                         }
                                     }

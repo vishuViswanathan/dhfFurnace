@@ -89,7 +89,7 @@ public class L2DFHDisplay implements L2Display{
             sL = new SizedLabel("Set Point", colHeadSize, JLabel.TRAILING, false, false);
             grpPan.add(sL, gbcL);
             gbcL.gridy++;
-            sL = new SizedLabel("Process Value", colHeadSize, JLabel.TRAILING, false, false);
+            sL = new SizedLabel("Fuel Flow", colHeadSize, JLabel.TRAILING, false, false);
             grpPan.add(sL, gbcL);
             gbcH.gridy++;
             rowHead.add(grpPan, gbcH);
@@ -111,7 +111,10 @@ public class L2DFHDisplay implements L2Display{
             sL = new SizedLabel("Set Point", colHeadSize, JLabel.TRAILING, false, false);
             grpPan.add(sL, gbcL);
             gbcL.gridy++;
-            sL = new SizedLabel("Process Value", colHeadSize, JLabel.TRAILING, false, false);
+            sL = new SizedLabel("Air Flow", colHeadSize, JLabel.TRAILING, false, false);
+            grpPan.add(sL, gbcL);
+            gbcL.gridy++;
+            sL = new SizedLabel("Air Temperature", colHeadSize, JLabel.TRAILING, false, false);
             grpPan.add(sL, gbcL);
             gbcH.gridy++;
             rowHead.add(grpPan, gbcH);
@@ -221,6 +224,11 @@ public class L2DFHDisplay implements L2Display{
         grpPan.add(c, gbcL);
         gbcL.gridy++;
         tag = param.getProcessTag(Tag.TagName.PV);
+        processTags.add(tag);
+        c = tag.displayComponent();
+        grpPan.add(c, gbcL);
+        gbcL.gridy++;
+        tag = param.getProcessTag(Tag.TagName.Temperature);
         processTags.add(tag);
         c = tag.displayComponent();
         grpPan.add(c, gbcL);

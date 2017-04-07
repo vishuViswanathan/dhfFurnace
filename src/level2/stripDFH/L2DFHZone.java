@@ -3,10 +3,12 @@ package level2.stripDFH;
 import com.prosysopc.ua.ServiceException;
 import com.prosysopc.ua.client.*;
 import directFiredHeating.FceSection;
+import directFiredHeating.process.FurnaceSettings;
 import level2.common.L2ParamGroup;
 import level2.common.L2SubscriptionListener;
 import level2.common.Tag;
 import level2.common.TagCreationException;
+import mvUtils.math.DoubleRange;
 import org.opcfoundation.ua.builtintypes.*;
 
 import java.util.Calendar;
@@ -20,6 +22,7 @@ import java.util.Hashtable;
  * To change this template use File | Settings | File Templates.
  */
 public class L2DFHZone extends L2ParamGroup {
+    FurnaceSettings fceBasicSettings;
     FceSection theSection = null;
     Subscription subscription = null;
     boolean dataCollectionOn = false;
@@ -37,6 +40,7 @@ public class L2DFHZone extends L2ParamGroup {
     public L2DFHZone(L2DFHFurnace l2Furnace, String zoneName, String descriptiveName, FceSection theSection,
                      boolean bSubscribe) throws TagCreationException {
         super(l2Furnace, zoneName, descriptiveName);
+        fceBasicSettings = l2Furnace.furnaceSettings;
         this.theSection = theSection;
         if (bSubscribe) {
             setSubscription(l2Furnace.source.createSubscription(new SubAliveListener(), new ZoneSubscriptionListener()));
@@ -47,17 +51,27 @@ public class L2DFHZone extends L2ParamGroup {
         String speedFmt = "#,##0";
         String ratioFmt = "#0.00";
         String airFlowFmt = "#,##0";
-        Tag[] temperatureTags = {new Tag(Parameter.Temperature, Tag.TagName.SP, false, false, temperatureFmt),
-                new Tag(Parameter.Temperature, Tag.TagName.PV, false, true, temperatureFmt),
+        float tempMinLimit = (float)fceBasicSettings.temperatureRange.min;
+        float tempMaxLimit = (float)fceBasicSettings.temperatureRange.max;
+        Tag[] temperatureTags = {
+                new Tag(Parameter.Temperature, Tag.TagName.SP, false, false,
+                        temperatureFmt, tempMinLimit, tempMaxLimit),
+                new Tag(Parameter.Temperature, Tag.TagName.PV, false, true,
+                        temperatureFmt, tempMinLimit, tempMaxLimit),
                 new Tag(Parameter.Temperature, Tag.TagName.Auto, false, false),
                 new Tag(Parameter.Temperature, Tag.TagName.SP, true, false, temperatureFmt)};
 
+        DoubleRange fuelLimits = fceBasicSettings.getFuelFlowLimits(theSection.secNum -1);
+        float fuelMinLimit = (float)fuelLimits.min;
+        float fuelMaxLimit = (float)fuelLimits.max;
         Tag[] fuelFlowTags = {   // new Tag(Parameter.FuelFlow, Tag.TagName.SP, false, false, fuelFlowFmt),
-                new Tag(Parameter.FuelFlow, Tag.TagName.PV, false, true, fuelFlowFmt),
+                new Tag(Parameter.FuelFlow, Tag.TagName.PV, false, true,
+                        fuelFlowFmt, fuelMinLimit, fuelMaxLimit),
                 new Tag(Parameter.FuelFlow, Tag.TagName.Auto, false, false),
                 new Tag(Parameter.FuelFlow, Tag.TagName.Remote, false, false),
 //                new Tag(Parameter.FuelFlow, Tag.TagName.Span, false, false, fuelFlowFmt),
-                new Tag(Parameter.FuelFlow, Tag.TagName.SP, false, false, fuelFlowFmt),
+                new Tag(Parameter.FuelFlow, Tag.TagName.SP, false, false,
+                        fuelFlowFmt, fuelMinLimit, fuelMaxLimit),
                 new Tag(Parameter.FuelFlow, Tag.TagName.SP, true, false, fuelFlowFmt)};
 
         Tag airFuelRatioTags = new Tag(Parameter.AFRatio, Tag.TagName.SP, false, false, ratioFmt);
@@ -67,7 +81,8 @@ public class L2DFHZone extends L2ParamGroup {
                 new Tag(Parameter.AirFlow, Tag.TagName.PV, false, true, airFlowFmt),
                 new Tag(Parameter.AirFlow, Tag.TagName.Auto, false, false),
                 new Tag(Parameter.AirFlow, Tag.TagName.Remote, false, false),
-                new Tag(Parameter.AirFlow, Tag.TagName.Temperature, false, true, temperatureFmt)};
+                new Tag(Parameter.AirFlow, Tag.TagName.Temperature, false, true,
+                        temperatureFmt, tempMinLimit, tempMaxLimit)};
         fuelCharSteps = l2Furnace.furnaceSettings.fuelCharSteps;
         Tag[] allfuelChrTags = new Tag[fuelCharSteps * 3]; // totFuel, zoneFuel and Speed
         tagsFuelChrTotal = new Tag[fuelCharSteps];
@@ -164,11 +179,11 @@ public class L2DFHZone extends L2ParamGroup {
 
     }
 
-    void info(String msg) {
-        l2Interface.logInfo("L2Zone: " + msg);
-    }
+//    void info(String msg) {
+//        l2Interface.logInfo("L2Zone: " + msg);
+//    }
 
-    void showError(String msg) {
-        l2Interface.logError("L2Zone: " + msg);
-    }
+//    void showError(String msg) {
+//        l2Interface.logError("L2Zone: " + msg);
+//    }
 }

@@ -1048,8 +1048,7 @@ public class DFHFurnace {
         String prof = "In fillChInTempProfile";
         for (double val: presetChInTempProfileTop)
             prof += String.format(", %3.3f", val);
-        System.out.println("Ch Temp Profile = " + prof + ", chEmmFactor = " + productionData.chEmmissCorrectionFactor);
-        // The above to be removed
+        controller.logTrace("DFHFurnace.1051: ChTempProfile = " + prof + ", chEmmFactor = " + productionData.chEmmissCorrectionFactor);  // TODO-remove
 
         if (bTopBot) {
             presetChInTempProfileBot = new double[nBotActiveSecs];

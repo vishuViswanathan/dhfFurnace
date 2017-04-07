@@ -1,6 +1,7 @@
 package level2.fieldResults;
 
 import FceElements.heatExchanger.HeatExchProps;
+import TMopcUa.ProcessValue;
 import basic.*;
 import directFiredHeating.DFHTuningParams;
 import level2.common.L2ParamGroup;
@@ -74,59 +75,72 @@ public class FieldResults {
                 }
             }
         }
+        else {
+            inError = true;
+            errMsg = "Error in reading Zonal Data. Probably some parameter is out of Range";
+        }
     }
 
     ErrorStatAndMsg takeStripData(L2ParamGroup stripZone, boolean allowNewProcess) {
         ErrorStatAndMsg retVal = new ErrorStatAndMsg();
-        double stripExitT = stripZone.getValue(L2ParamGroup.Parameter.Temperature, Tag.TagName.PV).floatValue;
-        double width = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Width).floatValue, 3) / 1000; // m
-        double thick = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Thick).floatValue, 3) / 1000; // m
-        double speed = stripZone.getValue(L2ParamGroup.Parameter.Speed, Tag.TagName.PV).floatValue * 60; // m/h
-        String forProcess = stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.BaseProcess).stringValue.trim(); // TODO what happens for Fresh Field Performance
-        stripDFHProc = l2Furnace.l2DFHeating.getStripDFHProcess(forProcess, stripExitT, width, thick);
-        l2Furnace.logTrace("forProcess " + forProcess + ", " + stripExitT +  ", " + width + ", " + thick);
-        boolean nowCreated = false;
-        if (stripDFHProc == null) {
-            if (allowNewProcess) {
-                if (l2Furnace.l2DFHeating.decide("Data From Field", "Process does not Exist. DO you want to create a new one?")) {
-                    DataWithStatus<OneStripDFHProcess> getNew = l2Furnace.createNewNewProcess(stripExitT, thick, width,
-                            speed, forProcess);
-                    if (getNew.getStatus() == DataStat.Status.OK) {
-                        stripDFHProc = getNew.getValue();
-                        nowCreated = true;
-                    } else
-                        retVal.addErrorMsg(getNew.getErrorMessage());
+        ProcessValue pv = stripZone.getValue(L2ParamGroup.Parameter.Temperature, Tag.TagName.PV);
+        if (pv.valid) {
+            double stripExitT = pv.floatValue;
+            double width = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Width).floatValue, 3) / 1000; // m
+            double thick = DoubleMV.round(stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.Thick).floatValue, 3) / 1000; // m
+            pv = stripZone.getValue(L2ParamGroup.Parameter.Speed, Tag.TagName.PV);
+            if (pv.valid) {
+                double speed = pv.floatValue * 60; // m/h
+                String forProcess = stripZone.getValue(L2ParamGroup.Parameter.Now, Tag.TagName.BaseProcess).stringValue.trim(); // TODO what happens for Fresh Field Performance
+                stripDFHProc = l2Furnace.l2DFHeating.getStripDFHProcess(forProcess, stripExitT, width, thick);
+                l2Furnace.logTrace("forProcess " + forProcess + ", " + stripExitT + ", " + width + ", " + thick);
+                boolean nowCreated = false;
+                if (stripDFHProc == null) {
+                    if (allowNewProcess) {
+                        if (l2Furnace.l2DFHeating.decide("Data From Field", "Process does not Exist. DO you want to create a new one?")) {
+                            DataWithStatus<OneStripDFHProcess> getNew = l2Furnace.createNewNewProcess(stripExitT, thick, width,
+                                    speed, forProcess);
+                            if (getNew.getStatus() == DataStat.Status.OK) {
+                                stripDFHProc = getNew.getValue();
+                                nowCreated = true;
+                            } else
+                                retVal.addErrorMsg(getNew.getErrorMessage());
+                        } else
+                            retVal.addErrorMsg("Process creation declined");
+                    }
                 }
-                else
-                    retVal.addErrorMsg("Process creation declined");
-            }
-        }
-        if (!retVal.inError) {
-            if (stripDFHProc != null) {
+                if (!retVal.inError) {
+                    if (stripDFHProc != null) {
 //                if (l2Furnace.isRefPerformanceAvailable(stripDFHProc, thick) || nowCreated) {
-                if (stripDFHProc.isPerformanceAvailable() || nowCreated) {
-                    production = new ProductionData(stripDFHProc.baseProcessName);
-                    DataWithStatus<ChMaterial> chMatSat = stripDFHProc.getChMaterial(thick);
-                    if (chMatSat.valid) {
-                        ChMaterial chMat = chMatSat.getValue();
-                        Charge ch = new Charge(chMat, width, 1.0, thick, 0.1, Charge.ChType.SOLID_RECTANGLE);
-                        production.charge = ch;
-                        production.chPitch = 1.0;
-                        production.production = chMat.density * width * speed * thick; //output;
-                        production.exitTemp = stripExitT;
-                        production.exitZoneFceTemp = topZones[topZones.length - 1].frFceTemp;
-                        production.minExitZoneTemp = stripDFHProc.getMinExitZoneTemp();
+                        if (stripDFHProc.isPerformanceAvailable() || nowCreated) {
+                            production = new ProductionData(stripDFHProc.baseProcessName);
+                            DataWithStatus<ChMaterial> chMatSat = stripDFHProc.getChMaterial(thick);
+                            if (chMatSat.valid) {
+                                ChMaterial chMat = chMatSat.getValue();
+                                Charge ch = new Charge(chMat, width, 1.0, thick, 0.1, Charge.ChType.SOLID_RECTANGLE);
+                                production.charge = ch;
+                                production.chPitch = 1.0;
+                                production.production = chMat.density * width * speed * thick; //output;
+                                production.exitTemp = stripExitT;
+                                production.exitZoneFceTemp = topZones[topZones.length - 1].frFceTemp;
+                                production.minExitZoneTemp = stripDFHProc.getMinExitZoneTemp();
 //                    DFHTuningParams tune = l2Furnace.tuningParams;
 //                    tune.setPerfTurndownSettings(stripDFHProc.minOutputFactor(), stripDFHProc.minWidthFactor());
+                            } else
+                                retVal.addErrorMsg("Could not ascertain Charge Material for " +
+                                        forProcess + " with strip Thickness " + thick);
+                        } else {
+                            retVal.addErrorMsg("Reference performance is NOT available");
+                        }
                     } else
-                        retVal.addErrorMsg("Could not ascertain Charge Material for " +
-                                forProcess + " with strip Thickness " + thick);
-                } else {
-                    retVal.addErrorMsg("Reference performance is NOT available");
+                        retVal.addErrorMsg("Could not get matching Process data while taking strip for Field process " + forProcess);
                 }
-            } else
-                retVal.addErrorMsg("Could not get matching Process data while taking strip for Field process " + forProcess);
+            }
+            else
+                retVal.addErrorMsg("Field Process - Strip Speed is out of range");
         }
+        else
+            retVal.addErrorMsg("Field Process - Strip Exit Temperature is out of range");
         return retVal;
     }
 
@@ -167,8 +181,8 @@ public class FieldResults {
             if (oneFieldZone.bValid)
                 topZones[z] = oneFieldZone;
             else {
-                l2Furnace.l2DFHeating.showError("Problem in reading field performance data for Zone " + (z + 1) + ": " +
-                        oneFieldZone.errMsg);
+//                l2Furnace.l2DFHeating.showError("Problem in reading field data for Zone " + (z + 1) + ": " +
+//                        oneFieldZone.errMsg);
                 retVal = false;
                 break;
             }

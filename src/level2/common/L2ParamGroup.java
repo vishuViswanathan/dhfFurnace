@@ -176,12 +176,17 @@ public class L2ParamGroup {
         return retVal;
     }
 
-    public void initForLevel2Operation() {
+    public void resetForLevel2Operation() {
 
     }
 
-    void info(String msg) {
+    protected void info(String msg) {
         l2Interface.logInfo("L2DataGroup: " + msg);
     }
+
+    protected void showError(String msg) {
+        l2Interface.logError("L2Zone: " + msg);
+    }
+
 
 }

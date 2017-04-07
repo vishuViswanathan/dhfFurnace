@@ -8,6 +8,7 @@ import com.prosysopc.ua.client.MonitoredDataItem;
 import com.prosysopc.ua.client.Subscription;
 import com.prosysopc.ua.client.SubscriptionAliveListener;
 import directFiredHeating.accessControl.L2AccessControl;
+import directFiredHeating.process.FurnaceSettings;
 import level2.applications.L2DFHeating;
 import directFiredHeating.process.OneStripDFHProcess;
 import level2.common.*;
@@ -19,7 +20,9 @@ import performance.stripFce.StripProcessAndSize;
 
 import javax.swing.*;
 import java.awt.*;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -30,6 +33,7 @@ import java.util.Vector;
  * To change this template use File | Settings | File Templates.
  */
 public class L2StripZone extends L2ParamGroup {
+    FurnaceSettings fceBasicSettings;
     L2DFHeating l2DFHeating;
     L2DFHFurnace l2Furnace;
     Hashtable<MonitoredDataItem, Tag> monitoredTags;
@@ -61,6 +65,7 @@ public class L2StripZone extends L2ParamGroup {
         super(l2DFHeating.l2Furnace, zoneName, descriptiveName);
         this.l2DFHeating = l2DFHeating;
         this.l2Furnace = l2DFHeating.l2Furnace;
+        fceBasicSettings = l2Furnace.furnaceSettings;
         monitoredTags = new Hashtable<MonitoredDataItem, Tag>();
         processTags = new Vector<Tag>();
         l2Tags = new Vector<Tag>();;
@@ -82,6 +87,7 @@ public class L2StripZone extends L2ParamGroup {
     }
 
     boolean createStripParam() throws TagCreationException {
+//        info("L2StripZone.88: creating params");   // TODO-remove
         boolean retVal = false;
         errorLocation = "";
         TMuaClient source = l2Interface.source();
@@ -91,6 +97,10 @@ public class L2StripZone extends L2ParamGroup {
         String lengthFmt = "#,###";
         String speedFmt = "#,###";
         String cvFmt = "###";
+        float tempMinLimit = (float)fceBasicSettings.temperatureRange.min;
+        float tempMaxLimit = (float)fceBasicSettings.temperatureRange.max;
+        float speedMinLimit = (float)fceBasicSettings.stripSpeedRange.min;
+        float speedMaxLimit = (float)fceBasicSettings.stripSpeedRange.max;
         blk:
         {
             stripSub = source.createTMSubscription("Strip Data", new SubAliveListener(), new StripListener());
@@ -101,7 +111,10 @@ public class L2StripZone extends L2ParamGroup {
                     new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Thick, false, false, thicknessFmt),
                     new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Width, false, false, widthFmt),
                     new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Noted, false, true),
-                    new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.ExitTemp, false, true, temperatureFmt),
+//                    new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.ExitTemp, false, true,
+//                            temperatureFmt),
+                    new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.ExitTemp, false, true,
+                            temperatureFmt, tempMinLimit, tempMaxLimit),
 
                     new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.Ready, true, false),
                     new Tag(L2ParamGroup.Parameter.Now, Tag.TagName.SpeedMax, true, false, speedFmt),
@@ -121,7 +134,10 @@ public class L2StripZone extends L2ParamGroup {
                     new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.Thick, false, false, thicknessFmt),
                     new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.Width, false, false, widthFmt),
                     new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.Noted, false, true),
-                    new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.ExitTemp, false, true, temperatureFmt),
+//                    new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.ExitTemp, false, true,
+//                            temperatureFmt),
+                    new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.ExitTemp, false, true,
+                            temperatureFmt, tempMinLimit, tempMaxLimit),
 
                     new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.Ready, true, false),
                     new Tag(L2ParamGroup.Parameter.Next, Tag.TagName.SpeedMax, true, false, speedFmt),
@@ -138,7 +154,10 @@ public class L2StripZone extends L2ParamGroup {
             String[] modeStr = {"Strip", "Zonal"};
             Tag[] tags3 = {
                     new Tag(L2ParamGroup.Parameter.Temperature, Tag.TagName.SP, false, false, temperatureFmt),
-                    new Tag(L2ParamGroup.Parameter.Temperature, Tag.TagName.PV, false, false, temperatureFmt),
+//                    new Tag(L2ParamGroup.Parameter.Temperature, Tag.TagName.PV, false, false,
+//                            temperatureFmt),
+                    new Tag(L2ParamGroup.Parameter.Temperature, Tag.TagName.PV, false, false,
+                            temperatureFmt, tempMinLimit, tempMaxLimit),
                     new Tag(L2ParamGroup.Parameter.Temperature, Tag.TagName.CV, false, false, cvFmt),
                     new Tag(L2ParamGroup.Parameter.Temperature, Tag.TagName.Mode, false, false, modeStr)};
             tagsStripTemperature = tags3;
@@ -148,7 +167,10 @@ public class L2StripZone extends L2ParamGroup {
 
             Tag[] tags4 = {
                     new Tag(L2ParamGroup.Parameter.Speed, Tag.TagName.SP, false, false, speedFmt),
-                    new Tag(L2ParamGroup.Parameter.Speed, Tag.TagName.PV, false, false, speedFmt)};
+//                    new Tag(L2ParamGroup.Parameter.Speed, Tag.TagName.PV, false, false,
+//                            speedFmt)};
+            new Tag(L2ParamGroup.Parameter.Speed, Tag.TagName.PV, false, false,
+                    speedFmt, speedMinLimit, speedMaxLimit)};
             tagsStripSpeed = tags4;
             errorLocation = "Strip Speed tags";
             paramStripNowSpeed =  addOneParameter(L2ParamGroup.Parameter.Speed, tagsStripSpeed);
@@ -172,6 +194,7 @@ public class L2StripZone extends L2ParamGroup {
 
             retVal = true;
         }
+//        info("L2StripZone.194: prams created");   // TODO-remove
         return retVal;
     }
 
@@ -181,7 +204,7 @@ public class L2StripZone extends L2ParamGroup {
                 monitoredTags.put(tag.getMonitoredDataItem(), tag);
     }
 
-    public void initForLevel2Operation() {
+    public void resetForLevel2Operation() {
         for (ReadyNotedParam p : readyNotedParamList)
             p.initStatus();
         paramStripSpeedCheck.setValue(Tag.TagName.Running, false);
@@ -570,34 +593,45 @@ public class L2StripZone extends L2ParamGroup {
             while (speedUpdaterThresdOn) {
                 if (updateSpeed) {
                     int count = 5;
-                    boolean gotIt = false;
-                    while (--count > 0) {
-                        if (!l2Furnace.isProcessDataBeingUsed()) {
-                            l2Furnace.stripSpeedRoutineON.set(true);
-                            gotIt = true;
-                            StatusWithMessage nowStripStatusWithMsg = new StatusWithMessage();
-                            setNowStripAction(nowStripStatusWithMsg);
-                            if (nowStripStatusWithMsg.getDataStatus() == DataStat.Status.OK) {
-                                setSpeedCheckMessge("OK");
-                                paramStripSpeedCheck.setValue(Tag.TagName.Running, true);
-                            }
-                            else {
-                                String msg = nowStripStatusWithMsg.getErrorMessage();
-                                setSpeedCheckMessge(msg);
-                                l2Furnace.logInfo(msg);
-                                paramStripSpeedCheck.setValue(Tag.TagName.Running, false);
-                            }
+                    try {
+                        boolean gotIt = false;
+                        while (--count > 0) {
+                            if (!l2Furnace.isProcessDataBeingUsed()) {
+                                l2Furnace.stripSpeedRoutineON.set(true);
+                                gotIt = true;
+                                StatusWithMessage nowStripStatusWithMsg = new StatusWithMessage();
+                                setNowStripAction(nowStripStatusWithMsg);
+                                DataStat.Status stat =  nowStripStatusWithMsg.getDataStatus();
+                                if (stat == DataStat.Status.OK) {
+//                                    setSpeedCheckMessge("OK at " + (new SimpleDateFormat("HH:mm:ss").format(new Date())));
+                                    setSpeedCheckMessge("OK");
+                                    paramStripSpeedCheck.setValue(Tag.TagName.Running, true);
+                                }
+                                else {
+                                    String msg = nowStripStatusWithMsg.getErrorMessage();
+                                    setSpeedCheckMessge(msg);
+                                    if (stat == DataStat.Status.WithErrorMsg)
+                                        l2Furnace.logError(msg);
+                                    else
+                                        l2Furnace.logInfo(msg);
+                                    paramStripSpeedCheck.setValue(Tag.TagName.Running, false);
+                                }
 
-                            break;
+                                break;
+                            }
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
                         }
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+                        if (!gotIt)
+                            l2Furnace.logInfo("Unable to process Strip speed routine");
+                    } catch (Exception e) {
+                        updateSpeed = false;
+                        setSpeedCheckMessge("Facing Some Error in Speed Check. Toggle speed Check Enable to try again");
+                         l2Furnace.logError("Error in Speed Check routine");
                     }
-                    if (!gotIt)
-                        l2Furnace.logInfo("Unable to process Strip speed routine");
                     l2Furnace.stripSpeedRoutineON.set(false);
                 }
                 try {  // multiple intervals to enable faster exit
