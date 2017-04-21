@@ -16,7 +16,7 @@ import java.nio.channels.FileLock;
  */
 public class Level2Expert extends L2DFHeating {
     public Level2Expert(String equipment) {
-        super(equipment);
+        super(equipment, false);
         bAllowManualCalculation = true;
         bAllowUpdateWithFieldData = true;
         bAllowL2Changes = true;
@@ -24,7 +24,7 @@ public class Level2Expert extends L2DFHeating {
     }
 
     public Level2Expert(String equipment, boolean fromLauncher) {
-        super(equipment);
+        super(equipment, fromLauncher);
         bAllowManualCalculation = true;
         bAllowUpdateWithFieldData = true;
         bAllowL2Changes = true;

@@ -9,7 +9,7 @@ import directFiredHeating.ResultsReadyListener;
 import directFiredHeating.process.OneStripDFHProcess;
 import directFiredHeating.stripDFH.SampleStripFurnace;
 import mvUtils.display.*;
-import mvUtils.jnlp.JNLPFileHandler;
+//import mvUtils.jnlp.JNLPFileHandler;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import performance.stripFce.Performance;
@@ -193,9 +193,9 @@ public abstract class StripHeating extends DFHeating {
         takeValuesFromUI();
         StatusWithMessage fceSettingsIntegrity = furnace.furnaceSettings.checkIntegrity();
         if (fceSettingsIntegrity.getDataStatus() == DataStat.Status.OK) {
-            if (asJNLP)
-                saveFceToFileJNLP(withPerformance);
-            else {
+//            if (asJNLP)
+//                saveFceToFileJNLP(withPerformance);
+//            else {
                 String title = "Save Level2 Furnace Data";
                 FileDialog fileDlg =
                         new FileDialog(mainF, title,
@@ -231,26 +231,26 @@ public abstract class StripHeating extends DFHeating {
                     }
                 }
                 parent().toFront();
-            }
+//            }
         } else
             showError("Problem in Fuel Settings :\n" + fceSettingsIntegrity.getErrorMessage());
     }
 
-    protected void saveFceToFileJNLP(boolean withPerformance) {
-        takeValuesFromUI();
-        boolean profileCodeChanged = createProfileCode();
-        String promptFile = (profileCodeChanged) ?
-                (profileCode + " FurnaceProfile." + profileFileExtension) :
-                profileFileName;
-        DataWithStatus<String> saveStatus = JNLPFileHandler.saveToFile(inputDataXML(withPerformance), profileFileExtension,
-                promptFile, "Please save file With extension '." + profileFileExtension + ", and suggested Name");
-        if (saveStatus.getStatus() == DataStat.Status.OK)
-            profileFileName = saveStatus.getValue();
-        else
-            showError(saveStatus.getErrorMessage() + " - Could not save to file");
-        parent().toFront();
-    }
-
+//    protected void saveFceToFileJNLP(boolean withPerformance) {
+//        takeValuesFromUI();
+//        boolean profileCodeChanged = createProfileCode();
+//        String promptFile = (profileCodeChanged) ?
+//                (profileCode + " FurnaceProfile." + profileFileExtension) :
+//                profileFileName;
+//        DataWithStatus<String> saveStatus = JNLPFileHandler.saveToFile(inputDataXML(withPerformance), profileFileExtension,
+//                promptFile, "Please save file With extension '." + profileFileExtension + ", and suggested Name");
+//        if (saveStatus.getStatus() == DataStat.Status.OK)
+//            profileFileName = saveStatus.getValue();
+//        else
+//            showError(saveStatus.getErrorMessage() + " - Could not save to file");
+//        parent().toFront();
+//    }
+//
 
     protected boolean createProfileCode() {
         debugLocal("changeProfileCode: " + changeProfileCode);

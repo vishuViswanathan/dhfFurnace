@@ -21,7 +21,8 @@ public class JSPFuel extends Fuel implements JSPObject {
     boolean dataCollected = false;
     public static Vector<JSPFuel> getFuelList(JSPConnection jspConnection) {
         Vector<JSPFuel> fuelList = new Vector<JSPFuel>();
-        ErrorStatAndMsg jspResponse = jspConnection.getData("../jsp/fuelList.jsp");
+//        ErrorStatAndMsg jspResponse = jspConnection.getData("../jsp/fuelList.jsp");
+        ErrorStatAndMsg jspResponse = jspConnection.getData("/jsp/fuelList.jsp");
         if (!jspResponse.inError) {
             String xmlStr = jspResponse.msg;
             ValAndPos vp;
@@ -68,7 +69,8 @@ public class JSPFuel extends Fuel implements JSPObject {
 
     public boolean collectData(mvUtils.jsp.JSPConnection jspConnection) {
         if (!dataCollected) {
-            ErrorStatAndMsg jspResponse = jspConnection.getData("../jsp/selectedFuel.jsp", "fuelID", ("" + getId()).trim());
+//            ErrorStatAndMsg jspResponse = jspConnection.getData("../jsp/selectedFuel.jsp", "fuelID", ("" + getId()).trim());
+            ErrorStatAndMsg jspResponse = jspConnection.getData("/jsp/selectedFuel.jsp", "fuelID", ("" + getId()).trim());
             if (!jspResponse.inError) {
                 String xmlStr = jspResponse.msg;
                 dataCollected = takeDataFromXML(xmlStr);

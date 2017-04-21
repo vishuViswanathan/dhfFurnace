@@ -2,6 +2,7 @@ package protection;
 
 import directFiredHeating.DFHeating;
 import mvUtils.display.StatusWithMessage;
+import mvUtils.security.MiscUtil;
 
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -16,7 +17,7 @@ import java.net.UnknownHostException;
  * To change this template use File | Settings | File Templates.
  */
 public class MachineCheck {
-    public String getMachineID() {
+    public String getMachineIDOLD() {
         String retVal = "";
         try {
             InetAddress ip = InetAddress.getLocalHost();
@@ -36,10 +37,35 @@ public class MachineCheck {
         return retVal;
     }
 
+    public String getMachineID() {
+        return getMachineID(false);
+    }
+
+    public String getMachineID(boolean withUserName) {
+        String userName = "";
+        if (withUserName) {
+            userName = System.getProperty("user.name");
+            debug("getMachineID.46: userName = " + userName);
+        }
+        return produceIDString((MiscUtil.getMotherboardSN() + userName + MiscUtil.getSerialNumber("C")).getBytes());
+    }
+
     String produceIDString(byte[] mac) {
+        byte[] usedBytes;
+        int len = mac.length;
+        debug("produceIDString.53: len = " + len);
+        if (len > 12)  {
+            int skip = len / 8;
+            len /= skip;
+            usedBytes = new byte[len];
+            for (int i = 0; i < len; i++)
+                usedBytes[i] = mac[i * skip];
+        }
+        else 
+            usedBytes = mac;
         StringBuilder idStr = new StringBuilder();
-        for (int i = 0; i < mac.length; i++) {
-            idStr.append(String.format("%02X", (255-mac[i])));
+        for (int i = 0; i < usedBytes.length; i++) {
+            idStr.append(String.format("%02X", (255-usedBytes[i])));
         }
         return idStr.toString();
     }
@@ -70,10 +96,13 @@ public class MachineCheck {
         return key.toString();
     }
 
-
     public StatusWithMessage checkKey(String key) {
+        return checkKey(key, false);
+    }
+
+    public StatusWithMessage checkKey(String key, boolean withUsername) {
         StatusWithMessage retVal = new StatusWithMessage();
-        String machineID = getMachineID();
+        String machineID = getMachineID(withUsername);
         if (machineID.length() > 5) {
             if (!key.equals(getKey(machineID)))
                 retVal.setInfoMessage("Key Mismatch");

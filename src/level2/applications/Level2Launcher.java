@@ -63,6 +63,7 @@ public class Level2Launcher {
     String fceDataLocation = "level2FceData/";
     String lockPath;
     File lockFile;
+    boolean someAppLaunched = false;
 
     public Level2Launcher() {
         boolean allOk = false;
@@ -128,8 +129,9 @@ public class Level2Launcher {
     boolean testMachineID() {
         boolean keyOK = false;
         boolean newKey = false;
+        boolean withUserName = false;
         MachineCheck mc = new MachineCheck();
-        String machineId = mc.getMachineID();
+        String machineId = mc.getMachineID(withUserName);
         if (machineId.length() > 2) {
             String key = getKeyFromFile();
             do {
@@ -138,7 +140,7 @@ public class Level2Launcher {
                     newKey = true;
                 }
                 if (key.length() > 5) {
-                    StatusWithMessage keyStatus = mc.checkKey(key);
+                    StatusWithMessage keyStatus = mc.checkKey(key, withUserName);
                     boolean tryAgain = false;
                     switch (keyStatus.getDataStatus()) {
                         case WithErrorMsg:
@@ -341,11 +343,13 @@ public class Level2Launcher {
                 if (getAccessToLevel2(L2DFHeating.defaultLevel())) {
                     new WaitMsg(mainF, "Starting Level2Runtime. Please wait ...", new ActInBackground() {
                         public void doInBackground() {
-                            L2DFHeating l2 = new L2Runtime("Furnace");
+                            L2DFHeating l2 = new L2Runtime("Furnace", true);
                             l2.setLoadTesting(loadTesting);
                             System.out.println("RUNTIME: l2.l2SystemReady = " + l2.l2SystemReady);
-                            if (l2.l2SystemReady)
+                            if (l2.l2SystemReady) {
+                                someAppLaunched = true;
                                 quit();
+                            }
                         }
                     });
                 }
@@ -371,8 +375,10 @@ public class Level2Launcher {
                                     L2DFHeating l2 = new L2Updater("Furnace", true);
                                     l2.setLoadTesting(loadTesting);
                                     System.out.println("EXPERT: l2.l2SystemReady = " + l2.l2SystemReady);
-                                    if (l2.l2SystemReady)
+                                    if (l2.l2SystemReady) {
+                                        someAppLaunched = true;
                                         quit();
+                                    }
                                 }
                             });
                         }
@@ -402,8 +408,10 @@ public class Level2Launcher {
                                     L2DFHeating l2 = new Level2Expert("Furnace", true);
                                     l2.setLoadTesting(loadTesting);
                                     System.out.println("EXPERT: l2.l2SystemReady = " + l2.l2SystemReady);
-                                    if (l2.l2SystemReady)
+                                    if (l2.l2SystemReady) {
+                                        someAppLaunched = true;
                                         quit();
+                                    }
                                 }
                             });
                         }
@@ -437,6 +445,7 @@ public class Level2Launcher {
                         new WaitMsg(mainF, "Starting Level2Installer. Please wait ...", new ActInBackground() {
                             public void doInBackground() {
                                 new Level2Installer("Furnace", true);
+                                someAppLaunched = true;
                                 quit();
                             }
                         });
@@ -487,6 +496,8 @@ public class Level2Launcher {
     void quit() {
         mainF.setVisible(false);
         mainF.dispose();
+        if (!someAppLaunched)
+            System.exit(1);
     }
 
     class DetailsField extends FramedPanel {

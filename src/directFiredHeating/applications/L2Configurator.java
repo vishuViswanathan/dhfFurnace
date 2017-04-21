@@ -42,7 +42,7 @@ public class L2Configurator extends StripHeating {
         bAllowProfileChange = true;
         bAllowManualCalculation = true;
         asApplication = true;
-        releaseDate = "20170314";
+        releaseDate = "20170421";
         createLocalMenuItems();
     }
 
@@ -73,7 +73,7 @@ public class L2Configurator extends StripHeating {
             setDefaultSelections();
             setTestData();
             switchPage(DFHDisplayPageType.INPUTPAGE);
-            if (asJNLP) {
+            if (asJNLP || justJSP) {
                 cbFuel.addActionListener(e -> {
                     Fuel nowSelected = (Fuel) cbFuel.getSelectedItem();
 //                    showMessage("Fuel " + nowSelected);

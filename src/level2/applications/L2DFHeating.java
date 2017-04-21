@@ -42,7 +42,7 @@ import java.util.Vector;
 public class L2DFHeating extends StripHeating {
     public boolean bAllowUpdateWithFieldData = false;
     protected boolean bAllowL2Changes = false;
-
+    protected boolean fromLauncher = false;
     public enum L2DisplayPageType {NONE, PROCESS, LEVEL2}
 
     public L2DisplayPageType l2DisplayNow = L2DisplayPageType.NONE;
@@ -61,8 +61,9 @@ public class L2DFHeating extends StripHeating {
     L2AccessControl l2AccessControl;
     L2ProcessList l2ProcessList;
 
-    public L2DFHeating(String equipment) {
+    public L2DFHeating(String equipment, boolean fromLauncher) {
         super();
+        this.fromLauncher = fromLauncher;
 //        fceDataLocation = "level2FceData\\";
         File folder = new File("");
         l2BasePath = folder.getAbsolutePath();
@@ -201,7 +202,7 @@ public class L2DFHeating extends StripHeating {
 //        debug("Creating new Level2furnace");
         l2Furnace = new L2DFHFurnace(this, false, false, lNameListener);
         furnace = l2Furnace;
-        if (!testMachineID()) {
+        if (!fromLauncher && !testMachineID()) {
             showError("Software key mismatch, Aborting ...");
             justQuit();
         }
@@ -1254,7 +1255,7 @@ public class L2DFHeating extends StripHeating {
     }
 
     public static void main(String[] args) {
-        final L2DFHeating level2Heating = new L2DFHeating("Furnace");
+        final L2DFHeating level2Heating = new L2DFHeating("Furnace", false);
         if (level2Heating.parseCmdLineArgs(args)) {
             if (!onProductionLine || level2Heating.setupUaClient()) {
                 level2Heating.setItUp();

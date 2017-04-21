@@ -19,8 +19,8 @@ import java.util.Date;
  */
 public class L2Runtime extends L2DFHeating {
 
-    public L2Runtime(String equipment) {
-        super(equipment);
+    public L2Runtime(String equipment, boolean fromLauncher) {
+        super(equipment, fromLauncher);
         bAllowManualCalculation = false;
         bAllowUpdateWithFieldData = false;
         accessLevel = L2AccessControl.AccessLevel.RUNTIME;

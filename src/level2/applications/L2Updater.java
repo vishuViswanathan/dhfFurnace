@@ -17,7 +17,7 @@ import java.awt.*;
 public class L2Updater extends L2DFHeating{
 
     public L2Updater(String equipment) {
-        super(equipment);
+        super(equipment, false);
         bAllowManualCalculation = false;
         bAllowUpdateWithFieldData = true;
         bAllowL2Changes = false;
@@ -25,7 +25,7 @@ public class L2Updater extends L2DFHeating{
     }
 
     public L2Updater(String equipment, boolean fromLauncher) {
-        super(equipment);
+        super(equipment, fromLauncher);
         bAllowManualCalculation = false;
         bAllowUpdateWithFieldData = true;
         bAllowL2Changes = false;

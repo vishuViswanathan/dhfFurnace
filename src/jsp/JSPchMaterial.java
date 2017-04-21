@@ -31,7 +31,8 @@ public class JSPchMaterial extends ChMaterial implements JSPObject {
 
     public static Vector<JSPchMaterial> getMetalList(mvUtils.jsp.JSPConnection jspConnection) {
          Vector<JSPchMaterial> metalList = new Vector<JSPchMaterial>();
-         ErrorStatAndMsg jspResponse = jspConnection.getData("../jsp/metalList.jsp");
+//         ErrorStatAndMsg jspResponse = jspConnection.getData("../jsp/metalList.jsp");
+         ErrorStatAndMsg jspResponse = jspConnection.getData("/jsp/metalList.jsp");
          if (!jspResponse.inError) {
              String xmlStr = jspResponse.msg;
              ValAndPos vp;
@@ -68,7 +69,8 @@ public class JSPchMaterial extends ChMaterial implements JSPObject {
             Hashtable<String,String> query = new Hashtable<String, String>(){
                 {put("matID", matID.trim()); put("matName", name);}
             };
-            ErrorStatAndMsg jspResponse = jspConnection.getData("../jsp/selectedMetal.jsp", query);
+//            ErrorStatAndMsg jspResponse = jspConnection.getData("../jsp/selectedMetal.jsp", query);
+            ErrorStatAndMsg jspResponse = jspConnection.getData("/jsp/selectedMetal.jsp", query);
             if (!jspResponse.inError) {
                 String xmlStr = jspResponse.msg;
 //                debug("xmlStr = " + xmlStr);

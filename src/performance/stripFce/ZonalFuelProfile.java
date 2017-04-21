@@ -5,7 +5,7 @@ import directFiredHeating.DFHeating;
 import mvUtils.display.DataWithStatus;
 import mvUtils.display.ExcelStyles;
 import mvUtils.display.FramedPanel;
-import mvUtils.jnlp.JNLPFileHandler;
+//import mvUtils.jnlp.JNLPFileHandler;
 import mvUtils.math.XYArray;
 import org.apache.poi.hssf.record.aggregates.WorksheetProtectionBlock;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
@@ -15,7 +15,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 
-import javax.jnlp.FileContents;
+//import javax.jnlp.FileContents;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -589,18 +589,18 @@ public class ZonalFuelProfile {
 
     void saveFuelTrendToXL(Workbook wB) {
         //  create a new file
-        if (controller.asJNLP) {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            try {
-                wB.write(bos);
-                byte[] bytes = bos.toByteArray();
-                if (!JNLPFileHandler.saveToFile(bytes, "xls", "FuelTrend.xls"))
-                    controller.showError("Some problem in writing to Excel file!");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        else {
+//        if (controller.asJNLP) {
+//            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+//            try {
+//                wB.write(bos);
+//                byte[] bytes = bos.toByteArray();
+//                if (!JNLPFileHandler.saveToFile(bytes, "xls", "FuelTrend.xls"))
+//                    controller.showError("Some problem in writing to Excel file!");
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//        else {
             FileOutputStream out = null;
             FileDialog fileDlg =
                     new FileDialog(DFHeating.mainF, "Saving Fuel Trend Table to Excel",
@@ -629,7 +629,7 @@ public class ZonalFuelProfile {
                     controller.showError("Some problem with file.\n" + e.getMessage());
                 }
             }
-        }
+//        }
         controller.parent().toFront();
     }
 
@@ -652,25 +652,25 @@ public class ZonalFuelProfile {
         // read the existing file
         InputStream xlInput = null;
         HSSFWorkbook wB = null;
-        if (controller.asJNLP) {
-            try {
-                FileContents fc = JNLPFileHandler.getReadFile(null, new String[]{"xls"}, 0, 0);
-                if (fc != null) {
-                    try {
-                        String fileName = fc.getName();
-                        boolean bXL = (fileName.length() > 4) && (fileName.substring(fileName.length() - 4).equalsIgnoreCase(".xls"));
-                        if (bXL)
-                            xlInput = fc.getInputStream();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        else {
+//        if (controller.asJNLP) {
+//            try {
+//                FileContents fc = JNLPFileHandler.getReadFile(null, new String[]{"xls"}, 0, 0);
+//                if (fc != null) {
+//                    try {
+//                        String fileName = fc.getName();
+//                        boolean bXL = (fileName.length() > 4) && (fileName.substring(fileName.length() - 4).equalsIgnoreCase(".xls"));
+//                        if (bXL)
+//                            xlInput = fc.getInputStream();
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
+//
+//                }
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//        else {
             FileDialog fileDlg =
                     new FileDialog(controller.mainF, "Appending Fuel Trend Table to Excel",
                             FileDialog.LOAD);
@@ -690,7 +690,7 @@ public class ZonalFuelProfile {
                     }
                 }
             }
-        }
+//        }
         if (xlInput != null) {
             try {
                 /** Create a workbook using the File System**/
