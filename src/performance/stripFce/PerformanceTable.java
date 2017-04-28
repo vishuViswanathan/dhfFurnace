@@ -309,10 +309,11 @@ public class PerformanceTable {
     int outputSteps = 3;
 
     void showSelDataSet() {
-        if (ntWidth.isInError() || ntOutput.isInError())
+        if (ntWidth.isInError() || ntOutput.isInError() || ntThick.isInError()) {
             showError("Select parameters within Range");
+        }
         else {
-            double width = ntWidth.getData();
+            double width = ntWidth.getData() / 1000;
             double outputFactor = ntOutput.getData();
             double thickness = ntThick.getData() / 1000;
             InterpolatedParams interpolatedParams = new InterpolatedParams(baseP.furnace);
@@ -340,6 +341,8 @@ public class PerformanceTable {
         TwoDTable tempT =  commTables.get(Performance.Params.AIRTEMP);
         double maxW =  tempT.getMaxRowHead();
         double maxS = tempT.getMaxColHead();
+        double minThickness = baseP.dfhProcess.minThickness;
+        double maxThickness = baseP.dfhProcess.maxThickness;
         double selWidth = baseP.chLength;
 
         if (tableSelP == null) {
@@ -354,11 +357,11 @@ public class PerformanceTable {
 
                 }
             };
-            ntWidth = new NumberTextField(control, selWidth, 6, false, minW, maxW, tempT.rowHeadFmtStr, "Selected Width (m)");
+            ntWidth = new NumberTextField(control, selWidth * 1000, 6, false, minW * 1000, maxW * 1000, tempT.rowHeadFmtStr, "Selected Width (mm)");
             ntWidth.addFocusListener(li);
             ntOutput = new NumberTextField(control, 1.0, 6, false, minS, maxS, tempT.colHeadFmtStr, "Selected output Factor");
             ntOutput.addFocusListener(li);
-            ntThick = new NumberTextField(control, baseP.chThick * 1000, 6, false, 0.01, 10.0, "#0.00", "Select thickness (mm)");
+            ntThick = new NumberTextField(control, baseP.chThick * 1000, 6, false, minThickness * 1000, maxThickness * 1000, "#0.000", "Select thickness (mm)");
             ntThick.addFocusListener(li);
             buttGetData = new JButton("Get Data");
             buttGetData.addActionListener(new ActionListener() {
@@ -376,7 +379,7 @@ public class PerformanceTable {
             tableSelP.add(innerP, BorderLayout.CENTER);
         }
         else {
-            ntWidth.setData(selWidth);
+            ntWidth.setData(selWidth * 1000);
             ntOutput.setData(1.0);
 //            ntOutput.setData(maxS);
             ntThick.setData(baseP.chThick * 1000);

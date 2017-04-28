@@ -269,7 +269,7 @@ public class Performance {
     double[] outputFactors;
     double[] widthList; // in fact, it is width steps
 
-    public boolean setTableFactorsREMOVE(double minOutputFactor, double outputStep, double minWidthFactor, double widthStep) { // TOD to be removed
+    public boolean setTableFactorsREMOVE(double minOutputFactor, double outputStep, double minWidthFactor, double widthStep) { // TODO to be removed
 //        int nOutput = (int)((1.0 - minOutputFactor) / outputStep) + 1;
         Vector<Double> vOF = new Vector<Double>();
         double of = 1.0; //  + outputStep;
@@ -301,46 +301,74 @@ public class Performance {
         return true;
     }
 
-    public boolean setTableFactorsREMOVE(double outputStep, double widthStep) {  // TODO tobe removed
-        OneStripDFHProcess dfhProc = controller.getStripDFHProcess(processName);
-        if (dfhProc != null) {
-            double minOutputFactor = dfhProc.minOutputFactor();
-            double minWidthFactor = dfhProc.minWidthFactor();
-//        int nOutput = (int)((1.0 - minOutputFactor) / outputStep) + 1;
-            Vector<Double> vOF = new Vector<Double>();
-            double of = 1.0; //  + outputStep;
-            while (of > minOutputFactor) {
-                vOF.add(of);
-                of -= outputStep;
-                if (Math.abs(of - minOutputFactor) < (outputStep / 4))
-                    break;
-            }
-            vOF.add(minOutputFactor);
-            outputFactors = new double[vOF.size()];
-            int n = 0;
-            for (double o : vOF)
-                outputFactors[n++] = o;
+    public StatusWithMessage setTableFactors() {
+        StatusWithMessage retVal = new StatusWithMessage();
+        if (bLimitsReady) {
+            double refWidth = chLength;
+            double refUnitOutput = output / chLength;
+            if (refWidth >= minWidth) {
+                if (refWidth <= maxWidth) {
+                    double maxUnitOutputAllowed = maxUnitOutput * controller.getTuningParams().unitOutputOverRange;
+                    if (refUnitOutput >= minUnitOutput) {
+                        if (refUnitOutput <= maxUnitOutputAllowed) {
+                            Vector<Double> vOF = new Vector<Double>();
+                            double maxOutputFactor = maxUnitOutputAllowed / refUnitOutput;
+                            if (maxOutputFactor < 1.05)
+                                maxOutputFactor = 1.05;
+                            vOF.add(maxOutputFactor);
+                            double nowOutputFactor = 1.0;
+                            double minUnitOutputFactor = minUnitOutput / refUnitOutput;
+                            while (nowOutputFactor > minUnitOutputFactor) {
+                                vOF.add(nowOutputFactor);
+                                nowOutputFactor -= outputStep;
+                                if (Math.abs(nowOutputFactor - minUnitOutputFactor) < (outputStep / 4))
+                                    break;
+                            }
+                            vOF.add(minUnitOutputFactor);
+                            outputFactors = new double[vOF.size()];
+                            int n = 0;
+                            for (double o : vOF)
+                                outputFactors[n++] = o;
 
-            Vector<Double> vWF = new Vector<Double>();
-            double wf = 1.0 + widthStep;
-            while (wf > minWidthFactor) {
-                vWF.add(wf);
-                wf -= widthStep;
-                if (Math.abs(wf - minWidthFactor) < (widthStep / 4))
-                    break;
-            }
-            vWF.add(minWidthFactor);
-            widthList = new double[vWF.size()];
-            n = 0;
-            for (double w : vWF)
-                widthList[n++] = w * chLength;
-            return true;
+                            Vector<Double> vWF = new Vector<Double>();
+                            double maxWidthFactor = maxWidth / refWidth;
+                            vWF.add(maxWidthFactor);
+                            double nowWidthFactor = 1.0;
+                            if ((maxWidthFactor - nowWidthFactor) < 0.003)
+                                nowWidthFactor = maxWidthFactor - widthStep;
+                            double minWidthFactor = minWidth / refWidth;
+                            while (nowWidthFactor > minWidthFactor) {
+                                vWF.add(nowWidthFactor);
+                                nowWidthFactor -= widthStep;
+                                if (Math.abs(nowWidthFactor - minWidthFactor) < (widthStep / 4))
+                                    break;
+                            }
+                            vWF.add(minWidthFactor);
+                            widthList = new double[vWF.size()];
+                            n = 0;
+                            for (double w : vWF)
+                                widthList[n++] = w * refWidth;
+                        }
+                        else
+                            retVal.setErrorMessage(String.format("Production is more than limit of %5.3f t/h/meter width",
+                                    maxUnitOutputAllowed / 1000));
+                    }
+                    else
+                        retVal.setErrorMessage(String.format("Production is less than limit of %5.3f t/h/meter width",
+                                minUnitOutput / 1000));
+                } else
+                    retVal.setErrorMessage(String.format("Strip Width is more than limit of %8.3f mm",
+                            maxWidth * 1000));
+            } else
+                retVal.setErrorMessage(String.format("Strip Width is less than limit of %8.3f mm",
+                        minWidth * 1000));
         }
         else
-            return false;
+            retVal.setErrorMessage("SLimits are set for this Performance base");
+        return retVal;
     }
 
-    public StatusWithMessage setTableFactors() {
+    public StatusWithMessage setTableFactorsOLD() {
         StatusWithMessage retVal = new StatusWithMessage();
         if (bLimitsReady) {
             double refWidth = chLength;
