@@ -16,7 +16,7 @@ import mvUtils.file.FileChooserWithOptions;
 import mvUtils.mvXML.XMLmv;
 import org.apache.log4j.Logger;
 import performance.stripFce.Performance;
-import protection.MachineCheck;
+import mvUtils.security.MachineCheck;
 
 import javax.swing.*;
 import javax.swing.event.MenuEvent;

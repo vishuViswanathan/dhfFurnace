@@ -3,7 +3,7 @@ package tmiOnly;
 import mvUtils.display.InputControl;
 import mvUtils.display.OneParameterDialog;
 import mvUtils.display.SimpleDialog;
-import protection.MachineCheck;
+import mvUtils.security.MachineCheck;
 
 import java.awt.*;
 

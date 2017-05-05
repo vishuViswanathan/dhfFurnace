@@ -16,7 +16,7 @@ import java.net.UnknownHostException;
  * Time: 3:00 PM
  * To change this template use File | Settings | File Templates.
  */
-public class MachineCheck {
+public class MachineCheckXXX {
     public String getMachineIDOLD() {
         String retVal = "";
         try {

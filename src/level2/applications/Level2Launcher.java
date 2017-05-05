@@ -7,7 +7,7 @@ import mvUtils.file.AccessControl;
 import mvUtils.file.ActInBackground;
 import mvUtils.file.FileChooserWithOptions;
 import mvUtils.file.WaitMsg;
-import protection.MachineCheck;
+import mvUtils.security.MachineCheck;
 
 import javax.swing.*;
 import javax.xml.transform.OutputKeys;
