@@ -52,6 +52,7 @@ public class Level2Installer extends L2DFHeating {
 
     public Level2Installer(String equipment) {
         super(equipment, false);
+        appCode = 105;
         onProductionLine = false;
 //        bAllowEditDFHProcess = true;
         bAllowProfileChange = true;
@@ -63,6 +64,7 @@ public class Level2Installer extends L2DFHeating {
 
     public Level2Installer(String equipment, boolean fromLauncher) {
         super(equipment, fromLauncher);
+        appCode = 105;
         onProductionLine = false;
 //        bAllowEditDFHProcess = true;
         bAllowProfileChange = true;

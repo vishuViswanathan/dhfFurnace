@@ -189,12 +189,12 @@ public class DFHTuningParams {
             }
         });
         cBbSmoothenCurve = new JCheckBox();
-        cBbConsiderChTempProfile = new JCheckBox();
-        cBbConsiderChTempProfile.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                bConsiderChTempProfile = cBbConsiderChTempProfile.isSelected();
-            }
-        });
+//        cBbConsiderChTempProfile = new JCheckBox();
+//        cBbConsiderChTempProfile.addActionListener(new ActionListener() {
+//            public void actionPerformed(ActionEvent e) {
+//                bConsiderChTempProfile = cBbConsiderChTempProfile.isSelected();
+//            }
+//        });
         cBbAdjustChTempProfile = new JCheckBox();
         cBbAdjustChTempProfile.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -292,7 +292,7 @@ public class DFHTuningParams {
         bAllowRegenAirTemp = (cBAllowRegenAirTemp.isSelected());
         bAutoTempForLosses = cBbAutoTempForLosses.isSelected();
         bSmoothenCurve = cBbSmoothenCurve.isSelected();
-        bConsiderChTempProfile = cBbConsiderChTempProfile.isSelected();
+//        bConsiderChTempProfile = cBbConsiderChTempProfile.isSelected();
         bAdjustChTempProfile= cBbAdjustChTempProfile.isSelected();
 //        overUP = tfOverUP.getData();
 //        underUP = tfUnderUP.getData();
@@ -330,7 +330,7 @@ public class DFHTuningParams {
         tfTFMStep.setData(tfmStep * 1000);
         cBbAutoTempForLosses.setSelected(bAutoTempForLosses);
         cBbSmoothenCurve.setSelected(bSmoothenCurve);
-        cBbConsiderChTempProfile.setSelected(bConsiderChTempProfile);
+//        cBbConsiderChTempProfile.setSelected(bConsiderChTempProfile);
         cBbAdjustChTempProfile.setSelected(bAdjustChTempProfile);
 //        tfOverUP.setData(overUP);
 //        tfUnderUP.setData(underUP);
@@ -385,11 +385,21 @@ public class DFHTuningParams {
         xmlStr += XMLmv.putTag("bAllowSecFuel", (bAllowSecFuel) ? 1: 0);
         xmlStr += XMLmv.putTag("bAllowRegenAirTemp", (bAllowRegenAirTemp) ? 1: 0);
         // Performance base
-        xmlStr += XMLmv.putTag("bConsiderChTempProfile", (bConsiderChTempProfile) ? 1: 0);
+//        xmlStr += XMLmv.putTag("bConsiderChTempProfile", (bConsiderChTempProfile) ? 1: 0);
 //        xmlStr += XMLmv.putTag("overUP", overUP);
 //        xmlStr += XMLmv.putTag("underUP", underUP);
         xmlStr += XMLmv.putTag("bOnProductionLine", (bOnProductionLine) ? 1: 0);
 //        xmlStr += XMLmv.putTag("takeEmissivityCorrFactor", (takeEmissivityCorrFactor) ? 1: 0);
+        // performance table and field performance
+        xmlStr += XMLmv.putTag("unitOutputOverRange", unitOutputOverRange);
+        xmlStr += XMLmv.putTag("unitOutputUnderRange", unitOutputUnderRange);
+        xmlStr += XMLmv.putTag("unitOutputOverRangeForTable", unitOutputOverRangeForTable);
+        xmlStr += XMLmv.putTag("bRespectFirstFiredZoneExitStripTemp", bRespectFirstFiredZoneExitStripTemp);
+        xmlStr += XMLmv.putTag("exitTempTolerance", exitTempTolerance);
+        xmlStr += XMLmv.putTag("outputStep", outputStep);
+        xmlStr += XMLmv.putTag("widthOverRange", widthOverRange);
+        xmlStr += XMLmv.putTag("widthStep", widthStep);
+
         return xmlStr;
     }
 
@@ -464,12 +474,10 @@ public class DFHTuningParams {
             bMindChHeight = (vp.val.equals("1"));
             vp = XMLmv.getTag(xmlStr, "bAllowSecFuel", 0);
             bAllowSecFuel = (vp.val.equals("1"));
-//            vp = XMLmv.getTag(xmlStr, "bAllowRegenAirTemp", 0);
-//            bAllowRegenAirTemp = (vp.val.equals("1"));
 
             // performance base
-            vp = XMLmv.getTag(xmlStr, "bConsiderChTempProfile", 0);
-            bConsiderChTempProfile = (vp.val.equals("1"));
+//            vp = XMLmv.getTag(xmlStr, "bConsiderChTempProfile", 0);
+//            bConsiderChTempProfile = (vp.val.equals("1"));
 //            vp = XMLmv.getTag(xmlStr, "overUP", 0);
 //            if (vp.val.length() > 0)
 //                overUP = Double.valueOf(vp.val);
@@ -480,6 +488,29 @@ public class DFHTuningParams {
 //            bOnProductionLine = (vp.val.equals("1"));
 //            vp = XMLmv.getTag(xmlStr, "takeEmissivityCorrFactor", 0);
 //            takeEmissivityCorrFactor = (vp.val.equals("1"));
+            vp = XMLmv.getTag(xmlStr, "unitOutputOverRange", vp.endPos);
+            if (vp.val.length() > 0)
+                unitOutputOverRange = Double.valueOf(vp.val);
+            vp = XMLmv.getTag(xmlStr, "unitOutputUnderRange", vp.endPos);
+            if (vp.val.length() > 0)
+                unitOutputUnderRange = Double.valueOf(vp.val);
+            vp = XMLmv.getTag(xmlStr, "unitOutputOverRangeForTable", vp.endPos);
+            if (vp.val.length() > 0)
+                unitOutputOverRangeForTable = Double.valueOf(vp.val);
+            vp = XMLmv.getTag(xmlStr, "bRespectFirstFiredZoneExitStripTemp", vp.endPos);
+            bRespectFirstFiredZoneExitStripTemp = vp.val.equals("1");
+            vp = XMLmv.getTag(xmlStr, "exitTempTolerance", vp.endPos);
+            if (vp.val.length() > 0)
+                exitTempTolerance = Double.valueOf(vp.val);
+            vp = XMLmv.getTag(xmlStr, "outputStep", vp.endPos);
+            if (vp.val.length() > 0)
+                outputStep = Double.valueOf(vp.val);
+            vp = XMLmv.getTag(xmlStr, "widthOverRange", vp.endPos);
+            if (vp.val.length() > 0)
+                widthOverRange = Double.valueOf(vp.val);
+            vp = XMLmv.getTag(xmlStr, "widthStep", vp.endPos);
+            if (vp.val.length() > 0)
+                widthStep = Double.valueOf(vp.val);
         } catch (NumberFormatException e) {
             bRetVal = false;
         }
@@ -560,20 +591,21 @@ public class DFHTuningParams {
     NumberTextField tfTFMStep;
     // for evaluation from reference performance
     public boolean bConsiderChTempProfile = true;
+    public boolean bRespectFirstFiredZoneExitStripTemp = false;  // while adjusting strip temperatures for respecting Exit Zone Minimum temperature
+    JCheckBox cbRespectFirstFiredZoneExitStripTemp;
     JCheckBox cBbConsiderChTempProfile;
-//    public double overUP = 1.05, underUP = 0.2; // allowed upper and lower factors with respect to
-    // output per unit Strip width (charge length)
     public boolean bAdjustChTempProfile = true;    // while respecting last zone minimum fce temp
     JCheckBox cBbAdjustChTempProfile;
-//    NumberTextField tfOverUP, tfUnderUP;
     public boolean bOnProductionLine = false;
     JCheckBox cBbOnProductionLine;
     // parameters for Field reference Data
     public double unitOutputOverRange = 1.05;
     public double unitOutputUnderRange = 0.9;
+    public double unitOutputOverRangeForTable = 1.05;
     public double exitTempTolerance = 5;   // it is (T - 5) > t >= (T + 5)
     NumberTextField ntUnitOutputOverRange;
     NumberTextField ntUnitOutputUnderRange;
+    NumberTextField ntUnitOutputOverRangeForTable;
     NumberTextField ntExitTempTolerance;
 
     // parameters for Performance Table
@@ -639,7 +671,7 @@ public class DFHTuningParams {
 
     JPanel performancePan() {
         MultiPairColPanel jp = new MultiPairColPanel("Using Reference Performance",200, 60);
-        jp.addItemPair("Consider Charge Temp Profile", cBbConsiderChTempProfile);
+//        jp.addItemPair("Consider Charge Temp Profile", cBbConsiderChTempProfile);
         jp.addItemPair("Adjust Charge Temp Profile", cBbAdjustChTempProfile);
 //        jp.addItemPair(tfOverUP);
 //        jp.addItemPair(tfUnderUP);
@@ -776,17 +808,20 @@ public class DFHTuningParams {
             MultiPairColPanel jp = new MultiPairColPanel("Settings for Performance Table", 200, 60);
 //            ntMinOutputFactor = new NumberTextField(controller, minOutputFactor, 6, false, 0.1, 0.9, "0.00", "Minimum Unit Output Factor");
             ntOutputStep = new NumberTextField(controller, outputStep, 6, false, 0.05, 0.5, "0.00", "Unit Step Output Factor");
-
+            ntUnitOutputOverRangeForTable = new NumberTextField(controller, unitOutputOverRangeForTable, 6, false, 1.0, 1.5, "0.00", "Unit output upper Margin for Control");
             ntWidthOverRange = new NumberTextField(controller, widthOverRange, 6, false, 1.01, 1.5, "0.00", "Width OverRange Factor (A)");
 //            ntMinWidthFactor = new NumberTextField(controller, minWidthFactor, 6, false, 0.1, 0.9, "0.00", "Minimum Width Factor");
             ntWidthStep = new NumberTextField(controller, widthStep, 6, false, 0.05, 0.5, "0.00", "Width Step Factor");
-
+            cbRespectFirstFiredZoneExitStripTemp = new JCheckBox("Respect FirstZone Charge Temperature", bRespectFirstFiredZoneExitStripTemp);
 //            jp.addItemPair(ntMinOutputFactor);
             jp.addItemPair(ntOutputStep);
+            jp.addItemPair(ntUnitOutputOverRangeForTable);
             jp.addBlank();
             jp.addItemPair(ntWidthOverRange);
 //            jp.addItemPair(ntMinWidthFactor);
             jp.addItemPair(ntWidthStep);
+            jp.addItem(cbRespectFirstFiredZoneExitStripTemp);
+            jp.addItem(new JLabel("(While adjusting Charge Temp profile for minimum Exit Zone Temp)"));
             return jp;
         }
 
@@ -822,6 +857,7 @@ public class DFHTuningParams {
         void takeSetValues() {
 //            minOutputFactor = ntMinOutputFactor.getData();
             outputStep = ntOutputStep.getData();
+            unitOutputOverRangeForTable = ntUnitOutputOverRangeForTable.getData();
 //            minWidthFactor = ntMinWidthFactor.getData();
             widthStep = ntWidthStep.getData();
             widthOverRange = ntWidthOverRange.getData();
@@ -829,6 +865,7 @@ public class DFHTuningParams {
             unitOutputOverRange = ntUnitOutputOverRange.getData();
             unitOutputUnderRange = ntUnitOutputUnderRange.getData();
             exitTempTolerance = ntExitTempTolerance.getData();
+            bRespectFirstFiredZoneExitStripTemp = cbRespectFirstFiredZoneExitStripTemp.isSelected();
         }
 
         void closeThisWindow() {

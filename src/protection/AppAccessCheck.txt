@@ -1,0 +1,108 @@
+Each App has a appID
+
+When Application launched {
+    Look for softwareKey.ini in user$/APPDATA folder;
+    If available {
+        Check entry for the particular application;
+        if available
+            locally create software code (lAppKey) for the app-user-machineID
+            compare with entry in ini file
+            if OK
+                run app;
+            else
+                getExistingAppKey
+                if YES
+                    maybe user Machine is changed, cannot run
+                else // no entry in server
+                    getSoftwareKey and run  - the administrator has cleared the earlier entry
+        else
+           getSoftwareKey and run
+    }
+    else
+        getSoftwareKey and run
+}
+
+
+getSoftwareKey {
+    get from app server, the software code for the app-user-machineID
+    (getAppkey.jsp)
+    if got
+        save key to ini file and proceed to runApp (create ini file if not available)
+    else
+        message 'Not authorised/ report problem' and exit
+}
+
+softwareKey.ini {
+    Fields:
+        AppID  (encrypted)
+        machineID (encrypted)
+        softwareKey
+}
+
+
+
+SQL
+    TIPLIntranetUsers.StoredProcedures
+        pAddUser (uID, fullName, emailID, password)
+        pAuthenticate (uID, password)
+        pCheckUserID (uID)
+        pDeleteUser (uID)
+        pModifyPassword(uID, existingPW, new PW)
+        pResetPassword(uID, newPW)
+
+    TIPLIntranetUsers.Functions
+        fnUserExists (loginID)
+        getHash (password)
+        isNamePasswordOK(loginID, password)
+
+    EnggData.StoredProcedures
+        prGetAppInstallation(loginID, appCode)
+        prSetAppPermission (loginID, appCode, forceNew)
+        prIsAppPermitted (loginID, appCode)
+        prNoteApppermissionData (loginID, appCde, machineID, accessID, forceNew)
+        prisAppPermissionCleared
+        prNullifyAppPermissionDetails
+
+JSP
+    getAppKey.jsp (KeyEncrypted userID, appCode, KeyEncrypted machineID, encrypted Key)
+        Checks if user is permitted for appCode
+        if YES
+            create appkey and update AppPermissions
+            return OK with appKey
+        else
+            return ERROR with Msg
+
+
+    getExistingAppKey.jsp (KeyEncrypted userID, appCode, encrypted key)
+        executes SQL prGetAppInstallation(decrypted userId, appCode)
+        return status
+
+8080
+    enggData/DownloadAndUPload
+        download.aspx
+        fileRead.aspx
+        flledownload.aspx
+        
+    
+in CatalinaBase/conf/web.xml
+    add
+    <error-page>
+        <error-code>404</error-code>
+        <location>/error-404.jsp</location>
+    </error-page>
+    in <web-app></web-app>
+
+error-404.jsp must be available in ROOT and in fceCalculations (?)
+For jsp Exceptions use <%@ page errorPage="exceptionPage.jsp" %> of top of page
+
+additional class files to be located in jreXX\lib\ext folder:
+    poi-3.8-20120326.jar
+    httpclient-4.2.5.jar
+    httpcore-4.2.4.jar
+    commons-logging-1.1.1.jar
+    log4j-1.2.17.jar
+
+NOTE:
+    mvUtils.jsp.JSPConnections had some JNLP class references - removed on 20170515
+
+

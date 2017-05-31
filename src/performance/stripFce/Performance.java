@@ -307,17 +307,25 @@ public class Performance {
             double refUnitOutput = output / chLength;
             if (refWidth >= minWidth) {
                 if (refWidth <= maxWidth) {
-                    double maxUnitOutputAllowed = maxUnitOutput * controller.getTuningParams().unitOutputOverRange;
+                    DFHTuningParams tuning = controller.getTuningParams();
+                    double maxUnitOutputAllowed = Math.max(refUnitOutput, maxUnitOutput * tuning.unitOutputOverRange);
+                    maxUnitOutputAllowed *= tuning.unitOutputOverRangeForTable;
                     if (refUnitOutput >= minUnitOutput) {
                         if (refUnitOutput <= maxUnitOutputAllowed) {
                             Vector<Double> vOF = new Vector<Double>();
                             double maxOutputFactor = maxUnitOutputAllowed / refUnitOutput;
-                            if (maxOutputFactor < 1.05)
-                                maxOutputFactor = 1.05;
+//                            if (maxOutputFactor < 1.05)
+//                                maxOutputFactor = 1.05;
+                            double nowOutputFactor;
                             vOF.add(maxOutputFactor);
-                            double nowOutputFactor = 1.0;
+                            if (maxOutputFactor > 1.01) {
+                                nowOutputFactor = 1.0;
+                            }
+                            else
+                                nowOutputFactor = 1.0 - outputStep;
                             double minUnitOutputFactor = minUnitOutput / refUnitOutput;
-                            while (nowOutputFactor > minUnitOutputFactor) {
+                            nowOutputFactor = Math.max(nowOutputFactor, minUnitOutputFactor);
+                            while (nowOutputFactor > minUnitOutputFactor) {                            
                                 vOF.add(nowOutputFactor);
                                 nowOutputFactor -= outputStep;
                                 if (Math.abs(nowOutputFactor - minUnitOutputFactor) < (outputStep / 4))
@@ -336,10 +344,11 @@ public class Performance {
                             if ((maxWidthFactor - nowWidthFactor) < 0.003)
                                 nowWidthFactor = maxWidthFactor - widthStep;
                             double minWidthFactor = minWidth / refWidth;
+                            nowWidthFactor = Math.min(nowOutputFactor, minUnitOutputFactor);
                             while (nowWidthFactor > minWidthFactor) {
                                 vWF.add(nowWidthFactor);
                                 nowWidthFactor -= widthStep;
-                                if (Math.abs(nowWidthFactor - minWidthFactor) < (widthStep / 4))
+                                if (Math.abs(nowWidthFactor - minWidthFactor) < (widthStep / 8))
                                     break;
                             }
                             vWF.add(minWidthFactor);
@@ -712,12 +721,18 @@ public class Performance {
     public String toString() {
         if (chMaterial != null) {
             String str;
-            if (dfhProcess != null)
-                str = String.format("Process %s, Strip %4.0f mm x %5.3f mm to %4.0f C at %4.2f t/h (%4.1f mpm)",
-                    dfhProcess.toString(), (chLength * 1000), (chThick * 1000), exitTemp(), (output / 1000), (speed / 60));
+            if (dfhProcess != null) {
+                if (topZones != null) {
+                    str = String.format("Process %s, Strip %4.0f mm x %5.3f mm to %4.0f C at %4.2f t/h (%4.1f mpm)",
+                            dfhProcess.toString(), (chLength * 1000), (chThick * 1000), exitTemp(), (output / 1000), (speed / 60));
+                } else {
+                    str = String.format("Process %s, Strip %4.0f mm x %5.3f mm at %4.2f t/h (%4.1f mpm)",
+                            dfhProcess.toString(), (chLength * 1000), (chThick * 1000), (output / 1000), (speed / 60));
+                }
+            }
             else
-                str = String.format("Material: %s, size %4.0f mm x %5.3f mm to %4.0f C at %4.2f t/h (%4.1f mpm) and fuel %s",
-                    chMaterial, (chLength * 1000), (chThick * 1000), exitTemp(), (output / 1000), (speed / 60), fuelName);
+                str = String.format("Material: %s, size %4.0f mm x %5.3f mm  at %4.2f t/h (%4.1f mpm) and fuel %s",
+                    chMaterial, (chLength * 1000), (chThick * 1000),  (output / 1000), (speed / 60), fuelName);
             return (str);
         }
         else
@@ -777,116 +792,121 @@ public class Performance {
     public boolean  takeDataFromXML(String xmlStr, boolean readPerfTable) {
         boolean bRetVal = true;
         ValAndPos vp;
-        try {
-            vp = XMLmv.getTag(xmlStr, "Interpolated", 0);
-            interpolated = (vp.val.equals("1"));
-            if (!interpolated) {
-                vp = XMLmv.getTag(xmlStr, "dateOfResult", 0);
-                if (vp.val.length() > 0) {
-                    dateOfResult = new GregorianCalendar();
-                    dateOfResult.setTime(new Date(Long.valueOf(vp.val)));
+        oneBlock:
+        {
+            try {
+                vp = XMLmv.getTag(xmlStr, "Interpolated", 0);
+                interpolated = (vp.val.equals("1"));
+                if (!interpolated) {
+                    vp = XMLmv.getTag(xmlStr, "dateOfResult", 0);
+                    if (vp.val.length() > 0) {
+                        dateOfResult = new GregorianCalendar();
+                        dateOfResult.setTime(new Date(Long.valueOf(vp.val)));
+                    } else {
+                        dateOfResult = new GregorianCalendar(2000, 0, 1);
+                    }
                 }
-                else {
-                    dateOfResult = new GregorianCalendar(2000, 0, 1);
+                vp = XMLmv.getTag(xmlStr, "ProcessNameP", 0);
+                processName = vp.val;
+                vp = XMLmv.getTag(xmlStr, "ChMaterialP", 0);
+                chMaterial = vp.val;
+                vp = XMLmv.getTag(xmlStr, "chEmmCorrectionFactor", 0);
+                if (vp.val.length() > 0)
+                    chEmmCorrectionFactor = Double.valueOf(vp.val);
+                else
+                    chEmmCorrectionFactor = 1.0;
+                vp = XMLmv.getTag(xmlStr, "chWidthP", 0);
+                chWidth = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "chLengthP", 0);
+                chLength = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "chThickP", 0);
+                chThick = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "chPitchP", 0);
+                chPitch = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "chWtP", 0);
+                chWt = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "outputP", 0);
+                output = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "airTempP", 0);
+                if (vp.val.length() > 0)
+                    airTemp = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "speed", 0);
+                if (vp.val.length() > 0)
+                    speed = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "fuelNameP", 0);
+                fuelName = vp.val;
+                if (!furnace.isFuelAvailable(fuelName)) {
+                    showError("Fuel '" + fuelName + " required for Performance data is not available");
+                    bRetVal = false;
+                    break oneBlock;
                 }
-            }
-            vp = XMLmv.getTag(xmlStr, "ProcessNameP", 0);
-            processName = vp.val;
-            vp = XMLmv.getTag(xmlStr, "ChMaterialP", 0);
-            chMaterial = vp.val;
-            vp = XMLmv.getTag(xmlStr, "chEmmCorrectionFactor", 0);
-            if (vp.val.length() > 0)
-                chEmmCorrectionFactor = Double.valueOf(vp.val);
-            else
-                chEmmCorrectionFactor = 1.0;
-            vp = XMLmv.getTag(xmlStr, "chWidthP", 0);
-            chWidth = Double.valueOf(vp.val);
-            vp = XMLmv.getTag(xmlStr, "chLengthP", 0);
-            chLength = Double.valueOf(vp.val);
-            vp = XMLmv.getTag(xmlStr, "chThickP", 0);
-            chThick = Double.valueOf(vp.val);
-            vp = XMLmv.getTag(xmlStr, "chPitchP", 0);
-            chPitch = Double.valueOf(vp.val);
-            vp = XMLmv.getTag(xmlStr, "chWtP", 0);
-            chWt = Double.valueOf(vp.val);
-            vp = XMLmv.getTag(xmlStr, "outputP", 0);
-            output = Double.valueOf(vp.val);
-            vp = XMLmv.getTag(xmlStr, "airTempP", 0);
-            if (vp.val.length() > 0)
-                airTemp = Double.valueOf(vp.val);
-            vp = XMLmv.getTag(xmlStr, "speed", 0);
-            if (vp.val.length() > 0)
-                speed = Double.valueOf(vp.val);
-            vp = XMLmv.getTag(xmlStr, "fuelNameP", 0);
-            fuelName = vp.val;
-            int nZones = 0;
-            vp = XMLmv.getTag(xmlStr, "nZones", 0);
-            if (vp.val.length() > 0)
-                nZones = Integer.valueOf(vp.val);
-            if (nZones > 2) {
+
+                int nZones = 0;
+                vp = XMLmv.getTag(xmlStr, "nZones", 0);
+                if (vp.val.length() > 0)
+                    nZones = Integer.valueOf(vp.val);
+                if (nZones > 2) {
 //                topZones = new Vector<OneZone>();
-                for (int z = 0; z < nZones; z++) {
-                    OneZone zone = new OneZone();
-                    vp = XMLmv.getTag(xmlStr, "zone" + ("" + z).trim(), 0);
-                    if (!zone.takeDataFromXML(vp.val)) {
-                        showError("takeDataFromXML: Some Problem in reading Performance Data for Top Zones. Data considered as invalid", 10000);
-                        bRetVal = false;
-                        break;
-                    }
-                    zone.setPerformanceOf(this);
-                    addToZones(false, zone);
-//                    topZones.add(zone);
-                }
-                vp = XMLmv.getTag(xmlStr, "botZones", vp.endPos);
-                if (vp.val.length() > 0) {
-                    vp = XMLmv.getTag(xmlStr, "nBotZones", 0);
-                    if (vp.val.length() > 0)
-                        nZones = Integer.valueOf(vp.val);
-                    if (nZones > 2) {
-//                        botZones = new Vector<OneZone>();
-                        for (int z = 0; z < nZones; z++) {
-                            OneZone zone = new OneZone();
-                            vp = XMLmv.getTag(xmlStr, "bZone" + ("" + z).trim(), 0);
-                            if (!zone.takeDataFromXML(vp.val)) {
-                                showError("takeDataFromXML: Some Problem in reading Performance Data for Bottom Zones. Data considered as invalid", 3000);
-                                bRetVal = false;
-                                break;
-                            }
-                            zone.setPerformanceOf(this);
-                            addToZones(true, zone);
-//                            botZones.add(zone);
-                        }
-                    }
-                }
-                getUnitOutput();
-                if (readPerfTable) {
-                    vp = XMLmv.getTag(xmlStr, "PerfTable", vp.endPos);
-                    if (vp.val.length() > 20) {
-                        try {
-                            perfTable = new PerformanceTable(this, vp.val);
-                        } catch (Exception e) {
-                            showError("takeDataFromXML: Facing some problem is loading Performance table \n" + e.getMessage());
-                            perfTable = null;
-                        }
-                    }
-                    if (perfTable != null) {
-                        DataWithStatus<OneStripDFHProcess> processStat = controller.getDFHProcess(this);
-                        if (processStat.getDataStatus() == DataStat.Status.OK) {
-                            dfhProcess = processStat.getValue();
-                            processName = dfhProcess.getFullProcessID();
-                        }
-                        else
+                    for (int z = 0; z < nZones; z++) {
+                        OneZone zone = new OneZone();
+                        vp = XMLmv.getTag(xmlStr, "zone" + ("" + z).trim(), 0);
+                        if (!zone.takeDataFromXML(vp.val)) {
+                            showError("takeDataFromXML: Some Problem in reading Performance Data for Top Zones. Data considered as invalid", 10000);
                             bRetVal = false;
+                            break;
+                        }
+                        zone.setPerformanceOf(this);
+                        addToZones(false, zone);
+//                    topZones.add(zone);
                     }
+                    vp = XMLmv.getTag(xmlStr, "botZones", vp.endPos);
+                    if (vp.val.length() > 0) {
+                        vp = XMLmv.getTag(xmlStr, "nBotZones", 0);
+                        if (vp.val.length() > 0)
+                            nZones = Integer.valueOf(vp.val);
+                        if (nZones > 2) {
+//                        botZones = new Vector<OneZone>();
+                            for (int z = 0; z < nZones; z++) {
+                                OneZone zone = new OneZone();
+                                vp = XMLmv.getTag(xmlStr, "bZone" + ("" + z).trim(), 0);
+                                if (!zone.takeDataFromXML(vp.val)) {
+                                    showError("takeDataFromXML: Some Problem in reading Performance Data for Bottom Zones. Data considered as invalid", 3000);
+                                    bRetVal = false;
+                                    break;
+                                }
+                                zone.setPerformanceOf(this);
+                                addToZones(true, zone);
+//                            botZones.add(zone);
+                            }
+                        }
+                    }
+                    getUnitOutput();
+                    if (readPerfTable) {
+                        vp = XMLmv.getTag(xmlStr, "PerfTable", vp.endPos);
+                        if (vp.val.length() > 20) {
+                            try {
+                                perfTable = new PerformanceTable(this, vp.val);
+                            } catch (Exception e) {
+                                showError("takeDataFromXML: Facing some problem is loading Performance table \n" + e.getMessage());
+                                perfTable = null;
+                            }
+                        }
+                        if (perfTable != null) {
+                            DataWithStatus<OneStripDFHProcess> processStat = controller.getDFHProcess(this);
+                            if (processStat.getDataStatus() == DataStat.Status.OK) {
+                                dfhProcess = processStat.getValue();
+                                processName = dfhProcess.getFullProcessID();
+                            } else
+                                bRetVal = false;
+                        }
+                    }
+                } else {
+                    showError("takeDataFromXML: Number of zones in Performance data is less than 3, Data is considered as invalid", 3000);
+                    bRetVal = false;
                 }
-            }
-            else {
-                showError("takeDataFromXML: Number of zones in Performance data is less than 3, Data is considered as invalid", 3000);
+            } catch (Exception e) {
                 bRetVal = false;
             }
-        }
-        catch (Exception e) {
-            bRetVal = false;
         }
         return bRetVal;
     }

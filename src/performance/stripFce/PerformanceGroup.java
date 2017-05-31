@@ -119,7 +119,7 @@ public class PerformanceGroup implements ActionListener{
                     if (foundAt < 2)
                         requiresInterpolCheck = true;
                     if (!fromXML)
-                        showMessage("Replaced earlier data" + ((requiresInterpolCheck) ? " with interpolation check" : ""));
+                        showMessage("Replacing earlier data" + ((requiresInterpolCheck) ? " with interpolation check" : ""));
                 }
                 else {
                     String msg =  (status == DataStat.Status.WithInfoMsg) ? addResponse.getInfoMessage() : addResponse.getErrorMessage();

@@ -25,7 +25,7 @@ import java.text.DecimalFormat;
 /**
  * User: M Viswanathan
  * Date: 18-Jul-16
- * Time: 4:08 PM
+ * Time: 4:08 PM                                           `
  * To change this template use File | Settings | File Templates.
  */
 public abstract class StripHeating extends DFHeating {

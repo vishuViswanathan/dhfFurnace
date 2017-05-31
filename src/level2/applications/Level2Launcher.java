@@ -64,7 +64,7 @@ public class Level2Launcher {
     String lockPath;
     File lockFile;
     boolean someAppLaunched = false;
-
+    int appCode = 104;
     public Level2Launcher() {
         boolean allOk = false;
         File folder = new File("");
@@ -129,9 +129,8 @@ public class Level2Launcher {
     boolean testMachineID() {
         boolean keyOK = false;
         boolean newKey = false;
-        boolean withUserName = false;
         MachineCheck mc = new MachineCheck();
-        String machineId = mc.getMachineID(withUserName);
+        String machineId = mc.getMachineID();
         if (machineId.length() > 2) {
             String key = getKeyFromFile();
             do {
@@ -140,7 +139,7 @@ public class Level2Launcher {
                     newKey = true;
                 }
                 if (key.length() > 5) {
-                    StatusWithMessage keyStatus = mc.checkKey(key, withUserName);
+                    StatusWithMessage keyStatus = mc.checkKey(key);
                     boolean tryAgain = false;
                     switch (keyStatus.getDataStatus()) {
                         case WithErrorMsg:
@@ -211,6 +210,7 @@ public class Level2Launcher {
                     key = dataStr.substring(headLen);
             } else
                 showError("File size " + len + " for " + filePath);
+            iStream.close();
         } catch (Exception e) {
             showError("Some Problem in Software Key!");
         }

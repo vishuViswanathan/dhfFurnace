@@ -187,14 +187,16 @@ public class DFHFurnace {
 
     boolean checkTopBotLength() {
         fceLength = fceLength(false);
+        DecimalFormat fmt = new DecimalFormat("#,##0");
         if (bTopBot) {
             bottLength = fceLength(true);
             double diff = fceLength - bottLength;
             if (bAutoTopOnlySoak) {
-                if (diff > 2) {
+                if (diff > 0.5) {
                     topOnlyDEnd = decide("Top and bottom Furnace Lengths",
                             "Top Furnace length is greater than the bottom sections\n" +
-                                    "Do you want to proceed with the discharge end " + diff * 1000 + "mm as TOP ONLY FIRING?");
+                                    "Do you want to proceed with the discharge end " +
+                                    fmt.format(diff * 1000) + "mm as TOP ONLY FIRING?");
                     if (topOnlyDEnd)
                         changeOverPt = bottLength;
                     return topOnlyDEnd;
@@ -204,6 +206,10 @@ public class DFHFurnace {
                 return (Math.abs(diff) < 0.0001);
         } else
             return (fceLength > 0);
+    }
+
+    public boolean isFuelAvailable(String fuelName)  {
+        return controller.isFuelAvailable(fuelName);
     }
 
     public String checkData(String nlSpace) {
@@ -1083,6 +1089,8 @@ public class DFHFurnace {
         boolean allOk = true;
         Vector<FceSection> vSec;
         int iFirstFiredSection;
+        int iSecWithEntryTempFixed;  // In case STRIP with respecting Exit Zone Temp, while adjusting
+                                     // strip temperature,this section's entry temperatures has to be maintained
         int iLastFiredSection;
         double[] chInTempProfile = null;
         int nFiredSecs;
@@ -1109,6 +1117,7 @@ public class DFHFurnace {
             else title = "";
         }
         iFirstFiredSection = fired[0];
+        iSecWithEntryTempFixed = (tuningParams.bRespectFirstFiredZoneExitStripTemp) ? (iFirstFiredSection + 1) : 0;
         iLastFiredSection = fired[nFiredSecs - 1];
         int iLastSec = fired[nFiredSecs - 1];
         firstRevCalUpto = iFirstFiredSection + 1;
@@ -1256,7 +1265,7 @@ public class DFHFurnace {
 
                     if (considerChTempProfile && !((iSec == iLastSec) && honorLastZoneMinFceTemp)) {
                         if (iSec > iFirstFiredSection) {
-                            double firstOutTemp = chInTempProfile[iFirstFiredSection + 1];
+                            double firstOutTemp = chInTempProfile[iSecWithEntryTempFixed];
                             chInTempReqd = firstOutTemp + chTempProfileFactor * (chInTempProfile[iSec] - firstOutTemp);
                         } else
                             chInTempReqd = chInTempProfile[iSec];
@@ -1267,7 +1276,7 @@ public class DFHFurnace {
                     } else {
                         response = theSection.oneSectionInRev();
                         if (tuningParams.bAdjustChTempProfile && (iSec == iLastSec) && honorLastZoneMinFceTemp)
-                            chTempProfileFactor = chTempFactor(chInTempProfile, iSec, theSection, iFirstFiredSection, iLastFiredSection);
+                            chTempProfileFactor = chTempFactor(chInTempProfile, iSec, theSection, iSecWithEntryTempFixed, iLastFiredSection);
                     }
                     if (!(response == FceEvaluator.EvalStat.OK)) {
                         allOk = false;
@@ -1284,8 +1293,10 @@ public class DFHFurnace {
                     }
                     if (considerChTempProfile && (iSec == iLastSec) && !honorLastZoneMinFceTemp) {
                         honorLastZoneMinFceTemp = limitLastZoneFceTempIfReqd();
-                        if (honorLastZoneMinFceTemp)
+                        if (honorLastZoneMinFceTemp) {
+                            iSec++;
                             continue;
+                        }
                     }
 
                     if (!(response == FceEvaluator.EvalStat.OK)) {
@@ -1447,11 +1458,11 @@ public class DFHFurnace {
         return allOk;
      }
 
-    double chTempFactor(double[] nowProfile, int iSecNum, FceSection theSection, int iFirstFired, int iLastFired) {
+    double chTempFactor(double[] nowProfile, int iSecNum, FceSection theSection, int iSecWithFixedEntryTemp, int iLastFired) {
         double factor = 1;
-        if (iSecNum == iLastFired && iSecNum > (iFirstFired + 1)) {
+        if (iSecNum == iLastFired && iSecNum > (iSecWithFixedEntryTemp)) {  // if iLastFired == (iFirstFired + 2) then there is no scope for adjustment
             double nowInTemp = theSection.chEntryTemp();
-            double firstOutTemp = nowProfile[iFirstFired + 1];
+            double firstOutTemp = nowProfile[iSecWithFixedEntryTemp];  // the IN Temperature of [iFirstFired + 1]
             return (nowInTemp - firstOutTemp) / (nowProfile[iSecNum] - firstOutTemp);
         }
         return factor;

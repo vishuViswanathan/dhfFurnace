@@ -2,10 +2,13 @@ package directFiredHeating;
 
 import FceElements.RegenBurner;
 import basic.*;
+import directFiredHeating.applications.L2Configurator;
 import directFiredHeating.billetWH.SampleWHFurnace;
 import directFiredHeating.process.OneStripDFHProcess;
 import directFiredHeating.process.StripDFHProcessList;
 import jsp.*;
+import mvUtils.file.ActInBackground;
+import mvUtils.file.WaitMsg;
 import mvUtils.jsp.*;
 import mvUtils.display.*;
 //import mvUtils.jnlp.JNLPFileHandler;
@@ -16,11 +19,13 @@ import mvUtils.mvXML.XMLmv;
 import mvUtils.math.XYArray;
 import netscape.javascript.JSObject;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.ss.usermodel.*;
 import performance.stripFce.Performance;
 import performance.stripFce.StripProcessAndSize;
+import protection.CheckAppKey;
 
 //import javax.jnlp.FileContents;
 import javax.print.attribute.HashPrintRequestAttributeSet;
@@ -127,7 +132,9 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             return retVal;
           }
     }
-    
+
+//    static public String jspBase = "http://localhost:9080/fceCalculations/jsp/";
+    static public String jspBase = "http://HYPWAP02:9080/fceCalculations/jsp/";
     static public boolean bAllowProfileChange = true;
     static public boolean bAllowManualCalculation = true;
     static public boolean bAllowEditPerformanceList = true;
@@ -144,6 +151,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 //    static public boolean bAllowEditDFHProcess = false;
     static public boolean bL2Configurator = false;
     static public boolean bAtSite = false;
+
+    public int appCode = 100;
     public boolean loadTesting = false;
     protected String profileFileExtension = "dfhDat";
     protected String profileFileName = "FurnaceProfile." + profileFileExtension;
@@ -153,7 +162,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = "JNLP 20170320";
+    protected String releaseDate = "Downloadable 20170524PM";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -279,19 +288,19 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 //        debug("Locale is " + locale);
     }
 
-    public DFHeating(boolean asApplication, boolean onProductionLine) {
-        this();
-        this.asApplication = asApplication;
-        DFHeating.onProductionLine = onProductionLine;
-        debugLocal("as Application");
-        init();
-    }
+//    public DFHeating(boolean asApplication, boolean onProductionLine) {
+//        this();
+//        this.asApplication = asApplication;
+//        DFHeating.onProductionLine = onProductionLine;
+//        debugLocal("as Application");
+//        init();
+//    }
 
     public DFHeating(boolean asApplication) {
         this();
         this.asApplication = asApplication;
         debugLocal("as Application");
-        init();
+//        init();
     }
 
     public void setLoadTesting(boolean ena) {
@@ -310,71 +319,79 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     protected void startLog4j() {
+        PropertyConfigurator.configure("DFHFurnace.properties");
         log = Logger.getLogger(DFHeating.class);
     }
 
-    public void init() {
-        modifyJTextEdit();
-        fuelList = new Vector<Fuel>();
-        vChMaterial = new Vector<ChMaterial>();
-        setUIDefaults();
-        String strTest;
-        mainF = new JFrame();
-        mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        if (!asApplication) {
-            strTest = this.getParameter("OnTest");
-            if (strTest != null)
-                onTest = strTest.equalsIgnoreCase("YES");
-            if (onTest)
-                mainF.setTitle("DFH Furnace on Test " + releaseDate);
-            else
-                mainF.setTitle("DFH Furnace " + releaseDate);
-        } else {
-            if (log == null) {
-                startLog4j();
+    public boolean setItUp() {
+        boolean retVal = false;
+        DataWithStatus<Boolean> runCheck =  new CheckAppKey().canRunThisApp(appCode, true);
+        if (runCheck.getStatus() == DataStat.Status.OK) {
+            modifyJTextEdit();
+            fuelList = new Vector<Fuel>();
+            vChMaterial = new Vector<ChMaterial>();
+            setUIDefaults();
+            String strTest;
+            mainF = new JFrame();
+            mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+            if (!asApplication) {
+                strTest = this.getParameter("OnTest");
+                if (strTest != null)
+                    onTest = strTest.equalsIgnoreCase("YES");
+                if (onTest)
+                    mainF.setTitle("DFH Furnace on Test " + releaseDate);
+                else
+                    mainF.setTitle("DFH Furnace " + releaseDate);
+            } else {
+                if (log == null) {
+                    startLog4j();
 //                log = Logger.getLogger(DFHeating.class);
-                // Load Log4j configurations from external file
+                    // Load Log4j configurations from external file
+                }
+                mainF.setTitle("DFH Furnace Application " + releaseDate + testTitle);
             }
-            mainF.setTitle("DFH Furnace Application "+ releaseDate + testTitle);
-        }
 
-        tuningParams = new DFHTuningParams(this, onProductionLine, 1, 5, 30, 1.12, 1, false, false);
-        debugLocal("Creating new DFHFurnace");
-        furnace = new DFHFurnace(this, bTopBot, bAddTopSoak, lNameListener);
-        debugLocal("Created furnace");
-        furnace.setTuningParams(tuningParams);
-        debugLocal("tuning params set");
-        if (onTest || asApplication) {
-            createUIs();
-            loadFuelAndChMaterialData();
-            setTestData();
-            switchPage(DFHDisplayPageType.INPUTPAGE);
-            displayIt();
-        } else {
-            try {
-                win = JSObject.getWindow(this);
-            } catch (Exception e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                win = null;
+            tuningParams = new DFHTuningParams(this, onProductionLine, 1, 5, 30, 1.12, 1, false, false);
+            debugLocal("Creating new DFHFurnace");
+            furnace = new DFHFurnace(this, bTopBot, bAddTopSoak, lNameListener);
+            debugLocal("Created furnace");
+            furnace.setTuningParams(tuningParams);
+            debugLocal("tuning params set");
+//            if (onTest || asApplication) {
+                createUIs();
+            if (loadFuelAndChMaterialData()) {
+                setTestData();
+                switchPage(DFHDisplayPageType.INPUTPAGE);
+                displayIt();
+//            } else {
+//                try {
+//                    win = JSObject.getWindow(this);
+//                } catch (Exception e) {
+//                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+//                    win = null;
+//                }
+//                Object o;
+//                debugLocal("got win");
+//                o = win.eval("enableSpecsSave()");
+//                enableSpecsSave = (o != null) && o.equals("1");
+//                debugLocal("before creating UI");
+//                loadFuelAndChMaterialData();
+//                createUIs();
+//                debugLocal("Created UI");
+////            testFunctions();
+//                setTestData();
+//                debugLocal("did setTestData()");
+//                o = win.eval("getData()");
+//                debugLocal("got Data from aspx");
+//            }
+                fuelMixP = Fuel.mixedFuelPanel(this, jspConnection, fuelList);
+                regenBurnerStudy = new RegenBurner(fuelList, jspConnection, this);
+                logInfo("DFHeating initiated");
+                enableDataEdit();
+                retVal = true;
             }
-            Object o;
-            debugLocal("got win");
-            o = win.eval("enableSpecsSave()");
-            enableSpecsSave = (o != null) && o.equals("1");
-            debugLocal("before creating UI");
-            loadFuelAndChMaterialData();
-            createUIs();
-            debugLocal("Created UI");
-//            testFunctions();
-            setTestData();
-            debugLocal("did setTestData()");
-            o = win.eval("getData()");
-            debugLocal("got Data from aspx");
         }
-        fuelMixP = Fuel.mixedFuelPanel(this, jspConnection, fuelList);
-        regenBurnerStudy = new RegenBurner(fuelList, jspConnection, this);
-        logInfo("DFHeating initiated");
-        enableDataEdit();
+        return retVal;
     }
 
     String testingWarning = "  (IN TESTING MODE)";
@@ -492,7 +509,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         furnace.clearAssociatedData();
     }
 
-    protected void loadFuelAndChMaterialData() {
+    protected boolean loadFuelAndChMaterialData() {
         if (asApplication) {
             if (justJSP) {
                 if (jspConnection.allOK) {
@@ -514,7 +531,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             }
         }
 
-        if (onTest || asApplication) {
+        if (onTest) {
             if (fuelList.size() == 0) {
                 addFuel("Pseudo Nat Gas #8500 [8,502 kcal/m3N]", "Nm3", "" + 8503, "" +
                                 9.47, "" + 10.47, "0, 0, 100, 39.47, 200, 84.82, 900, 553.347, 2000, 1583.07",
@@ -530,6 +547,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                 vChMaterial.add(mat);
             }
         }
+        return (fuelList.size() > 0 && vChMaterial.size() > 0);
     }
 
     // for Applet version
@@ -1969,6 +1987,17 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return (Fuel)cbFuel.getSelectedItem();
     }
 
+    public boolean isFuelAvailable(String fuelName)  {
+        boolean retVal = false;
+        for (Fuel f: fuelList) {
+            if (fuelName.equalsIgnoreCase(f.toString())) {
+                retVal = true;
+                break;
+            }
+        }
+        return retVal;
+    }
+
     protected void setExitZoneTemperatures(double tNormal, double tMin) {
         tfExitZoneFceTemp.setData(tNormal);
         exitZoneFceTemp = tNormal;
@@ -3315,6 +3344,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                                     loaded = true;
 //                                    showMessage("Recuperator loaded.\n Remember to save Furnace profile for future use");
                             }
+                            iStream.close();
                         } else
                             showError("File size " + len + " for " + filePath);
                     } catch (Exception e) {
@@ -3395,6 +3425,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                         retVal.setErrorMessage("This not a proper DFHFurnace data file!");
                     }
                 }
+                iStream.close();
             } else {
                 retVal.setErrorMessage("File size " + len + " for " + filePath);
             }
@@ -3986,6 +4017,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                     else
                         showMessage("Some problem reading Fuel Specification file", 3000);
                     }
+                    iStream.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -4116,6 +4148,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                     else
                         showMessage("Some problem reading Charge Material Specification file", 3000);
                     }
+                    iStream.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -4537,12 +4570,15 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                         break;
                 }
         }
+//        debugLocal("DFHeating.4546: justJSP = " + justJSP);
         if (justJSP) {
             try {
-                URL url = new URL("http://localhost:9080/fceCalculations");
+                URL url = new URL(jspBase);
+//                debugLocal("DFHeating.4550: url = " + url);
                 jspConnection = new JSPConnection(url);
+//                debugLocal("DFHeating.4552: jspConnection = " + jspConnection);
             } catch (MalformedURLException e) {
-                System.out.println("DFHeating.4540: " + e.getLocalizedMessage());
+                System.out.println("DFHeating.4554: " + e.getLocalizedMessage());
                 retVal = false;
             }
         }
@@ -4550,20 +4586,27 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     public static void main(String[] args) {
-//        PropertyConfigurator.configureAndWatch(DFHeating.class
-//                .getResource("log.properties").getFile(), 5000);
-        if (DFHeating.parseCmdLineArgs(args)) {
-//            try {
-//                SwingUtilities.invokeLater(new Runnable() {
-//                    @Override
-//                    public void run() {
-                        DFHeating trHeat = new DFHeating(true);
-//                    }
-//                });
-//            } catch (Exception e) {
-//                e.printStackTrace();
+        new WaitMsg(null, "Starting DFHFurnace. Please wait ...", new ActInBackground() {
+            public void doInBackground() {
+                if (DFHeating.parseCmdLineArgs(args)) {
+                    DFHeating trHeat = new DFHeating(true);
+                    if (!trHeat.setItUp()) {
+                        trHeat.showError("  Unable to Get Application Data.\nAborting ...");
+                        System.exit(1);
+                    }
+                }
+            }
+        });
+
+
+
+//        if (DFHeating.parseCmdLineArgs(args)) {
+//            DFHeating trHeat = new DFHeating(true);
+//            if (!trHeat.setItUp()) {
+//                trHeat.showError("  Unable to Get Application Data.\nAborting ...");
+//                System.exit(1);
 //            }
-        }
+//        }
     }
 
 }

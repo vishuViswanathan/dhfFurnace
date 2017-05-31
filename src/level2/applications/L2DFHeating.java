@@ -63,6 +63,7 @@ public class L2DFHeating extends StripHeating {
 
     public L2DFHeating(String equipment, boolean fromLauncher) {
         super();
+        appCode = 103;
         this.fromLauncher = fromLauncher;
 //        fceDataLocation = "level2FceData\\";
         File folder = new File("");
@@ -208,6 +209,7 @@ public class L2DFHeating extends StripHeating {
         }
         furnace.setTuningParams(tuningParams);
         tuningParams.bConsiderChTempProfile = true;
+        tuningParams.bAdjustChTempProfile = true;
         l2ProcessList = new L2ProcessList(this);
         dfhProcessList = l2ProcessList;
         createUIs(false); // without the default menuBar
@@ -484,6 +486,7 @@ public class L2DFHeating extends StripHeating {
             mp.addItemPair("Reference ", tfReference);
             mp.addItemPair("Title ", tfFceTitle);
             mp.addItemPair("Customer ", tfCustomer);
+            mp.addItemPair("Fuel", cbFuel);  // TODO must be removed
             mp.setEnabled(false);
             mp.setEnabled(false);
             titleAndFceCommon = mp;
@@ -818,8 +821,18 @@ public class L2DFHeating extends StripHeating {
     }
 
     boolean getFuelAndCharge() {
-        return (fuelSpecsFromFile(fceDataLocation + "FuelSpecifications.dfhSpecs") &&
-                chMaterialSpecsFromFile(fceDataLocation + "ChMaterialSpecifications.dfhSpecs"));
+        boolean retVal = false;
+        if (fuelSpecsFromFile(fceDataLocation + "FuelSpecifications.dfhSpecs") ) {
+            int nFuel = fuelList.size();
+            if (nFuel > 1) { // restrict to just one Fuel
+                for (int f = 1; f < nFuel; f++)
+                    fuelList.remove(f);
+            }
+            retVal = chMaterialSpecsFromFile(fceDataLocation + "ChMaterialSpecifications.dfhSpecs");
+        }
+        return retVal;
+//        return (fuelSpecsFromFile(fceDataLocation + "FuelSpecifications.dfhSpecs") &&
+//                chMaterialSpecsFromFile(fceDataLocation + "ChMaterialSpecifications.dfhSpecs"));
     }
 
     public FceEvaluator calculateFce() {

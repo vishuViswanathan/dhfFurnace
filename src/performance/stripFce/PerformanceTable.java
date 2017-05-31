@@ -211,7 +211,7 @@ public class PerformanceTable {
 //            iParams.speed = commTables.get(Performance.Params.STRIPSPEED).getData(outputFactor, widthFactor);
             } catch (Exception e) {
                 allOk = false;
-                showError("Problem in filling interpolated data of air temperature or speed, " + e.getMessage());
+                showError("#214: Problem in filling interpolated data of air temperature or speed, " + e.getMessage());
             }
             if (allOk) {
                 int zNum = 0;

@@ -3,13 +3,21 @@ package directFiredHeating.applications;
 import basic.ChMaterial;
 import basic.Fuel;
 import directFiredHeating.DFHTuningParams;
+import directFiredHeating.DFHeating;
 import directFiredHeating.accessControl.L2AccessControl;
 import directFiredHeating.accessControl.OfflineAccessControl;
 import directFiredHeating.process.StripDFHProcessList;
 import directFiredHeating.stripDFH.StripFurnace;
+import level2.applications.Level2Installer;
 import mvUtils.display.DataStat;
+import mvUtils.display.DataWithStatus;
 import mvUtils.display.StatusWithMessage;
+import mvUtils.file.ActInBackground;
+import mvUtils.file.WaitMsg;
 import mvUtils.jsp.JSPObject;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
+import protection.CheckAppKey;
 import tmiOnly.GetSoftwareKey;
 
 import javax.swing.*;
@@ -35,6 +43,7 @@ public class L2Configurator extends StripHeating {
 
     public L2Configurator() {
         super();
+        appCode = 102;
         fceDataLocation = "level2FceData/mustBeUserEntry/";
         bL2Configurator = true;
         enableSpecsSave = true;
@@ -42,73 +51,85 @@ public class L2Configurator extends StripHeating {
         bAllowProfileChange = true;
         bAllowManualCalculation = true;
         asApplication = true;
-        releaseDate = "20170421";
+        releaseDate = "Donloadable 20170524PM";
+//        debugLocal("L2Configurator.49");
         createLocalMenuItems();
     }
 
     Fuel lastSelected = null;
 
     public boolean setItUp() {
-        modifyJTextEdit();
-        fuelList = new Vector<Fuel>();
-        vChMaterial = new Vector<ChMaterial>();
-        dfhProcessList = new StripDFHProcessList(this);
-        setUIDefaults();
-        mainF = new JFrame();
-        mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        try {
-            accessControl = new OfflineAccessControl(asJNLP, mainF);
-            mainF.setTitle("DFH Furnace - L2 Configurator - " + releaseDate + testTitle);
+        boolean retVal = false;
+//        debugLocal("L2Configurator.56");
+        DataWithStatus<Boolean> runCheck = new CheckAppKey().canRunThisApp(appCode, true);
+        if (runCheck.getStatus() == DataStat.Status.OK) {
+            modifyJTextEdit();
+            fuelList = new Vector<Fuel>();
+            vChMaterial = new Vector<ChMaterial>();
+            dfhProcessList = new StripDFHProcessList(this);
+            setUIDefaults();
+            mainF = new JFrame();
+            mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+            try {
+//                debugLocal("L2Configurator.67");
+                accessControl = new OfflineAccessControl(asJNLP, mainF);
+                if (log == null) 
+                    startLog4j();
+                mainF.setTitle("DFH Furnace - L2 Configurator - " + releaseDate + testTitle);
 
-            tuningParams = new DFHTuningParams(this, false, 1, 5, 30, 1.12, 1, false, false);
-            furnace = new StripFurnace(this, false, false, lNameListener);
-            furnace.setTuningParams(tuningParams);
-            tuningParams.bConsiderChTempProfile = true;
-            createUIs(false); // without the default menuBar
-            mISetPerfTablelimits.setVisible(true);
-            disableSomeUIs();
+                tuningParams = new DFHTuningParams(this, false, 1, 5, 30, 1.12, 1, false, false);
+                furnace = new StripFurnace(this, false, false, lNameListener);
+                furnace.setTuningParams(tuningParams);
+                tuningParams.bConsiderChTempProfile = true;
+                tuningParams.bAdjustChTempProfile = true;
+                createUIs(false); // without the default menuBar
+                mISetPerfTablelimits.setVisible(true);
+                disableSomeUIs();
 //            addMenuBar(createL2MenuBar(true, true));
-            associatedDataLoaded = true;
-            loadFuelAndChMaterialData();
-            setDefaultSelections();
-            setTestData();
-            switchPage(DFHDisplayPageType.INPUTPAGE);
-            if (asJNLP || justJSP) {
-                cbFuel.addActionListener(e -> {
-                    Fuel nowSelected = (Fuel) cbFuel.getSelectedItem();
+                if (loadFuelAndChMaterialData()) {
+                    setDefaultSelections();
+                    setTestData();
+                    switchPage(DFHDisplayPageType.INPUTPAGE);
+                    if (asJNLP || justJSP) {
+                        cbFuel.addActionListener(e -> {
+                            Fuel nowSelected = (Fuel) cbFuel.getSelectedItem();
 //                    showMessage("Fuel " + nowSelected);
-                    if (nowSelected != null) {
-                        if (lastSelected != null) {
-                            if (decide("Change of Fuel", "The Fuel has been changed. The earlier selection will be Deleted" +
-                                    "\nEnsure that there are no Performance data with earlier fuel")) {
-                                ((JSPObject) lastSelected).unCollectData();
-                                lastSelected = nowSelected;
-                            } else {
-                                cbFuel.setSelectedItem(lastSelected);
-                                ((JSPObject) nowSelected).unCollectData();
+                            if (nowSelected != null) {
+                                if (lastSelected != null) {
+                                    if (decide("Change of Fuel", "The Fuel has been changed. The earlier selection will be Deleted" +
+                                            "\nEnsure that there are no Performance data with earlier fuel")) {
+                                        ((JSPObject) lastSelected).unCollectData();
+                                        lastSelected = nowSelected;
+                                    } else {
+                                        cbFuel.setSelectedItem(lastSelected);
+                                        ((JSPObject) nowSelected).unCollectData();
+                                    }
+                                } else
+                                    lastSelected = nowSelected;
                             }
-                        } else
-                            lastSelected = nowSelected;
+                        });
                     }
-                });
-            }
-            displayIt();
+                    displayIt();
 
-            showMessage("The furnace has to be of " + HeatingMode.TOPBOTSTRIP + " for " + DFHTuningParams.FurnaceFor.STRIP +
-                    "\n\nIt is the responsibility of the user to ensure data integrity among:" +
-                    "\n      1) Profile including Fuel type " +
-                    "\n      2) IP address of OPC server  '" + mL2Configuration.getText() + "'" +
-                    "\n      3) L2 Basic settings under '" + mL2Configuration.getText() + "'" +
-                    "\n      4) DHFProcess List data under '" + mL2Configuration.getText() + "'" +
-                    "\n      5) Performance Data under '" + perfMenu.getText() + "'" +
-                    "\n\nIt is suggested that the profile and L2 Basic Setting are finalised before updating" +
-                    "\nthe other data." +
-                    "\n\nBefore exiting, ensure that the Furnace data is saved/updated through 'File' menu.");
-        } catch (Exception e) {
-            e.printStackTrace();
+                    showMessage("The furnace has to be of " + HeatingMode.TOPBOTSTRIP + " for " + DFHTuningParams.FurnaceFor.STRIP +
+                            "\n\nIt is the responsibility of the user to ensure data integrity among:" +
+                            "\n      1) Profile including Fuel type " +
+                            "\n      2) IP address of OPC server  '" + mL2Configuration.getText() + "'" +
+                            "\n      3) L2 Basic settings under '" + mL2Configuration.getText() + "'" +
+                            "\n      4) DHFProcess List data under '" + mL2Configuration.getText() + "'" +
+                            "\n      5) Performance Data under '" + perfMenu.getText() + "'" +
+                            "\n\nIt is suggested that the profile and L2 Basic Setting are finalised before updating" +
+                            "\nthe other data." +
+                            "\n\nBefore exiting, ensure that the Furnace data is saved/updated through 'File' menu.");
+                    associatedDataLoaded = true;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            System.out.println("Java Version :" + System.getProperty("java.version"));
+            retVal = associatedDataLoaded;
         }
-        System.out.println("Java Version :" + System.getProperty("java.version"));
-        return associatedDataLoaded;
+        return retVal;
     }
 
     protected void createAllMenuItems() {
@@ -160,6 +181,25 @@ public class L2Configurator extends StripHeating {
         SoftKeyListener li = new SoftKeyListener();
         mIGetSoftwareKey = new JMenuItem("Get Software Key");
         mIGetSoftwareKey.addActionListener(li);
+    }
+
+    protected void startLog4j() {
+        PropertyConfigurator.configure("L2Configurator.properties");
+        log = Logger.getLogger(L2Configurator.class);
+    }
+
+    protected boolean isProfileCodeOK() {
+        boolean retVal = false;
+        if (profileCode.length() == profileCodeFormat.format(0).length())
+            retVal = true;
+        else {
+            if (decide("Level2 Profile", "The profile is not be prepared for Level2." +
+            "\nSelect YES to continue as Level2 or NO to exit")) {
+                createProfileCode();
+                retVal = true;
+            }
+        }
+        return retVal;
     }
 
     class SoftKeyListener implements ActionListener  {
@@ -229,13 +269,28 @@ public class L2Configurator extends StripHeating {
     }
 
     public static void main(String[] args) {
-        final L2Configurator l2Preparer = new L2Configurator();
-        if (parseCmdLineArgs(args)) {
-            l2Preparer.setItUp();
-            if (!l2Preparer.associatedDataLoaded) {
-                l2Preparer.showError(" Aborting ...");
-                System.exit(1);
+        L2Configurator l2Preparer;
+        new WaitMsg(null, "Starting Level2 Configurator. Please wait ...", new ActInBackground() {
+            public void doInBackground() {
+                L2Configurator l2Preparer = new L2Configurator();
+                if (parseCmdLineArgs(args)) {
+                    l2Preparer.setItUp();
+                    if (!l2Preparer.associatedDataLoaded) {
+                        l2Preparer.showError(" Unable to Get Application Data.\nAborting ...");
+                        System.exit(1);
+                    }
+                }
             }
-        }
+        });
+
+
+//        final L2Configurator l2Preparer = new L2Configurator();
+//        if (parseCmdLineArgs(args)) {
+//            l2Preparer.setItUp();
+//            if (!l2Preparer.associatedDataLoaded) {
+//                l2Preparer.showError(" Unable to Get Application Data.\nAborting ...");
+//                System.exit(1);
+//            }
+//        }
     }
 }

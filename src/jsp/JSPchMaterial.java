@@ -1,6 +1,7 @@
 package jsp;
 
 import basic.ChMaterial;
+import directFiredHeating.DFHeating;
 import mvUtils.display.ErrorStatAndMsg;
 import mvUtils.jsp.JSPConnection;
 import mvUtils.jsp.JSPObject;
@@ -32,25 +33,27 @@ public class JSPchMaterial extends ChMaterial implements JSPObject {
     public static Vector<JSPchMaterial> getMetalList(mvUtils.jsp.JSPConnection jspConnection) {
          Vector<JSPchMaterial> metalList = new Vector<JSPchMaterial>();
 //         ErrorStatAndMsg jspResponse = jspConnection.getData("../jsp/metalList.jsp");
-         ErrorStatAndMsg jspResponse = jspConnection.getData("/jsp/metalList.jsp");
+         ErrorStatAndMsg jspResponse = jspConnection.getData("metalList.jsp");
          if (!jspResponse.inError) {
              String xmlStr = jspResponse.msg;
              ValAndPos vp;
              String xmlOneFuel;
              vp = XMLmv.getTag(xmlStr, "nMetals");
-             int nMetals = Integer.valueOf(vp.val);
-             for (int n = 0; n < nMetals; n++) {
-                 vp = XMLmv.getTag(xmlStr, "M" + ("" + n).trim(), vp.endPos);
-                 try {
-                     metalList.add(new JSPchMaterial(vp.val, true));
-                 } catch (Exception e) {
-                     e.printStackTrace();
+             if (vp.val.length() > 0) {
+                 int nMetals = Integer.valueOf(vp.val);
+                 for (int n = 0; n < nMetals; n++) {
+                     vp = XMLmv.getTag(xmlStr, "M" + ("" + n).trim(), vp.endPos);
+                     try {
+                         metalList.add(new JSPchMaterial(vp.val, true));
+                     } catch (Exception e) {
+                         e.printStackTrace();
+                     }
                  }
              }
          }
          else
              System.out.println("ERROR:" + jspResponse.msg);
-         System.out.println("nMetals " + metalList.size());
+         debug("nMetals " + metalList.size());
          return metalList;
      }
 
@@ -70,7 +73,7 @@ public class JSPchMaterial extends ChMaterial implements JSPObject {
                 {put("matID", matID.trim()); put("matName", name);}
             };
 //            ErrorStatAndMsg jspResponse = jspConnection.getData("../jsp/selectedMetal.jsp", query);
-            ErrorStatAndMsg jspResponse = jspConnection.getData("/jsp/selectedMetal.jsp", query);
+            ErrorStatAndMsg jspResponse = jspConnection.getData("selectedMetal.jsp", query);
             if (!jspResponse.inError) {
                 String xmlStr = jspResponse.msg;
 //                debug("xmlStr = " + xmlStr);
@@ -78,13 +81,13 @@ public class JSPchMaterial extends ChMaterial implements JSPObject {
                 if (!dataCollected)
                     debug("ERROR: " + xmlStr);
             }
-            else
-                debug("jspResponse:" + jspResponse.msg);
+//            else
+//                debug("jspResponse:" + jspResponse.msg);
         }
         return dataCollected;
     }
 
-    void debug(String msg) {
-        System.out.println("JSPchMaterial: " + msg);
+    static void debug(String msg) {
+        DFHeating.debugLocal(msg);
     }
 }
