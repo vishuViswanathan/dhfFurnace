@@ -39,7 +39,7 @@ public class FuelDetails {
     public double density;
     boolean composAvailable;
     boolean bValid = false;
-    boolean bNew = false;
+    public boolean bNew = false;
     XYArrayWithFract netHeatCont;
     //    double H2, CO, CH4, C2H6, C2H2, C3H8, C4H10, N2, H2O, CO2, O2, C, S, Ash;
     LinkedHashMap<String, ElementNvalue> elementHash;
@@ -363,7 +363,7 @@ public class FuelDetails {
     }
 
 
-    String[] paramsForSaving() {
+    public String[] paramsForSaving() {
         String[] params  = new String[28];
         params[0] = (bNew) ? "YES" : "NO";  //newFuel
         params[1] = ("" + fuel.getId()).trim();
