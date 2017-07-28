@@ -12,14 +12,14 @@ import mvUtils.math.XYArray;
  */
 public class FuelComponent {
     String idInMaterialCode;
-    String elemName;
+    public String elemName;
     String units;
     String elementType;
-    double molWeight, calValue, density;
-    double hAtoms, cAtoms, oAtoms, sAtoms, nAtoms;
-    double o2Required, airRequired;
-    double CO2, H2O, N2, SO2, flue;
-    XYArray heatContent;
+    public double molWeight, calValue, density;
+    public double hAtoms, cAtoms, oAtoms, sAtoms, nAtoms;
+    public double o2Required, airRequired;
+    public double CO2, H2O, N2, SO2, flue;
+    public XYArray heatContent;
 
     public FuelComponent(String idInMaterialCode, String elemName, String units, String elementType, double molWeight,
                          double calValue, double density, double hAtoms, double cAtoms, double oAtoms,

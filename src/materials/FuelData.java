@@ -1,21 +1,22 @@
 package materials;
 
 import PropertySetter.FuelComponent;
-import PropertySetter.FuelDetails;
 import PropertySetter.PropertyControl;
-import basic.ChMaterial;
 import basic.FlueComposition;
 import basic.Fuel;
-import directFiredHeating.DFHResult;
-import display.ControlCenter;
 import mvUtils.display.InputControl;
+import mvUtils.http.PostToWebSite;
 import mvUtils.math.XYArray;
-import netscape.javascript.JSException;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLmv;
+import mvUtils.security.MiscUtil;
 import netscape.javascript.JSObject;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Stack;
 import java.util.Vector;
 
@@ -34,30 +35,22 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
     boolean onTest = false;
     InputControl controller;
     Vector<FuelComponent> fuelComponents;
-    Vector<FuelDetails> fuelDetails;
+    Vector<FuelParameters> fuelParemeters;
     boolean itsON = false;
+    String user;
+
+    FuelData() {
+        user = MiscUtil.getUser();
+    }
+
     public void init() {
         UIManager.put("ComboBox.disabledForeground", Color.black);
-        String strTest = this.getParameter("OnTest");
-        mainF = new JFrame("Set Material Property");
-        mainF.addWindowListener(new winListener());
-        fuelComponents = new Stack<FuelComponent>();
-        fuelDetails = new Stack<FuelDetails>();
-        if (strTest != null)
-            onTest = strTest.equalsIgnoreCase("YES");
-        if (onTest) {
-            setTestData();
-            displayIt();
-        } else {
-            try {
-                win = JSObject.getWindow(this);
-            } catch (JSException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                win = null;
-            }
-            Object o;
-            o = win.eval("getData()");
-        }
+        mainF = new JFrame("Fuel Details");
+        mainF.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        fuelComponents = new Stack<>();
+        fuelParemeters = new Stack<>();
+        getAllData();
+        displayIt();
     }
 
     JComboBox cbFuels;
@@ -70,19 +63,19 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
     }
 
     String newFuelName = "..... CREATE NEW FUEL";
-    FuelDetails newFuelDetails;
+    FuelParameters newFuelParameters;
     void populateCBFuel() {
         if (bCanEdit) {
             try {
                 Fuel newF = new Fuel(newFuelName);
-                newFuelDetails = new FuelDetails(this, this, newF, "G", fuelComponents, true, bCanEdit);
-                newFuelDetails.setComposition(0, 0, 0, 0, 0, 0, 0, 1,0,0,0);
-                fuelDetails.add(newFuelDetails);
+                newFuelParameters = new FuelParameters(this, this, newF, "G", fuelComponents, true, bCanEdit);
+                newFuelParameters.setComposition(0, 0, 0, 0, 0, 0, 0, 1,0,0,0);
+                fuelParemeters.add(newFuelParameters);
             } catch (Exception e) {
             }
         }
-        cbFuels = new JComboBox(fuelDetails.toArray());
-        cbFuels = new JComboBox(fuelDetails.toArray());
+//        cbFuels = new JComboBox(fuelParemeters.toArray());
+        cbFuels = new JComboBox(fuelParemeters);
         cbFuels.setSelectedIndex(0);
         cbFuels.addActionListener(new CBFuelListener());
     }
@@ -94,7 +87,7 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
 
             topP.add(cbFuels);
             mainF.add(topP, BorderLayout.NORTH);
-            mainF.addWindowListener(new winListener());
+//            mainF.addWindowListener(new winListener());
 //            setMenuOptions();
             setDetailsPanel();
             mainF.setLocation(20, 10);
@@ -105,32 +98,186 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
     void setDetailsPanel() {
         if (detPan != null)
             mainF.remove(detPan);
-        FuelDetails selected =  (FuelDetails)cbFuels.getSelectedItem();
+        FuelParameters selected =  (FuelParameters)cbFuels.getSelectedItem();
         detPan = selected.fuelDetPanel();
         mainF.add(detPan, BorderLayout.CENTER );
         detPan.updateUI();
     }
 
-    boolean getFuelComponents() {
-        return false;
+    boolean getAllData() {
+        return getFuelComponents() && getAllFuelAllDetails();
+//        PostToWebSite jspSrc = new PostToWebSite(jspBase);
+//        HashMap<String, String> params = new HashMap<>();
+//        params.put("user", user);
+//        String xmlComponents = jspSrc.getByPOSTRequest("getAllFuelComponents.jsp", params, 1000000);
+//        setFuelComponentsFromXMl(xmlComponents);
+//        String xmlAllFuelParameters = jspSrc.getByPOSTRequest("getAllFuelAllDetails.jsp", params, 1000000);
+//        setAllFuelsDetailsFromXMl(xmlAllFuelParameters);
+//        return true;
     }
 
-    void setTestData() {
-        addFuelComponents("1001", "CH4", "m3N", "G", "16", "8550", "0.714", "4", "1" , "0", "0", "0", "0, 0, 2000, 700");
-        addFuelComponents("1002", "C4H10", "m3N", "G", "58", "29510", "2.589", "10", "4" , "0", "0", "0", "0, 0, 2000, 400");
-        addFuelComponents("1003", "H2", "m3N", "G", "16", "8550", "0.714", "4", "1" , "0", "0", "0", "");
-        addFuelComponents("1004", "CO", "m3N", "G", "58", "29510", "2.589", "10", "4" , "0", "0", "0", "0, 0, 200, 700");
-        addFuelComponents("1005", "C2H2", "m3N", "G", "16", "8550", "0.714", "4", "1" , "0", "0", "0", "0, 0, 200, 700");
-        addFuelComponents("1006", "C2H6", "m3N", "G", "58", "29510", "2.589", "10", "4" , "0", "0", "0", "0, 0, 200, 700");
-        addFuelComponents("1007", "C3H8", "m3N", "G", "58", "29510", "2.589", "10", "4" , "0", "0", "0", "0, 0, 200, 700");
-        addFuelComponents("1008", "N2", "m3N", "G", "16", "8550", "0.714", "4", "1" , "0", "0", "0", "0, 0, 2000, 700");
-        addFuelComponents("1009", "CO2", "m3N", "G", "58", "29510", "2.589", "10", "4" , "0", "0", "0", "0, 0, 200, 700");
-        addFuelComponents("1010", "O2", "m3N", "G", "58", "29510", "2.589", "10", "4" , "0", "0", "0", "0, 0, 200, 700");
-        addFuelComponents("1011", "H2O", "m3N", "G", "58", "29510", "2.589", "10", "4" , "0", "0", "0", "0, 0, 200, 700");
-        addFuelData("3001", "FUEL OIL", "G", "kg", "17030", " 19.5", "22", "", "0.132", "0.152", "0.716", "0", "0", "0", "0",
-                "0.3", "0", "0", "0", "0.7", "0", "0","0", "0", "0", "0", "0");
-        addFuelData("3002", "Mixed Gas", "G", "m3N", "19030", " 19.5", "22", "", "0.132", "0.152", "0.716", "0", "0", "0", "0",
-                "0.5", "0", "0", "0", "0.49", "0.010", "0","0", "0", "0", "0", "0");
+    boolean getFuelComponents() {
+        PostToWebSite jspSrc = new PostToWebSite(jspBase);
+        HashMap<String, String> params = new HashMap<>();
+        params.put("user", user);
+        String xmlComponents = jspSrc.getByPOSTRequest("getAllFuelComponents.jsp", params, 1000000);
+        setFuelComponentsFromXMl(xmlComponents);
+        return true;
+    }
+
+    boolean getAllFuelAllDetails() {
+        PostToWebSite jspSrc = new PostToWebSite(jspBase);
+        HashMap<String, String> params = new HashMap<>();
+        params.put("user", user);
+        String xmlAllFuelParameters = jspSrc.getByPOSTRequest("getAllFuelAllDetails.jsp", params, 1000000);
+        getAllFuelsDetailsFromXML(xmlAllFuelParameters, false);
+        return true;
+
+    }
+
+    boolean getOneFuelAllDetails(int fuelID) {
+        PostToWebSite jspSrc = new PostToWebSite(jspBase);
+        HashMap<String, String> params = new HashMap<>();
+        params.put("user", user);
+        params.put("fuelID", "" + fuelID);
+        String xmlAllFuelParameters = jspSrc.getByPOSTRequest("getOneFuelAllDetails.jsp", params, 1000000);
+        getOneFuelsDetailsFromXML(xmlAllFuelParameters, true);
+        return true;
+
+    }
+
+    boolean setFuelComponentsFromXMl(String xmlStr) {
+        boolean retVal = false;
+        ValAndPos vp;
+        int nC;
+        ValAndPos localVp;
+        String[] keys = {"IDinMaterialCode", "ElemName", "Units", "ElementType", "MolWeight", "CalValue",
+                "Density", "Hatoms", "Catoms", "Oatoms", "Satoms", "Natoms", "HeatContStr"};
+        LinkedHashMap<String, String> pHash = new LinkedHashMap<>();
+        String oneElement;
+        vp = XMLmv.getTag(xmlStr, "Status", 0);
+        if (vp.val.equalsIgnoreCase("OK")) {
+            vp = XMLmv.getTag(xmlStr, "nC", vp.endPos);
+            if (vp.val.length() > 0) {
+                nC = Integer.valueOf(vp.val);
+                retVal = true;
+                for (int c = 0; c < nC && retVal; c++) {
+                    vp = XMLmv.getTag(xmlStr, "Element", vp.endPos);
+                    oneElement = vp.val;
+                    if (oneElement.length() > 0) {
+                        for (String key : keys) {
+                            pHash.put(key, XMLmv.getStringVal(oneElement, key));
+                        }
+                        String[] p = pHash.values().toArray(new String[]{""});
+                        addFuelComponents(p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10], p[11], p[12]);
+                        retVal = true;
+                    } else
+                        retVal = false;
+                }
+                if (!retVal)
+                    showError("Some error in getting Fel Components");
+            }
+        } else {
+            if (vp.val.equalsIgnoreCase("Error")) {
+                vp = XMLmv.getTag(xmlStr, "Msg", vp.endPos);
+                showError(vp.val);
+
+            } else
+                showError("Unknown response from server for Fuel Components");
+        }
+        return retVal;
+    }
+
+    boolean getAllFuelsDetailsFromXML(String xmlStr, boolean update) {
+        boolean retVal = false;
+        ValAndPos vp;
+        int nF;
+//        ValAndPos localVp;
+//        String[] keys = {"ID", "FuelName", "FuelType", "Units", "CalVal",  "AirFuelRatio",
+//                "FlueFuelRatio", "HeatContStr", "CO2fract", "H2Ofract", "SO2fract", "N2fract", "O2fract",
+//                "H2", "CO", "CH4", "C2H6", "C2H2", "C3H8", "C4H10", "N2", "H2O", "CO2", "O2", "C", "S", "Ash"};
+        LinkedHashMap<String, String> pHash = new LinkedHashMap<>();
+        String oneElement;
+        vp = XMLmv.getTag(xmlStr, "Status", 0);
+        if (vp.val.equalsIgnoreCase("OK")) {
+            vp = XMLmv.getTag(xmlStr, "nF", vp.endPos);
+            if (vp.val.length() > 0) {
+                nF = Integer.valueOf(vp.val);
+                retVal = true;
+                for (int c = 0; c < nF && retVal; c++) {
+                    vp = XMLmv.getTag(xmlStr, "FuelData", vp.endPos);
+                    oneElement = vp.val;
+                    retVal = setOneFuelsDetailsFromXML(oneElement, update);
+//                    if (oneElement.length() > 0) {
+//                        for (String key:keys) {
+//                            pHash.put(key, XMLmv.getStringVal(oneElement, key));
+//                        }
+//                        String[] p = pHash.values().toArray(new String[]{""});
+//                        addFuelData(p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8],p[9], p[10], p[11], p[12],
+//                                p[13], p[14], p[15], p[16], p[17], p[18], p[19], p[20],p[21], p[22], p[23], p[24],
+//                                p[25], p[26], update);
+//                        retVal = true;
+//                    }
+////                    else
+////                        retVal = false;
+                }
+                if (!retVal)
+                    showError("Some error in getting Fuel details");
+            }
+        }
+        else {
+            if (vp.val.equalsIgnoreCase("Error")) {
+                vp = XMLmv.getTag(xmlStr, "Msg", vp.endPos);
+                showError(vp.val);
+
+            }
+            else
+                showError("Unknown response from server for Fuel Details");
+        }
+        return retVal;
+    }
+
+    boolean getOneFuelsDetailsFromXML(String xmlStr, boolean update) {
+        boolean retVal = false;
+        ValAndPos vp;
+        int nF;
+        LinkedHashMap<String, String> pHash = new LinkedHashMap<>();
+        String oneElement;
+        vp = XMLmv.getTag(xmlStr, "Status", 0);
+        if (vp.val.equalsIgnoreCase("OK")) {
+            vp = XMLmv.getTag(xmlStr, "FuelData", vp.endPos);
+            oneElement = vp.val;
+            retVal = setOneFuelsDetailsFromXML(oneElement, update);
+        }
+        else {
+            if (vp.val.equalsIgnoreCase("Error")) {
+                vp = XMLmv.getTag(xmlStr, "Msg", vp.endPos);
+                showError(vp.val);
+            }
+            else
+                showError("Unknown response from server for Fuel Details");
+        }
+        return retVal;
+    }
+
+    boolean setOneFuelsDetailsFromXML(String xmlStr, boolean update) {
+        boolean retVal = false;
+        ValAndPos vp;
+        String[] keys = {"ID", "FuelName", "FuelType", "Units", "CalVal",  "AirFuelRatio",
+                "FlueFuelRatio", "HeatContStr", "CO2fract", "H2Ofract", "SO2fract", "N2fract", "O2fract",
+                "H2", "CO", "CH4", "C2H6", "C2H2", "C3H8", "C4H10", "N2", "H2O", "CO2", "O2", "C", "S", "Ash"};
+        LinkedHashMap<String, String> pHash = new LinkedHashMap<>();
+        if (xmlStr.length() > 0) {
+            for (String key:keys) {
+                pHash.put(key, XMLmv.getStringVal(xmlStr, key));
+            }
+            String[] p = pHash.values().toArray(new String[]{""});
+            addFuelData(p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8],p[9], p[10], p[11], p[12],
+                    p[13], p[14], p[15], p[16], p[17], p[18], p[19], p[20],p[21], p[22], p[23], p[24],
+                    p[25], p[26], update);
+            retVal = true;
+        }
+        return retVal;
     }
 
     public void displayIt() {
@@ -181,7 +328,8 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
                               String fractCO2str, String fractH2Ostr, String fractN2str, String fractO2str, String fractSO2str,
                               String h2Str, String coStr, String ch4Str,
                               String c2h6Str, String c2h2Str, String c3h8Str, String c4h10Str,
-                              String n2Str, String h2oStr, String co2Str, String o2Str, String cStr, String sStr, String ashStr)  {
+                              String n2Str, String h2oStr, String co2Str, String o2Str, String cStr, String sStr, String ashStr,
+                              boolean update)  {
         String retVal = "OK";
         int id;
         double calVal, airFuelRatio, flueFuelRatio;
@@ -223,17 +371,36 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
         }
         Fuel fuel = new Fuel(name, units, calVal, airFuelRatio, flueFuelRatio, sensHeat, flueComp);
         fuel.setID(id);
-        FuelDetails fDet = new FuelDetails(this, this, fuel, type, fuelComponents, false, bCanEdit);
+        FuelParameters fDet = new FuelParameters(this, this, fuel, type, fuelComponents, false, bCanEdit);
 //debug("fuelType " + type + " for fuel " + name);
         if (type.equals("G"))  {
 //debug("setting fuel composition for " + name);
             boolean bResp = fDet.setComposition(h2, co, ch4, c2h6, c2h2, c3h8, c4h10, n2, h2o, co2, o2);
             if (bResp)
-                fuelDetails.add(fDet);
+                if (update)
+                    updateOneFuel(fDet);
+                else
+                    fuelParemeters.add(fDet);
             else
                 retVal = "ERROR: in fuel Composition!";
         }
         return retVal;
+    }
+
+    boolean updateOneFuel(FuelParameters fDet) {
+        boolean done = false;
+        for (FuelParameters oneDet: fuelParemeters) {
+            if (oneDet.getFuelID() == fDet.getFuelID()) {
+                int selectedIndex = cbFuels.getSelectedIndex();
+                fuelParemeters.remove(oneDet);
+                fuelParemeters.add(selectedIndex, fDet);
+                setDetailsPanel();
+//                cbFuels.updateUI();
+                done = true;
+                break;
+            }
+        }
+        return done;
     }
 
     boolean bCanNotify = true;
@@ -286,13 +453,13 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
         debug("CLOSING ...");
         mainF.dispose();
         itsON = false;
-        if (!onTest)
-            win.eval("gettingOut()");
-    } // close
+        System.exit(0);
+    }
 
     public boolean saveData(Object o) {
-        if (o instanceof FuelDetails) {
-            FuelDetails fD = (FuelDetails)o;
+        boolean retVal = false;
+        if (o instanceof FuelParameters) {
+            FuelParameters fD = (FuelParameters)o;
             String name = fD.name;
             String trimmedName = name.trim().replace(" ", "").replace("-", "");
             boolean isNew = fD.bNew;
@@ -302,11 +469,11 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
                 showError("Fuel Name '" + name + "' is too long (> 30)!");
             else {
                 boolean bSave = true;
-                FuelDetails existing;
+                FuelParameters existing;
                 if (isNew) {
-                    for (int f = 0; f < fuelDetails.size();  f++) {
-                        existing = fuelDetails.get(f);
-                        if (existing != newFuelDetails)  { // do not check with new entry
+                    for (int f = 0; f < fuelParemeters.size(); f++) {
+                        existing = fuelParemeters.get(f);
+                        if (existing != newFuelParameters)  { // do not check with new entry
                             if (trimmedName.equalsIgnoreCase(existing.name.trim().replace(" ", "").replace("-", ""))) {
                                 showError("Fuel Name '" + name + "' already Exists!\nTry different Name ..." );
                                 bSave = false;
@@ -320,16 +487,32 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
                 }
 
                 if (bSave)  {
-                    String[] params = fD.paramsForSaving();
-                    bSave= decide("Saving Fuel Data", "Proceed with saving Fuel '" + name + "'?");
-                    if (bSave && (win != null))  {
-                        Object r = win.call("saveFuelData", params);
-                        close();
+                    String xmlStr = fD.dataInXML();
+                    PostToWebSite jspSrc = new PostToWebSite(jspBase);
+                    HashMap<String, String> params = new HashMap<>();
+                    params.put("user", user);
+                    params.put("itsNew", (isNew ? "1": "0"));
+                    params.put("allData", xmlStr);
+                    params.put("heatContStr", fD.getHContStr());
+                    String response = jspSrc.getByPOSTRequest("modifyFuelProperties.jsp", params, 1000000);
+                    String status = XMLmv.getStringVal(response, "Status");
+                    if (status.equalsIgnoreCase("OK")) {
+                        retVal = true;
+                    }
+                    else {
+                        if (status.equalsIgnoreCase("ERROR"))
+                            showError(XMLmv.getStringVal(response, "Msg"));
+                        else
+                            showError("Unknown response from server: " + response);
                     }
                 }
             }
         }
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        if (retVal) {
+            showMessage("Data saved");
+            getOneFuelAllDetails(((FuelParameters)cbFuels.getSelectedItem()).getFuelID());
+        }
+        return retVal;
     }
 
     public void inEdit(boolean bInEdit) {
@@ -356,88 +539,6 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
         }
     }
 
-    class Control implements ControlCenter {
-
-        public boolean canNotify() {
-            return true;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public void enableNotify(boolean ena) {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public Frame parent() {
-            return mainF;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public ActionListener lengthChangeListener() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public FocusListener lengthFocusListener() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public ActionListener calCulStatListener() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public void pausingCalculation(boolean paused) {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public Fuel fuelFromName(String name) {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public ChMaterial chMatFromName(String name) {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public void abortingCalculation() {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public void resultsReady() {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public void addResult(DFHResult.Type type, JPanel panel) {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-    }
-
-    class winListener implements WindowListener {
-        public void windowOpened(WindowEvent e) {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public void windowClosing(WindowEvent e) {
-            debug("mainF CLOSING");
-            destroy();
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public void windowClosed(WindowEvent e) {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public void windowIconified(WindowEvent e) {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public void windowDeiconified(WindowEvent e) {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public void windowActivated(WindowEvent e) {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public void windowDeactivated(WindowEvent e) {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-    }
     public static void main(String[] args)  {
         FuelData fD = new FuelData();
         fD.init();

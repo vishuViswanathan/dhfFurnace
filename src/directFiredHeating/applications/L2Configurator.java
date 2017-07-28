@@ -61,74 +61,78 @@ public class L2Configurator extends StripHeating {
     public boolean setItUp() {
         boolean retVal = false;
 //        debugLocal("L2Configurator.56");
-        DataWithStatus<Boolean> runCheck = new CheckAppKey().canRunThisApp(appCode, true);
-        if (runCheck.getStatus() == DataStat.Status.OK) {
-            modifyJTextEdit();
-            fuelList = new Vector<Fuel>();
-            vChMaterial = new Vector<ChMaterial>();
-            dfhProcessList = new StripDFHProcessList(this);
-            setUIDefaults();
-            mainF = new JFrame();
-            mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-            try {
+        if (getJSPbase() && getJSPConnection()) {
+            DataWithStatus<Boolean> runCheck = new CheckAppKey().canRunThisApp(appCode, true);
+            if (runCheck.getStatus() == DataStat.Status.OK) {
+                modifyJTextEdit();
+                fuelList = new Vector<Fuel>();
+                vChMaterial = new Vector<ChMaterial>();
+                dfhProcessList = new StripDFHProcessList(this);
+                setUIDefaults();
+                mainF = new JFrame();
+                mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+                try {
 //                debugLocal("L2Configurator.67");
-                accessControl = new OfflineAccessControl(asJNLP, mainF);
-                if (log == null) 
-                    startLog4j();
-                mainF.setTitle("DFH Furnace - L2 Configurator - " + releaseDate + testTitle);
+                    accessControl = new OfflineAccessControl(asJNLP, mainF);
+                    if (log == null)
+                        startLog4j();
+                    mainF.setTitle("DFH Furnace - L2 Configurator - " + releaseDate + testTitle);
 
-                tuningParams = new DFHTuningParams(this, false, 1, 5, 30, 1.12, 1, false, false);
-                furnace = new StripFurnace(this, false, false, lNameListener);
-                furnace.setTuningParams(tuningParams);
-                tuningParams.bConsiderChTempProfile = true;
-                tuningParams.bAdjustChTempProfile = true;
-                createUIs(false); // without the default menuBar
-                mISetPerfTablelimits.setVisible(true);
-                disableSomeUIs();
+                    tuningParams = new DFHTuningParams(this, false, 1, 5, 30, 1.12, 1, false, false);
+                    furnace = new StripFurnace(this, false, false, lNameListener);
+                    furnace.setTuningParams(tuningParams);
+                    tuningParams.bConsiderChTempProfile = true;
+                    tuningParams.bAdjustChTempProfile = true;
+                    createUIs(false); // without the default menuBar
+                    mISetPerfTablelimits.setVisible(true);
+                    disableSomeUIs();
 //            addMenuBar(createL2MenuBar(true, true));
-                if (loadFuelAndChMaterialData()) {
-                    setDefaultSelections();
-                    setTestData();
-                    switchPage(DFHDisplayPageType.INPUTPAGE);
-                    if (asJNLP || justJSP) {
-                        cbFuel.addActionListener(e -> {
-                            Fuel nowSelected = (Fuel) cbFuel.getSelectedItem();
+                    if (loadFuelAndChMaterialData()) {
+                        setDefaultSelections();
+                        setTestData();
+                        switchPage(DFHDisplayPageType.INPUTPAGE);
+                        if (asJNLP || justJSP) {
+                            cbFuel.addActionListener(e -> {
+                                Fuel nowSelected = (Fuel) cbFuel.getSelectedItem();
 //                    showMessage("Fuel " + nowSelected);
-                            if (nowSelected != null) {
-                                if (lastSelected != null) {
-                                    if (decide("Change of Fuel", "The Fuel has been changed. The earlier selection will be Deleted" +
-                                            "\nEnsure that there are no Performance data with earlier fuel")) {
-                                        ((JSPObject) lastSelected).unCollectData();
+                                if (nowSelected != null) {
+                                    if (lastSelected != null) {
+                                        if (decide("Change of Fuel", "The Fuel has been changed. The earlier selection will be Deleted" +
+                                                "\nEnsure that there are no Performance data with earlier fuel")) {
+                                            ((JSPObject) lastSelected).unCollectData();
+                                            lastSelected = nowSelected;
+                                        } else {
+                                            cbFuel.setSelectedItem(lastSelected);
+                                            ((JSPObject) nowSelected).unCollectData();
+                                        }
+                                    } else
                                         lastSelected = nowSelected;
-                                    } else {
-                                        cbFuel.setSelectedItem(lastSelected);
-                                        ((JSPObject) nowSelected).unCollectData();
-                                    }
-                                } else
-                                    lastSelected = nowSelected;
-                            }
-                        });
-                    }
-                    displayIt();
+                                }
+                            });
+                        }
+                        displayIt();
 
-                    showMessage("The furnace has to be of " + HeatingMode.TOPBOTSTRIP + " for " + DFHTuningParams.FurnaceFor.STRIP +
-                            "\n\nIt is the responsibility of the user to ensure data integrity among:" +
-                            "\n      1) Profile including Fuel type " +
-                            "\n      2) IP address of OPC server  '" + mL2Configuration.getText() + "'" +
-                            "\n      3) L2 Basic settings under '" + mL2Configuration.getText() + "'" +
-                            "\n      4) DHFProcess List data under '" + mL2Configuration.getText() + "'" +
-                            "\n      5) Performance Data under '" + perfMenu.getText() + "'" +
-                            "\n\nIt is suggested that the profile and L2 Basic Setting are finalised before updating" +
-                            "\nthe other data." +
-                            "\n\nBefore exiting, ensure that the Furnace data is saved/updated through 'File' menu.");
-                    associatedDataLoaded = true;
+                        showMessage("The furnace has to be of " + HeatingMode.TOPBOTSTRIP + " for " + DFHTuningParams.FurnaceFor.STRIP +
+                                "\n\nIt is the responsibility of the user to ensure data integrity among:" +
+                                "\n      1) Profile including Fuel type " +
+                                "\n      2) IP address of OPC server  '" + mL2Configuration.getText() + "'" +
+                                "\n      3) L2 Basic settings under '" + mL2Configuration.getText() + "'" +
+                                "\n      4) DHFProcess List data under '" + mL2Configuration.getText() + "'" +
+                                "\n      5) Performance Data under '" + perfMenu.getText() + "'" +
+                                "\n\nIt is suggested that the profile and L2 Basic Setting are finalised before updating" +
+                                "\nthe other data." +
+                                "\n\nBefore exiting, ensure that the Furnace data is saved/updated through 'File' menu.");
+                        associatedDataLoaded = true;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+                System.out.println("Java Version :" + System.getProperty("java.version"));
+                retVal = associatedDataLoaded;
             }
-            System.out.println("Java Version :" + System.getProperty("java.version"));
-            retVal = associatedDataLoaded;
         }
+        else
+            showError("Unable get Server base");
         return retVal;
     }
 
@@ -272,25 +276,15 @@ public class L2Configurator extends StripHeating {
         L2Configurator l2Preparer;
         new WaitMsg(null, "Starting Level2 Configurator. Please wait ...", new ActInBackground() {
             public void doInBackground() {
-                L2Configurator l2Preparer = new L2Configurator();
+                L2Configurator l2Configurator = new L2Configurator();
                 if (parseCmdLineArgs(args)) {
-                    l2Preparer.setItUp();
-                    if (!l2Preparer.associatedDataLoaded) {
-                        l2Preparer.showError(" Unable to Get Application Data.\nAborting ...");
+                    l2Configurator.setItUp();
+                    if (!l2Configurator.associatedDataLoaded) {
+                        l2Configurator.showError(" Unable to Get Application Data.\nAborting ...");
                         System.exit(1);
                     }
                 }
             }
         });
-
-
-//        final L2Configurator l2Preparer = new L2Configurator();
-//        if (parseCmdLineArgs(args)) {
-//            l2Preparer.setItUp();
-//            if (!l2Preparer.associatedDataLoaded) {
-//                l2Preparer.showError(" Unable to Get Application Data.\nAborting ...");
-//                System.exit(1);
-//            }
-//        }
     }
 }

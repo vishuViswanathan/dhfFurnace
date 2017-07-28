@@ -225,7 +225,8 @@ public class CheckAppKey {
         params.put("mID", machineID);
 //        String keyXX =  cipher.bytesToByteString(cipher.encrypt(keyBytes));
 //        params.put("key", keyXX);
-        String response = jspReq.getByPOSTRequest("getAppKey.jsp", params, 2000);
+        long respLen = 2000l;
+        String response = jspReq.getByPOSTRequest("getAppKey.jsp", params, respLen);
         ValAndPos vp;
         vp = XMLmv.getTag(response, "Status", 0);
         if (vp.val.length() > 0) {
