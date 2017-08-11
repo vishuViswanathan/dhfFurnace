@@ -1,6 +1,11 @@
 package basic;
 
+import mvUtils.display.InputControl;
+import mvUtils.display.MultiPairColPanel;
+import mvUtils.display.NumberTextField;
 import mvUtils.mvXML.XMLmv;
+
+import javax.swing.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -22,14 +27,18 @@ public class RadiantTube {
 
     ;
 
-    RTFunction function;
-    RTSource heating;
-    RTType tubeType;
+    RTFunction function = RTFunction.HEATING;
+    RTSource heating = RTSource.ELECTIRICAL;
+    RTType tubeType = RTType.SINGLEENDED;
 
-    public double dia, activeLen;
-    public double internHtCoeff, surfEmiss;
-    public double rating;
+    public double dia = 0.198, activeLen = 1.4;
+    public double internHtCoeff = 5000, surfEmiss = 0.85;
+    public double rating = 15; // in kW??
     public double elementTemp;
+
+    public RadiantTube() {
+
+    }
 
     public RadiantTube(RTFunction function, RTSource heating, RTType tubeType, double od, double effLen, double emiss, double rating) {
         this.function = function;
@@ -50,6 +59,56 @@ public class RadiantTube {
         this(RTFunction.HEATING, RTSource.ELECTIRICAL, RTType.SINGLEENDED, od, effLen, emiss, rating);
 
     }
+
+    NumberTextField ntRadiantTubeOD;
+    NumberTextField ntRadiantTubeLen;
+    NumberTextField ntRadiantTubeRating;
+    NumberTextField ntRadiantTubeEmiss;
+    boolean radiantTubeFieldsSet = false;
+    JPanel dataPanel;
+
+    public JPanel radiantTubesP(InputControl ipc) {
+        if (!radiantTubeFieldsSet) {
+            MultiPairColPanel pan = new MultiPairColPanel("One Radiant tube" );
+            ntRadiantTubeOD = new NumberTextField(ipc, dia * 1000, 6, false,
+                    10, 1000, "#,###", "Tube OD (mm)");
+            ntRadiantTubeLen = new NumberTextField(ipc, activeLen * 1000, 6, false,
+                    10, 10000, "#,###", "Effective Length (mm)");
+            ntRadiantTubeRating = new NumberTextField(ipc, rating, 6, false,
+                    0.01, 1000, "#,###", "Power Rating (kW)");
+            ntRadiantTubeEmiss = new NumberTextField(ipc, surfEmiss, 6, false,
+                    0.01, 1.0, "0.00", "Surface Emissivity");
+            pan.addItemPair(ntRadiantTubeOD);
+            pan.addItemPair(ntRadiantTubeLen);
+            pan.addItemPair(ntRadiantTubeRating);
+            pan.addItemPair(ntRadiantTubeEmiss);
+            dataPanel = pan;
+            radiantTubeFieldsSet = true;
+        }
+        return dataPanel;
+    }
+
+    public boolean takeFromUI() {
+        boolean retVal = false;
+        if (!ntRadiantTubeOD.isInError() && !ntRadiantTubeLen.isInError() && !ntRadiantTubeRating.isInError() &&
+                !ntRadiantTubeEmiss.isInError()) {
+            dia = ntRadiantTubeOD.getData() / 1000;
+            activeLen = ntRadiantTubeLen.getData() / 1000;
+            rating = ntRadiantTubeRating.getData();
+            surfEmiss = ntRadiantTubeEmiss.getData();
+            retVal = true;
+        }
+        return retVal;
+    }
+
+    public void enableDataEdit(boolean ena) {
+        ntRadiantTubeOD.setEditable(ena);
+        ntRadiantTubeLen.setEditable(ena);
+        ntRadiantTubeRating.setEditable(ena);
+        ntRadiantTubeEmiss.setEditable(ena);
+
+    }
+
 
     public double getTotHeatingSurface() {
         return Math.PI * dia * activeLen;

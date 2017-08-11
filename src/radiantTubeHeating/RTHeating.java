@@ -4,18 +4,31 @@ import PropertyViewer.OnePropertyTrace;
 import basic.ChMaterial;
 import basic.Charge;
 import basic.RadiantTube;
-import mvUtils.display.FramedPanel;
-import mvUtils.display.GraphDisplay;
-import mvUtils.display.GraphInfo;
+import com.sun.org.apache.regexp.internal.RE;
+import jsp.JSPchMaterial;
+import mvUtils.display.*;
+import mvUtils.jsp.JSPComboBox;
+import mvUtils.jsp.JSPConnection;
 import mvUtils.math.XYArray;
 import netscape.javascript.JSException;
 import netscape.javascript.JSObject;
 
 
 import javax.swing.*;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
 import java.awt.*;
 import java.awt.Color;
 import java.awt.event.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Vector;
 
 /**
  * Created by IntelliJ IDEA.
@@ -25,47 +38,254 @@ import java.awt.event.*;
  * To change this template use File | Settings | File Templates.
  */
 
-public class RTHeating extends JApplet {
-    boolean onTest = false;
+public class RTHeating extends JApplet implements InputControl{
+    public enum LimitMode {
+        RTTEMP("RT Temperature"),
+        RTHEAT("RT Heat Release");
+
+        private final String modeName;
+
+        LimitMode(String modeName) {
+            this.modeName = modeName;
+        }
+
+        public String getValue() {
+            return name();
+        }
+
+        @Override
+        public String toString() {
+            return modeName;
+        }
+
+        public static LimitMode getEnum(String text) {
+            LimitMode retVal = null;
+            if (text != null) {
+                for (LimitMode b : LimitMode.values()) {
+                    if (text.equalsIgnoreCase(b.modeName)) {
+                        retVal = b;
+                        break;
+                    }
+                }
+            }
+            return retVal;
+        }
+    }
+
+    protected enum RTHDisplayPage {
+        INPUTPAGE, RESULTSPAGE
+    }
+
+    boolean canNotify = true;
     JSObject win;
     String header;
     boolean itsON = false;
     JFrame mainF;
     JPanel mainFrame;
+    JButton jBcalculate = new JButton("Calculate");
     String cvs;
+    String jspBase = "HYPWAP02:9080/fceCalculations/jsp/";
+    JPanel inpPage;
+    JPanel resultsPage;
+    protected JScrollPane slate = new JScrollPane();
+    public JButton pbEdit;
+
+    public JSPConnection jspConnection;
 
     public RTHeating() {
     }
 
-    public void init() {
-        String strTest = this.getParameter("OnTest");
-        if (strTest != null)
-            onTest = strTest.equalsIgnoreCase("YES");
-        if (onTest) {
-            setTestData();
-            calculateRTFce();
-            displayIt();
-        } else {
-            try {
-                win = JSObject.getWindow(this);
-            } catch (JSException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                win = null;
+//    public void init() {
+////        String strTest = this.getParameter("OnTest");
+////        if (strTest != null)
+////            onTest = strTest.equalsIgnoreCase("YES");
+//        onTest = true;
+//        if (onTest) {
+//            setTestData();
+//            calculateRTFce();
+//            displayIt();
+//        } else {
+//            try {
+//                win = JSObject.getWindow(this);
+//            } catch (JSException e) {
+//                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+//                win = null;
+//            }
+//            Object o;
+//            o = win.eval("getData()");
+//        }
+//    }
+
+    public void setItup() {
+        setUIDefaults();
+        mainF = new JFrame("RadiantTube Furnace");
+//        mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        setMenuOptions();
+//        setTestData();
+        mainF.add(slate);
+        vChMaterial = new Vector<ChMaterial>();
+        furnace = new RTFurnace(this);
+        if (getJSPbase()) {
+            if (getJSPConnection()) {
+                inpPage = inputPage();
+                switchToSelectedPage(RTHDisplayPage.INPUTPAGE);
+                mainF.pack();
+                mainF.setVisible(true);
             }
-            Object o;
-            o = win.eval("getData()");
         }
     }
 
-    void setTestData() {
-        debug("hC " + setChargeHeatCont("0, 0, 100, 11.5, 300, 37, 450, 59.0005, 600, 85, 700, 104, 750, 117.5, 850, 137, 1000, 161, 2000, 327"));
-        debug("tk " + setChargeTk("0, 42"));
-        debug("emiss " + setChargeEmiss("0, 0.6, 2000, 0.6"));
-        debug("charge Basic " + chargeBasic("TestMaterial", "0000", "" + 7.85, "" + 1.05, "" + 0.55));
-        debug("rt " + defineRT("" + 0.198, "" + 1.40, "" + 30, "" + 0.85));
-        debug("furnace " + defineFurnace("" + 1.55, "" + 0.8, "" + 0.4, "" + 3.333333, "" + 4000));
-        debug("production " + defineProduction("" + 20000, "" + 550, "" + 730, "" + 900, "" + 24, "" + 50, "" + 1.0, "RTHEAT"));
+    protected void setUIDefaults() {
+        UIManager.put("ComboBox.disabledForeground", Color.black);
+        UIManager.put("Label.disabledForeground", Color.black);
+        Font oldLabelFont = UIManager.getFont("Label.font");
+        UIManager.put("Label.font", oldLabelFont.deriveFont(Font.PLAIN));
+        oldLabelFont = UIManager.getFont("ComboBox.font");
+        UIManager.put("ComboBox.font", oldLabelFont.deriveFont(Font.PLAIN + Font.ITALIC));
+        modifyJTextEdit();
     }
+
+    protected void modifyJTextEdit() {
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                .addPropertyChangeListener("permanentFocusOwner", new PropertyChangeListener() {
+                    public void propertyChange(final PropertyChangeEvent e) {
+                        if (e.getOldValue() instanceof JTextField) {
+                            SwingUtilities.invokeLater(new Runnable() {
+                                public void run() {
+                                    JTextField oldTextField = (JTextField) e.getOldValue();
+                                    oldTextField.setSelectionStart(0);
+                                    oldTextField.setSelectionEnd(0);
+                                }
+                            });
+                        }
+                        if (e.getNewValue() instanceof JTextField) {
+                            SwingUtilities.invokeLater(new Runnable() {
+                                public void run() {
+                                    JTextField textField = (JTextField) e.getNewValue();
+                                    textField.selectAll();
+                                }
+                            });
+                        }
+                    }
+                });
+    }
+
+
+    JPanel inputPage() {
+        JPanel inputFrame = new JPanel(new GridBagLayout());
+        GridBagConstraints gbcMf = new GridBagConstraints();
+
+        gbcMf.anchor = GridBagConstraints.CENTER;
+        gbcMf.gridx = 0;
+        gbcMf.gridy = 0;
+        gbcMf.insets = new Insets(0, 0, 0, 0);
+        gbcMf.gridwidth = 1;
+        gbcMf.gridheight = 1;
+        gbcMf.gridy++;
+        inputFrame.add(furnace.fceDetailsP(this), gbcMf);
+        gbcMf.gridx = 0;
+        gbcMf.gridy++;
+        gbcMf.gridheight = 2;
+        inputFrame.add(furnace.radiantTubesP(this), gbcMf);
+        gbcMf.gridheight = 1;
+        gbcMf.gridx = 1;
+        gbcMf.gridy = 1;
+        inputFrame.add(chargePan(this), gbcMf);
+        gbcMf.gridy++;
+        inputFrame.add(productionP(this), gbcMf);
+        gbcMf.gridy++;
+        inputFrame.add(calculDataP(this), gbcMf);
+        gbcMf.gridx = 0;
+        gbcMf.gridwidth = 2;
+        gbcMf.gridy++;
+        JPanel buttonPanel = new JPanel();
+        jBcalculate.addActionListener(e-> {
+            calculateRTFce();
+        });
+        buttonPanel.add(jBcalculate);
+        inputFrame.add(buttonPanel, gbcMf);
+        return inputFrame;
+    }
+
+    JPanel resultsPage() {
+        JPanel resultsFrame = new JPanel(new GridBagLayout());
+        GridBagConstraints gbcMf = new GridBagConstraints();
+        gbcMf.anchor = GridBagConstraints.CENTER;
+        gbcMf.gridx = 0;
+        gbcMf.gridy = 0;
+        gbcMf.insets = new Insets(0, 0, 0, 0);
+        gbcMf.gridwidth = 1;
+        gbcMf.gridheight = 1;
+        resultsFrame.add(getTitlePanel(), gbcMf);
+        gbcMf.gridx = 0;
+        gbcMf.gridy++;
+        resultsFrame.add(getGraphPanel(), gbcMf);
+        gbcMf.gridx = 0;
+        gbcMf.gridy++;
+        gbcMf.gridwidth = 1;
+        gbcMf.gridheight = 2;
+        resultsFrame.add(getListPanel(), gbcMf);
+        trendPanel.setTraceToShow(-1);
+        return resultsFrame;
+    }
+
+    private void switchToSelectedPage(RTHDisplayPage page) {
+        boolean done = true;
+        switch (page) {
+            case INPUTPAGE:
+                slate.setViewportView(inpPage);
+                break;
+            case RESULTSPAGE:
+                slate.setViewportView(resultsPage);
+                break;
+        }
+    }
+
+    protected boolean getJSPbase() {
+        boolean retVal = false;
+        String jspBaseIDPath = "jspBase.txt";
+        File jspBaseFile = new File(jspBaseIDPath);
+        long len = jspBaseFile.length();
+        if (len > 5 && len < 100) {
+            int iLen = (int) len;
+            byte[] data = new byte[iLen + 1];
+            try {
+                BufferedInputStream iStream = new BufferedInputStream(new FileInputStream(jspBaseFile));
+                if (iStream.read(data) > 5) {
+                    String svr = new String(data).trim();
+                    debug("svr: " + svr);
+                    jspBase = svr + ":9080/fceCalculations/jsp/";
+                    iStream.close();
+                    retVal = true;
+                }
+            } catch (IOException e) {
+                ;
+            }
+        }
+        return retVal;
+    }
+
+    protected boolean getJSPConnection() {
+        boolean retVal = false;
+        try {
+            jspConnection = new JSPConnection(jspBase);
+            retVal = true;
+        } catch (Exception e) {
+            System.out.println("RTHeating.234" + e.getMessage());
+        }
+        return retVal;
+    }
+
+//    void setTestData() {
+//        debug("hC " + setChargeHeatCont("0, 0, 100, 11.5, 300, 37, 450, 59.0005, 600, 85, 700, 104, 750, 117.5, 850, 137, 1000, 161, 2000, 327"));
+//        debug("tk " + setChargeTk("0, 42"));
+//        debug("emiss " + setChargeEmiss("0, 0.6, 2000, 0.6"));
+//        debug("charge Basic " + chargeBasic("TestMaterial", "0000", "" + 7.85, "" + 1.05, "" + 0.00055));
+//        debug("rt " + defineRT("" + 0.198, "" + 1.40, "" + 30, "" + 0.85));
+//        debug("furnace " + defineFurnace("" + 1.55, "" + 0.8, "" + 0.4, "" + 3.333333, "" + 4000));
+//        debug("production " + defineProduction("" + 20000, "" + 550, "" + 730, "" + 900, "" + 24, "" + 50, "" + 1.0, "RTHEAT"));
+//    }
+
 
     public void displayIt() {
         if (!itsON && furnace != null) {
@@ -106,28 +326,94 @@ public class RTHeating extends JApplet {
         }
     }
 
-    JMenu propMenu;
+    JMenu fileMenu;
+    JMenu inputMenu;
+    JMenu resultsMenu;
+    boolean resultsReady = false;
 
     void setMenuOptions() {
         JMenuBar mb = new JMenuBar();
         OnePropertyTrace oneT;
         JMenuItem mI;
         MenuActions mAction = new MenuActions();
-        propMenu = new JMenu("File");
-        mI = new JMenuItem("Save Results");
-        mI.addActionListener(mAction);
-        propMenu.add(mI);
-        mI = new JMenuItem("Retrieve Results");
-        mI.addActionListener(mAction);
-        propMenu.add(mI);
-        propMenu.addSeparator();
+        fileMenu = new JMenu("File");
+//        mI = new JMenuItem("Save Results");
+//        mI.addActionListener(mAction);
+//        fileMenu.add(mI);
+//        mI = new JMenuItem("Retrieve Results");
+//        mI.addActionListener(mAction);
+//        fileMenu.add(mI);
+//        fileMenu.addSeparator();
         mI = new JMenuItem("Exit");
-        mI = new JMenuItem("Exit");
         mI.addActionListener(mAction);
-        propMenu.add(mI);
+        fileMenu.add(mI);
+        mb.add(fileMenu);
+        inputMenu = new JMenu("input Data");
+        resultsMenu = new JMenu("Results");
+        resultsMenu.setEnabled(false);
+        MenuListener menuListener = new MenuListener() {
+            @Override
+            public void menuSelected(MenuEvent e) {
+                if (e.getSource() == inputMenu)
+                    switchToSelectedPage(RTHDisplayPage.INPUTPAGE);
+                else if (e.getSource() == resultsMenu && resultsReady)
+                    switchToSelectedPage(RTHDisplayPage.RESULTSPAGE);
+            }
 
-        mb.add(propMenu);
+            @Override
+            public void menuDeselected(MenuEvent e) {
+
+            }
+
+            @Override
+            public void menuCanceled(MenuEvent e) {
+
+            }
+        };
+
+        inputMenu.addMenuListener(menuListener);
+        resultsMenu.addMenuListener(menuListener);
+        mb.add(inputMenu);
+        mb.add(resultsMenu);
+
+        pbEdit = new JButton("AllowDataEdit");
+        pbEdit.setMnemonic(KeyEvent.VK_E);
+        pbEdit.getModel().setPressed(true);
+        pbEdit.setEnabled(false);
+        pbEdit.addActionListener(e -> {
+            switchToSelectedPage(RTHDisplayPage.INPUTPAGE);
+            enableDataEdit(true);
+
+        });
+        mb.add(pbEdit);
         mainF.setJMenuBar(mb);
+    }
+
+    public void enableDataEdit(boolean ena) {
+
+        ntStripWidth.setEditable(ena);
+        ntStripThickness.setEditable(ena);
+        cbChMaterial.setEnabled(ena);
+
+        ntOutput.setEditable(ena);
+        ntChEntryTemp.setEditable(ena);
+        ntChExitTemp.setEditable(ena);
+
+        cbLimitMode.setEnabled(ena);
+        ntMaxRtTemp.setEditable(ena);
+        ntMaxRtHeat.setEditable(ena);
+        ntUfceLen.setEditable(ena);
+
+        furnace.enableDataEdit(ena);
+        jBcalculate.setEnabled(ena);
+
+//        enableDataEntry(true);
+//        enableFileMenu(true);
+//        enableDefineMenu(true);
+        pbEdit.getModel().setPressed(ena);
+        pbEdit.setEnabled(!ena);
+        resultsReady = !ena;
+        resultsMenu.setEnabled(!ena);
     }
 
     void close() {
@@ -142,12 +428,6 @@ public class RTHeating extends JApplet {
             String command = e.getActionCommand();
             if (command.equals("Exit"))
                 close();
-            if (command.equals("Save Results")) {
-                Object o;
-                o = win.eval("saveResults()");
-//                if (Integer.valueOf(((String)o)) >0)
-                close();
-            }
         } // actionPerformed
     } // class TraceActionListener
 
@@ -258,119 +538,276 @@ public class RTHeating extends JApplet {
     } // class GraphPanel
 
 
-    ChMaterial material;
+    ChMaterial chMaterial;
     Charge theCharge;
     XYArray hC, tk, emiss;
     RadiantTube rt;
     RTFurnace furnace;
-    double production, stTemp, endTemp, perMLoss;
-    double rtLimitTemp, rtLimitHeat, fceLimitLength;
+    double production, stTemp = 30, endTemp = 730, perMLoss;
+    double rtLimitTemp = 900, rtLimitHeat = 24, fceLimitLength;
     boolean bHeatLimit, bRtTempLimit, bFceLengthLimit;
 
-    double uLen;
-    RTFurnace.CalculMode iCalculMode;
+    double uLen = 1;
+    LimitMode iLimitMode;
 
     ScrollPane resultScroll;
     JTable resultTable;
 
-    public String chargeBasic(String matName, String matID, String density, String width, String thickness) {
-        double w = 0;
-        double th = 0;
-        double den = 0;
-        String retVal = "";
-        try {
-            w = Double.valueOf(width);
-            th = Double.valueOf(thickness);
-            den = Double.valueOf(density);
-            if (tk != null && hC != null && emiss != null) {
-                material = new ChMaterial(matName, matID, den, tk, hC, emiss);
-                theCharge = new Charge(material, 1.0, w, th);
-                retVal = "OK";
-            } else
-                retVal = "ERROR: Properties not set!";
-        } catch (NumberFormatException e) {
-            retVal = "ERROR in number format in chargeBasic!";
+    JSPComboBox<ChMaterial> cbChMaterial;
+    Vector<ChMaterial> vChMaterial;
+    JPanel chargeP;
+    double stripWidth = 1.25;
+    double stripThick = 0.0006;
+    NumberTextField ntStripWidth;
+    NumberTextField ntStripThickness;
+    boolean chargeFieldsSet = false;
+    Vector<NumberTextField> chargeFields;
+
+    protected boolean loadChMaterialData() {
+        boolean retVal = false;
+        if (jspConnection.allOK) {
+            Vector<JSPchMaterial> metalListJSP = JSPchMaterial.getMetalList(jspConnection);
+            for (JSPchMaterial mat : metalListJSP)
+                vChMaterial.add(mat);
+            retVal = true; // TODO must be improved to check vChMaterial.size() > 0;
         }
         return retVal;
     }
 
-    public String setChargeHeatCont(String heatCont) {
-        hC = new XYArray(heatCont);
-        return "OK " + hC.arrLen;
+    public JPanel chargePan(InputControl ipc) {
+        if (!chargeFieldsSet) {
+            MultiPairColPanel pan = new MultiPairColPanel("Charge Data");
+            if (loadChMaterialData()) {
+                cbChMaterial = new JSPComboBox<>(jspConnection, vChMaterial);
+                chargeFields = new Vector<>();
+                chargeFields.add(ntStripWidth = new NumberTextField(ipc, stripWidth * 1000, 6, false,
+                        50, 10000, "#,###", "Strip Width (mm)"));
+                chargeFields.add(ntStripThickness = new NumberTextField(ipc, stripThick * 1000, 6, false,
+                        0.001, 200, "0.000", "Strip Thickness (mm)"));
+                pan.addItemPair("Charge Material", cbChMaterial);
+                pan.addItemPair(ntStripWidth);
+                pan.addItemPair(ntStripThickness);
+                chargeP = pan;
+                chargeFieldsSet = true;
+            }
+        }
+        return chargeP;
     }
 
-    public String setChargeTk(String thermalC) {
-        tk = new XYArray(thermalC);
-        return "OK " + tk.arrLen;
-    }
-
-    public String setChargeEmiss(String emissivity) {
-        emiss = new XYArray(emissivity);
-        return "OK " + emiss.arrLen;
-    }
-
-    public String defineRT(String od, String effLen, String rating, String emiss) {
-        String retVal = "OK";
-        try {
-            double odVal = Double.valueOf(od);
-            double effLenVal = Double.valueOf(effLen);
-            double ratingVal = Double.valueOf(rating);
-            double emissVal = Double.valueOf(emiss);
-            rt = new RadiantTube(odVal, effLenVal, ratingVal, emissVal);
-        } catch (NumberFormatException e) {
-            retVal = "ERROR in number format in defineRT!";
+    boolean takeChargeFromUI() {
+        chMaterial = (ChMaterial)cbChMaterial.getSelectedItem();
+        boolean retVal = (chMaterial != null);
+        for (NumberTextField f: chargeFields)
+            retVal &= !f.isInError();
+        if (retVal) {
+            stripWidth = ntStripWidth.getData() / 1000;
+            stripThick = ntStripThickness.getData() / 1000;
         }
         return retVal;
     }
 
-    public String defineFurnace(String width, String heightAbove, String rtCenterAbove, String rtPerM, String lossPerM) {
-        String retVal = "OK";
-        try {
-            double w = Double.valueOf(width);
-            double h = Double.valueOf(heightAbove);
-            double cl = Double.valueOf(rtCenterAbove);
-            double rts = Double.valueOf(rtPerM);
-            perMLoss = Double.valueOf(lossPerM);
-            if (rt != null)
-                furnace = new RTFurnace(w, h, cl, rt, rts);
-            else
-                retVal = "ERROR Radiant tube not defined in defineFurnace!";
-        } catch (NumberFormatException e) {
-            retVal = "ERROR in number format in defineFurnace!";
+    NumberTextField ntOutput;
+    NumberTextField ntChEntryTemp;
+    NumberTextField ntChExitTemp;
+    JPanel productionPanel;
+    boolean productionFieldsSet = false;
+    Vector<NumberTextField> productionFields;
+
+    public JPanel productionP(InputControl ipc) {
+        if (!productionFieldsSet) {
+            MultiPairColPanel pan = new MultiPairColPanel("Production Data" );
+            productionFields = new Vector<>();
+            productionFields.add(ntOutput = new NumberTextField(ipc, production/ 1000, 6, false,
+                    0.200, 200000, "#,###", "Output (t/h)"));
+            productionFields.add(ntChEntryTemp = new NumberTextField(ipc, stTemp, 6, false,
+                    -200, 2000, "#,###", "Charge Entry Temperatures (C)"));
+            productionFields.add(ntChExitTemp = new NumberTextField(ipc, endTemp, 6, false,
+                    -200, 2000, "#,###", "Charge Exit Temperatures (C)"));
+            pan.addItemPair(ntOutput);
+            pan.addItemPair(ntChEntryTemp);
+            pan.addItemPair(ntChExitTemp);
+            productionPanel = pan;
+            productionFieldsSet = true;
+        }
+        return productionPanel;
+    }
+
+    public boolean takeProductionFromUI() {
+        boolean retVal = true;
+        for (NumberTextField f: productionFields)
+            retVal &= !f.isInError();
+        if (retVal) {
+            production = ntOutput.getData() * 1000;
+            stTemp = ntChEntryTemp.getData();
+            endTemp = ntChExitTemp.getData();
+            if (endTemp <= stTemp) {
+                showError("Charge Exit Temperature has to be higher the Entry");
+                retVal = false;
+            }
         }
         return retVal;
     }
 
-    public String defineProduction(String output, String stTempStr, String endTempStr, String maxRtTemp,
-                                   String maxRTHeat, String maxFceLen, String uFceLen, String limitType) {
-        String retVal = "OK";
-        try {
-            production = Double.valueOf(output);
-            stTemp = Double.valueOf(stTempStr);
-            endTemp = Double.valueOf(endTempStr);
-            rtLimitTemp = Double.valueOf(maxRtTemp);
-            rtLimitHeat = Double.valueOf(maxRTHeat);
-            fceLimitLength = Double.valueOf(maxFceLen);
-            bRtTempLimit = false;
-            bHeatLimit = false;
-            bFceLengthLimit = false;
+//    public String chargeBasic(String matName, String matID, String density, String width, String thickness) {
+//        double l = 0; // dimension along furnace width, nomenclatures as per Charge class
+//        double w = 1; // dimension along furnace length
+//        double th = 0;
+//        double den = 0;
+//        String retVal = "";
+//        try {
+//            l = Double.valueOf(width);
+//            th = Double.valueOf(thickness);
+//            den = Double.valueOf(density);
+//            if (tk != null && hC != null && emiss != null) {
+//                chMaterial = new ChMaterial(matName, matID, den, tk, hC, emiss);
+//                theCharge = new Charge(chMaterial, l, w, th);
+//                retVal = "OK";
+//            } else
+//                retVal = "ERROR: Properties not set!";
+//        } catch (NumberFormatException e) {
+//            retVal = "ERROR in number format in chargeBasic!";
+//        }
+//        return retVal;
+//    }
+//
+//    public String setChargeHeatCont(String heatCont) {
+//        hC = new XYArray(heatCont);
+//        return "OK " + hC.arrLen;
+//    }
+//
+//    public String setChargeTk(String thermalC) {
+//        tk = new XYArray(thermalC);
+//        return "OK " + tk.arrLen;
+//    }
+//
+//    public String setChargeEmiss(String emissivity) {
+//        emiss = new XYArray(emissivity);
+//        return "OK " + emiss.arrLen;
+//    }
+//
+//    public String defineRT(String od, String effLen, String rating, String emiss) {
+//        String retVal = "OK";
+//        try {
+//            double odVal = Double.valueOf(od);
+//            double effLenVal = Double.valueOf(effLen);
+//            double ratingVal = Double.valueOf(rating);
+//            double emissVal = Double.valueOf(emiss);
+//            rt = new RadiantTube(odVal, effLenVal, ratingVal, emissVal);
+//        } catch (NumberFormatException e) {
+//            retVal = "ERROR in number format in defineRT!";
+//        }
+//        return retVal;
+//    }
+//
+//    public String defineFurnace(String width, String heightAbove, String rtCenterAbove, String rtPerM, String lossPerM) {
+//        String retVal = "OK";
+//        try {
+//            double w = Double.valueOf(width);
+//            double h = Double.valueOf(heightAbove);
+//            double cl = Double.valueOf(rtCenterAbove);
+//            double rts = Double.valueOf(rtPerM);
+//            perMLoss = Double.valueOf(lossPerM);
+//            if (rt != null)
+//                furnace = new RTFurnace(w, h, cl, rt, rts);
+//            else
+//                retVal = "ERROR Radiant tube not defined in defineFurnace!";
+//        } catch (NumberFormatException e) {
+//            retVal = "ERROR in number format in defineFurnace!";
+//        }
+//        return retVal;
+//    }
+//
+//    public String defineProduction(String output, String stTempStr, String endTempStr, String maxRtTemp,
+//                                   String maxRTHeat, String maxFceLen, String uFceLen, String limitType) {
+//        String retVal = "OK";
+//        try {
+//            production = Double.valueOf(output);
+//            stTemp = Double.valueOf(stTempStr);
+//            endTemp = Double.valueOf(endTempStr);
+//            rtLimitTemp = Double.valueOf(maxRtTemp);
+//            rtLimitHeat = Double.valueOf(maxRTHeat);
+//            fceLimitLength = Double.valueOf(maxFceLen);
+//            bRtTempLimit = false;
+//            bHeatLimit = false;
+//            bFceLengthLimit = false;
+//
+//            if (limitType.equalsIgnoreCase("" + LimitMode.RTTEMP))
+//                iLimitMode = LimitMode.RTTEMP;
+//            else if (limitType.equalsIgnoreCase("" + LimitMode.RTHEAT))
+//                iLimitMode = LimitMode.RTHEAT;
+//            uLen = Double.valueOf(uFceLen);
+//            furnace.setProduction(theCharge, production, fceLimitLength, uLen, perMLoss * uLen, iLimitMode);
+//        } catch (NumberFormatException e) {
+//            retVal = "ERROR in number format in defineProduction!";
+//        }
+//
+//        return retVal;
+//    }
 
-            if (limitType.equalsIgnoreCase("" + RTFurnace.CalculMode.RTTEMP))
-                iCalculMode = RTFurnace.CalculMode.RTTEMP;
-            else if (limitType.equalsIgnoreCase("" + RTFurnace.CalculMode.RTHEAT))
-                iCalculMode = RTFurnace.CalculMode.RTHEAT;
-            uLen = Double.valueOf(uFceLen);
-            furnace.setProduction(theCharge, production, fceLimitLength, uLen, perMLoss * uLen, iCalculMode);
-        } catch (NumberFormatException e) {
-            retVal = "ERROR in number format in defineProduction!";
+    JPanel calculModeP;
+    JComboBox<LimitMode> cbLimitMode;
+    NumberTextField ntMaxRtTemp;
+    NumberTextField ntMaxRtHeat;
+    NumberTextField ntUfceLen;
+    Vector<NumberTextField> calculFields;
+    boolean calculFieldsSet = false;
+
+    JPanel calculDataP(InputControl ipc) {
+        if (!calculFieldsSet) {
+            MultiPairColPanel pan = new MultiPairColPanel("Calculation Mode");
+            calculFields = new Vector<>();
+            cbLimitMode = new JComboBox<>(LimitMode.values());
+            pan.addItemPair("Calculation Limiting Mode", cbLimitMode);
+            calculFields.add(ntMaxRtTemp = new NumberTextField(ipc, rtLimitTemp, 6, false,
+                    200, 2000, "#,###", "Radiant Tube Temperature Limit (C)"));
+            productionFields.add(ntMaxRtHeat = new NumberTextField(ipc, rtLimitHeat, 6, false,
+                    0, 2000, "#,###.00", "Radiant Tube Heat Limit (kW)"));
+            productionFields.add(ntUfceLen = new NumberTextField(ipc, uLen * 1000, 6, false,
+                    200, 20000, "#,###", "Furnace Calculation Step Length (mm)"));
+            pan.addItemPair(ntMaxRtTemp);
+            pan.addItemPair(ntMaxRtHeat);
+            pan.addItemPair(ntUfceLen);
+            calculModeP = pan;
+            calculFieldsSet = true;
         }
+        return calculModeP;
+    }
 
+    boolean takeCalculModeFromUI() {
+        boolean retVal = true;
+        for (NumberTextField f: calculFields)
+            retVal &= !f.isInError();
+        if (retVal) {
+            rtLimitTemp = ntMaxRtTemp.getData();
+            rtLimitHeat = ntMaxRtHeat.getData();
+            uLen = ntUfceLen.getData() / 1000;
+            iLimitMode = (LimitMode)(cbLimitMode.getSelectedItem());
+            switch ((LimitMode)cbLimitMode.getSelectedItem()) {
+                case RTHEAT:
+                    bHeatLimit = true;
+                    bRtTempLimit = false;
+                    break;
+                case RTTEMP:
+                    bHeatLimit = false;
+                    bRtTempLimit = true;
+                    break;
+            }
+        }
         return retVal;
     }
 
     public void calculateRTFce() {
-        furtherCalculations();
-
+        if (takeChargeFromUI() && takeProductionFromUI() && furnace.takeFceDetailsFromUI() &&
+                takeCalculModeFromUI()) {
+            theCharge = new Charge(chMaterial, stripWidth, uLen, stripThick);
+            furnace.setProduction(theCharge, production, uLen, iLimitMode);
+            furtherCalculations();
+            resultsPage = resultsPage();
+            enableDataEdit(false);
+            switchToSelectedPage(RTHDisplayPage.RESULTSPAGE);
+        }
+        else
+            showError("Some Input Data is not acceptable");
     }
 
     void debug(String msg) {
@@ -382,8 +819,41 @@ public class RTHeating extends JApplet {
         furnace.calculate(stTemp + 273, endTemp + 273, rtLimitTemp + 273, rtLimitHeat);
     }
 
-    public String resultsInCVS() {
-        return furnace.resultsInCVS();
+//    public String resultsInCVS() {
+//        return furnace.resultsInCVS();
+//    }
+
+    @Override
+    public boolean canNotify() {
+        return canNotify;
+    }
+
+    @Override
+    public void enableNotify(boolean b) {
+        canNotify = b;
+    }
+
+    @Override
+    public Window parent() {
+        return mainF;
+    }
+
+    public void showError(String msg) {
+        showError(msg, mainF);
+    }
+
+    public static void showError(String msg, Window w){
+        SimpleDialog.showError(w, "", msg);
+        if (w != null)
+            w.toFront();
+    }
+
+
+
+    public static void main (String[] arg) {
+        RTHeating rth = new RTHeating();
+        rth.setItup();
+
     }
 
 }

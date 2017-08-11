@@ -3,7 +3,6 @@ package radiantTubeHeating;
 import basic.Charge;
 import basic.RadiantTube;
 
-import javax.swing.*;
 import java.text.DecimalFormat;
 
 /**
@@ -14,6 +13,9 @@ import java.text.DecimalFormat;
  * To change this template use File | Settings | File Templates.
  */
 public class OneSlot {
+
+   // Reference book: Heat & mass Transfer by Dr.D. S. Kumar  9th Edition
+
     double stefBoltz = 0.0000000496;
     double TEMPERRLIMIT = 0.1;
     double HEATERRLIMIT = 0.001;
@@ -31,8 +33,15 @@ public class OneSlot {
     double unitTime, endTime;
     double shapeFHeCh;
     double uChWt;
-    double grayFactHeCh, sigGrayHeCh, grayFactHeFc, grayFactFcCh;
-    RTFurnace.CalculMode iMode;
+    double grayFactHeCh, sigGrayHeCh;
+//    double grayFactHeFc, grayFactFcCh;
+//    double relRHEtoWall; // for calculation wall temperature
+    double resistTotHEtoCharge; // for calculation wall temperature
+    double resistWallsToCharge;
+    double resistHEtoWall;
+    double restistNearHE;
+
+    RTHeating.LimitMode iMode;
     OneSlot prevSlot;
 
     public OneSlot(RTFurnace rtF, double lPos, OneSlot prevSlot) {
@@ -140,16 +149,39 @@ public class OneSlot {
                 ((1 / rT.surfEmiss - 1) + rtF.uAreaHeTot / rtF.uAreaChTot * (1 / emissCh - 1) +
                 (rtF.uAreaHeTot + rtF.uAreaChTot - 2 * rtF.uAreaHeTot * shapeFHeCh) /
                     (rtF.uAreaChTot - rtF.uAreaHeTot * shapeFHeCh * shapeFHeCh) );
+        // this has been checked and found to be ok on 20170801
+        // Ref page 402, 403
         sigGrayHeCh = stefBoltz * grayFactHeCh * rtF.uAreaHeTot;
-        grayFactHeFc = 1 /
-            ((1 - rT.surfEmiss) / (rtF.uAreaHeTot *  rT.surfEmiss) +
-                (1 / (rtF.uAreaHeTot * (1 - shapeFHeCh))) );
-        grayFactFcCh = 1 /
-            ((1 - emissCh) / (rtF.uAreaChTot * emissCh) +
-                (1 / (rtF.uAreaHeTot * (1 - shapeFHeCh * rtF.uAreaHeTot / rtF.uAreaChTot))));
+
+        restistNearHE = (1- rT.surfEmiss) / (rtF.uAreaHeTot * rT.surfEmiss);
+        resistTotHEtoCharge = 1 / (rtF.uAreaHeTot * grayFactHeCh);
+        double f12 = shapeFHeCh;
+        double f21 = f12 * rtF.uAreaHeTot / rtF.uAreaChTot;
+        double f23 = 1 - f21;
+        resistWallsToCharge = 1 / (rtF.uAreaChTot * f23);
+        double f13 = 1 - f12;
+        resistHEtoWall = 1 / (rtF.uAreaHeTot * f13);
+
+//        grayFactHeFc = 1 /
+//            ((1 - rT.surfEmiss) / (rtF.uAreaHeTot *  rT.surfEmiss) +
+//                (1 / (rtF.uAreaHeTot * (1 - shapeFHeCh))) );
+////        grayFactFcCh = 1 /
+////            ((1 - emissCh) / (rtF.uAreaChTot * emissCh) +
+////                (1 / (rtF.uAreaHeTot * (1 - shapeFHeCh * rtF.uAreaHeTot / rtF.uAreaChTot))));
+////      Corrected i=on 20170804
+//        grayFactFcCh = 1 /
+//                ((1 - emissCh) / (rtF.uAreaChTot * emissCh) +
+//                        (1 / (rtF.uAreaChTot * (1 - shapeFHeCh * rtF.uAreaHeTot / rtF.uAreaChTot))));
+//
+////        relRHEtoWall = (1- rT.surfEmiss) / (rtF.uAreaHeTot * rT.surfEmiss) +
+////                ((1 / (rtF.uAreaHeTot * shapeFHeCh) * (1 / rtF.uAreaChHe * (1 - shapeFHeCh) ))) /
+////                        ((1 / (rtF.uAreaHeTot * ((1 - shapeFHeCh)))) + (1 / (rtF.uAreaChHe * f23)));
+
     }
 
     double shapeFactor12(Double area1, double area2, double gap, double angle) {
+        // considers the surfaces as sqares with centers and side aligned
+        // Presently 'angle' is not used ... assumed 0 (parallel)
         int CALCdivs = 5;
         int MIDdiv = 2;
         double da1da2, w1, w2, dw1;
@@ -207,10 +239,36 @@ public class OneSlot {
         return tempChE2;
     }
 
+//    double furnaceTemp(double tempChMean, double tempSrc) {
+//        return Math.pow(((grayFactHeFc * Math.pow(tempSrc, 4) + grayFactFcCh * Math.pow(tempChMean, 4)) /
+//                            (grayFactHeFc + grayFactFcCh)), 0.25);
+//    }
+//  Corrected on 20170804
+
     double furnaceTemp(double tempChMean, double tempSrc) {
-        return Math.pow(((grayFactHeFc * Math.pow(tempSrc, 4) + grayFactFcCh * Math.pow(tempChMean, 4)) /
-                            (grayFactHeFc + grayFactFcCh)), 0.25);
+        // rt = 1, charge = 2, Fce = 3
+//        double f32 = grayFactFcCh;
+//        double f13 = grayFactHeFc;
+//        double f31 = f13 * rtF.uAreaHeTot / rtF.uAreaWalls;
+//        return Math.pow(((f32 * Math.pow(tempSrc, 4) + f31 * Math.pow(tempChMean, 4)) /
+//                (f32 + f31)), 0.25);
+
+        double v1 = Math.pow(tempSrc, 4);
+        double v2 = Math.pow(tempChMean, 4);
+        double current = (v1 - v2 ) / resistTotHEtoCharge;
+        double emissCharge = charge.getEmiss(tempChMean);
+        double resistNearCharge = (1 - emissCharge) / (emissCharge * rtF.uAreaChTot);
+
+        double v3 = (resistWallsToCharge * (v1 - current * restistNearHE) + resistHEtoWall * (v2 + current * resistNearCharge)) /
+                (resistWallsToCharge + resistHEtoWall);
+        return Math.pow(v3, 0.25);
     }
+
+//    double furnaceTempApsXLVersion(double tempChMean, double tempSrc) {
+//        return Math.pow(((grayFactHeFc * Math.pow(tempHe, 4) + grayFactFcCh * Math.pow(tempChMean, 4)) /
+//                (grayFactHeFc + grayFactFcCh)), 0.25);
+//    }
+//
 
     public double calculate() {
         if (prevSlot != null)
@@ -219,7 +277,7 @@ public class OneSlot {
             return Double.NaN;
     }
 
-    public double calculate(double fromTemp, double srcTemp, double prevDeltaTemp, double srcHeat, RTFurnace.CalculMode iMode) {
+    public double calculate(double fromTemp, double srcTemp, double prevDeltaTemp, double srcHeat, RTHeating.LimitMode iMode) {
         tempChSt = fromTemp;
         getGrayFactors();
         double tempChB, tempChE1, tempChE2;
@@ -235,7 +293,7 @@ public class OneSlot {
             tempChE1 = tempChSt + prevDeltaTemp;
 
         chHeatContB = charge.getHeatFromTemp(tempChSt - 273);
-        if (iMode == RTFurnace.CalculMode.RTTEMP)
+        if (iMode == RTHeating.LimitMode.RTTEMP)
                 tempHe1 = srcTemp;
         else {//it is in heat limited mode
             if (prevSlot == null)
@@ -245,7 +303,7 @@ public class OneSlot {
         }
         while (true) { // heat limit check loop
             tempChE2 = chargeEndTemp(tempChSt, tempHe1);
-            if (iMode == RTFurnace.CalculMode.RTTEMP)  // exit if not heat limit
+            if (iMode == RTHeating.LimitMode.RTTEMP)  // exit if not heat limit
                 break;
             tempChMean = (tempChSt + tempChE2) / 2;
             heatHe1 = sigGrayHeCh * (Math.pow(tempHe1, 4) - Math.pow(tempChMean, 4)) + heatLoss;

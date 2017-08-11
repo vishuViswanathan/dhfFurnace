@@ -134,7 +134,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
 //    static public String jspBase = "http://localhost:9080/fceCalculations/jsp/";
-    static public String jspBase = "http://HYPWAP02:9080/fceCalculations/jsp/";
+    static public String jspBase = "HYPWAP02:9080/fceCalculations/jsp/";
     static public boolean bAllowProfileChange = true;
     static public boolean bAllowManualCalculation = true;
     static public boolean bAllowEditPerformanceList = true;
@@ -4593,11 +4593,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected boolean getJSPConnection() {
         boolean retVal = false;
         try {
-            URL url = new URL(jspBase);
-            jspConnection = new JSPConnection(url);
+            jspConnection = new JSPConnection(jspBase);
             retVal = true;
-        } catch (MalformedURLException e) {
-            System.out.println("DFHeating.4627 " + e.getLocalizedMessage());
+        } catch (Exception e) {
+            System.out.println("DFHeating.4599 " + e.getLocalizedMessage());
         }
         return retVal;
     }
