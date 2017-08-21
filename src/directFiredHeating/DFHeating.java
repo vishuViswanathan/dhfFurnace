@@ -162,7 +162,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = "Downloadable 20170524PM";
+    protected String releaseDate = "Downloadable 20170821";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -326,7 +326,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     public boolean setItUp() {
         boolean retVal = false;
         if (getJSPbase() && getJSPConnection()) {
-            DataWithStatus<Boolean> runCheck = new CheckAppKey().canRunThisApp(appCode, true);
+            DataWithStatus<Boolean> runCheck = new CheckAppKey(jspBase).canRunThisApp(appCode, true);
             if (runCheck.getStatus() == DataStat.Status.OK) {
                 modifyJTextEdit();
                 fuelList = new Vector<Fuel>();
@@ -358,33 +358,11 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                 debugLocal("Created furnace");
                 furnace.setTuningParams(tuningParams);
                 debugLocal("tuning params set");
-//            if (onTest || asApplication) {
                 createUIs();
                 if (loadFuelAndChMaterialData()) {
                     setTestData();
                     switchPage(DFHDisplayPageType.INPUTPAGE);
                     displayIt();
-//            } else {
-//                try {
-//                    win = JSObject.getWindow(this);
-//                } catch (Exception e) {
-//                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-//                    win = null;
-//                }
-//                Object o;
-//                debugLocal("got win");
-//                o = win.eval("enableSpecsSave()");
-//                enableSpecsSave = (o != null) && o.equals("1");
-//                debugLocal("before creating UI");
-//                loadFuelAndChMaterialData();
-//                createUIs();
-//                debugLocal("Created UI");
-////            testFunctions();
-//                setTestData();
-//                debugLocal("did setTestData()");
-//                o = win.eval("getData()");
-//                debugLocal("got Data from aspx");
-//            }
                     fuelMixP = Fuel.mixedFuelPanel(this, jspConnection, fuelList);
                     regenBurnerStudy = new RegenBurner(fuelList, jspConnection, this);
                     logInfo("DFHeating initiated");
@@ -400,7 +378,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             }
         }
         else
-            showError("Unable get Server base");
+            showError("Unable to connect to Server");
         return retVal;
     }
 

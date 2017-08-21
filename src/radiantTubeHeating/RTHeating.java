@@ -4,14 +4,13 @@ import PropertyViewer.OnePropertyTrace;
 import basic.ChMaterial;
 import basic.Charge;
 import basic.RadiantTube;
-import com.sun.org.apache.regexp.internal.RE;
 import jsp.JSPchMaterial;
 import mvUtils.display.*;
 import mvUtils.jsp.JSPComboBox;
 import mvUtils.jsp.JSPConnection;
 import mvUtils.math.XYArray;
-import netscape.javascript.JSException;
 import netscape.javascript.JSObject;
+import protection.CheckAppKey;
 
 
 import javax.swing.*;
@@ -26,8 +25,6 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Vector;
 
 /**
@@ -75,7 +72,7 @@ public class RTHeating extends JApplet implements InputControl{
     protected enum RTHDisplayPage {
         INPUTPAGE, RESULTSPAGE
     }
-
+    public int appCode = 101;
     boolean canNotify = true;
     JSObject win;
     String header;
@@ -116,7 +113,33 @@ public class RTHeating extends JApplet implements InputControl{
 //        }
 //    }
 
-    public void setItup() {
+    public boolean setItUp() {
+        boolean retVal = false;
+        if (getJSPbase() && getJSPConnection()) {
+            DataWithStatus<Boolean> runCheck = new CheckAppKey(jspBase).canRunThisApp(appCode, true);
+            if (runCheck.getStatus() == DataStat.Status.OK) {
+                setUIDefaults();
+                mainF = new JFrame("RadiantTube Furnace");
+//        mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+                setMenuOptions();
+//        setTestData();
+                mainF.add(slate);
+                vChMaterial = new Vector<ChMaterial>();
+                furnace = new RTFurnace(this);
+                if (loadChMaterialData()) {
+                    inpPage = inputPage();
+                    switchToSelectedPage(RTHDisplayPage.INPUTPAGE);
+                    mainF.pack();
+                    mainF.setVisible(true);
+                    retVal = true;
+                }
+            }
+        } else
+            showError("Unable to connect to Server");
+        return retVal;
+    }
+
+    public void setItupOLD() { // TODO check and remove
         setUIDefaults();
         mainF = new JFrame("RadiantTube Furnace");
 //        mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -569,7 +592,7 @@ public class RTHeating extends JApplet implements InputControl{
             Vector<JSPchMaterial> metalListJSP = JSPchMaterial.getMetalList(jspConnection);
             for (JSPchMaterial mat : metalListJSP)
                 vChMaterial.add(mat);
-            retVal = true; // TODO must be improved to check vChMaterial.size() > 0;
+            retVal = (vChMaterial.size() > 0);
         }
         return retVal;
     }
@@ -577,7 +600,7 @@ public class RTHeating extends JApplet implements InputControl{
     public JPanel chargePan(InputControl ipc) {
         if (!chargeFieldsSet) {
             MultiPairColPanel pan = new MultiPairColPanel("Charge Data");
-            if (loadChMaterialData()) {
+//            if (loadChMaterialData()) {
                 cbChMaterial = new JSPComboBox<>(jspConnection, vChMaterial);
                 chargeFields = new Vector<>();
                 chargeFields.add(ntStripWidth = new NumberTextField(ipc, stripWidth * 1000, 6, false,
@@ -589,7 +612,7 @@ public class RTHeating extends JApplet implements InputControl{
                 pan.addItemPair(ntStripThickness);
                 chargeP = pan;
                 chargeFieldsSet = true;
-            }
+//            }
         }
         return chargeP;
     }
@@ -852,8 +875,10 @@ public class RTHeating extends JApplet implements InputControl{
 
     public static void main (String[] arg) {
         RTHeating rth = new RTHeating();
-        rth.setItup();
-
+        if (!rth.setItUp()) {
+            rth.showError("Something is not OK. Aborting");
+            System.exit(1);
+        }
     }
 
 }

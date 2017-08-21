@@ -12,7 +12,7 @@ import protection.CheckAppKey;
  */
 public class TestPad {
     static public void main(String[] args) {
-        CheckAppKey keyCheck = new CheckAppKey();
+        CheckAppKey keyCheck = new CheckAppKey("localhost");
         DataWithStatus resp = keyCheck.canRunThisApp(100, false);
         DataStat.Status stat = resp.getStatus();
         print(stat.toString());

@@ -62,7 +62,7 @@ public class L2Configurator extends StripHeating {
         boolean retVal = false;
 //        debugLocal("L2Configurator.56");
         if (getJSPbase() && getJSPConnection()) {
-            DataWithStatus<Boolean> runCheck = new CheckAppKey().canRunThisApp(appCode, true);
+            DataWithStatus<Boolean> runCheck = new CheckAppKey(jspBase).canRunThisApp(appCode, true);
             if (runCheck.getStatus() == DataStat.Status.OK) {
                 modifyJTextEdit();
                 fuelList = new Vector<Fuel>();
@@ -132,7 +132,7 @@ public class L2Configurator extends StripHeating {
             }
         }
         else
-            showError("Unable get Server base");
+            showError("Unable to connect to Server");
         return retVal;
     }
 

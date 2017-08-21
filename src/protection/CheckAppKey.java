@@ -23,6 +23,7 @@ import java.util.HashMap;
  */
 public class CheckAppKey {
     enum KeyStat  {FOUND, NOTIAPPFOLDER, NOFILE, NOBASEFOLDER, NOENTRY, ERRORREADING};
+    String jspBase;
     String machineID;
     MachineCheck mC;
     final String newLine = "\r\n";
@@ -33,7 +34,8 @@ public class CheckAppKey {
     byte[] localKey  = {100};
     GCMCipher cipher;
 
-    public CheckAppKey() {
+    public CheckAppKey(String jspBase) {
+        this.jspBase = "http://" + jspBase;
         mC = new MachineCheck();
         machineID = mC.getMachineID(true);
         user = MiscUtil.getUser();
@@ -212,7 +214,7 @@ public class CheckAppKey {
 
     DataWithStatus<String> getAppKeyFromServer(int appID) {
         DataWithStatus<String> retVal = new DataWithStatus<>("ERROR");
-        PostToWebSite jspReq =  new PostToWebSite(DFHeating.jspBase);
+        PostToWebSite jspReq =  new PostToWebSite(jspBase);
         HashMap<String, String> params = new HashMap<>();
 //        byte[] keyBytes = localKey;
 //        String key =  cipher.bytesToByteString(keyBytes);
