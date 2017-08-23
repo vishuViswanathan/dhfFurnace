@@ -825,7 +825,7 @@ public class L2DFHeating extends StripHeating {
         if (fuelSpecsFromFile(fceDataLocation + "FuelSpecifications.dfhSpecs") ) {
             int nFuel = fuelList.size();
             if (nFuel > 1) { // restrict to just one Fuel
-                for (int f = 1; f < nFuel; f++)
+                for (int f = nFuel - 1; f > 0; f--)
                     fuelList.remove(f);
             }
             retVal = chMaterialSpecsFromFile(fceDataLocation + "ChMaterialSpecifications.dfhSpecs");
