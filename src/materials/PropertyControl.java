@@ -1,4 +1,4 @@
-package PropertySetter;
+package materials;
 
 /**
  * Created by IntelliJ IDEA.
@@ -8,8 +8,8 @@ package PropertySetter;
  * To change this template use File | Settings | File Templates.
  */
 public interface PropertyControl {
-    public boolean saveData(Object o);
-    public void inEdit(boolean bInEdit);
+    boolean saveData(Object o);
+    void inEdit(boolean bInEdit);
 
-    public void quit();
+    void quit();
 }

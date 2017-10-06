@@ -3,6 +3,8 @@ package PropertySetter;
 import basic.FlueComposition;
 import basic.Fuel;
 import display.*;
+import materials.FuelComponent;
+import materials.PropertyControl;
 import mvUtils.display.InputControl;
 import mvUtils.display.MultiPairColPanel;
 import mvUtils.display.NumberTextField;
@@ -44,7 +46,7 @@ public class FuelDetails {
     //    double H2, CO, CH4, C2H6, C2H2, C3H8, C4H10, N2, H2O, CO2, O2, C, S, Ash;
     LinkedHashMap<String, ElementNvalue> elementHash;
 
-    public FuelDetails(InputControl control, PropertyControl propControl,  Fuel fuel, String type,
+    public FuelDetails(InputControl control, PropertyControl propControl, Fuel fuel, String type,
                        Vector<FuelComponent> fuelComponents, boolean bNew, boolean bCanEdit) {
         this.control = control;
         this.propControl = propControl;
@@ -446,7 +448,10 @@ debug("netHeatCont :" + netHeatCont);
             if (command.equals("Save Fuel Data"))  {
                 noteIt();
                 if (compoOK)
-                    trySavingFuel();
+                    if (trySavingFuel()) {
+                        compoCopy = null;
+                        fuelCopy = null;
+                    }
             }
             else if (command.equals("Edit Fuel Data")) {
                 getReadyToEdit();

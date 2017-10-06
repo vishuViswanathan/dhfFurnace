@@ -1,7 +1,5 @@
 package materials;
 
-import PropertySetter.FuelComponent;
-import PropertySetter.PropertyControl;
 import basic.FlueComposition;
 import basic.Fuel;
 import display.*;
@@ -397,8 +395,8 @@ public class FuelParameters {
         retVal.append(XMLmv.putTag("C", "" + 0)); //  C$
         retVal.append(XMLmv.putTag("S", "" + 0)); //  S$
         retVal.append(XMLmv.putTag("Ash", "" + 0)); //  Ash$
-        retVal.append(XMLmv.putTag("AirFuelRation", "" + fuel.airFuelRatio)); //  AirFuelRatio$
-        retVal.append(XMLmv.putTag("FlueFuelRation", "" + fuel.flueFuelRatio)); //  FlueFuelRatio$
+        retVal.append(XMLmv.putTag("AirFuelRatio", "" + fuel.airFuelRatio)); //  AirFuelRatio$
+        retVal.append(XMLmv.putTag("FlueFuelRatio", "" + fuel.flueFuelRatio)); //  FlueFuelRatio$
         retVal.append(XMLmv.putTag("CO2fract", "" + fractCO2)); //  CO2fract$
         retVal.append(XMLmv.putTag("H2Ofract", "" + fractH2O)); //  H2Ofract$
         retVal.append(XMLmv.putTag("SO2fract", "" + fractSO2)); //  SO2fract$
@@ -408,7 +406,7 @@ public class FuelParameters {
         return retVal.toString();
     }
 
-    public LinkedHashMap<String, String> paramsHashForSaving() {
+    public LinkedHashMap<String, String> paramsHashForSaving() { // TODO REMOVE
         LinkedHashMap<String, String> retVal = new LinkedHashMap<>();
 //        params[0] = (bNew) ? "YES" : "NO";  //newFuel
         retVal.put("ID", ("" + fuel.getId()).trim());
@@ -430,8 +428,8 @@ public class FuelParameters {
         retVal.put("C", "" + 0); //  C$
         retVal.put("S", "" + 0); //  S$
         retVal.put("Ash", "" + 0); //  Ash$
-        retVal.put("AirFuelRation", "" + fuel.airFuelRatio); //  AirFuelRatio$
-        retVal.put("FlueFuelRation", "" + fuel.flueFuelRatio); //  FlueFuelRatio$
+        retVal.put("AirFuelRatio", "" + fuel.airFuelRatio); //  AirFuelRatio$
+        retVal.put("FlueFuelRatio", "" + fuel.flueFuelRatio); //  FlueFuelRatio$
         retVal.put("CO2fract", "" + fractCO2); //  CO2fract$
         retVal.put("H2Ofract", "" + fractH2O); //  H2Ofract$
         retVal.put("SO2fract", "" + fractSO2); //  SO2fract$
@@ -444,7 +442,7 @@ public class FuelParameters {
         return retVal;
     }
 
-    public String[] paramsForSaving() {
+    public String[] paramsForSaving() { // TODO REMOVE
         String[] params  = new String[28];
         params[0] = (bNew) ? "YES" : "NO";  //newFuel
         params[1] = ("" + fuel.getId()).trim();
@@ -527,7 +525,11 @@ public class FuelParameters {
             if (command.equals("Save Fuel Data"))  {
                 noteIt();
                 if (compoOK) {
-                    trySavingFuel();
+                    if (trySavingFuel()) {
+                        fuelCopy = null;
+                        compoCopy = null;
+                        resetButt.doClick();
+                    }
                 }
             }
             else if (command.equals("Edit Fuel Data")) {

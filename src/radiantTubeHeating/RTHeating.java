@@ -72,13 +72,15 @@ public class RTHeating extends JApplet implements InputControl{
     protected enum RTHDisplayPage {
         INPUTPAGE, RESULTSPAGE
     }
+
+    String title = "Radiant Tube Heated Furnace 20170901";
     public int appCode = 101;
     boolean canNotify = true;
     JSObject win;
     String header;
     boolean itsON = false;
     JFrame mainF;
-    JPanel mainFrame;
+    JPanel mainPanel;
     JButton jBcalculate = new JButton("Calculate");
     String cvs;
     String jspBase = "HYPWAP02:9080/fceCalculations/jsp/";
@@ -119,7 +121,7 @@ public class RTHeating extends JApplet implements InputControl{
             DataWithStatus<Boolean> runCheck = new CheckAppKey(jspBase).canRunThisApp(appCode, true);
             if (runCheck.getStatus() == DataStat.Status.OK) {
                 setUIDefaults();
-                mainF = new JFrame("RadiantTube Furnace");
+                mainF = new JFrame(title);
 //        mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
                 setMenuOptions();
 //        setTestData();
@@ -316,9 +318,9 @@ public class RTHeating extends JApplet implements InputControl{
             mainF = new JFrame("RT Furnace Heating");
 
             setMenuOptions();
-            mainFrame = new JPanel(new GridBagLayout());
-            mainF.getContentPane().add(mainFrame);
-            mainFrame.setBackground(new JPanel().getBackground());
+            mainPanel = new JPanel(new GridBagLayout());
+            mainF.getContentPane().add(mainPanel);
+            mainPanel.setBackground(new JPanel().getBackground());
             GridBagConstraints gbcMf = new GridBagConstraints();
             gbcMf.anchor = GridBagConstraints.CENTER;
             gbcMf.gridx = 0;
@@ -326,15 +328,15 @@ public class RTHeating extends JApplet implements InputControl{
             gbcMf.insets = new Insets(0, 0, 0, 0);
             gbcMf.gridwidth = 1;
             gbcMf.gridheight = 1;
-            mainFrame.add(getTitlePanel(), gbcMf);
+            mainPanel.add(getTitlePanel(), gbcMf);
             gbcMf.gridx = 0;
             gbcMf.gridy++;
-            mainFrame.add(getGraphPanel(), gbcMf);
+            mainPanel.add(getGraphPanel(), gbcMf);
             gbcMf.gridx = 0;
             gbcMf.gridy++;
             gbcMf.gridwidth = 1;
             gbcMf.gridheight = 2;
-            mainFrame.add(getListPanel(), gbcMf);
+            mainPanel.add(getListPanel(), gbcMf);
 //            if (!onTest) {
 //                Dimension d = getSize();
 //                win.eval("setAppletSize(" + d.width + ", " + d.height + ")");

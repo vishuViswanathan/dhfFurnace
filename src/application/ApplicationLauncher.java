@@ -2,6 +2,10 @@ package application;
 
 import directFiredHeating.DFHeating;
 import directFiredHeating.applications.L2Configurator;
+import materials.EditFuelData;
+import materials.EditThermalProperties;
+import materials.FuelData;
+import materials.ThermalProperties;
 import mvUtils.display.FramedPanel;
 import mvUtils.display.MultiPairColPanel;
 import mvUtils.file.ActInBackground;
@@ -19,6 +23,7 @@ import java.awt.event.WindowListener;
  * Created by viswanathanm on 11-08-2017.
  */
 public class ApplicationLauncher {
+    String title = "Thermal Applications 20171004";
     int textFieldWidth = 400;
 
     JButton launchDFHFunace = new JButton("DFH Furnace Module");
@@ -31,6 +36,18 @@ public class ApplicationLauncher {
     String rthDetails =
             "<html>Heating Furnace with Radiant Tubes, " +
                     "<b>Top and Bottom Heating for Strips</html>";
+
+    JButton jbViewThermalProperties = new JButton("View-Thermal-Properties Module");
+    String strViewThermalProperties = "<html>Viewing Thermal Properties of Materials</html>";
+
+    JButton jbEditThermalProperties = new JButton("Edit-Thermal-Properties Module");
+    String strEditThermalProperties = "<html>Adding/Editing Thermal Properties of Materials</html>";
+
+    JButton jbViewFuelProperties= new JButton("View-Fuel-Properties Module");
+    String strViewFuelProperties = "<html>Viewing Properties of Fuels</html>";
+
+    JButton jbEditFuelProperties = new JButton("Edit-Fuel-Properties Module");
+    String strEditFuelProperties = "<html>Adding/Editing Fuel Properties</html>";
 
     JButton launchL2Configurator = new JButton("Level2 Configurator Module");
     String l2ConfiguratortDetails = "<html>Configurator for Level2 application for DFH for Strips</html>";
@@ -51,13 +68,18 @@ public class ApplicationLauncher {
         launchDFHFunace.addActionListener(bh);
         launchRTH.addActionListener(bh);
         launchL2Configurator.addActionListener(bh);
+        jbViewThermalProperties.addActionListener(bh);
+        jbEditThermalProperties.addActionListener(bh);
+        jbViewFuelProperties.addActionListener(bh);
+        jbEditFuelProperties.addActionListener(bh);
+
         exitButton.addActionListener(bh);
 
-        int buttonWidth = Math.max(launchDFHFunace.getPreferredSize().width, launchRTH.getPreferredSize().width);
+        int buttonWidth = Math.max(jbViewThermalProperties.getPreferredSize().width, launchRTH.getPreferredSize().width);
         buttonWidth = Math.max(buttonWidth, launchL2Configurator.getPreferredSize().width);
         buttonSize = new Dimension(buttonWidth, launchL2Configurator.getPreferredSize().height);
 
-        mainF = new JFrame();
+        mainF = new JFrame(title);
         mainF.addWindowListener(new WinListener());
         mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         mainF.setSize(new Dimension(800, 600));
@@ -71,6 +93,16 @@ public class ApplicationLauncher {
         mainP.addBlank();
         mainP.addItem(new DetailsField(launchL2Configurator, buttonSize, l2ConfiguratortDetails));
         mainP.addBlank();
+
+        mainP.addItem(new DetailsField(jbViewThermalProperties, buttonSize, strViewThermalProperties));
+        mainP.addBlank();
+        mainP.addItem(new DetailsField(jbEditThermalProperties, buttonSize, strEditThermalProperties));
+        mainP.addBlank();
+        mainP.addItem(new DetailsField(jbViewFuelProperties, buttonSize, strViewFuelProperties));
+        mainP.addBlank();
+        mainP.addItem(new DetailsField(jbEditFuelProperties, buttonSize, strEditFuelProperties));
+        mainP.addBlank();
+
         mainP.addBlank();
         mainP.addItem(exitButton);
         mainF.add(mainP);
@@ -104,7 +136,15 @@ public class ApplicationLauncher {
             } else if (src == launchRTH) {
                 someAppLaunched = launchRTH();
             } else if (src == launchL2Configurator) {
-                someAppLaunched = launchL2Configurator() ;
+                someAppLaunched = launchViewThermalProperties() ;
+            } else if (src == jbViewThermalProperties) {
+                someAppLaunched = launchViewThermalProperties() ;
+            } else if (src == jbEditThermalProperties) {
+                someAppLaunched = launchEditThermalProperties() ;
+            } else if (src == jbViewFuelProperties) {
+                someAppLaunched = launchFuelData();
+            } else if (src == jbEditFuelProperties) {
+                someAppLaunched = launchEditFuelData() ;
             } else if (src == exitButton) {
                 quit();
             }
@@ -145,6 +185,58 @@ public class ApplicationLauncher {
                 L2Configurator l2C = new L2Configurator();
                 if (!l2C.setItUp()) {
                     l2C.showError("  Unable to Get Application Data.\nAborting ...");
+                    System.exit(1);
+                }
+            }
+        });
+        return true;
+    }
+
+    boolean launchViewThermalProperties() {
+        new WaitMsg(null, "Starting Thermal Properties. Please wait ...", new ActInBackground() {
+            public void doInBackground() {
+                ThermalProperties tp = new ThermalProperties();
+                if (!tp.setItUp()) {
+                    tp.showError("  Unable to Get Application Data.\nAborting ...");
+                    System.exit(1);
+                }
+            }
+        });
+        return true;
+    }
+
+    boolean launchEditThermalProperties() {
+        new WaitMsg(null, "Starting Thermal Properties. Please wait ...", new ActInBackground() {
+            public void doInBackground() {
+                EditThermalProperties tp = new EditThermalProperties();
+                if (!tp.setItUp()) {
+                    tp.showError("  Unable to Get Application Data.\nAborting ...");
+                    System.exit(1);
+                }
+            }
+        });
+        return true;
+    }
+
+    boolean launchFuelData() {
+        new WaitMsg(null, "Starting Fuel Properties. Please wait ...", new ActInBackground() {
+            public void doInBackground() {
+                FuelData fd = new FuelData();
+                if (!fd.setItUp()) {
+                    fd.showError("  Unable to Get Application Data.\nAborting ...");
+                    System.exit(1);
+                }
+            }
+        });
+        return true;
+    }
+
+    boolean launchEditFuelData() {
+        new WaitMsg(null, "Starting Add/Edit Fuel Properties. Please wait ...", new ActInBackground() {
+            public void doInBackground() {
+                EditFuelData efd = new EditFuelData();
+                if (!efd.setItUp()) {
+                    efd.showError("  Unable to Get Application Data.\nAborting ...");
                     System.exit(1);
                 }
             }

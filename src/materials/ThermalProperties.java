@@ -1,23 +1,26 @@
 package materials;
 
+import directFiredHeating.DFHeating;
+import directFiredHeating.FceEvaluator;
 import mvUtils.display.*;
+import mvUtils.file.ActInBackground;
+import mvUtils.file.WaitMsg;
 import mvUtils.http.PostToWebSite;
+import mvUtils.jsp.JSPConnection;
 import mvUtils.math.DoubleRange;
 import mvUtils.math.XYArray;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import mvUtils.security.MiscUtil;
 import netscape.javascript.JSObject;
+import protection.CheckAppKey;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Vector;
+import java.util.*;
 
 /**
  * User: M Viswanathan
@@ -27,9 +30,10 @@ import java.util.Vector;
  */
 
 public class ThermalProperties extends JApplet implements InputControl {
-    //    static public String jspBase = "http://HYPWAP02:9080/fceCalculations/jsp/";
-    static public String jspBase = "http://localhost:9080/fceCalculations/jsp/";
-    boolean bCanEdit = true;
+    public int appCode = 0;
+    static public JSPConnection jspConnection;
+    static public String jspBase = "localhost:9080/fceCalculations/jsp/";
+    boolean bCanEdit = false;
     boolean bEditON = false;
     int MAXROWS = 30;
     JComboBox jcMaterialGroup, jcMatNames, jcProperty;
@@ -46,7 +50,60 @@ public class ThermalProperties extends JApplet implements InputControl {
     String user;
 
     public ThermalProperties() {
+        this.appCode = 106;
         user = MiscUtil.getUser();
+    }
+
+    protected boolean getJSPbase() {
+        boolean retVal = false;
+        String jspBaseIDPath = "jspBase.txt";
+        File jspBaseFile = new File(jspBaseIDPath);
+        long len = jspBaseFile.length();
+        if (len > 5 && len < 100) {
+            int iLen = (int) len;
+            byte[] data = new byte[iLen + 1];
+            try {
+                BufferedInputStream iStream = new BufferedInputStream(new FileInputStream(jspBaseFile));
+                if (iStream.read(data) > 5) {
+                    jspBase = new String(data).trim() + ":9080/fceCalculations/jsp/";
+                    iStream.close();
+                    retVal = true;
+                }
+            } catch (IOException e) {
+                ;
+            }
+        }
+        return retVal;
+    }
+
+    protected boolean getJSPConnection() {
+        boolean retVal = false;
+        try {
+            jspConnection = new JSPConnection(jspBase);
+            retVal = true;
+        } catch (Exception e) {
+            System.out.println("DFHeating.4599 " + e.getLocalizedMessage());
+        }
+        return retVal;
+    }
+
+    public boolean setItUp() {
+        boolean retVal = false;
+        if (getJSPbase()) {
+            DataWithStatus<Boolean> runCheck = new CheckAppKey(jspBase).canRunThisApp(appCode, true);
+            if (runCheck.getStatus() == DataStat.Status.OK) {
+                UIManager.put("ComboBox.disabledForeground", Color.black);
+                tableAndGraph = new TableAndGraph(this, MAXROWS, new DoubleRange(0, 2000), new DoubleRange(-1e6, 1e6), "#,###", "#,##0.###");
+                mainF = new JFrame("Set Material Property");
+                mainF.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                matAndPropsHash = new LinkedHashMap<String, MatAndProps>();
+                createUIs();
+                getMatGroups();
+                displayIt();
+                retVal = true;
+            }
+        }
+        return retVal;
     }
 
     public void init() {
@@ -63,7 +120,6 @@ public class ThermalProperties extends JApplet implements InputControl {
 //        getSelectedGroupData("steels");
         displayIt();
     }
-
     NewMatListener matListener;
 
     String enterNewMaterial = "##Enter New Material";
@@ -103,7 +159,7 @@ public class ThermalProperties extends JApplet implements InputControl {
     }
 
     void getMatGroups() {
-        PostToWebSite jspSrc = new PostToWebSite(jspBase);
+        PostToWebSite jspSrc = new PostToWebSite("http://" + jspBase);
         HashMap<String, String> params = new HashMap<>();
         params.put("user", user);
         String xmlProplist = jspSrc.getByPOSTRequest("getPropertyList.jsp", params, 100000);
@@ -114,10 +170,9 @@ public class ThermalProperties extends JApplet implements InputControl {
         String xmlMatGroupList = jspSrc.getByPOSTRequest("getMaterialGroups.jsp", params, 100000);
         addMatGroupListFromXML(xmlMatGroupList);
         jcMaterialGroup.addActionListener(e-> {
+            WaitMsg waitMSg = new WaitMsg(mainF, "Please Wait - Reloading Data");
             collectAndUpdateData();
-//            getSelectedGroupData((String)jcMaterialType.getSelectedItem());
-//            jcProperty.setSelectedIndex(0);
-//            clearDetailsPanel();
+            waitMSg.close();
         });
         jcMaterialGroup.setSelectedIndex(2);
     }
@@ -129,7 +184,7 @@ public class ThermalProperties extends JApplet implements InputControl {
     }
 
     void getSelectedGroupData(String materialGrp) {
-        PostToWebSite jspSrc = new PostToWebSite(jspBase);
+        PostToWebSite jspSrc = new PostToWebSite("http://" + jspBase);
         HashMap<String, String> params = new HashMap<>();
         params.clear();
         params.put("user", user);
@@ -152,7 +207,7 @@ public class ThermalProperties extends JApplet implements InputControl {
         boolean retVal = false;
         String matID = (bNewMaterial) ? getNewMaterialCode():((MatAndProps)jcMatNames.getSelectedItem()).getID();
         if (matID.length() > 0) {
-            PostToWebSite jspSrc = new PostToWebSite(jspBase);
+            PostToWebSite jspSrc = new PostToWebSite("http://" + jspBase);
             HashMap<String, String> params = new HashMap<>();
             params.clear();
             params.put("user", user);
@@ -181,7 +236,7 @@ public class ThermalProperties extends JApplet implements InputControl {
 
     String getNewMaterialCode() {
         String matCode = "";
-        PostToWebSite jspSrc = new PostToWebSite(jspBase);
+        PostToWebSite jspSrc = new PostToWebSite("http://" + jspBase);
         HashMap<String, String> params = new HashMap<>();
         params.clear();
         params.put("user", user);
@@ -741,7 +796,7 @@ public class ThermalProperties extends JApplet implements InputControl {
         System.out.println("ViewSetProperty " + msg);
     }
 
-    void showError(String msg) {
+    public void showError(String msg) {
         JOptionPane.showMessageDialog(parent(), msg, "ERROR", JOptionPane.ERROR_MESSAGE);
         parent().toFront();
     }
@@ -841,6 +896,9 @@ public class ThermalProperties extends JApplet implements InputControl {
         }
     }
 
+    boolean waitMagON = false;
+    JDialog dlgWait;
+
     class ButtonListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             Object src = e.getSource();
@@ -851,15 +909,10 @@ public class ThermalProperties extends JApplet implements InputControl {
                 }
                 if (src == pbSaveData) {
                     if (checkAndSave()) {
-//                        new WaitMsg(mainF, "Reloading Data. Please wait ...", new ActInBackground() {
-//                            public void doInBackground() {
-//                                collectAndUpdateData();
-//                            }
-//                        });
-
+                        WaitMsg waitMSg = new WaitMsg(mainF, "Please Wait - Reloading Data");
                         collectAndUpdateData();
-                        clearDetailsPanel();
                         editButtonAction();
+                        waitMSg.close();
                     }
                     break;
                 }
@@ -914,9 +967,31 @@ public class ThermalProperties extends JApplet implements InputControl {
         }
     }
 
+    class WaitMsg {
+        JDialog dlgWait;
+        WaitMsg(Frame parent, String msg) {
+            Thread waitThrd = new Thread(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            dlgWait = new JDialog(parent, msg, true);
+                            dlgWait.setSize(new Dimension(msg.length() * 10, 20));
+                            dlgWait.setLocationRelativeTo(mainF);
+                            dlgWait.setVisible(true);
+                        }
+                    },
+                    "waiter");
+            waitThrd.start();
+        }
+
+        void close() {
+            dlgWait.dispose();
+        }
+    }
+
     public static void main(String[] args)  {
         ThermalProperties tP= new ThermalProperties();
-        tP.init();
+        tP.setItUp();
     }
 
 }

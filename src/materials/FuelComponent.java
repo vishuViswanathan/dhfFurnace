@@ -1,4 +1,4 @@
-package PropertySetter;
+package materials;
 
 import mvUtils.math.SPECIAL;
 import mvUtils.math.XYArray;

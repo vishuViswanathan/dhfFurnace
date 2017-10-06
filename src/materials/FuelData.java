@@ -1,9 +1,9 @@
 package materials;
 
-import PropertySetter.FuelComponent;
-import PropertySetter.PropertyControl;
 import basic.FlueComposition;
 import basic.Fuel;
+import mvUtils.display.DataStat;
+import mvUtils.display.DataWithStatus;
 import mvUtils.display.InputControl;
 import mvUtils.http.PostToWebSite;
 import mvUtils.math.XYArray;
@@ -11,10 +11,15 @@ import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import mvUtils.security.MiscUtil;
 import netscape.javascript.JSObject;
+import protection.CheckAppKey;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Stack;
@@ -27,9 +32,10 @@ import java.util.Vector;
  * To change this template use File | Settings | File Templates.
  */
 public class FuelData extends JApplet implements InputControl, PropertyControl {
-    //    static public String jspBase = "http://HYPWAP02:9080/fceCalculations/jsp/";
-    static public String jspBase = "http://localhost:9080/fceCalculations/jsp/";
-    boolean bCanEdit = true;
+    public int appCode = 0;
+    //    static public String jspBase = "HYPWAP02:9080/fceCalculations/jsp/";
+    static public String jspBase = "localhost:9080/fceCalculations/jsp/";
+    boolean bCanEdit = false;
     JSObject win;
     JFrame mainF;
     boolean onTest = false;
@@ -39,8 +45,48 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
     boolean itsON = false;
     String user;
 
-    FuelData() {
+    public FuelData() {
+        this.appCode = 108;
         user = MiscUtil.getUser();
+    }
+
+    protected boolean getJSPbase() {
+        boolean retVal = false;
+        String jspBaseIDPath = "jspBase.txt";
+        File jspBaseFile = new File(jspBaseIDPath);
+        long len = jspBaseFile.length();
+        if (len > 5 && len < 100) {
+            int iLen = (int) len;
+            byte[] data = new byte[iLen + 1];
+            try {
+                BufferedInputStream iStream = new BufferedInputStream(new FileInputStream(jspBaseFile));
+                if (iStream.read(data) > 5) {
+                    jspBase = new String(data).trim() + ":9080/fceCalculations/jsp/";
+                    iStream.close();
+                    retVal = true;
+                }
+            } catch (IOException e) {
+                ;
+            }
+        }
+        return retVal;
+    }
+    public boolean setItUp() {
+        boolean retVal = false;
+        if (getJSPbase()) {
+            DataWithStatus<Boolean> runCheck = new CheckAppKey(jspBase).canRunThisApp(appCode, true);
+            if (runCheck.getStatus() == DataStat.Status.OK) {
+                UIManager.put("ComboBox.disabledForeground", Color.black);
+                mainF = new JFrame("Fuel Details");
+                mainF.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                fuelComponents = new Stack<>();
+                fuelParemeters = new Stack<>();
+                getAllData();
+                displayIt();
+                retVal = true;
+            }
+        }
+        return retVal;
     }
 
     public void init() {
@@ -117,7 +163,7 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
     }
 
     boolean getFuelComponents() {
-        PostToWebSite jspSrc = new PostToWebSite(jspBase);
+        PostToWebSite jspSrc = new PostToWebSite("http://" + jspBase);
         HashMap<String, String> params = new HashMap<>();
         params.put("user", user);
         String xmlComponents = jspSrc.getByPOSTRequest("getAllFuelComponents.jsp", params, 1000000);
@@ -126,7 +172,7 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
     }
 
     boolean getAllFuelAllDetails() {
-        PostToWebSite jspSrc = new PostToWebSite(jspBase);
+        PostToWebSite jspSrc = new PostToWebSite("http://" + jspBase);
         HashMap<String, String> params = new HashMap<>();
         params.put("user", user);
         String xmlAllFuelParameters = jspSrc.getByPOSTRequest("getAllFuelAllDetails.jsp", params, 1000000);
@@ -136,7 +182,7 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
     }
 
     boolean getOneFuelAllDetails(int fuelID) {
-        PostToWebSite jspSrc = new PostToWebSite(jspBase);
+        PostToWebSite jspSrc = new PostToWebSite("http://" + jspBase);
         HashMap<String, String> params = new HashMap<>();
         params.put("user", user);
         params.put("fuelID", "" + fuelID);
@@ -292,14 +338,6 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
         }
     }
 
-    public String setCanEdit(String canEditStr) {
-        if (canEditStr.trim().equals("CANEDIT"))
-            bCanEdit = true;
-        else
-            bCanEdit = false;
-        return "OK";
-    }
-
     public String addFuelComponents(String idInMaterialCode, String name, String units, String type, String molWtStr,
                                     String calValStr, String densityStr, String hAtomsStr, String cAtomsStr,
                                     String oAtomsStr, String sAtomsStr, String nAtomsStr, String heatContStr) {
@@ -430,7 +468,7 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
         System.out.println("FuelData " + msg);
     }
 
-    void showError(String msg) {
+    public void showError(String msg) {
         JOptionPane.showMessageDialog(parent(), msg, "ERROR", JOptionPane.ERROR_MESSAGE);
         parent().toFront();
     }
@@ -488,7 +526,7 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
 
                 if (bSave)  {
                     String xmlStr = fD.dataInXML();
-                    PostToWebSite jspSrc = new PostToWebSite(jspBase);
+                    PostToWebSite jspSrc = new PostToWebSite("http://" + jspBase);
                     HashMap<String, String> params = new HashMap<>();
                     params.put("user", user);
                     params.put("itsNew", (isNew ? "1": "0"));
@@ -541,6 +579,6 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
 
     public static void main(String[] args)  {
         FuelData fD = new FuelData();
-        fD.init();
+        fD.setItUp();
     }
 }

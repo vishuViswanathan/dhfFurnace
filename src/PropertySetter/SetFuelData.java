@@ -5,6 +5,8 @@ import basic.FlueComposition;
 import basic.Fuel;
 import directFiredHeating.DFHResult;
 import display.ControlCenter;
+import materials.FuelComponent;
+import materials.PropertyControl;
 import mvUtils.display.InputControl;
 import mvUtils.math.XYArray;
 import netscape.javascript.JSException;
@@ -23,7 +25,7 @@ import java.util.Vector;
  * Time: 11:57 AM
  * To change this template use File | Settings | File Templates.
  */
-public class SetFuelData extends JApplet implements InputControl, PropertyControl{
+public class SetFuelData extends JApplet implements InputControl, PropertyControl {
     boolean bCanEdit = true;
     JSObject win;
     JFrame mainF;

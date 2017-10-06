@@ -15,6 +15,9 @@ import javax.crypto.SecretKey;
 import java.io.*;
 import java.util.HashMap;
 
+import static mvUtils.security.MachineCheck.MachineStat.CANNOTRUN;
+import static mvUtils.security.MachineCheck.MachineStat.CANRUN;
+
 /**
  * User: M Viswanathan
  * Date: 08-May-17
@@ -57,8 +60,13 @@ public class CheckAppKey {
             case FOUND:
                 String storedKey = softwareKeyStat.key;
                 MachineCheck mc = new MachineCheck();
-                if ((mc.checkKey(storedKey, true, appID).getDataStatus() == DataStat.Status.OK))
-                    retVal.setValue(true);
+                if ((mc.checkKey(storedKey, true, appID).getDataStatus() == DataStat.Status.OK)) {
+                    DataWithStatus<Boolean> serverCheck = checkWithServerDB(appID, storedKey);
+                    if (serverCheck.getStatus() == DataStat.Status.OK)
+                        retVal.setValue(true);
+                    else
+                        retVal.setErrorMsg(serverCheck.getErrorMessage());
+                }
                 else
                     retVal.setErrorMessage("Local Software key does not match");
                 break;
@@ -79,6 +87,55 @@ public class CheckAppKey {
             SimpleDialog.showError("Checking Application Access", retVal.getErrorMessage());
         }
         return retVal;
+    }
+
+    DataWithStatus<Boolean> checkWithServerDB(int appID, String storedKey) {
+        DataWithStatus<Boolean> retVal = new DataWithStatus(true);
+        byte[] seed = {(byte)(127 * Math.random())};
+        String encryptedKey = cipher.bytesToByteString(cipher.encrypt(seed));
+        String encryptedUser = cipher.encryptStringWithKey2(user, encryptedKey);
+        String encryptedMachineID = cipher.encryptStringWithKey2(machineID, encryptedKey);
+        PostToWebSite jspReq =  new PostToWebSite(jspBase);
+        HashMap<String, String> params = new HashMap<>();
+        params.put("user", encryptedUser);
+        params.put("appCode", ("" + appID).trim());
+        params.put("mID", encryptedMachineID);
+        params.put("key", encryptedKey);
+        long respLen = 2000l;
+        String response = jspReq.getByPOSTRequest("canUserRunThisApp.jsp", params, respLen);
+        ValAndPos vp;
+        vp = XMLmv.getTag(response, "Status", 0);
+        if (vp.val.length() > 0) {
+            if (vp.val.equalsIgnoreCase("OK")) {
+                vp = XMLmv.getTag(response, "accessCodeEncrypt", 0);
+                if (!vp.val.equals(storedKey))
+                    retVal.setErrorMsg("Some mismatch in Software Access codes");
+            }
+            else {
+                if (vp.val.equalsIgnoreCase("ERROR")) {
+                    vp = XMLmv.getTag(response, "Msg", vp.endPos);
+                    retVal.setErrorMsg(vp.val);
+                }
+                else {
+                    switch (MachineCheck.MachineStat.getEnum(cipher.decryptStringWithKey2(vp.val, encryptedKey))) {
+                        case CANNOTRUN:
+                            retVal.setErrorMsg("You care not authorised to run this Application");
+                            break;
+                        case DIFFERENTMACHINE:
+                            retVal.setErrorMsg("Server record shows your installation on another system");
+                            break;
+                        case NOMACHINERECORD:
+                            retVal.setErrorMsg("Server does not have record of installations on you system");
+                            break;
+                    }
+                }
+            }
+        }
+        else {
+            retVal.setErrorMsg("Some problem in checking access from the Server");
+        }
+        return retVal;
+
     }
 
     KeyWithKeyStat getSavedSoftwareKey(String appID)  {
@@ -194,7 +251,6 @@ public class CheckAppKey {
         DataWithStatus appKeyResp = getAppKeyFromServer(appID);
         if (appKeyResp.getStatus() == DataStat.Status.OK) {
             String appIDcrypt = encryptInt(appID);
-//            String mIDCrpt = cipher.bytesToByteString(cipher.encrypt(machineID, localKey));
             if (f.exists()) {
                 try {
                     FileWriter fileWriter = new FileWriter(f,true);
@@ -214,19 +270,52 @@ public class CheckAppKey {
 
     DataWithStatus<String> getAppKeyFromServer(int appID) {
         DataWithStatus<String> retVal = new DataWithStatus<>("ERROR");
+        byte[] seed = {(byte)(127 * Math.random())};
+        String encryptedKey = cipher.bytesToByteString(cipher.encrypt(seed));
+        String encryptedUser = cipher.encryptStringWithKey2(user, encryptedKey);
+        String encryptedMachineID = cipher.encryptStringWithKey2(machineID, encryptedKey);
         PostToWebSite jspReq =  new PostToWebSite(jspBase);
         HashMap<String, String> params = new HashMap<>();
-//        byte[] keyBytes = localKey;
-//        String key =  cipher.bytesToByteString(keyBytes);
-//        String uidxx = cipher.encryptStringWithKey(user, key);
-//        params.put("user", uidxx);
+        params.put("user", encryptedUser);
+        params.put("appCode", ("" + appID).trim());
+        params.put("mID", encryptedMachineID);
+        params.put("key", encryptedKey);
+        long respLen = 2000l;
+
+        String response = jspReq.getByPOSTRequest("getAppKey.jsp", params, respLen);
+        ValAndPos vp;
+        vp = XMLmv.getTag(response, "Status", 0);
+
+        if (vp.val.length() > 0) {
+            if (vp.val.equalsIgnoreCase("ERROR")) {
+                vp = XMLmv.getTag(response, "Msg", vp.endPos);
+                retVal.setErrorMsg(vp.val);
+            }
+            else {
+                if  (MachineCheck.MachineStat.getEnum(cipher.decryptStringWithKey2(vp.val, encryptedKey)) == CANRUN) {
+                    vp = XMLmv.getTag(response, "accessCode", vp.endPos);
+                    if (vp.val.length() > 0) {
+                        retVal.setValue(cipher.decryptStringWithKey2(vp.val, encryptedKey));
+                    } else
+                        retVal.setErrorMessage("Got empty accessCode");
+                }
+                else
+                    retVal.setErrorMsg("Unable to get AccessCode");
+            }
+        }
+        else {
+            retVal.setErrorMsg("Some problem in checking access from the Server");
+        }
+        return retVal;
+    }
+
+    DataWithStatus<String> getAppKeyFromServerOLD(int appID) {
+        DataWithStatus<String> retVal = new DataWithStatus<>("ERROR");
+        PostToWebSite jspReq =  new PostToWebSite(jspBase);
+        HashMap<String, String> params = new HashMap<>();
         params.put("user", user);
         params.put("appCode", ("" + appID).trim());
-//        String machineIDxx = cipher.encryptStringWithKey(machineID, key);
-//        params.put("mID", machineIDxx);
         params.put("mID", machineID);
-//        String keyXX =  cipher.bytesToByteString(cipher.encrypt(keyBytes));
-//        params.put("key", keyXX);
         long respLen = 2000l;
         String response = jspReq.getByPOSTRequest("getAppKey.jsp", params, respLen);
         ValAndPos vp;
