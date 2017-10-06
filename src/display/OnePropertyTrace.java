@@ -1,4 +1,4 @@
-package PropertyViewer;
+package display;
 
 import mvUtils.display.TraceHeader;
 import mvUtils.math.DoublePoint;

@@ -1,6 +1,6 @@
 package radiantTubeHeating;
 
-import PropertyViewer.OnePropertyTrace;
+import display.OnePropertyTrace;
 import basic.ChMaterial;
 import basic.Charge;
 import basic.RadiantTube;

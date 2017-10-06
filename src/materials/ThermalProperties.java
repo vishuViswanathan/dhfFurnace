@@ -36,15 +36,13 @@ public class ThermalProperties extends JApplet implements InputControl {
     boolean bCanEdit = false;
     boolean bEditON = false;
     int MAXROWS = 30;
-    JComboBox jcMaterialGroup, jcMatNames, jcProperty;
-    //    IDandName[] idAndName;
+    JComboBox<String> jcMaterialGroup;
+    JComboBox jcMatNames, jcProperty;
     LinkedHashMap<String, MatAndProps> matAndPropsHash;
 
-    JSObject win;
     JFrame mainF;
     ControlledTextField tfNewMaterial;
     TableAndGraph tableAndGraph;
-//    TraceBuilder tableAndGraph;
     JButton pbEditData, pbSaveData, pbCLose, pbFileData;
     boolean itsON = false;
     String user;
@@ -106,39 +104,29 @@ public class ThermalProperties extends JApplet implements InputControl {
         return retVal;
     }
 
-    public void init() {
-        UIManager.put("ComboBox.disabledForeground", Color.black);
-//        String strTest = this.getParameter("OnTest");
-        tableAndGraph = new TableAndGraph(this, MAXROWS, new DoubleRange(0, 2000), new DoubleRange(-1e6, 1e6), "#,###", "#,##0.###");
-//        tableAndGraph = new TraceBuilder(this, MAXROWS, new DoubleRange(0, 2000), new DoubleRange(-1e6, 1e6), "#,###", "#,##0.###");
-        mainF = new JFrame("Set Material Property");
-        mainF.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-//        mainF.addWindowListener(new winListener());
-        matAndPropsHash = new LinkedHashMap<String, MatAndProps>();
-        createUIs();
-        getMatGroups();
-//        getSelectedGroupData("steels");
-        displayIt();
-    }
+//    public void init() {
+//        UIManager.put("ComboBox.disabledForeground", Color.black);
+//        tableAndGraph = new TableAndGraph(this, MAXROWS, new DoubleRange(0, 2000), new DoubleRange(-1e6, 1e6), "#,###", "#,##0.###");
+//        mainF = new JFrame("Set Material Property");
+//        mainF.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//        matAndPropsHash = new LinkedHashMap<String, MatAndProps>();
+//        createUIs();
+//        getMatGroups();
+//        displayIt();
+//    }
+//
     NewMatListener matListener;
 
     String enterNewMaterial = "##Enter New Material";
 
     void createUIs() {
-        jcMaterialGroup = new JComboBox();
-//        jcMaterialType.setPreferredSize(new Dimension(200, 25));
-//        jcMaterialType.addActionListener(e-> {
-//            getSelectedGroupData((String)jcMaterialType.getSelectedItem());
-//        });
-
+        jcMaterialGroup = new JComboBox<String>();
         jcMatNames = new JComboBox();
         jcMatNames.setPreferredSize(new Dimension(200, 25));
         matListener = new NewMatListener();
         tfNewMaterial = new ControlledTextField(this, 1, 25, new Dimension(200, 25));
         tfNewMaterial.setText(enterNewMaterial);
         tfNewMaterial.setEnabled(false);
-//        tfNewMaterial.setPreferredSize(new Dimension(200, 25));
-        //       colData = traceBuilder.getColData();    // NumberTextField[MAXROWS][2];
         tableAndGraph.enableColDataEdit(false);
         ButtonListener li = new ButtonListener();
         Dimension pbSize = new Dimension(100, 25);
@@ -200,7 +188,6 @@ public class ThermalProperties extends JApplet implements InputControl {
             addMatPropertyFromXML(matCode, xmlProps);
         }
         populateMatList();
-//        populateDataTable();
     }
 
     boolean saveProperty() {
@@ -259,12 +246,9 @@ public class ThermalProperties extends JApplet implements InputControl {
 
     public void displayIt() {
         if (!itsON) {
-//            populateMatList();
-//            populateDataTable();
             itsON = true;
             FramedPanel fp = new FramedPanel(new BorderLayout());
             fp.add(prepareDetailsPanel(), BorderLayout.NORTH);
-//            populateDetailsPanel();
             mainF.add(fp);
             mainF.setFocusable(true);
             mainF.setVisible(true);
@@ -294,7 +278,6 @@ public class ThermalProperties extends JApplet implements InputControl {
         gbc.gridx = 0;
         gbc.gridy++;
         jp.add(jcMaterialGroup, gbc);
-//        jp.add(new JLabel(matType), gbc);
         gbc.gridx++;
         jp.add(jcMatNames, gbc);
         gbc.gridx++;
@@ -327,6 +310,7 @@ public class ThermalProperties extends JApplet implements InputControl {
             gbc.gridwidth = 1;
             graphPanel = tableAndGraph.graphPanel();
             jp.add(graphPanel, gbc);
+            jp.updateUI();
         }
     }
 
@@ -352,7 +336,6 @@ public class ThermalProperties extends JApplet implements InputControl {
             gbc.insets = ins;
             jp.add(pbEditData, gbc);
             gbc.gridx++;
-//            ins.set(1, 5, 1, 5);
             jp.add(pbFileData, gbc);
             gbc.gridx++;
             jp.add(pbSaveData, gbc);
@@ -365,14 +348,6 @@ public class ThermalProperties extends JApplet implements InputControl {
             jp.add(pbCLose, BorderLayout.EAST);
         }
         return jp;
-    }
-
-    public String setCanEdit(String canEditStr) {
-        if (canEditStr.trim().equals("CANEDIT"))
-            bCanEdit = true;
-        else
-            bCanEdit = false;
-        return "OK";
     }
 
     int addMatGroupListFromXML(String xmlStr) {
@@ -494,39 +469,7 @@ public class ThermalProperties extends JApplet implements InputControl {
                 }
             }
         }
-        jcProperty = new JComboBox(propText);
-        jcProperty.addActionListener(new NewPropListner());
-        return nProps;
-    }
-
-    int setPropListFromXMLOLD(String xmlStr) {
-        int nProps = 0;
-        ValAndPos vp;
-        ValAndPos localVp;
-        String oneProp;
-        vp = XMLmv.getTag(xmlStr, "Status", 0);
-        if (vp.val.equalsIgnoreCase("OK")) {
-            vp = XMLmv.getTag(xmlStr, "n", vp.endPos);
-            if (vp.val.length() > 0) {
-                nProps = Integer.valueOf(vp.val);
-                propCol = new String[nProps];
-                propName= new String[nProps];
-                propText = new String[nProps];
-                propUnits = new String[nProps];
-                for (int p = 0; p < nProps; p++)  {
-                    vp = XMLmv.getTag(xmlStr, "property", vp.endPos);
-                    oneProp  = vp.val;
-                    localVp = XMLmv.getTag(oneProp, "propertyColName", 0);
-                    propCol[p] = localVp.val;
-                    localVp = XMLmv.getTag(oneProp, "propertyText", localVp.endPos);
-                    propName[p] = localVp.val;
-                    localVp = XMLmv.getTag(oneProp, "units", localVp.endPos);
-                    propUnits[p] = localVp.val;
-                    propText[p] = propName[p] + "(" + propUnits[p] + ")";
-                }
-            }
-        }
-        jcProperty = new JComboBox(propText);
+        jcProperty = new JComboBox<String>(propText);
         jcProperty.addActionListener(new NewPropListner());
         return nProps;
     }
@@ -560,18 +503,11 @@ public class ThermalProperties extends JApplet implements InputControl {
                 String units = propUnits[selProp];
                 String name = propName[selProp];
                 XYArray arr = matProps.getPropsArr(pCol);
-                TraceHeader head = new TraceHeader("Temperature", "degC", "#,###", name, "", "");
+                TraceHeader head = new TraceHeader("Temperature", "degC", "#,###", name,
+                        "", "");
                 tableAndGraph.populate(head, arr, bEditON);
-                setDataVisible(arr != null || bEditON);
             }
         }
-    }
-
-    void setDataVisible(boolean ena) {
-//        if (tablePanel != null) {
-//            tablePanel.setVisible(ena);
-//            graphPanel.setVisible(ena);
-//        }
     }
 
     String checkDuplicate(String checkName) {
@@ -633,56 +569,9 @@ public class ThermalProperties extends JApplet implements InputControl {
     String propStr, matCode, matType, property, isNewMat, newMatName ="";
     boolean bNewMaterial = false;
 
-    boolean setDataToSend() {
-        if (bNewMaterial) {
-            isNewMat = "YES";
-            matCode = "0";
-        }
-        else {
-            isNewMat = "NO";
-            matCode = ((MatAndProps)jcMatNames.getSelectedItem()).getID();
-        }
-        property = propCol[jcProperty.getSelectedIndex()];
-        propStr = tableAndGraph.dataAsString();
-        if (propStr.length() > 3)
-            return true;
-        else
-            return false;
-    }
-
-    public String getPropStr() {
-        return propStr;
-    }
-
-    public String getMatCode() {
-        return matCode;
-    }
-
-    public String getMatType() {
-        return matType;
-    }
-
-    public String getPropertyCol() {
-        return property;
-    }
-
-    public String getIsNewMat() {
-        return isNewMat;
-    }
-
-    public String getNewMatName() {
-        return newMatName;
-    }
-
     public Frame parent() {
         return mainF;
     }
-
-//    @Override
-//    public void destroy() {
-//        debug("In Destroy");
-//        super.destroy();
-//    }
 
     void close() {
         debug("CLOSING ...");
@@ -864,11 +753,10 @@ public class ThermalProperties extends JApplet implements InputControl {
 
     class NewPropListner implements ActionListener {
         public void actionPerformed(ActionEvent e) {
-//            if (!jcMatNames.getSelectedItem().equals("Add New Material ..."))
             if (jcProperty.getSelectedIndex() > 0) {
-//                populateDataTable();
-                populateDetailsPanel();
+//                populateDetailsPanel();
                 populateDataTable();
+                populateDetailsPanel();
             }
         }
     }
@@ -923,45 +811,6 @@ public class ThermalProperties extends JApplet implements InputControl {
                 if (src == pbFileData) {
                     getFceFromFile();
                     break;
-                }
-            }
-        }
-    }
-
-    class ButtonListenerOLD implements ActionListener {
-        public void actionPerformed(ActionEvent e) {
-            String command = e.getActionCommand();
-            while (true) {
-                if (command.equals("Edit Data")) {
-                    if (bEditON) {
-                        bEditON = false;
-                        pbFileData.setEnabled(false);
-                        pbSaveData.setEnabled(false);
-                        jcMatNames.setEnabled(true);
-                        jcProperty.setEnabled(true);
-                        tableAndGraph.enableColDataEdit(false);
-                    }
-                    else {
-                        bEditON = true;
-                        pbFileData.setEnabled(true);
-                        pbSaveData.setEnabled(true);
-                        jcMatNames.setEnabled(false);
-                        jcProperty.setEnabled(false);
-                        tableAndGraph.enableColDataEdit(true);
-                    }
-                    break;
-                }
-                if (command.equals("Save \n" +
-                        "                    break;\n" +
-                        "                }\n" +
-                        "                if (command.equals(\"Exit\")) {\n" +
-                        "                    close();\n" +
-                        "                    break;\n" +
-                        "                }\n" +
-                        "                if (command.equals(\"Data From File\")) {\n" +
-                        "                    getFceFromFile();\n" +
-                        "                    break;Data")) {
-                    checkAndSave();
                 }
             }
         }

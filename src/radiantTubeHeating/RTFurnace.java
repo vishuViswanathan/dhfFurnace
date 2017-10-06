@@ -1,13 +1,9 @@
 package radiantTubeHeating;
 
-import PropertyViewer.OnePropertyTrace;
-import basic.ChMaterial;
+import display.OnePropertyTrace;
 import basic.Charge;
 import basic.RadiantTube;
-import jsp.JSPFuel;
-import jsp.JSPchMaterial;
 import mvUtils.display.*;
-import mvUtils.jsp.JSPComboBox;
 import mvUtils.math.DoublePoint;
 import mvUtils.math.DoubleRange;
 import mvUtils.mvXML.XMLmv;
