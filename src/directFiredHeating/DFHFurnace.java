@@ -1817,6 +1817,159 @@ public class DFHFurnace {
         FceSection sec, firstFsec, prevSec, entrySec;
         entrySec = vSec.get(0);
         double tempGZ1Assume;
+        boolean dynamicCorrection = tuningParams.bDynamicGasTempCorrection;
+        double minCorrection = tuningParams.minGasTempCorrection;
+        double maxCorrection = tuningParams.maxGasTempCorrection;
+        double dynamicLocRange = tuningParams.dynamicGasTempCorrectionRange;
+        double problemPosition = -1;
+        double lengthUpToZoneExit = vSec.get(iFirstFiredSec).sectionExitPos();
+        double posFraction;
+
+        double trialDeltaT = (tuningParams.suggested1stCorrection > 0) ?
+                tuningParams.suggested1stCorrection : 10;
+        firstFsec = vSec.get(iFirstFiredSec);
+        tempGZ1Assume = firstFsec.getLastSlotGasTemp();
+        if (tempGZ1Assume <= 0)
+            tempGZ1Assume = firstFsec.getEnteringGasTemp();
+        if (bBot && bRecalculBot)
+            tempGZ1Assume = tempGZ1Bot;
+        if (!bBot && bRecalculTop)
+            tempGZ1Assume = tempGZ1Top;
+        boolean bTrial1 = true;
+        boolean redoIt = false;
+        lastResponse = FceEvaluator.EvalStat.OK;
+        response = FceEvaluator.EvalStat.OK;
+        boolean done = false;
+        boolean loopBack = false;
+        double tmNow, tmLast = 0;
+        double diff, lastDiff = 0;
+        double tgNow, tgLast = 0;
+        double reqdChTempM = productionData.entryTemp;
+        while (!done && canRun()) {
+            redoIt = false;
+            firstFsec.setLastSlotGasTemp(tempGZ1Assume);
+            for (int s = iFirstFiredSec; s >= 0; s--) {
+                showStatus(statusHead + (s + 1));
+                sec = vSec.get(s);
+                response = sec.oneSectionInRev();
+                if (response != FceEvaluator.EvalStat.OK) {
+                    if (dynamicCorrection) {
+                        problemPosition = sec.getProblemPosition();
+                        posFraction = problemPosition / lengthUpToZoneExit;
+                        if (posFraction < dynamicLocRange) {
+                            trialDeltaT = minCorrection +
+                                    (maxCorrection - minCorrection) * posFraction / dynamicLocRange;
+                        }
+                        else
+                            trialDeltaT = maxCorrection;
+                    }
+                    else {
+                        if (response != lastResponse) {
+                            lastResponse = response;
+                            trialDeltaT = (tuningParams.suggested1stCorrection > 0) ?
+                                    tuningParams.suggested1stCorrection : 10;
+                        }
+                    }
+                    if (response == FceEvaluator.EvalStat.TOOHIGHGAS) {
+//                        trialDeltaT *= 2;
+                        tempGZ1Assume -= trialDeltaT;
+                        loopBack = true;
+                        break;
+                    } else if (response == FceEvaluator.EvalStat.TOOLOWGAS) {
+                        break;
+                    }
+                    else {
+//                        showError("firstZoneInRev: Unknown response from oneSectionInRev() for " + statusHead + s);
+                        redoIt = false;
+                        bRetVal = false;
+                        break;
+                    }
+                }
+                if (s > 0) {
+                    prevSec = vSec.get(s - 1);
+                    prevSec.copyFromNextSection(sec);
+                    if (tuningParams.bSectionalFlueExh) {
+                        prevSec.fluePassThrough = 0;
+                    } else {
+                        FlueCompoAndQty netFlue = flueFromDEnd(bBot, s - 1);
+                        prevSec.passFlueCompAndQty.noteValues(netFlue);
+                        prevSec.fluePassThrough = netFlue.flow;
+                    }
+                } else {
+                    if (!tuningParams.bSectionalFlueExh) {
+                        flueFromDEnd(bBot, s - 1);
+                    }
+                }
+            }
+
+            if (bRetVal) {
+                if (loopBack || redoIt) {
+                    loopBack = false;
+                    continue;
+                }
+//                if (response != lastResponse) {
+//                    lastResponse = response;
+//                    trialDeltaT = (tuningParams.suggested1stCorrection > 0) ?
+//                            tuningParams.suggested1stCorrection : 10;
+//                }
+                if (response == FceEvaluator.EvalStat.TOOLOWGAS) {
+                    tempGZ1Assume += trialDeltaT;
+                    continue;
+                }
+                tmNow = entrySec.chEntryTemp();
+                diff = tmNow - reqdChTempM;
+
+//showError("WAITING TO CONTINUE tmNow = " + tmNow);
+                if (Math.abs(diff) <= 1 * tuningParams.errorAllowed)
+                    break;
+                if (bTrial1) {
+                    tgLast = tempGZ1Assume;
+                    tmLast = tmNow;
+                    tempGZ1Assume += (diff < 0) ? (-trialDeltaT) : trialDeltaT;
+                    bTrial1 = false;
+                } else {
+                    tgNow = tempGZ1Assume;
+                    tempGZ1Assume = tgNow + (tgNow - tgLast) / (tmNow - tmLast) * (reqdChTempM - tmNow);
+                    if (Double.isNaN(tempGZ1Assume)) {
+                        showError("DFHFurnace.1915: Some problem in getting to charge entry temperature\n" +
+                                "     Try with reduced losses in the first section ...");
+                        bRetVal = false;
+                        break;
+                    }
+                    tgLast = tgNow;
+                    tmLast = tmNow;
+                }
+                lastDiff = diff;
+            }
+            else
+                break;
+        }
+        if (bRetVal) {
+            entrySec.setEntryChTemps(reqdChTempM, reqdChTempM, reqdChTempM);
+            entrySec.showEntryResults();
+        }
+        return bRetVal;
+    }
+
+    boolean firstZoneInRevBEFOREDynmaicGasTempCorrection(boolean bBot) {
+        boolean bRetVal = true;
+        FceEvaluator.EvalStat lastResponse, response;
+        String statusHead;
+        Vector<FceSection> vSec;
+        int[] fired;
+        if (bBot) {
+            fired = botFiredSections;
+            vSec = botSections;
+            statusHead = "Bottom Zone ";
+        } else {
+            fired = topFiredSections;
+            vSec = topSections;
+            statusHead = "Top Zone ";
+        }
+        int iFirstFiredSec = fired[0];
+        FceSection sec, firstFsec, prevSec, entrySec;
+        entrySec = vSec.get(0);
+        double tempGZ1Assume;
 
         double trialDeltaT = (tuningParams.suggested1stCorrection > 0) ?
                 tuningParams.suggested1stCorrection : 10;
@@ -1852,7 +2005,7 @@ public class DFHFurnace {
                                 tuningParams.suggested1stCorrection : 10;
                     }
                     if (response == FceEvaluator.EvalStat.TOOHIGHGAS) {
-                        trialDeltaT *= 2;
+//                        trialDeltaT *= 2;
                         tempGZ1Assume -= trialDeltaT;
                         loopBack = true;
                         break;
@@ -1894,7 +2047,7 @@ public class DFHFurnace {
                             tuningParams.suggested1stCorrection : 10;
                 }
                 if (response == FceEvaluator.EvalStat.TOOLOWGAS) {
-                    tempGZ1Assume += 10;
+                    tempGZ1Assume += trialDeltaT;
                     continue;
                 }
                 tmNow = entrySec.chEntryTemp();
@@ -1912,7 +2065,7 @@ public class DFHFurnace {
                     tgNow = tempGZ1Assume;
                     tempGZ1Assume = tgNow + (tgNow - tgLast) / (tmNow - tmLast) * (reqdChTempM - tmNow);
                     if (Double.isNaN(tempGZ1Assume)) {
-                        showError("Some problem in getting to charge entry temperature\n" +
+                        showError("DFHFurnace.1915: Some problem in getting to charge entry temperature\n" +
                                 "     Try with reduced losses in the first section ...");
                         bRetVal = false;
                         break;

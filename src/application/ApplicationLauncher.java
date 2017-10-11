@@ -23,7 +23,7 @@ import java.awt.event.WindowListener;
  * Created by viswanathanm on 11-08-2017.
  */
 public class ApplicationLauncher {
-    String title = "Thermal Applications 20171004";
+    String title = "Thermal Applications 20171009";
     int textFieldWidth = 400;
 
     JButton launchDFHFunace = new JButton("DFH Furnace Module");
@@ -136,7 +136,7 @@ public class ApplicationLauncher {
             } else if (src == launchRTH) {
                 someAppLaunched = launchRTH();
             } else if (src == launchL2Configurator) {
-                someAppLaunched = launchViewThermalProperties() ;
+                someAppLaunched = launchL2Configurator() ;
             } else if (src == jbViewThermalProperties) {
                 someAppLaunched = launchViewThermalProperties() ;
             } else if (src == jbEditThermalProperties) {

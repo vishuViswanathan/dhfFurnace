@@ -1,10 +1,6 @@
 package materials;
 
-import directFiredHeating.DFHeating;
-import directFiredHeating.FceEvaluator;
 import mvUtils.display.*;
-import mvUtils.file.ActInBackground;
-import mvUtils.file.WaitMsg;
 import mvUtils.http.PostToWebSite;
 import mvUtils.jsp.JSPConnection;
 import mvUtils.math.DoubleRange;
@@ -12,7 +8,6 @@ import mvUtils.math.XYArray;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import mvUtils.security.MiscUtil;
-import netscape.javascript.JSObject;
 import protection.CheckAppKey;
 
 import javax.swing.*;
@@ -74,17 +69,6 @@ public class ThermalProperties extends JApplet implements InputControl {
         return retVal;
     }
 
-    protected boolean getJSPConnection() {
-        boolean retVal = false;
-        try {
-            jspConnection = new JSPConnection(jspBase);
-            retVal = true;
-        } catch (Exception e) {
-            System.out.println("DFHeating.4599 " + e.getLocalizedMessage());
-        }
-        return retVal;
-    }
-
     public boolean setItUp() {
         boolean retVal = false;
         if (getJSPbase()) {
@@ -104,17 +88,6 @@ public class ThermalProperties extends JApplet implements InputControl {
         return retVal;
     }
 
-//    public void init() {
-//        UIManager.put("ComboBox.disabledForeground", Color.black);
-//        tableAndGraph = new TableAndGraph(this, MAXROWS, new DoubleRange(0, 2000), new DoubleRange(-1e6, 1e6), "#,###", "#,##0.###");
-//        mainF = new JFrame("Set Material Property");
-//        mainF.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-//        matAndPropsHash = new LinkedHashMap<String, MatAndProps>();
-//        createUIs();
-//        getMatGroups();
-//        displayIt();
-//    }
-//
     NewMatListener matListener;
 
     String enterNewMaterial = "##Enter New Material";

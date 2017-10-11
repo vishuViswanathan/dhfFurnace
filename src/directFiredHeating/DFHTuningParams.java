@@ -83,6 +83,12 @@ public class DFHTuningParams {
     public double suggested1stCorrection = defaultSuggested1stCorrection;
     double defaultCorrectionForTooLowGas =10;
     public double correctionForTooLowGas = defaultCorrectionForTooLowGas;
+    public boolean bDynamicGasTempCorrection = false;
+    double defaultMinGasTempCorrection = 1;
+    public double minGasTempCorrection = defaultMinGasTempCorrection;
+    double defaultMaxGasTempCorrection = 30;
+    public double maxGasTempCorrection = defaultMaxGasTempCorrection;
+    public double dynamicGasTempCorrectionRange = 0.5; //  position as fraction of length upto end of 1st fired section
     public boolean bMindChHeight = true;
     public boolean bAllowSecFuel = false;
     public boolean bAllowRegenAirTemp = true;
@@ -125,7 +131,13 @@ public class DFHTuningParams {
         tfwallLoss = new NumberTextField(controller, wallLoss, 6, false, 0, 1000, "#,###.00", "", true);
         tfsuggested1stCorrection = new NumberTextField(controller, suggested1stCorrection, 6, false, 0, 20, "#,###.00", "", true);
         tfCorrectionforTooLowGas = new NumberTextField(controller, correctionForTooLowGas, 6, false, 0, 20, "#,###.00", "", true);
-
+        chbDynamicGasTempCorrection = new JCheckBox("Enable Dynamic Gas Temp Correction");
+        tfMaxGasTempCorrection = new NumberTextField(controller, maxGasTempCorrection, 6, false, 1, 100, "#,###.00", "Min. Gas Temp Correction (C)", true);
+        tfMinGasTempCorrection = new NumberTextField(controller, minGasTempCorrection, 6, false, 1, 100, "#,###.00", "Max Gas Temp Correction (C)", true);
+//        chbDynamicGasTempCorrection.addActionListener(e-> {
+//            tfMinGasTempCorrection.setEnabled(chbDynamicGasTempCorrection.isSelected());
+//            tfMaxGasTempCorrection.setEnabled(chbDynamicGasTempCorrection.isSelected());
+//        });
         cBSlotRadInCalcul = new JCheckBox();
         cBTakeEndWalls = new JCheckBox();
         cBbaseOnZonalTemperature = new JCheckBox();
@@ -278,6 +290,11 @@ public class DFHTuningParams {
         wallLoss = tfwallLoss.getData();
         suggested1stCorrection = tfsuggested1stCorrection.getData();
         correctionForTooLowGas = tfCorrectionforTooLowGas.getData();
+        bDynamicGasTempCorrection = chbDynamicGasTempCorrection.isSelected();
+        if (bDynamicGasTempCorrection) {
+            minGasTempCorrection = tfMinGasTempCorrection.getData();
+            maxGasTempCorrection = tfMaxGasTempCorrection.getData();
+        }
         bTakeEndWalls = (cBTakeEndWalls.isSelected());
         bEvalBotFirst = (cBbEvalBotFirst.isSelected());
         bHotCharge = cBHotCharge.isSelected();
@@ -310,6 +327,8 @@ public class DFHTuningParams {
         tfwallLoss.setData(wallLoss);
         tfsuggested1stCorrection.setData(suggested1stCorrection);
         tfCorrectionforTooLowGas.setData(correctionForTooLowGas);
+        tfMinGasTempCorrection.setData(minGasTempCorrection);
+        tfMaxGasTempCorrection.setData(maxGasTempCorrection);
         cBTakeEndWalls.setSelected(bTakeEndWalls);
         cBTakeGasAbsorptionForInterRad.setSelected(bTakeGasAbsorptionForInterRad);
         cBNoGasAbsorptionInWallBalance.setSelected(bNoGasAbsorptionInWallBalance);
@@ -475,19 +494,6 @@ public class DFHTuningParams {
             vp = XMLmv.getTag(xmlStr, "bAllowSecFuel", 0);
             bAllowSecFuel = (vp.val.equals("1"));
 
-            // performance base
-//            vp = XMLmv.getTag(xmlStr, "bConsiderChTempProfile", 0);
-//            bConsiderChTempProfile = (vp.val.equals("1"));
-//            vp = XMLmv.getTag(xmlStr, "overUP", 0);
-//            if (vp.val.length() > 0)
-//                overUP = Double.valueOf(vp.val);
-//            vp = XMLmv.getTag(xmlStr, "underUP", 0);
-//            if (vp.val.length() > 0)
-//                underUP = Double.valueOf(vp.val);
-//            vp = XMLmv.getTag(xmlStr, "bOnProductionLine", 0);
-//            bOnProductionLine = (vp.val.equals("1"));
-//            vp = XMLmv.getTag(xmlStr, "takeEmissivityCorrFactor", 0);
-//            takeEmissivityCorrFactor = (vp.val.equals("1"));
             vp = XMLmv.getTag(xmlStr, "unitOutputOverRange", vp.endPos);
             if (vp.val.length() > 0)
                 unitOutputOverRange = Double.valueOf(vp.val);
@@ -511,6 +517,9 @@ public class DFHTuningParams {
             vp = XMLmv.getTag(xmlStr, "widthStep", vp.endPos);
             if (vp.val.length() > 0)
                 widthStep = Double.valueOf(vp.val);
+            bDynamicGasTempCorrection = false; // no saving of this data
+            minGasTempCorrection = defaultMinGasTempCorrection;
+            maxGasTempCorrection = defaultMaxGasTempCorrection;
         } catch (NumberFormatException e) {
             bRetVal = false;
         }
@@ -588,6 +597,8 @@ public class DFHTuningParams {
     }
 
     NumberTextField tferrorAllowed, tfwallLoss, tfsuggested1stCorrection, tfCorrectionforTooLowGas;
+    NumberTextField tfMinGasTempCorrection, tfMaxGasTempCorrection;
+    JCheckBox chbDynamicGasTempCorrection;
     NumberTextField tfTFMStep;
     // for evaluation from reference performance
     public boolean bConsiderChTempProfile = true;
@@ -624,8 +635,12 @@ public class DFHTuningParams {
         MultiPairColPanel jp = new MultiPairColPanel(200, 60);
         jp.addItemPair("Error Allowed (degC)", tferrorAllowed);
         jp.addItemPair("Wall loss (for internal use)", tfwallLoss);
-        jp.addItemPair("Suggested First Correction (degC)", tfsuggested1stCorrection);
-        jp.addItemPair("Correction For TooLowGas (degC)", tfCorrectionforTooLowGas);
+        jp.addItem(chbDynamicGasTempCorrection);
+        jp.addItemPair(tfMinGasTempCorrection);
+        jp.addItemPair(tfMaxGasTempCorrection);
+        jp.addItem("(Ensure Min < Max)");
+//        jp.addItemPair("Suggested First Correction (degC)", tfsuggested1stCorrection);
+//        jp.addItemPair("Correction For TooLowGas (degC)", tfCorrectionforTooLowGas);
         jp.addBlank();
         jp.addItemPair("Temperature Profile for TFM", cBProfileForTFM);
         jp.addItemPair("Length step for TFM Temperature Profile (mm)", tfTFMStep);
