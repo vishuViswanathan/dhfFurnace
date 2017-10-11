@@ -285,22 +285,12 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     public DFHeating() {
         debugLocal("Release " + releaseDate);
         locale = Locale.getDefault(); // creates Locale class object by getting the default locale.
-//        debug("Locale is " + locale);
     }
-
-//    public DFHeating(boolean asApplication, boolean onProductionLine) {
-//        this();
-//        this.asApplication = asApplication;
-//        DFHeating.onProductionLine = onProductionLine;
-//        debugLocal("as Application");
-//        init();
-//    }
 
     public DFHeating(boolean asApplication) {
         this();
         this.asApplication = asApplication;
         debugLocal("as Application");
-//        init();
     }
 
     public void setLoadTesting(boolean ena) {
@@ -346,8 +336,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                 } else {
                     if (log == null) {
                         startLog4j();
-//                log = Logger.getLogger(DFHeating.class);
-                        // Load Log4j configurations from external file
                     }
                     mainF.setTitle("DFH Furnace Application " + releaseDate + testTitle);
                 }
@@ -434,7 +422,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
              opPage = OperationPage();
              slate.setViewportView(inpPage);
              mainAppPanel.add(slate, BorderLayout.CENTER);
-//             switchPage(DFHDisplayPageType.INPUTPAGE);
              cbHeatingMode.setSelectedItem(HeatingMode.TOPONLY);
              cbFceFor.setSelectedItem(furnaceFor);
              cbFuel.setSelectedItem(commFuel);
@@ -453,7 +440,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         ena &= bAllowManualCalculation;
         if (ena)
             furnace.resetSections();
-//        if (titleAndFceCommon != null)  titleAndFceCommon.setEnabled(ena && bAllowProfileChange);
         enableTitleEdit(ena && bAllowProfileChange);
 
         cbChType.setEnabled((furnaceFor != DFHTuningParams.FurnaceFor.STRIP) && ena && bAllowProfileChange);
@@ -500,8 +486,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         }
         tuningParams.enableDataEntry(ena && bAllowProfileChange);
         enableUserTunePanel(ena);
-//        if (!onProductionLine)
-//            userTunePanel.setEnabled(ena);
         disableSomeUIs();
     }
 
@@ -828,12 +812,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
         gbcOP.gridx++;
         gbcOP.anchor = GridBagConstraints.WEST;
-//        jp.add(chargeInFurnacePanel(), gbcOP);
         mpChInFce = chargeInFurnacePanel();
         jp.add(mpChInFce, gbcOP);
 
         gbcOP.gridx++;
-//        jp.add(recuDataPanel(), gbcOP);
         mpRecuData = recuDataPanel();
         jp.add(mpRecuData, gbcOP);
         gbcOP.gridy++;
@@ -843,7 +825,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         jp.add(userTunePanel, gbcOP);
         gbcOP.gridx++;
         gbcOP.gridx++;
-//        jp.add(calCulDataPanel(), gbcOP);
         mpCalcul = calCulDataPanel();
         jp.add(mpCalcul, gbcOP);
         gbcOP.gridx = 0;
@@ -1070,7 +1051,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                 }
             }
         });
-//        cbFuel.setSelectedItem(commFuel);
         cbFuel.setRenderer(new BasicComboBoxRenderer() {
             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 if (isSelected) {
@@ -1556,13 +1536,11 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             gbcTp.gridy = 0;
             panel.add(getTitlePanel(), gbcTp);
             gbcTp.gridx++;
-//            panel.add(fceCommDataPanel(), gbcTp);
             mpFceCommDataPanel =  fceCommDataPanel();
             panel.add(mpFceCommDataPanel, gbcTp);
             titleAndFceCommon = panel;
         }
         cbFuel.updateUI();
-//        debug("DFHEating.1507: SwingUtilities.isEventDispatchThread() = " +SwingUtilities.isEventDispatchThread());
         return titleAndFceCommon;
     }
 
@@ -1710,7 +1688,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         jp.addItemPair(tfAirTemp);
         jp.addItemPair(tfFuelTemp);
         jp.addItemPair(tfCalculStep);
-//        jp.addItemPair("", pbCalculate);
         jp.addItem(pbCalculate);
         return jp;
     }
@@ -1754,7 +1731,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         cell.setCellValue("FURNACE BASIC DATA");
 
         sheet.setColumnWidth(1, 8000);
-//        sheet.setColumnWidth(2, 9000);
         sheet.setColumnWidth(3, 4000);
         sheet.setColumnWidth(4, 8000);
         sheet.setColumnWidth(6, 4000);
@@ -2027,7 +2003,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
         furnaceFor = (DFHTuningParams.FurnaceFor) cbFceFor.getSelectedItem();
         tuningParams.setSelectedProc(furnaceFor);
-//        bTopBot = (cbHeatingType.getSelectedIndex() == 1);
         fceWidth = ntfWidth.getData() / 1000;
         furnace.setFceWidth(fceWidth);
         commFuel = (Fuel) cbFuel.getSelectedItem();
@@ -2041,7 +2016,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
         bottShadow = tfBottShadow.getData() / 100;
         getProcessName();
-//        processName = tfProcessName.getText();
         if (cbFceFor.getSelectedItem() == DFHTuningParams.FurnaceFor.STRIP)
             chPitch = 1;
         else
@@ -2059,9 +2033,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
         ambTemp = tfAmbTemp.getData();
         airTemp = tfAirTemp.getData();
-
-//        showMessage("Start Air preheat = " + airTemp);    // TODO-remove in RELEASE
-
         fuelTemp = tfFuelTemp.getData();
         calculStep = tfCalculStep.getData() / 1000;
         furnace.takeValuesFromUI();
@@ -2227,10 +2198,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             ok = false;
             msg += "\n   " + tfChWidth.getName();
         }
-//        if (cbChMaterial.getSelectedIndex() < 0) {
-//            ok = false;
-//            msg += "\n   Material of Charge";
-//        }
         return new ErrorStatAndMsg(!ok, msg);
     }
 
@@ -2413,7 +2380,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             mainF.toFront();
             debugLocal(msg);
         } else {
-//            if (bAirHeatedByRecu && !bFuelHeatedByRecu && !furnace.checkExistingRecu()) {
             if (!bFuelHeatedByRecu && !furnace.checkExistingRecu()) {
                     furnace.newRecu();
             }
@@ -2450,7 +2416,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     public FceEvaluator calculateForPerformanceTable(Performance baseP) {
-//        baseP.setTableFactors(tuningParams.outputStep, tuningParams.widthStep);
         return calculateForPerformanceTable(baseP, null);
     }
 
@@ -2486,8 +2451,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         }
         if (bResetLossFactor) {
             furnace.resetLossFactor();
-//            if (checkData())    on 20151213
-                takeValuesFromUI();
+            takeValuesFromUI();
         }
         boolean proceed = false;
         Thread evalThread = null;
@@ -2541,11 +2505,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return true;
     }
 
-//    public boolean setProductionData(ProductionData production) {
-//        furnace.setProductionData(new ProductionData(production));
-//        return true;
-//    }
-
     public FceEvaluator calculateFce(boolean bResetLossFactor, ResultsReadyListener resultsReadyListener) {
         return calculateFce(resultsReadyListener, true, bResetLossFactor, true);
     }
@@ -2584,7 +2543,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         enableResultsMenu(false);
         enableFileMenu(true);
         enablePerfMenu(true);
-//        showError("ABORTING CALCULATION!\n" + reason);
         switchPage(DFHDisplayPageType.INPUTPAGE);
         parent().toFront();
     }
@@ -2674,7 +2632,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     public StatusWithMessage takeProfileDataFromXML(String xmlStr) {
-//        logInfo("in takeProfileDatFromXML in DFHeating");
         return takeProfileDataFromXML(xmlStr, false, null, null);
     }
 
@@ -3138,105 +3095,43 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     protected void saveFceToFile(boolean withPerformance) {
-//        if (asJNLP)
-//            saveFceToFileJNLP(withPerformance);
-//        else {
-            takeValuesFromUI();
-            String title = "Save DFH Furnace Data" + ((withPerformance) ? " (with Performance Data)" : "");
-            FileDialog fileDlg =
-                    new FileDialog(mainF, title,
-                            FileDialog.SAVE);
-            fileDlg.setFile(profileFileName);
-            fileDlg.setVisible(true);
+        takeValuesFromUI();
+        String title = "Save DFH Furnace Data" + ((withPerformance) ? " (with Performance Data)" : "");
+        FileDialog fileDlg =
+                new FileDialog(mainF, title,
+                        FileDialog.SAVE);
+        fileDlg.setFile(profileFileName);
+        fileDlg.setVisible(true);
 
-            String bareFile = fileDlg.getFile();
-            if (!(bareFile == null)) {
-                int len = bareFile.length();
-                if ((len < 8) || !(bareFile.substring(len - 7).equalsIgnoreCase("." + profileFileExtension))) {
-                    showMessage("Adding '." + profileFileExtension + "' to file name");
-                    bareFile = bareFile + "." + profileFileExtension;
-                }
-                String fileName = fileDlg.getDirectory() + bareFile;
-                debugLocal("Save Data file name :" + fileName);
-                File f = new File(fileName);
-                boolean goAhead = true;
-                if (goAhead) {
-                    try {
-                        BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(fileName));
-                        oStream.write(inputDataXML(withPerformance).getBytes());
-                        oStream.close();
-                        if (withPerformance)
-                            furnace.performanceIsSaved();
-                    } catch (FileNotFoundException e) {
-                        showError("File " + fileName + " NOT found!");
-                    } catch (IOException e) {
-                        showError("Some IO Error in writing to file " + fileName + "!");
-                    }
+        String bareFile = fileDlg.getFile();
+        if (!(bareFile == null)) {
+            int len = bareFile.length();
+            if ((len < 8) || !(bareFile.substring(len - 7).equalsIgnoreCase("." + profileFileExtension))) {
+                showMessage("Adding '." + profileFileExtension + "' to file name");
+                bareFile = bareFile + "." + profileFileExtension;
+            }
+            String fileName = fileDlg.getDirectory() + bareFile;
+            debugLocal("Save Data file name :" + fileName);
+            File f = new File(fileName);
+            boolean goAhead = true;
+            if (goAhead) {
+                try {
+                    BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(fileName));
+                    oStream.write(inputDataXML(withPerformance).getBytes());
+                    oStream.close();
+                    if (withPerformance)
+                        furnace.performanceIsSaved();
+                } catch (FileNotFoundException e) {
+                    showError("File " + fileName + " NOT found!");
+                } catch (IOException e) {
+                    showError("Some IO Error in writing to file " + fileName + "!");
                 }
             }
-            parent().toFront();
-//        }
+        }
+        parent().toFront();
     }
 
-//    protected void saveFceToFileJNLP(boolean withPerformance) {
-//        takeValuesFromUI();
-//        if (!JNLPFileHandler.saveToFile(inputDataXML(withPerformance), profileFileExtension, "furnaceProfile." + profileFileExtension))
-//            showError("Could not save to file!");
-//        parent().toFront();
-//    }
-
-//    protected StatusWithMessage getFceFromFileJNLP() {
-//        disableCompare();
-//        StatusWithMessage retVal = new StatusWithMessage();
-//        furnace.resetSections();
-//        try {
-//            FileContents fc = JNLPFileHandler.getReadFile(null, new String[]{profileFileExtension, "xls", "test"}, 0, 0);
-//            if (fc != null) {
-//                String fileName = fc.getName();
-//                boolean bXL = (fileName.length() > 4) && (fileName.substring(fileName.length() - 4).equalsIgnoreCase(".xls"));
-//                setResultsReady(false);
-//                setItFromTFM(false);
-//                furnace.resetLossAssignment();
-//                furnace.clearPerfBase();
-//                hidePerformMenu();
-//                debugLocal("Data file name (JNLP):" + fileName);
-//                if (bXL) {
-//                    String fceData = fceDataFromXL(fc);
-//                    if (checkVersion(fceData)) {
-//                        retVal = takeProfileDataFromXML(fceData);
-//                        if ((retVal.getDataStatus() == DataStat.Status.OK)) {
-////                            retVal.setInfoMessage(fileName);
-//                            profileFileName = fileName;
-//                            parent().toFront();
-//                            if (!onProductionLine)
-//                                showMessage("Fuel and Charge Material to be Selected/Checked before Calculation.");
-//                        } else {
-//                            retVal.setErrorMessage("in Furnace Data from XL file!\n" + retVal.getErrorMessage());
-//                            showError(retVal.getErrorMessage());
-//                        }
-//                    } else {
-//                        retVal.setErrorMessage("This file does not contain proper DFHFurnace data!");
-//                        showError(retVal.getErrorMessage());
-//                    }
-//                }
-//                else {
-//                    retVal = getFceFromFceDatFile(fc);
-//                    if (retVal.getDataStatus() != DataStat.Status.WithErrorMsg)
-//                        profileFileName = fileName;
-//
-//                }
-//            }
-//        } catch (IOException e) {
-//            showError("facing some problem in reading data : " + e.getMessage());
-//            e.printStackTrace();
-//        }
-//        switchPage(DFHDisplayPageType.INPUTPAGE);
-//        return retVal;
-//    }
-
     protected StatusWithMessage getFceFromFile() {
-//        if (asJNLP)
-//            return getFceFromFileJNLP();
         StatusWithMessage retVal = new StatusWithMessage();
         disableCompare();
         boolean bRetVal = false;
@@ -3284,138 +3179,77 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                          "# and leave them as they are.\n\n\n";
 
         String xmlStr = fileMsg + XMLmv.putTag("Recuperator", xmlStrRecu);
-//        if (asJNLP) {
-//            if (JNLPFileHandler.saveToFile(xmlStr, "recuDat", "recuperator.recuDat"))
-//                retVal = true;
-//            else
-//                showError("Could not save to file!");
-//        }
-//        else {
-            String title = "Save Recuperator  Data";
-            FileDialog fileDlg =
-                    new FileDialog(mainF, title,
-                            FileDialog.SAVE);
-            fileDlg.setFile("*.recuDat");
-            fileDlg.setVisible(true);
+        String title = "Save Recuperator  Data";
+        FileDialog fileDlg =
+                new FileDialog(mainF, title,
+                        FileDialog.SAVE);
+        fileDlg.setFile("*.recuDat");
+        fileDlg.setVisible(true);
 
-            String bareFile = fileDlg.getFile();
-            if (!(bareFile == null)) {
-                int len = bareFile.length();
-                if ((len < 9) || !(bareFile.substring(len - 8).equalsIgnoreCase(".recuDat"))) {
-                    showMessage("Adding '.recuDat' to file name");
-                    bareFile = bareFile + ".recuDat";
-                }
-                String fileName = fileDlg.getDirectory() + bareFile;
-                debugLocal("Save Recu Data file name :" + fileName);
-                File f = new File(fileName);
-                boolean goAhead = true;
-                if (goAhead) {
-                    try {
-                        BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(fileName));
-                        oStream.write(xmlStr.getBytes());
-                        oStream.close();
-                        retVal = true;
-                    } catch (FileNotFoundException e) {
-                        showError("File " + fileName + " NOT found!");
-                    } catch (IOException e) {
-                        showError("Some IO Error in writing to file " + fileName + "!");
-                    }
+        String bareFile = fileDlg.getFile();
+        if (!(bareFile == null)) {
+            int len = bareFile.length();
+            if ((len < 9) || !(bareFile.substring(len - 8).equalsIgnoreCase(".recuDat"))) {
+                showMessage("Adding '.recuDat' to file name");
+                bareFile = bareFile + ".recuDat";
+            }
+            String fileName = fileDlg.getDirectory() + bareFile;
+            debugLocal("Save Recu Data file name :" + fileName);
+            File f = new File(fileName);
+            boolean goAhead = true;
+            if (goAhead) {
+                try {
+                    BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(fileName));
+                    oStream.write(xmlStr.getBytes());
+                    oStream.close();
+                    retVal = true;
+                } catch (FileNotFoundException e) {
+                    showError("File " + fileName + " NOT found!");
+                } catch (IOException e) {
+                    showError("Some IO Error in writing to file " + fileName + "!");
                 }
             }
-//        }
+        }
         parent().toFront();
         return retVal;
     }
 
     void loadRecuperator() {
         boolean loaded = false;
-//        if (asJNLP)
-//            loaded = loadRecuperatorJNLP();
-//        else {
-            FileDialog fileDlg =
-                    new FileDialog(mainF, "Load Recuperator Specifications",
-                            FileDialog.LOAD);
-            fileDlg.setFile("*.recuDat");
-            fileDlg.setVisible(true);
-            String fileName = fileDlg.getFile();
-            if (fileName != null) {
-                String filePath = fileDlg.getDirectory() + fileName;
-                if (!filePath.equals("nullnull")) {
-                    debugLocal("Recu Data file name :" + filePath);
-                    try {
-                        BufferedInputStream iStream = new BufferedInputStream(new FileInputStream(filePath));
-                        File f = new File(filePath);
-                        long len = f.length();
-                        if (len > 50 && len < 1000) {
-                            int iLen = (int) len;
-                            byte[] data = new byte[iLen + 10];
-                            if (iStream.read(data) > 50) {
-                                if (furnace.setRecuSpecs(new String(data)))
-                                    loaded = true;
-//                                    showMessage("Recuperator loaded.\n Remember to save Furnace profile for future use");
-                            }
-                            iStream.close();
-                        } else
-                            showError("File size " + len + " for " + filePath);
-                    } catch (Exception e) {
-                        showError("Some Problem in getting file!");
-                    }
+        FileDialog fileDlg =
+                new FileDialog(mainF, "Load Recuperator Specifications",
+                        FileDialog.LOAD);
+        fileDlg.setFile("*.recuDat");
+        fileDlg.setVisible(true);
+        String fileName = fileDlg.getFile();
+        if (fileName != null) {
+            String filePath = fileDlg.getDirectory() + fileName;
+            if (!filePath.equals("nullnull")) {
+                debugLocal("Recu Data file name :" + filePath);
+                try {
+                    BufferedInputStream iStream = new BufferedInputStream(new FileInputStream(filePath));
+                    File f = new File(filePath);
+                    long len = f.length();
+                    if (len > 50 && len < 1000) {
+                        int iLen = (int) len;
+                        byte[] data = new byte[iLen + 10];
+                        if (iStream.read(data) > 50) {
+                            if (furnace.setRecuSpecs(new String(data)))
+                                loaded = true;
+                        }
+                        iStream.close();
+                    } else
+                        showError("File size " + len + " for " + filePath);
+                } catch (Exception e) {
+                    showError("Some Problem in getting file!");
                 }
             }
-//        }
+        }
         if (loaded)
             showMessage("Recuperator loaded.\n Remember to save Furnace profile for future use");
         else
             showError("Unable to load Recuperator Data");
      }
-
-//    boolean loadRecuperatorJNLP() {
-//        boolean bRetVal = false;
-//        try {
-//            FileContents fc = JNLPFileHandler.getReadFile(null, new String[]{"recuDat"}, 50, 1000);
-//            if (fc != null) {
-//                if (furnace.setRecuSpecs(new String(JNLPFileHandler.readFile(fc))))   {
-////                    showMessage("Recuperator loaded");
-//                    bRetVal = true;
-//                }
-//            }
-//            else
-//                showError("Some problem in loading Recuperator.\n    May be the file is not the required file");
-//
-//        } catch (IOException e) {
-//            showError("facing some problem in reading Recuperator data : " + e.getMessage());
-//            e.printStackTrace();
-//        }
-//        switchPage(DFHDisplayPageType.INPUTPAGE);
-//        return bRetVal;
-//    }
-
-
-//    protected StatusWithMessage getFceFromFceDatFile(FileContents fc) {
-//        StatusWithMessage retVal = new StatusWithMessage();
-//        try {
-//            long len = fc.getLength();
-//            if (len > 1300 && len < 10e6) {
-//                String header = JNLPFileHandler.readFile(fc, 200);
-//                if (checkVersion(header)) {
-//                    String fceData = JNLPFileHandler.readFile(fc);
-//                    if (fceData != null) {
-//                        retVal = takeProfileDataFromXML(fceData);
-//                    }
-//                } else {
-//                    retVal.setErrorMessage("This not a proper DFHFurnace data file!");
-//                    showError(retVal.getErrorMessage());
-//                }
-//            } else {
-//                retVal.setErrorMessage("File size " + len + " for " + fc.getName());
-//                showError(retVal.getErrorMessage());
-//            }
-//        } catch (Exception e) {
-//            retVal.setErrorMessage("Some Problem in getting file! : " + e.getMessage());
-//            showError(retVal.getErrorMessage());
-//        }
-//        return retVal;
-//    }
 
     protected StatusWithMessage getFceFromFceDatFile(String filePath) {
         StatusWithMessage retVal = new StatusWithMessage();
@@ -3450,46 +3284,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         mIBeamParamTFM.setEnabled(bYes);
         mILossParamTFM.setEnabled(bYes);
     }
-
-//    String fceDataFromXL(FileContents fc) {
-//        String data = "";
-//        try {
-//            InputStream xlInput = fc.getInputStream();
-//            POIFSFileSystem xlFileSystem = new POIFSFileSystem(xlInput);
-//
-//            /** Create a workbook using the File System**/
-//            HSSFWorkbook wB = new HSSFWorkbook(xlFileSystem);
-//
-//            /** Get the first sheet from workbook**/
-//            HSSFSheet sh = wB.getSheet("Furnace Profile");
-//            if (sh != null) {
-//                Row r = sh.getRow(0);
-//                Cell cell = r.getCell(0);
-//                if (cell.getCellType() == Cell.CELL_TYPE_STRING) {
-//                    if (cell.getStringCellValue().equals("mv7414")) {
-//                        r = sh.getRow(1);
-//                        cell = r.getCell(0);
-//                        if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC)  { // data is multi column
-//                            int nCols = (int)cell.getNumericCellValue();
-//                            for (int c = 1; c <= nCols; c++) {
-//                                cell = r.getCell(c);
-//                                if (cell.getCellType() == Cell.CELL_TYPE_STRING)
-//                                    data += cell.getStringCellValue();
-//                            }
-//                        }
-//                        else {         // kept for backward compatibility
-//                            if (cell.getCellType() == Cell.CELL_TYPE_STRING)
-//                                data = cell.getStringCellValue();
-//                        }
-//                    }
-//                }
-//            }
-//            xlInput.close();
-//        } catch (Exception e) {
-//            showError("Error in DFHEating:fceDataFromXL >" + e.getMessage());
-//        }
-//        return data;
-//    }
 
     String fceDataFromXL(String filePath) {
         String data = "";
@@ -3532,7 +3326,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     JPanel printTitleP() {
-//        DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
         Date date = new Date();
         MultiPairColPanel jp = new MultiPairColPanel("Results of DFH Furnace Calculations");
         jp.addItemPair(new JLabel("Date :"), new JLabel(dateFormat.format(date)));
@@ -3621,87 +3414,68 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     void tProfileForTFM() {
         String profStr = furnace.tProfileForTFMWithLen(); //(false);
         if (profStr.length() > 100) {
-//            if (asJNLP) {
-//                if (!JNLPFileHandler.saveToFile(profStr, "csv", "Temperature Profile for TFM.csv"))
-//                    showError("Could not save to file!");
-//            }
-//            else {
-                FileDialog fileDlg =
-                        new FileDialog(mainF, "Temperature Profile for TFM",
-                                FileDialog.SAVE);
-                fileDlg.setFile("Temperature Profile for TFM.csv");
-                fileDlg.setVisible(true);
-                String bareFile = fileDlg.getFile();
-                if (bareFile != null) {
-                    int len = bareFile.length();
-                    if ((len < 4) || !(bareFile.substring(len - 4).equalsIgnoreCase(".csv"))) {
-                        showMessage("Adding '.csv' to file name");
-                        bareFile = bareFile + ".csv";
-                    }
-                    String fileName = fileDlg.getDirectory() + bareFile;
-                    try {
-                        BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(fileName));
-                        oStream.write(profStr.getBytes());
-                        oStream.close();
-                    } catch (Exception e) {
-                        showError("Some problem in file.\n" + e.getMessage());
-                        return;
-                    }
+            FileDialog fileDlg =
+                    new FileDialog(mainF, "Temperature Profile for TFM",
+                            FileDialog.SAVE);
+            fileDlg.setFile("Temperature Profile for TFM.csv");
+            fileDlg.setVisible(true);
+            String bareFile = fileDlg.getFile();
+            if (bareFile != null) {
+                int len = bareFile.length();
+                if ((len < 4) || !(bareFile.substring(len - 4).equalsIgnoreCase(".csv"))) {
+                    showMessage("Adding '.csv' to file name");
+                    bareFile = bareFile + ".csv";
                 }
-//            }
+                String fileName = fileDlg.getDirectory() + bareFile;
+                try {
+                    BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(fileName));
+                    oStream.write(profStr.getBytes());
+                    oStream.close();
+                } catch (Exception e) {
+                    showError("Some problem in file.\n" + e.getMessage());
+                    return;
+                }
+            }
             parent().toFront();
         }
     }
 
     void saveComparisonToXL() {
 //  create a new workbook
-            Workbook wb = new HSSFWorkbook();
-            int nSheet = 0;
+        Workbook wb = new HSSFWorkbook();
+        int nSheet = 0;
 //  create a new sheet
-            ExcelStyles styles = new ExcelStyles(wb);
-            Sheet sh = prepareReportWB(wb, styles);
-            furnace.xlComparisonReport(sh, styles);
-//        if (asJNLP) {
-//            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-//            try {
-//                wb.write(bos);
-//                byte[] bytes = bos.toByteArray();
-//                if (!JNLPFileHandler.saveToFile(bytes, "xls", "comparisonTable.xls"))
-//                    showError("Some problem in writing to comparison Table Excel file!");
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//        else {
-            FileOutputStream out = null;
-            FileDialog fileDlg =
-                    new FileDialog(mainF, "Saving Results Table to Excel",
-                            FileDialog.SAVE);
-            fileDlg.setFile("Test Results Table.xls");
-            fileDlg.setVisible(true);
-            String bareFile = fileDlg.getFile();
-            if (bareFile != null) {
-                int len = bareFile.length();
-                if ((len < 4) || !(bareFile.substring(len - 4).equalsIgnoreCase(".xls"))) {
-                    showMessage("Adding '.xls' to file name");
-                    bareFile = bareFile + ".xls";
-                }
-                String fileName = fileDlg.getDirectory() + bareFile;
-                try {
-                    out = new FileOutputStream(fileName);
-                } catch (FileNotFoundException e) {
-                    showError("Some problem in file.\n" + e.getMessage());
-                    return;
-                }
-                try {
-                    wb.write(out);
-                    out.close();
-                } catch (IOException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                    showError("Some problem with file.\n" + e.getMessage());
-                }
+        ExcelStyles styles = new ExcelStyles(wb);
+        Sheet sh = prepareReportWB(wb, styles);
+        furnace.xlComparisonReport(sh, styles);
+        FileOutputStream out = null;
+        FileDialog fileDlg =
+                new FileDialog(mainF, "Saving Results Table to Excel",
+                        FileDialog.SAVE);
+        fileDlg.setFile("Test Results Table.xls");
+        fileDlg.setVisible(true);
+        String bareFile = fileDlg.getFile();
+        if (bareFile != null) {
+            int len = bareFile.length();
+            if ((len < 4) || !(bareFile.substring(len - 4).equalsIgnoreCase(".xls"))) {
+                showMessage("Adding '.xls' to file name");
+                bareFile = bareFile + ".xls";
             }
-//        }
+            String fileName = fileDlg.getDirectory() + bareFile;
+            try {
+                out = new FileOutputStream(fileName);
+            } catch (FileNotFoundException e) {
+                showError("Some problem in file.\n" + e.getMessage());
+                return;
+            }
+            try {
+                wb.write(out);
+                out.close();
+            } catch (IOException e) {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                showError("Some problem with file.\n" + e.getMessage());
+            }
+        }
         parent().toFront();
     }
 
@@ -3720,52 +3494,47 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     void appendToComparisonToXL() {
-//        if (asJNLP) {
-//            showError("Not ready to append to comparison table file yet!");
-//        }
-//        else {
-            FileDialog fileDlg =
-                    new FileDialog(mainF, "Appending Results Table to Excel",
-                            FileDialog.LOAD);
-            fileDlg.setFile("*.xls");
-            fileDlg.setVisible(true);
-            String bareFile = fileDlg.getFile();
-            if (bareFile != null) {
-                boolean bXL = (bareFile.length() > 4) && (bareFile.substring(bareFile.length() - 4).equalsIgnoreCase(".xls"));
-                if (bXL) {
-                    String filePath = fileDlg.getDirectory() + bareFile;
-                    if (!filePath.equals("nullnull")) {
-                        FileInputStream xlInput = null;
-                        HSSFWorkbook wB = null;
+        FileDialog fileDlg =
+                new FileDialog(mainF, "Appending Results Table to Excel",
+                        FileDialog.LOAD);
+        fileDlg.setFile("*.xls");
+        fileDlg.setVisible(true);
+        String bareFile = fileDlg.getFile();
+        if (bareFile != null) {
+            boolean bXL = (bareFile.length() > 4) && (bareFile.substring(bareFile.length() - 4).equalsIgnoreCase(".xls"));
+            if (bXL) {
+                String filePath = fileDlg.getDirectory() + bareFile;
+                if (!filePath.equals("nullnull")) {
+                    FileInputStream xlInput = null;
+                    HSSFWorkbook wB = null;
+                    try {
+                        xlInput = new FileInputStream(filePath);
+                        /** Create a workbook using the File System**/
+                        wB = new HSSFWorkbook(xlInput);
+                    } catch (Exception e) {
+                        showError("Some problem in Reading/saving Report file\n" + e.getMessage());
+                    }
+
+                    /** Get the first sheet from workbook**/
+                    HSSFSheet sh = wB.getSheet("Results Table");
+                    if (sh != null) {
+                        ExcelStyles styles = new ExcelStyles(wB);
                         try {
-                            xlInput = new FileInputStream(filePath);
-                            /** Create a workbook using the File System**/
-                            wB = new HSSFWorkbook(xlInput);
-                        } catch (Exception e) {
+                            furnace.xlComparisonReport(sh, styles);
+                            xlInput.close();
+                            FileOutputStream outFile = new FileOutputStream(filePath);
+                            wB.write(outFile);
+                            outFile.close();
+                        } catch (FileNotFoundException e) {
+                            showError("Some problem in Reading/saving Report file\n" + e.getMessage());
+                        } catch (IOException e) {
                             showError("Some problem in Reading/saving Report file\n" + e.getMessage());
                         }
-
-                        /** Get the first sheet from workbook**/
-                        HSSFSheet sh = wB.getSheet("Results Table");
-                        if (sh != null) {
-                            ExcelStyles styles = new ExcelStyles(wB);
-                            try {
-                                furnace.xlComparisonReport(sh, styles);
-                                xlInput.close();
-                                FileOutputStream outFile = new FileOutputStream(filePath);
-                                wB.write(outFile);
-                                outFile.close();
-                            } catch (FileNotFoundException e) {
-                                showError("Some problem in Reading/saving Report file\n" + e.getMessage());
-                            } catch (IOException e) {
-                                showError("Some problem in Reading/saving Report file\n" + e.getMessage());
-                            }
-                        }
                     }
-                } else
-                    showMessage("Choose *.xls file");
-            }
-//        }
+                }
+            } else
+                showMessage("Choose *.xls file");
+        }
     }
 
     Sheet prepareReportWB(Workbook wb, ExcelStyles styles) {
@@ -3861,47 +3630,34 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
         nSheet++;
         //  create a new file
-//        if (asJNLP) {
-//            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-//            try {
-//                wb.write(bos);
-//                byte[] bytes = bos.toByteArray();
-//                if (!JNLPFileHandler.saveToFile(bytes, "xls", "furnaceResults.xls"))
-//                    showError("Some problem in writing to Excel file!");
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//        else {
-            FileOutputStream out = null;
-            FileDialog fileDlg =
-                    new FileDialog(mainF, "Saving Results to Excel",
-                            FileDialog.SAVE);
-            fileDlg.setFile("Test workbook from Java.xls");
-            fileDlg.setVisible(true);
-            String bareFile = fileDlg.getFile();
-            if (bareFile != null) {
-                int len = bareFile.length();
-                if ((len < 4) || !(bareFile.substring(len - 4).equalsIgnoreCase(".xls"))) {
-                    showMessage("Adding '.xls' to file name");
-                    bareFile = bareFile + ".xls";
-                }
-                String fileName = fileDlg.getDirectory() + bareFile;
-                try {
-                    out = new FileOutputStream(fileName);
-                } catch (FileNotFoundException e) {
-                    showError("Some problem in file.\n" + e.getMessage());
-                    return;
-                }
-                try {
-                    wb.write(out);
-                    out.close();
-                    furnace.performanceIsSaved();
-                } catch (IOException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                    showError("Some problem with file.\n" + e.getMessage());
-                }
-//            }
+        FileOutputStream out = null;
+        FileDialog fileDlg =
+                new FileDialog(mainF, "Saving Results to Excel",
+                        FileDialog.SAVE);
+        fileDlg.setFile("Test workbook from Java.xls");
+        fileDlg.setVisible(true);
+        String bareFile = fileDlg.getFile();
+        if (bareFile != null) {
+            int len = bareFile.length();
+            if ((len < 4) || !(bareFile.substring(len - 4).equalsIgnoreCase(".xls"))) {
+                showMessage("Adding '.xls' to file name");
+                bareFile = bareFile + ".xls";
+            }
+            String fileName = fileDlg.getDirectory() + bareFile;
+            try {
+                out = new FileOutputStream(fileName);
+            } catch (FileNotFoundException e) {
+                showError("Some problem in file.\n" + e.getMessage());
+                return;
+            }
+            try {
+                wb.write(out);
+                out.close();
+                furnace.performanceIsSaved();
+            } catch (IOException e) {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                showError("Some problem with file.\n" + e.getMessage());
+            }
         }
         parent().toFront();
     }
@@ -3932,48 +3688,33 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     void saveFuelSpecs() {
-//        if (asJNLP)
-//            saveFuelSpecsJNLP();
-//        else {
-            String fuelSpecsStr = "# Fuel specifications saved on " + dateFormat.format(new Date()) + "\n\n" +
-                    fuelSpecsInXML();
+        String fuelSpecsStr = "# Fuel specifications saved on " + dateFormat.format(new Date()) + "\n\n" +
+                fuelSpecsInXML();
 
-            FileOutputStream out = null;
-            FileDialog fileDlg =
-                    new FileDialog(mainF, "Saving Fuel Specifications to file",
-                            FileDialog.SAVE);
-            fileDlg.setFile("FuelSpecifications.dfhSpecs");
-            fileDlg.setVisible(true);
-            String bareFile = fileDlg.getFile();
-            if (bareFile != null) {
-                int len = bareFile.length();
-                if ((len < 9) || !(bareFile.substring(len - 9).equalsIgnoreCase(".dfhSpecs"))) {
-                    showMessage("Adding '.' to file name");
-                    bareFile = bareFile + ".dfhSpecs";
-                }
-                String fileName = fileDlg.getDirectory() + bareFile;
-                try {
-                    BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(fileName));
-                    oStream.write(fuelSpecsStr.getBytes());
-                    oStream.close();
-                } catch (Exception e) {
-                    showError("Some problem in saving Fuel specs.\n" + e.getMessage());
-                    return;
-                }
+        FileOutputStream out = null;
+        FileDialog fileDlg =
+                new FileDialog(mainF, "Saving Fuel Specifications to file",
+                        FileDialog.SAVE);
+        fileDlg.setFile("FuelSpecifications.dfhSpecs");
+        fileDlg.setVisible(true);
+        String bareFile = fileDlg.getFile();
+        if (bareFile != null) {
+            int len = bareFile.length();
+            if ((len < 9) || !(bareFile.substring(len - 9).equalsIgnoreCase(".dfhSpecs"))) {
+                showMessage("Adding '.' to file name");
+                bareFile = bareFile + ".dfhSpecs";
             }
-//        }
+            String fileName = fileDlg.getDirectory() + bareFile;
+            try {
+                BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(fileName));
+                oStream.write(fuelSpecsStr.getBytes());
+                oStream.close();
+            } catch (Exception e) {
+                showError("Some problem in saving Fuel specs.\n" + e.getMessage());
+                return;
+            }
+        }
     }
-
-//    void saveFuelSpecsJNLP() {
-//        if (cbFuel.confirmToSave(parent())) {
-//            String xmlStr = fuelSpecsInXMLasJNLP();
-//            if (!JNLPFileHandler.saveToFile(
-//                    "# Fuel specifications saved on " + dateFormat.format(new Date()) + "\n\n" + xmlStr,
-//                    "dfhSpecs", "FuelSpecifications.dfhSpecs"))
-//                showError("Could not save to file!");
-//            parent().toFront();
-//        }
-//    }
 
     String fuelSpecsInXML() {
         String xmlStr = XMLmv.putTag("nFuels", fuelList.size()) + "\n";
@@ -3985,25 +3726,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return xmlStr;
     }
 
-//    String fuelSpecsInXMLasJNLP() {
-//         int nF = 0;
-//         for (Fuel f:fuelList) {
-//             if (f instanceof JSPObject)
-//                 if (((JSPObject)f).isDataCollected())
-//                     nF++;
-//         }
-//         String xmlStr = XMLmv.putTag("nFuels", nF) + "\n";
-//         int fNum = 0;
-//         for (Fuel f:fuelList) {
-//             if (f instanceof JSPObject)
-//                 if (((JSPObject)f).isDataCollected()) {
-//                     fNum++;
-//                     xmlStr += XMLmv.putTag("F" + ("" + fNum).trim(), "\n" + f.fuelSpecInXML()) + "\n";
-//                 }
-//         }
-//         return xmlStr;
-//    }
-//
     void clearFuelData() {
         fuelList.clear();
         cbFuel.removeAll();
@@ -4066,50 +3788,34 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     void saveSteelSpecs() {
-//        if (asJNLP)
-//            saveSteelSpecsJNLP();
-//        else {
-            String xmlStr = chMaterialSpecsInXML();
-            if (xmlStr.length() > 25) {
-                FileOutputStream out = null;
-                FileDialog fileDlg =
-                        new FileDialog(mainF, "Saving Charge Material Specifications to file",
-                                FileDialog.SAVE);
-                fileDlg.setFile("ChMaterialSpecifications.dfhSpecs");
-                fileDlg.setVisible(true);
-                String bareFile = fileDlg.getFile();
-                if (bareFile != null) {
-                    int len = bareFile.length();
-                    if ((len < 9) || !(bareFile.substring(len - 9).equalsIgnoreCase(".dfhSpecs"))) {
-                        showMessage("Adding '.' to file name");
-                        bareFile = bareFile + ".dfhSpecs";
-                    }
-                    String fileName = fileDlg.getDirectory() + bareFile;
-                    try {
-                        BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(fileName));
-                        oStream.write(("# Charge Material specifications saved on " + dateFormat.format(new Date()) + "\n\n").getBytes());
-                        oStream.write(xmlStr.getBytes());
-                        oStream.close();
-                    } catch (Exception e) {
-                        showError("Some problem in saving Charge Material specs.\n" + e.getMessage());
-                        return;
-                    }
+        String xmlStr = chMaterialSpecsInXML();
+        if (xmlStr.length() > 25) {
+            FileOutputStream out = null;
+            FileDialog fileDlg =
+                    new FileDialog(mainF, "Saving Charge Material Specifications to file",
+                            FileDialog.SAVE);
+            fileDlg.setFile("ChMaterialSpecifications.dfhSpecs");
+            fileDlg.setVisible(true);
+            String bareFile = fileDlg.getFile();
+            if (bareFile != null) {
+                int len = bareFile.length();
+                if ((len < 9) || !(bareFile.substring(len - 9).equalsIgnoreCase(".dfhSpecs"))) {
+                    showMessage("Adding '.' to file name");
+                    bareFile = bareFile + ".dfhSpecs";
+                }
+                String fileName = fileDlg.getDirectory() + bareFile;
+                try {
+                    BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(fileName));
+                    oStream.write(("# Charge Material specifications saved on " + dateFormat.format(new Date()) + "\n\n").getBytes());
+                    oStream.write(xmlStr.getBytes());
+                    oStream.close();
+                } catch (Exception e) {
+                    showError("Some problem in saving Charge Material specs.\n" + e.getMessage());
+                    return;
                 }
             }
-//        }
+        }
     }
-
-//    void saveSteelSpecsJNLP() {
-//        if (cbChMaterial.confirmToSave(parent())) {
-//            String xmlStr = chMaterialSpecsInXMLasJNLP();
-//            if (!JNLPFileHandler.saveToFile(
-//                    "# Charge Material specifications saved on " + dateFormat.format(new Date()) + "\n\n" + xmlStr,
-//                    "dfhSpecs", "ChMaterialSpecifications.dfhSpecs"))
-//                showError("Could not save to file!");
-//            parent().toFront();
-//        }
-//    }
-//
 
     String chMaterialSpecsInXML() {
         String xmlStr = XMLmv.putTag("nCharge", vChMaterial.size()) + "\n";
@@ -4241,10 +3947,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         public void windowClosing(WindowEvent e) {
             debugLocal("mainF CLOSING");
             checkAndClose(true);
-//            destroy();
-//            if (asApplication)
-//                System.exit(0);
-//            //To change body of implemented methods use File | Settings | File Templates.
         }
 
         public void windowClosed(WindowEvent e) {
@@ -4363,7 +4065,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                     switchPage(DFHDisplayPageType.REGENSTUDY);
                 break menuBlk;
             }
-//            debug("DFHEating.4316 : SwingUtilities.isEventDispatchThread() =" + SwingUtilities.isEventDispatchThread());
         } // actionPerformed
     } // class MenuActions
 
@@ -4374,7 +4075,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                 saveForComparison();
             if (src == mIShowComparison) {
                 switchPage(DFHDisplayPageType.COMPAREPANEL);
-//                switchPage(furnace.getComparePanel());
             }
             if (src == mISaveComparisontoXL)
                 saveComparisonToXL();
@@ -4462,7 +4162,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         }
 
         public void focusLost(FocusEvent e) {
-//            invalidateResults();
         }
 
         public void actionPerformed(ActionEvent e) {
@@ -4525,22 +4224,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         }
     }
 
-//    protected static String readInput(boolean useCmdSequence) {
-//    		// You can provide "commands" already from the command line, in which
-//    		// case they will be kept in cmdSequence
-//    		BufferedReader stdin = new BufferedReader(new InputStreamReader(
-//    				System.in));
-//    		String s = null;
-//    		do
-//    			try {
-//    				s = stdin.readLine();
-//    			} catch (IOException e) {
-//    				e.printStackTrace();
-//    			}
-//    		while ((s == null) || (s.length() == 0));
-//    		return s;
-//    	}
-
     static protected boolean parseCmdLineArgs(String[] args) {
         boolean retVal = true;
         CommandLineArgs cmdArg;
@@ -4551,20 +4234,11 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                     case ALLOWSPECSSAVE:
                         enableSpecsSave = true;
                         break;
-//                    case JNLP:
-//                        asJNLP = true;
-//                        jspConnection = new JSPConnection();
-//                        justJSP = false;
-//                        break;
                     case DEBUGMSG:
                         showDebugMessages = true;
                         break;
                 }
         }
-//        debugLocal("DFHeating.4546: justJSP = " + justJSP);
-//        if (justJSP) {
-//            retVal = getJSPConnection();
-//        }
         return retVal;
     }
 
@@ -4593,11 +4267,3 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         });
     }
 }
-
-
-
-
-
-
-
-
