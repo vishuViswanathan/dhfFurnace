@@ -130,6 +130,12 @@ public class L2Configurator extends StripHeating {
                 System.out.println("Java Version :" + System.getProperty("java.version"));
                 retVal = associatedDataLoaded;
             }
+            else {
+                if (runCheck.getStatus() == DataStat.Status.WithErrorMsg)
+                    showError("Access Check: " + runCheck.getErrorMessage());
+                else
+                    showError("Some problem in getting Application permissions");
+            }
         }
         else
             showError("Unable to connect to Server");

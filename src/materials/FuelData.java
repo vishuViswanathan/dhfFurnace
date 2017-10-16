@@ -85,6 +85,12 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
                 displayIt();
                 retVal = true;
             }
+            else {
+                if (runCheck.getStatus() == DataStat.Status.WithErrorMsg)
+                    showError("Access Check: " + runCheck.getErrorMessage());
+                else
+                    showError("Some problem in getting Application permissions");
+            }
         }
         return retVal;
     }
@@ -470,12 +476,14 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
 
     public void showError(String msg) {
         JOptionPane.showMessageDialog(parent(), msg, "ERROR", JOptionPane.ERROR_MESSAGE);
-        parent().toFront();
+        if (mainF != null)
+            mainF.toFront();
     }
 
     void showMessage(String msg) {
         JOptionPane.showMessageDialog(parent(), msg, "FOR INFORMATION", JOptionPane.INFORMATION_MESSAGE);
-        parent().toFront();
+        if (mainF != null)
+            mainF.toFront();
     }
 
 

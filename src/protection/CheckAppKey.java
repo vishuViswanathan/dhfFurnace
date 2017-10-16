@@ -1,6 +1,5 @@
 package protection;
 
-import directFiredHeating.DFHeating;
 import mvUtils.display.DataStat;
 import mvUtils.display.DataWithStatus;
 import mvUtils.display.SimpleDialog;
@@ -10,12 +9,12 @@ import mvUtils.mvXML.XMLmv;
 import mvUtils.security.GCMCipher;
 import mvUtils.security.MachineCheck;
 import mvUtils.security.MiscUtil;
+import net.sf.antcontrib.walls.SilentCopy;
 
-import javax.crypto.SecretKey;
+import javax.swing.*;
 import java.io.*;
 import java.util.HashMap;
 
-import static mvUtils.security.MachineCheck.MachineStat.CANNOTRUN;
 import static mvUtils.security.MachineCheck.MachineStat.CANRUN;
 
 /**
@@ -25,7 +24,7 @@ import static mvUtils.security.MachineCheck.MachineStat.CANRUN;
  * To change this template use File | Settings | File Templates.
  */
 public class CheckAppKey {
-    enum KeyStat  {FOUND, NOTIAPPFOLDER, NOFILE, NOBASEFOLDER, NOENTRY, ERRORREADING};
+    enum KeyStat  {FOUND, NOTIAPPFOLDER, NOFILE, NOBASEFOLDER, NOENTRY, ERRORREADING, WRONGMACHINEID};
     String jspBase;
     String machineID;
     MachineCheck mC;
@@ -76,6 +75,17 @@ public class CheckAppKey {
             case ERRORREADING:
                 retVal.setErrorMessage("Error in Reading Application Settings");
                 break;
+            case WRONGMACHINEID:
+                if (SimpleDialog.decide(null, "Problem in Access Control File",
+                        "Access for this application was not installed for this system\n" +
+                        "Do you want to delete Access Control File and Re-install all Applications?") == JOptionPane.YES_OPTION) {
+                    if (deleteSoftwareAccessFile())
+                        SimpleDialog.showMessage("Problem in Access Control File", "Access Control File delted.\n" +
+                        "    Try restarting all applications after getting Access settings reset by Administrator");
+                    else
+                        SimpleDialog.showError("Problem in Access Control File", "Unable to delete Access Control File");
+                }
+                break;
             default:
                 if (updateIfNot) {
                     retVal= createAndSaveSoftwareKey(appID, stat, true);
@@ -83,9 +93,9 @@ public class CheckAppKey {
                 else
                     retVal.setErrorMessage("No Local entry of software key");
         }
-        if (retVal.getStatus() == DataStat.Status.WithErrorMsg) {
-            SimpleDialog.showError("Checking Application Access", retVal.getErrorMessage());
-        }
+//        if (retVal.getStatus() == DataStat.Status.WithErrorMsg) {
+//            SimpleDialog.showError("Checking Application Access", retVal.getErrorMessage());
+//        }
         return retVal;
     }
 
@@ -156,20 +166,18 @@ public class CheckAppKey {
                                 if (iStream.read(data) > 50) {
                                     String allData = new String(data);
                                     String[] lines = allData.split(newLine);
-                                    boolean found = false;
+//                                    boolean found = false;
                                     String key = "";
                                     for (String line : lines) {
                                         String field[] = line.split(separator);
                                         if (field.length == 3 && field[0].equals(appID)) {
-                                            found = true;
-                                            key = field[2];
+                                            if (field[1].equals(machineID))
+                                                ks = new KeyWithKeyStat(field[2]);
+                                            else
+                                                ks.stat = KeyStat.WRONGMACHINEID;
                                             break;
                                         }
                                     }
-                                    if (found)
-                                       ks = new KeyWithKeyStat(key);
-                                    else
-                                        ks.stat = KeyStat.NOENTRY;
                                 }
                             } catch (IOException e) {
                                 ks.stat = KeyStat.ERRORREADING;
@@ -195,6 +203,21 @@ public class CheckAppKey {
         else
             ks.stat = KeyStat.NOBASEFOLDER;
         return ks;
+    }
+
+    boolean deleteSoftwareAccessFile() {
+        boolean retVal = false;
+        String baseFolder = MiscUtil.appDataFolder();
+        if (baseFolder.length() > 2) {
+            File tIFolder = new File(baseFolder + "\\" + tIAppFolder);
+            if (tIFolder.isDirectory()) {
+                File f = new File(baseFolder + "\\" + tIAppFolder + "\\" + fileName);
+                if (f.exists()) {
+                    retVal = f.delete();
+                }
+            }
+        }
+        return retVal;
     }
 
     DataWithStatus<Boolean> createAndSaveSoftwareKey(int appID, KeyStat nowStat,  boolean createNewFile) {
@@ -235,10 +258,14 @@ public class CheckAppKey {
                 case NOENTRY:
                     if (nowStat == KeyStat.NOENTRY || fileReady) {
                         DataWithStatus fileSaveResp = makeEntryToFile(f, appID);
-                        if (fileSaveResp.getStatus() == DataStat.Status.OK && (Boolean)fileSaveResp.getValue())
+                        if (fileSaveResp.getStatus() == DataStat.Status.OK && (Boolean)fileSaveResp.getValue()) {
+                            SimpleDialog.showMessage("Access Control", "Installed access rights for the application");
                             retVal.setValue(true);
-                        else
-                            retVal.addErrorMessage("Unable to make entry to file, " + fileSaveResp.getErrorMessage());
+                        }
+                        else {
+                            retVal.addErrorMessage("Unable to make entry to Access Control file:\n   " + fileSaveResp.getErrorMessage() +
+                            "\n  If earlier Access Data Exists in Server, get Administrator to reset Access Data");
+                        }
                     }
                     break;
             }

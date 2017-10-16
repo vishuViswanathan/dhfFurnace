@@ -23,7 +23,7 @@ import java.awt.event.WindowListener;
  * Created by viswanathanm on 11-08-2017.
  */
 public class ApplicationLauncher {
-    String title = "Thermal Applications 20171009";
+    String title = "Thermal Applications 20171013";
     int textFieldWidth = 400;
 
     JButton launchDFHFunace = new JButton("DFH Furnace Module");
@@ -132,116 +132,120 @@ public class ApplicationLauncher {
             someAppLaunched = false;
             Object src = e.getSource();
             if (src == launchDFHFunace) {
-                someAppLaunched = launchDFHFurnace();
+                launchDFHFurnace();
             } else if (src == launchRTH) {
-                someAppLaunched = launchRTH();
+                launchRTH();
             } else if (src == launchL2Configurator) {
-                someAppLaunched = launchL2Configurator() ;
+                launchL2Configurator() ;
             } else if (src == jbViewThermalProperties) {
-                someAppLaunched = launchViewThermalProperties() ;
+                launchViewThermalProperties() ;
             } else if (src == jbEditThermalProperties) {
-                someAppLaunched = launchEditThermalProperties() ;
+                launchEditThermalProperties() ;
             } else if (src == jbViewFuelProperties) {
-                someAppLaunched = launchFuelData();
+                launchFuelData();
             } else if (src == jbEditFuelProperties) {
-                someAppLaunched = launchEditFuelData() ;
+                launchEditFuelData() ;
             } else if (src == exitButton) {
                 quit();
             }
-            if (someAppLaunched)
-                quit();
         }
     }
 
-    boolean launchDFHFurnace() {
+    void launchDFHFurnace() {
         new WaitMsg(null, "Starting DFHFurnace. Please wait ...", new ActInBackground() {
             public void doInBackground() {
-                    DFHeating trHeat = new DFHeating(true);
-                    if (!trHeat.setItUp()) {
-                        trHeat.showError("  Unable to Get Application Data.\nAborting ...");
-                        System.exit(1);
-                    }
+                DFHeating trHeat = new DFHeating(true);
+                if (trHeat.setItUp()) {
+                    someAppLaunched = true;
+                    quit();
+                } else
+                    trHeat.showError("  Unable to launch the Application.\nAborting ...");
             }
         });
-        return true;
     }
 
-    boolean launchRTH() {
+    void launchRTH() {
         new WaitMsg(null, "Starting RTH Furnace. Please wait ...", new ActInBackground() {
             public void doInBackground() {
                 RTHeating rth = new RTHeating();
-                if (!rth.setItUp()) {
-                    rth.showError("  Unable to Get Application Data.\nAborting ...");
-                    System.exit(1);
+                if (rth.setItUp()) {
+                    someAppLaunched = true;
+                    quit();
                 }
+                else
+                    rth.showError("  Unable to launch the Application.\nAborting ...");
             }
         });
-        return true;
     }
 
-    boolean launchL2Configurator() {
+    void launchL2Configurator() {
         new WaitMsg(null, "Starting DFHL2L2Configurator. Please wait ...", new ActInBackground() {
             public void doInBackground() {
                 L2Configurator l2C = new L2Configurator();
-                if (!l2C.setItUp()) {
-                    l2C.showError("  Unable to Get Application Data.\nAborting ...");
-                    System.exit(1);
+                if (l2C.setItUp()) {
+                    someAppLaunched = true;
+                    quit();
                 }
+                else
+                    l2C.showError("  Unable to launch the Application.\nAborting ...");
             }
         });
-        return true;
     }
 
-    boolean launchViewThermalProperties() {
+    void launchViewThermalProperties() {
         new WaitMsg(null, "Starting Thermal Properties. Please wait ...", new ActInBackground() {
             public void doInBackground() {
                 ThermalProperties tp = new ThermalProperties();
-                if (!tp.setItUp()) {
-                    tp.showError("  Unable to Get Application Data.\nAborting ...");
-                    System.exit(1);
+                if (tp.setItUp()) {
+                    someAppLaunched = true;
+                    quit();
                 }
+                else
+                    tp.showError("  Unable to launch the Application.\nAborting ...");
             }
         });
-        return true;
     }
 
-    boolean launchEditThermalProperties() {
+    void launchEditThermalProperties() {
         new WaitMsg(null, "Starting Thermal Properties. Please wait ...", new ActInBackground() {
             public void doInBackground() {
                 EditThermalProperties tp = new EditThermalProperties();
-                if (!tp.setItUp()) {
-                    tp.showError("  Unable to Get Application Data.\nAborting ...");
-                    System.exit(1);
+                if (tp.setItUp()) {
+                    someAppLaunched = true;
+                    quit();
                 }
+                else
+                    tp.showError("  Unable to launch the Application.\nAborting ...");
             }
         });
-        return true;
     }
 
-    boolean launchFuelData() {
+    void launchFuelData() {
         new WaitMsg(null, "Starting Fuel Properties. Please wait ...", new ActInBackground() {
             public void doInBackground() {
                 FuelData fd = new FuelData();
-                if (!fd.setItUp()) {
-                    fd.showError("  Unable to Get Application Data.\nAborting ...");
-                    System.exit(1);
+                if (fd.setItUp()) {
+                    someAppLaunched = true;
+                    quit();
                 }
+                else
+                    fd.showError("  Unable to launch the Application.\nAborting ...");
             }
         });
-        return true;
     }
 
-    boolean launchEditFuelData() {
+    void launchEditFuelData() {
         new WaitMsg(null, "Starting Add/Edit Fuel Properties. Please wait ...", new ActInBackground() {
             public void doInBackground() {
                 EditFuelData efd = new EditFuelData();
-                if (!efd.setItUp()) {
-                    efd.showError("  Unable to Get Application Data.\nAborting ...");
-                    System.exit(1);
+                if (efd.setItUp()) {
+                    someAppLaunched = true;
+                    quit();
                 }
+                else
+                    efd.showError("  Unable to launch the Application.\nAborting ...");
             }
         });
-        return true;
     }
 
     void quit() {

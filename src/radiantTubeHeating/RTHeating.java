@@ -94,27 +94,6 @@ public class RTHeating extends JApplet implements InputControl{
     public RTHeating() {
     }
 
-//    public void init() {
-////        String strTest = this.getParameter("OnTest");
-////        if (strTest != null)
-////            onTest = strTest.equalsIgnoreCase("YES");
-//        onTest = true;
-//        if (onTest) {
-//            setTestData();
-//            calculateRTFce();
-//            displayIt();
-//        } else {
-//            try {
-//                win = JSObject.getWindow(this);
-//            } catch (JSException e) {
-//                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-//                win = null;
-//            }
-//            Object o;
-//            o = win.eval("getData()");
-//        }
-//    }
-
     public boolean setItUp() {
         boolean retVal = false;
         if (getJSPbase() && getJSPConnection()) {
@@ -122,7 +101,8 @@ public class RTHeating extends JApplet implements InputControl{
             if (runCheck.getStatus() == DataStat.Status.OK) {
                 setUIDefaults();
                 mainF = new JFrame(title);
-//        mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+                mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+                mainF.addWindowListener(new WinListener());
                 setMenuOptions();
 //        setTestData();
                 mainF.add(slate);
@@ -135,6 +115,12 @@ public class RTHeating extends JApplet implements InputControl{
                     mainF.setVisible(true);
                     retVal = true;
                 }
+            }
+            else {
+                if (runCheck.getStatus() == DataStat.Status.WithErrorMsg)
+                    showError("Access Check: " + runCheck.getErrorMessage());
+                else
+                    showError("Some problem in getting Application permissions");
             }
         } else
             showError("Unable to connect to Server");
@@ -443,8 +429,7 @@ public class RTHeating extends JApplet implements InputControl{
 
     void close() {
         mainF.dispose();
-        mainF = null;
-        itsON = false;
+        System.exit(0);
     } // close
 
 
@@ -871,6 +856,30 @@ public class RTHeating extends JApplet implements InputControl{
         SimpleDialog.showError(w, "", msg);
         if (w != null)
             w.toFront();
+    }
+
+    class WinListener implements WindowListener {
+        public void windowOpened(WindowEvent e) {
+        }
+
+        public void windowClosing(WindowEvent e) {
+            close();
+        }
+
+        public void windowClosed(WindowEvent e) {
+        }
+
+        public void windowIconified(WindowEvent e) {
+        }
+
+        public void windowDeiconified(WindowEvent e) {
+        }
+
+        public void windowActivated(WindowEvent e) {
+        }
+
+        public void windowDeactivated(WindowEvent e) {
+        }
     }
 
 

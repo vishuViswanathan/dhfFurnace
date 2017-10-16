@@ -162,11 +162,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = " 20171009";
+    protected String releaseDate = " 20171013";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
-    JSObject win;
     protected boolean itsON = false;
     JPanel mainFrame;
     String reference = "Reference", fceTtitle = "Furnace", customer = "Customer";
@@ -1429,13 +1428,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     public void close() {
-        if (asApplication) {
-            System.exit(0);
-        }
-        else {
-            if (win != null)
-                win.eval("gettingOut()");
-        }
+        System.exit(0);
     }
 
     public void checkAndClose(boolean check) {
