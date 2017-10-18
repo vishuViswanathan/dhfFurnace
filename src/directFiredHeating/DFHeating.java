@@ -3710,13 +3710,22 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     String fuelSpecsInXML() {
-        String xmlStr = XMLmv.putTag("nFuels", fuelList.size()) + "\n";
-        int fNum = 0;
-        for (Fuel f:fuelList) {
-            fNum++;
-            xmlStr += XMLmv.putTag("F" + ("" + fNum).trim(), "\n" + f.fuelSpecInXML()) + "\n";
-        }
-        return xmlStr;
+         int nF = 0;
+         for (Fuel f:fuelList) {
+             if (f instanceof JSPObject)
+                 if (((JSPObject)f).isDataCollected())
+                     nF++;
+         }
+         String xmlStr = XMLmv.putTag("nFuels", nF) + "\n";
+         int fNum = 0;
+         for (Fuel f:fuelList) {
+             if (f instanceof JSPObject)
+                 if (((JSPObject)f).isDataCollected()) {
+                     fNum++;
+                     xmlStr += XMLmv.putTag("F" + ("" + fNum).trim(), "\n" + f.fuelSpecInXML()) + "\n";
+                 }
+         }
+         return xmlStr;
     }
 
     void clearFuelData() {
@@ -3811,11 +3820,19 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     String chMaterialSpecsInXML() {
-        String xmlStr = XMLmv.putTag("nCharge", vChMaterial.size()) + "\n";
+        int nCharge = 0;
+        for (ChMaterial chM:vChMaterial) {
+            if (chM instanceof JSPObject)
+                if (((JSPObject)chM).isDataCollected())
+                    nCharge++;
+        }
+        String xmlStr = XMLmv.putTag("nCharge", nCharge) + "\n";
         int cNum = 0;
         for (ChMaterial chM:vChMaterial) {
-            cNum++;
-            xmlStr += XMLmv.putTag("Ch" + ("" + cNum).trim(), "\n" + chM.materialSpecInXML()) + "\n";
+            if (((JSPObject)chM).isDataCollected()) {
+                cNum++;
+                xmlStr += XMLmv.putTag("Ch" + ("" + cNum).trim(), "\n" + chM.materialSpecInXML()) + "\n";
+            }
         }
         return xmlStr;
     }
