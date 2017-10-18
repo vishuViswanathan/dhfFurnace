@@ -23,6 +23,7 @@ public class FceEvaluator implements Runnable {
         TOOLOWGAS("Too Low Gas Temperature"),
         TOOHIGHGAS("Too High Gas Temperature"),
         DONTKNOW("Dont know"),
+        TOOMANYTRIALS("Too Many Trials"),
         ABORT("Aborted");
 
         private final String errName;

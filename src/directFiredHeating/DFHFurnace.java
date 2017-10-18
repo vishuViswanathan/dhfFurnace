@@ -1253,6 +1253,8 @@ public class DFHFurnace {
                             chTempProfileFactor = chTempFactor(chInTempProfile, iSec, theSection, iSecWithEntryTempFixed, iLastFiredSection);
                     }
                     if (!(response == FceEvaluator.EvalStat.OK)) {
+                        showError("DFHFurnace.1256: " + response + "  - problem in calculating Zone#" + theSection.secNum +
+                                " in Reverse\n    Aborting ...");
                         allOk = false;
                         break;
                     }
@@ -1716,10 +1718,14 @@ public class DFHFurnace {
                         loopBack = true;
                         break;
                     } else if (response == FceEvaluator.EvalStat.TOOLOWGAS) {
+                        tempGZ1Assume += trialDeltaT;
+//                        showError("DFHFurnace.1721: Fired Zone Gas temperature is too Low\n      Aborting ...");
+                        loopBack = true;
                         break;
                     }
                     else {
-//                        showError("firstZoneInRev: Unknown response from oneSectionInRev() for " + statusHead + s);
+                        showError("DFHFurnace.1725: " + response + " response from oneSectionInRev() for " +
+                                statusHead + (s + 1) + "\n   Aborting ...");
                         redoIt = false;
                         bRetVal = false;
                         break;

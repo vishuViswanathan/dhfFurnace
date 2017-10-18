@@ -901,16 +901,25 @@ public class UnitFurnace {
         tWMassume = tempWmean - tRate * delTime;
         done = false;
         boolean inReverse = true;
+        int trial = 1000;
         while (!done  && furnace.canRun()) {
+            if (trial-- < 0) {
+                retVal = FceEvaluator.EvalStat.TOOMANYTRIALS;
+                break;
+            }
             chHeat = production.production * gRatio *
                     (ch.getHeatFromTemp(tWMassume) - ch.getHeatFromTemp(tempWmean));
             totheat = chHeat - totLosses(); // losses;
             tempGB = (bRecuType) ? gasTempAfterHeat(tempG, fceSec.passFlueCompAndQty, totheat) : tempG;
-            if (tempGB <= tempWmean) {
-                retVal = FceEvaluator.EvalStat.TOOLOWGAS;
-                break;
-            }
+//  OLD          if (tempGB <= tempWmean) {
+//                retVal = FceEvaluator.EvalStat.TOOLOWGAS;
+//                break;
+//            }
 
+            if (tempGB <= tempWmean) {
+                tWMassume = (tempWmean + tWMassume) / 2;
+                continue;
+            }
             if (bLastSlot) {
                 setEW(tempWmean); // 20170227  eW = ch.getEmiss(tempWmean) * production.chEmmissCorrectionFactor;
                 chargeSurfTemp(tempG, tempWmean);
