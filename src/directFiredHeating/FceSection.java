@@ -2106,6 +2106,46 @@ public class FceSection {
     }
 
 
+    public FceEvaluator.EvalStat oneSectionInRev(boolean retryWithZeroLossesIfRequired) {
+        FceEvaluator.EvalStat response = FceEvaluator.EvalStat.OK;
+        UnitFurnace theSlot, prevSlot, nextSlot;
+        boolean bLastSlot;
+        boolean redo = false;
+        do {
+            redo = false;
+            theSlot = vUnitFurnaces.get(lastSlot);
+            problemPosition = -1;
+            for (int slot = lastSlot; slot >= firstSlot; slot--) {
+                bLastSlot = (slot == lastSlot);
+                prevSlot = vUnitFurnaces.get(slot - 1);
+                nextSlot = vUnitFurnaces.get(slot + 1);
+                response = theSlot.evalInRev(bLastSlot, prevSlot, (bLastSlot) ? lastRate : nextSlot.lastDeltaT);
+                if (response != FceEvaluator.EvalStat.OK) {
+                    if (bRecuType && response == FceEvaluator.EvalStat.TOOLOWGAS && retryWithZeroLossesIfRequired && vUnitFurnaces.get(firstSlot).slotRadNetOut == 0) {
+                        for (int i = lastSlot; i >= firstSlot; i--)
+                            vUnitFurnaces.get(i).temporaryLossCorrection = -vUnitFurnaces.get(i).losses;
+                        redo = true;
+                        break;
+                    }
+                    else {
+                        problemPosition = theSlot.stPos;
+                        break;
+                    }
+                }
+                theSlot = prevSlot;
+            }
+        } while(redo);
+        for (int i = lastSlot; i > firstSlot; i--)
+            vUnitFurnaces.get(i).temporaryLossCorrection = 0;
+        if (response == FceEvaluator.EvalStat.OK) {
+            if (bRecuType)
+                reCheckLosses();
+            heatToCharge();
+        }
+        updateUI();
+        return response;
+    }
+
     // evaluate the section to reach the charge entry temperature as specified
     // this is valid only for burner sections
     public FceEvaluator.EvalStat oneSectionInRev(double entryTemp) {

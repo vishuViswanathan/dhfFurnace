@@ -1248,7 +1248,8 @@ public class DFHFurnace {
                             chInTempReqd = chInTempProfile[iSec];
                         response = theSection.oneSectionInRev(chInTempReqd);
                     } else {
-                        response = theSection.oneSectionInRev();
+                        response = theSection.oneSectionInRev(true);
+                                                // allowed to retry bu nulling losses if required
                         if (tuningParams.bAdjustChTempProfile && (iSec == iLastSec) && honorLastZoneMinFceTemp)
                             chTempProfileFactor = chTempFactor(chInTempProfile, iSec, theSection, iSecWithEntryTempFixed, iLastFiredSection);
                     }

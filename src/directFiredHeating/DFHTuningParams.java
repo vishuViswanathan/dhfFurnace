@@ -86,7 +86,7 @@ public class DFHTuningParams {
     public boolean bDynamicGasTempCorrection = false;
     double defaultMinGasTempCorrection = 1;
     public double minGasTempCorrection = defaultMinGasTempCorrection;
-    double defaultMaxGasTempCorrection = 30;
+    double defaultMaxGasTempCorrection = 10;
     public double maxGasTempCorrection = defaultMaxGasTempCorrection;
     public double dynamicGasTempCorrectionRange = 0.5; //  position as fraction of length upto end of 1st fired section
     public boolean bMindChHeight = true;
@@ -132,8 +132,8 @@ public class DFHTuningParams {
         tfsuggested1stCorrection = new NumberTextField(controller, suggested1stCorrection, 6, false, 0, 20, "#,###.00", "", true);
         tfCorrectionforTooLowGas = new NumberTextField(controller, correctionForTooLowGas, 6, false, 0, 20, "#,###.00", "", true);
         chbDynamicGasTempCorrection = new JCheckBox("Enable Dynamic Gas Temp Correction");
-        tfMaxGasTempCorrection = new NumberTextField(controller, maxGasTempCorrection, 6, false, 1, 100, "#,###.00", "Min. Gas Temp Correction (C)", true);
-        tfMinGasTempCorrection = new NumberTextField(controller, minGasTempCorrection, 6, false, 1, 100, "#,###.00", "Max Gas Temp Correction (C)", true);
+        tfMaxGasTempCorrection = new NumberTextField(controller, maxGasTempCorrection, 6, false, 1, 100, "#,###.00", "Max Gas Temp Correction (C)", true);
+        tfMinGasTempCorrection = new NumberTextField(controller, minGasTempCorrection, 6, false, 1, 100, "#,###.00", "Min Gas Temp Correction (C)", true);
 //        chbDynamicGasTempCorrection.addActionListener(e-> {
 //            tfMinGasTempCorrection.setEnabled(chbDynamicGasTempCorrection.isSelected());
 //            tfMaxGasTempCorrection.setEnabled(chbDynamicGasTempCorrection.isSelected());

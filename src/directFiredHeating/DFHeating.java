@@ -162,7 +162,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = " 20171013";
+    protected String releaseDate = " 20171114";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -315,7 +315,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     public boolean setItUp() {
         boolean retVal = false;
         if (getJSPbase() && getJSPConnection()) {
-            DataWithStatus<Boolean> runCheck = new CheckAppKey(jspBase).canRunThisApp(appCode, true);
+             DataWithStatus<Boolean> runCheck = new CheckAppKey(jspBase).canRunThisApp(appCode, true);
             if (runCheck.getStatus() == DataStat.Status.OK) {
                 modifyJTextEdit();
                 fuelList = new Vector<Fuel>();
@@ -2023,6 +2023,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         deltaTflue = ntDeltaTFlue.getData();
         deltaTAirFromRecu = ntdeltaTAirFromRecu.getData();
         maxFlueAtRecu = ntMaxFlueTatRecu.getData();
+        deltaTFuelFromRecu = ntDeltaTFuelFromRecu.getData();
 
         ambTemp = tfAmbTemp.getData();
         airTemp = tfAirTemp.getData();
