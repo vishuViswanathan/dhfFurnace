@@ -20,9 +20,12 @@ import mvUtils.math.XYArray;
 import netscape.javascript.JSObject;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
-import org.apache.poi.hssf.usermodel.*;
-import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+// 20180323 import org.apache.poi.hssf.usermodel.*;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+//import org.apache.poi.openxml4j.opc.OPCPackage;
+//import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import performance.stripFce.Performance;
 import performance.stripFce.StripProcessAndSize;
 import protection.CheckAppKey;
@@ -1405,9 +1408,9 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     void enableShowComparison(boolean ena) {
         mIShowComparison.setEnabled(ena);
         mISaveComparisontoXL.setEnabled(ena);
-        if (justJSP)
-            mIAppendComparisontoXL.setEnabled(false);
-        else
+//        if (justJSP)
+//            mIAppendComparisontoXL.setEnabled(false);
+//        else
             mIAppendComparisontoXL.setEnabled(ena);
     }
 
@@ -3130,14 +3133,29 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         disableCompare();
         boolean bRetVal = false;
         furnace.resetSections();
+//        FilenameFilter fFilter = new FilenameFilter() {
+//            @Override
+//            public boolean accept(File dir, String name) {
+//                String lowercaseName = name.toLowerCase();
+//                if (lowercaseName.endsWith("*." + profileFileExtension) ||
+//                        lowercaseName.endsWith(".xlsx") || lowercaseName.endsWith(".xls")) {
+//                    return true;
+//                } else {
+//                    return false;
+//                }
+//            }
+//        };
         FileDialog fileDlg =
                 new FileDialog(mainF, "Read DFH Furnace Data",
                         FileDialog.LOAD);
-        fileDlg.setFile("*." + profileFileExtension + "; *.xls");
+        fileDlg.setFile("*." + profileFileExtension + "; *.xlsx; *.xls; *.*");
+//        fileDlg.setFilenameFilter(fFilter);
         fileDlg.setVisible(true);
         String fileName = fileDlg.getFile();
         if (fileName != null) {
-            boolean bXL = (fileName.length() > 4) && (fileName.substring(fileName.length() - 4).equalsIgnoreCase(".xls"));
+            String fS = fileName.toLowerCase();
+//            boolean bXL = (fileName.length() > 4) && (fileName.substring(fileName.length() - 4).equalsIgnoreCase(".xls"));
+            boolean bXL = (fS.length() > 4) && (fS.endsWith(".xlsx") || fS.endsWith(".xls"));
             String filePath = fileDlg.getDirectory() + fileName;
             if (!filePath.equals("nullnull")) {
                 setResultsReady(false);
@@ -3283,30 +3301,37 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         String data = "";
         try {
             FileInputStream xlInput = new FileInputStream(filePath);
-            POIFSFileSystem xlFileSystem = new POIFSFileSystem(xlInput);
+// 20180323            POIFSFileSystem xlFileSystem = new POIFSFileSystem(xlInput);
 
             /** Create a workbook using the File System**/
-            HSSFWorkbook wB = new HSSFWorkbook(xlFileSystem);
+// 20180323             HSSFWorkbook wB = new HSSFWorkbook(xlFileSystem);
+            Workbook wB;
+            if (filePath.toLowerCase().endsWith("xlsx"))
+//                wB = new XSSFWorkbook(OPCPackage.open(xlInput));
+                wB = new XSSFWorkbook(xlInput);
+            else
+                wB = new HSSFWorkbook(xlInput);
 
             /** Get the first sheet from workbook**/
-            HSSFSheet sh = wB.getSheet("Furnace Profile");
+// 20183023            HSSFSheet sh = wB.getSheet("Furnace Profile");
+            Sheet sh = wB.getSheet("Furnace Profile");
             if (sh != null) {
                 Row r = sh.getRow(0);
                 Cell cell = r.getCell(0);
-                if (cell.getCellType() == Cell.CELL_TYPE_STRING) {
+                if (cell.getCellTypeEnum() == CellType.STRING) {
                     if (cell.getStringCellValue().equals("mv7414")) {
                         r = sh.getRow(1);
                         cell = r.getCell(0);
-                        if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC)  { // data is multi column
+                        if (cell.getCellTypeEnum() == CellType.NUMERIC)  { // data is multi column
                             int nCols = (int)cell.getNumericCellValue();
                             for (int c = 1; c <= nCols; c++) {
                                 cell = r.getCell(c);
-                                if (cell.getCellType() == Cell.CELL_TYPE_STRING)
+                                if (cell.getCellTypeEnum() ==CellType.STRING)
                                     data += cell.getStringCellValue();
                             }
                         }
                         else {         // kept for backward compatibility
-                            if (cell.getCellType() == Cell.CELL_TYPE_STRING)
+                            if (cell.getCellTypeEnum() ==CellType.STRING)
                                 data = cell.getStringCellValue();
                         }
                     }
@@ -3436,7 +3461,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
     void saveComparisonToXL() {
 //  create a new workbook
-        Workbook wb = new HSSFWorkbook();
+// 20180323        Workbook wb = new HSSFWorkbook();
+        Workbook wb = new XSSFWorkbook();
         int nSheet = 0;
 //  create a new sheet
         ExcelStyles styles = new ExcelStyles(wb);
@@ -3446,14 +3472,14 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         FileDialog fileDlg =
                 new FileDialog(mainF, "Saving Results Table to Excel",
                         FileDialog.SAVE);
-        fileDlg.setFile("Test Results Table.xls");
+        fileDlg.setFile("Test Results Table.xlsx");
         fileDlg.setVisible(true);
         String bareFile = fileDlg.getFile();
         if (bareFile != null) {
             int len = bareFile.length();
-            if ((len < 4) || !(bareFile.substring(len - 4).equalsIgnoreCase(".xls"))) {
-                showMessage("Adding '.xls' to file name");
-                bareFile = bareFile + ".xls";
+            if ((len < 5) || !(bareFile.substring(len - 5).equalsIgnoreCase(".xlsx"))) {
+                showMessage("Adding '.xlsx' to file name");
+                bareFile = bareFile + ".xlsx";
             }
             String fileName = fileDlg.getDirectory() + bareFile;
             try {
@@ -3491,26 +3517,27 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         FileDialog fileDlg =
                 new FileDialog(mainF, "Appending Results Table to Excel",
                         FileDialog.LOAD);
-        fileDlg.setFile("*.xls");
+        fileDlg.setFile("*.xlsx");
         fileDlg.setVisible(true);
         String bareFile = fileDlg.getFile();
         if (bareFile != null) {
-            boolean bXL = (bareFile.length() > 4) && (bareFile.substring(bareFile.length() - 4).equalsIgnoreCase(".xls"));
+            boolean bXL = bareFile.toLowerCase().endsWith(".xlsx");
             if (bXL) {
                 String filePath = fileDlg.getDirectory() + bareFile;
                 if (!filePath.equals("nullnull")) {
                     FileInputStream xlInput = null;
-                    HSSFWorkbook wB = null;
+                    Workbook wB = null;
                     try {
                         xlInput = new FileInputStream(filePath);
                         /** Create a workbook using the File System**/
-                        wB = new HSSFWorkbook(xlInput);
+                        wB = new XSSFWorkbook(xlInput);
                     } catch (Exception e) {
                         showError("Some problem in Reading/saving Report file\n" + e.getMessage());
                     }
 
                     /** Get the first sheet from workbook**/
-                    HSSFSheet sh = wB.getSheet("Results Table");
+// 20180323                    HSSFSheet sh = wB.getSheet("Results Table");
+                    Sheet sh = wB.getSheet("Results Table");
                     if (sh != null) {
                         ExcelStyles styles = new ExcelStyles(wB);
                         try {
@@ -3525,9 +3552,11 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                             showError("Some problem in Reading/saving Report file\n" + e.getMessage());
                         }
                     }
+                    else
+                        showError("Unable to open 'Results Table' flap in file");
                 }
             } else
-                showMessage("Choose *.xls file");
+                showMessage("Choose *.xlsx file");
         }
     }
 
@@ -3568,7 +3597,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
     void excelResultsFile() {
         //  create a new workbook
-        Workbook wb = new HSSFWorkbook();
+//        Workbook wb = new HSSFWorkbook();
+        Workbook wb = new XSSFWorkbook();
         int nSheet = 0;
         //  create a new sheet
         ExcelStyles styles = new ExcelStyles(wb);
@@ -3628,6 +3658,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         FileDialog fileDlg =
                 new FileDialog(mainF, "Saving Results to Excel",
                         FileDialog.SAVE);
+
+/*
         fileDlg.setFile("Test workbook from Java.xls");
         fileDlg.setVisible(true);
         String bareFile = fileDlg.getFile();
@@ -3636,6 +3668,23 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             if ((len < 4) || !(bareFile.substring(len - 4).equalsIgnoreCase(".xls"))) {
                 showMessage("Adding '.xls' to file name");
                 bareFile = bareFile + ".xls";
+            }
+            String fileName = fileDlg.getDirectory() + bareFile;
+            try {
+                out = new FileOutputStream(fileName);
+            } catch (FileNotFoundException e) {
+                showError("Some problem in file.\n" + e.getMessage());
+                return;
+            }
+*/
+        fileDlg.setFile("Test workbook from Java.xlsx");
+        fileDlg.setVisible(true);
+        String bareFile = fileDlg.getFile();
+        if (bareFile != null) {
+            int len = bareFile.length();
+            if ((len < 4) || !(bareFile.substring(len - 5).equalsIgnoreCase(".xlsx"))) {
+                showMessage("Adding '.xlsx' to file name");
+                bareFile = bareFile + ".xlsx";
             }
             String fileName = fileDlg.getDirectory() + bareFile;
             try {

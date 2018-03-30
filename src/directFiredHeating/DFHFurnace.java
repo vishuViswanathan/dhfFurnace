@@ -4338,7 +4338,6 @@ public class DFHFurnace {
         topRow = row + 1;
         row = styles.xlMultiPairColPanel(mPchargeHeatIn, sheet, topRow, col);
         rRow = styles.xlMultiPairColPanel(mPchargeHeatOut, sheet, topRow, col + 3);
-        rRow = styles.xlMultiPairColPanel(mPchargeHeatOut, sheet, topRow, col + 3);
         row = Math.max(row, rRow);
         topRow = row + 1;
         row = styles.xlMultiPairColPanel(mPfuelHeatIn, sheet, topRow, col);

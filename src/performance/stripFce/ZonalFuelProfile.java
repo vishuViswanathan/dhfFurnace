@@ -5,17 +5,10 @@ import directFiredHeating.DFHeating;
 import mvUtils.display.DataWithStatus;
 import mvUtils.display.ExcelStyles;
 import mvUtils.display.FramedPanel;
-//import mvUtils.jnlp.JNLPFileHandler;
 import mvUtils.math.XYArray;
-import org.apache.poi.hssf.record.aggregates.WorksheetProtectionBlock;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.usermodel.*;
 
-//import javax.jnlp.FileContents;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -65,7 +58,6 @@ public class ZonalFuelProfile {
             throw new Exception("Strip Width is not in Range of Performance Table");
         this.stripWidthInm = stripWidth;
         this.stripThickInm = stripThickness;
-//        System.out.println("Before calling prepareFuelTable");
          if (!prepareFuelTable(stripWidth, stripThickness))
             throw new Exception("Facing some problem in creating Fuel Table");
     }
@@ -183,24 +175,6 @@ public class ZonalFuelProfile {
         return allOk;
     }
 
- /*
-    void prepareSpeedTotalFuelArray(boolean bBot) {
-        XYArray speedTotalFuel;
-        if (bBot)
-            speedTotalFuel = speedTotalFHBot = new XYArray();
-        else
-            speedTotalFuel = speedTotalFHTop = new XYArray();
-        Double[][] allZoneFuels = (bBot) ? botZoneFuels : topZoneFuels;
-        for (int r = 0; r < nOutputSteps; r++)
-            speedTotalFuel.add(allZoneFuels[r][TotFuelCol], allZoneFuels[r][USpeedCol]);
-    }
-
-    void prepareSpeedTotalFuelArray() {
-        prepareSpeedTotalFuelArray(false);
-        if (performanceTable.furnace.bTopBot)
-            prepareSpeedTotalFuelArray(true);
-    }
-*/
     public double[][] oneZoneFuelArray(int zNum, boolean bBot) {
         double[][] zoneFuel = new double[nOutputSteps][(bBot) ? nBotZones : nTopZones];
         if (zNum >=0 && zNum < ((bBot) ? nBotZones : nTopZones)) {
@@ -301,25 +275,6 @@ public class ZonalFuelProfile {
         else
             return speedTotalFHTop.getXat(totalFH);
     }
-/*
-
-    public double recommendedSpeed(double fuelFlow, int zNum, boolean bBot) {
-        int nZones;
-        XYArray[] arr;
-        if (bBot) {
-            nZones = nBotZones;
-            arr = speedZonelFuelBot;
-        }
-        else {
-            nZones = nTopZones;
-            arr = speedZonelFuelTop;
-        }
-        if (zNum >= 0 && zNum < nZones)
-            return arr[zNum].getXat(fuelFlow);
-        else
-            return -1;
-    }
-*/
 
     /**
      *
@@ -327,31 +282,6 @@ public class ZonalFuelProfile {
      * @return  DoubleRange with max and min values
      */
 
- /*
-    public DoubleRange recommendedSpeedRange(double[] fuelFlows, boolean bBot) {
-        DoubleRange range = new DoubleRange();
-        int nZones;
-         if (bBot) {
-             nZones = nBotZones;
-         }
-         else {
-             nZones = nTopZones;
-         }
-        double totFuel;
-        int len = fuelFlows.length;
-        if (len == nZones) {
-            totFuel = 0;
-//            for (int z = 0; z < len; z++) {
-            controller.showMessage("Neglecting zones 1 ");
-            for (int z = 0; z < len; z++) {
-                range.takeVal(recommendedSpeed(fuelFlows[z], z, bBot));
-                totFuel += fuelFlows[z];
-            }
-            range.takeVal(recommendedSpeed(totFuel, bBot));  // check for total flow
-        }
-        return range;
-    }
-*/
     JPanel fuelTrendP;
 
     public JPanel fuelFlowCharacteristic(boolean bBot) {
@@ -362,19 +292,15 @@ public class ZonalFuelProfile {
         Reporter fhReport = fuelHeatCharacteristicReport(bBot);
         JTabbedPane tP = new JTabbedPane();
 
-//        outerP.add(new JLabel(report.getHeader()), BorderLayout.NORTH);
         JTable table = report.getJTable();
         JScrollPane sP = new JScrollPane(table);
         sP.setBackground(SystemColor.lightGray);
         sP.setPreferredSize(new Dimension(table.getPreferredSize().width, 100));
-//        JPanel innerP = new JPanel();
-//        innerP.add(sP);
         tP.addTab("Fuel Flow", sP);
         table = fhReport.getJTable();
         sP = new JScrollPane(table);
         sP.setBackground(SystemColor.lightGray);
         sP.setPreferredSize(new Dimension(table.getPreferredSize().width, 100));
-//        innerP.add(sP);
         tP.addTab("Fuel Heat", sP);
 
         outerP.add(tP, BorderLayout.CENTER);
@@ -417,15 +343,14 @@ public class ZonalFuelProfile {
     void addFHReportColumns(Reporter report, boolean bBot) {
         report.addColumn(Reporter.ColType.NUMBER, 50, 1500, "#,##0.0", "Speed m/m");
         report.addColumn(Reporter.ColType.NUMBER, 50, 1500, "#,##0.0", "Output t/h");
-        report.addColumn(Reporter.ColType.NUMBER, 50, 1500, "0.00E0", "TotHeat");
+        report.addColumn(Reporter.ColType.NUMBER, 50, 1500, "0.00E00", "TotHeat");
 //        report.addColumn(Reporter.ColType.NUMBER, 50, 1500, "#.00.0e#", "Fuel+APH heat");
         int nZones = (bBot) ? nBotZones : nTopZones;
         for (int z =0; z < nZones; z++)
-            report.addColumn(Reporter.ColType.NUMBER, 50, 1500, "0.00E0", "Zone#" + ("" + (z + 1)).trim());
+            report.addColumn(Reporter.ColType.NUMBER, 50, 1500, "0.00E00", "Zone#" + ("" + (z + 1)).trim());
     }
 
     void addReportData(Reporter report, boolean bBot) {
-//        Double[][] dataSrc = (bBot) ? botZoneFuels : topZoneFuels;
         Double[][] dataSrc = (bBot) ? botZoneFuels : topZoneFuels;
         for (int o = 0; o < nOutputSteps; o++)
             report.addResultLine(dataSrc[o]);
@@ -493,143 +418,48 @@ public class ZonalFuelProfile {
         return topRow;
     }
 
-//    void saveFuelTrendToXLOLD() {
-//        FileOutputStream out = null;
-//        FileDialog fileDlg =
-//                new FileDialog(DFHeating.mainF, "Saving Fuel Trend Table to Excel",
-//                        FileDialog.SAVE);
-//        fileDlg.setFile("FuelTrend.xls");
-//        fileDlg.setVisible(true);
-//        String bareFile = fileDlg.getFile();
-//        if (bareFile != null) {
-//            int len = bareFile.length();
-//            if ((len < 4) || !(bareFile.substring(len - 4).equalsIgnoreCase(".xls"))) {
-//                controller.showMessage("Adding '.xls' to file name");
-//                bareFile = bareFile + ".xls";
-//            }
-//            String fileName = fileDlg.getDirectory() + bareFile;
-//            try {
-//                out = new FileOutputStream(fileName);
-//            } catch (FileNotFoundException e) {
-//                controller.showError("Some problem in file.\n" + e.getMessage());
-//                return;
-//            }
-////  create a new workbook
-//            Workbook wb = new HSSFWorkbook();
-//            int nSheet = 0;
-////  create a new sheet
-//            ExcelStyles styles = new ExcelStyles(wb);
-//            Sheet sh = prepareReportWB(wb, styles);
-//            xlFuelCharacteristicReport(sh, styles);
-//            try {
-//                wb.write(out);
-//                out.close();
-//            } catch (IOException e) {
-//                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-//                controller.showError("Some problem with file.\n" + e.getMessage());
-//            }
-//        }
-//        controller.parent().toFront();
-//    }
-
     void saveFuelTrendToXL() {
         //  create a new workbook
 //  create a new workbook
-        Workbook wb = new HSSFWorkbook();
+        Workbook wb = new XSSFWorkbook();
         int nSheet = 0;
 //  create a new sheet
         ExcelStyles styles = new ExcelStyles(wb);
         Sheet sh = prepareReportWB(wb, styles);
         xlFuelCharacteristicReport(sh, styles);
         saveFuelTrendToXL(wb);
-//        //  create a new file
-//        if (controller.asJNLP) {
-//            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-//            try {
-//                wb.write(bos);
-//                byte[] bytes = bos.toByteArray();
-//                if (!JNLPFileHandler.saveToFile(bytes, "xls", "FuelTrend.xls"))
-//                    controller.showError("Some problem in writing to Excel file!");
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//        else {
-//            FileOutputStream out = null;
-//            FileDialog fileDlg =
-//                    new FileDialog(DFHeating.mainF, "Saving Fuel Trend Table to Excel",
-//                            FileDialog.SAVE);
-//            fileDlg.setFile("FuelTrend.xls");
-//            fileDlg.setVisible(true);
-//            String bareFile = fileDlg.getFile();
-//            if (bareFile != null) {
-//                int len = bareFile.length();
-//                if ((len < 4) || !(bareFile.substring(len - 4).equalsIgnoreCase(".xls"))) {
-//                    controller.showMessage("Adding '.xls' to file name");
-//                    bareFile = bareFile + ".xls";
-//                }
-//                String fileName = fileDlg.getDirectory() + bareFile;
-//                try {
-//                    out = new FileOutputStream(fileName);
-//                } catch (FileNotFoundException e) {
-//                    controller.showError("Some problem in file.\n" + e.getMessage());
-//                    return;
-//                }
-//                try {
-//                    wb.write(out);
-//                    out.close();
-//                } catch (IOException e) {
-//                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-//                    controller.showError("Some problem with file.\n" + e.getMessage());
-//                }
-//            }
-//        }
-//        controller.parent().toFront();
     }
 
     void saveFuelTrendToXL(Workbook wB) {
         //  create a new file
-//        if (controller.asJNLP) {
-//            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-//            try {
-//                wB.write(bos);
-//                byte[] bytes = bos.toByteArray();
-//                if (!JNLPFileHandler.saveToFile(bytes, "xls", "FuelTrend.xls"))
-//                    controller.showError("Some problem in writing to Excel file!");
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//        else {
-            FileOutputStream out = null;
-            FileDialog fileDlg =
-                    new FileDialog(DFHeating.mainF, "Saving Fuel Trend Table to Excel",
-                            FileDialog.SAVE);
-            fileDlg.setFile("FuelTrend.xls");
-            fileDlg.setVisible(true);
-            String bareFile = fileDlg.getFile();
-            if (bareFile != null) {
-                int len = bareFile.length();
-                if ((len < 4) || !(bareFile.substring(len - 4).equalsIgnoreCase(".xls"))) {
-                    controller.showMessage("Adding '.xls' to file name");
-                    bareFile = bareFile + ".xls";
-                }
-                String fileName = fileDlg.getDirectory() + bareFile;
-                try {
-                    out = new FileOutputStream(fileName);
-                } catch (FileNotFoundException e) {
-                    controller.showError("Some problem in file.\n" + e.getMessage());
-                    return;
-                }
-                try {
-                    wB.write(out);
-                    out.close();
-                } catch (IOException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                    controller.showError("Some problem with file.\n" + e.getMessage());
-                }
+        FileOutputStream out = null;
+        FileDialog fileDlg =
+                new FileDialog(DFHeating.mainF, "Saving Fuel Trend Table to Excel",
+                        FileDialog.SAVE);
+        fileDlg.setFile("FuelTrend.xlsx");
+        fileDlg.setVisible(true);
+        String bareFile = fileDlg.getFile();
+        if (bareFile != null) {
+            int len = bareFile.length();
+            if ((len < 5) || !(bareFile.substring(len - 5).equalsIgnoreCase(".xlsx"))) {
+                controller.showMessage("Adding '.xlsx' to file name");
+                bareFile = bareFile + ".xlsx";
             }
-//        }
+            String fileName = fileDlg.getDirectory() + bareFile;
+            try {
+                out = new FileOutputStream(fileName);
+            } catch (FileNotFoundException e) {
+                controller.showError("Some problem in file.\n" + e.getMessage());
+                return;
+            }
+            try {
+                wB.write(out);
+                out.close();
+            } catch (IOException e) {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                controller.showError("Some problem with file.\n" + e.getMessage());
+            }
+        }
         controller.parent().toFront();
     }
 
@@ -651,56 +481,36 @@ public class ZonalFuelProfile {
     void appendFuelTrendToXL() {
         // read the existing file
         InputStream xlInput = null;
-        HSSFWorkbook wB = null;
-//        if (controller.asJNLP) {
-//            try {
-//                FileContents fc = JNLPFileHandler.getReadFile(null, new String[]{"xls"}, 0, 0);
-//                if (fc != null) {
-//                    try {
-//                        String fileName = fc.getName();
-//                        boolean bXL = (fileName.length() > 4) && (fileName.substring(fileName.length() - 4).equalsIgnoreCase(".xls"));
-//                        if (bXL)
-//                            xlInput = fc.getInputStream();
-//                    } catch (IOException e) {
-//                        e.printStackTrace();
-//                    }
-//
-//                }
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//        else {
-            FileDialog fileDlg =
-                    new FileDialog(controller.mainF, "Appending Fuel Trend Table to Excel",
-                            FileDialog.LOAD);
-            fileDlg.setFile("*.xls");
-            fileDlg.setVisible(true);
-            String bareFile = fileDlg.getFile();
-            if (bareFile != null) {
-                boolean bXL = (bareFile.length() > 4) && (bareFile.substring(bareFile.length() - 4).equalsIgnoreCase(".xls"));
-                if (bXL) {
-                    String filePath = fileDlg.getDirectory() + bareFile;
-                    if (!filePath.equals("nullnull")) {
-                        try {
-                            xlInput = new FileInputStream(filePath);
-                        } catch (FileNotFoundException e) {
-                            controller.showError("Some problem in Reading Fuel Trend file\n" + e.getMessage());
-                        }
+        Workbook wB = null;
+        FileDialog fileDlg =
+                new FileDialog(controller.mainF, "Appending Fuel Trend Table to Excel",
+                        FileDialog.LOAD);
+        fileDlg.setFile("*.xlsx");
+        fileDlg.setVisible(true);
+        String bareFile = fileDlg.getFile();
+        if (bareFile != null) {
+            boolean bXL = (bareFile.length() > 5) && (bareFile.substring(bareFile.length() - 5).equalsIgnoreCase(".xlsx"));
+            if (bXL) {
+                String filePath = fileDlg.getDirectory() + bareFile;
+                if (!filePath.equals("nullnull")) {
+                    try {
+                        xlInput = new FileInputStream(filePath);
+                    } catch (FileNotFoundException e) {
+                        controller.showError("Some problem in Reading Fuel Trend file\n" + e.getMessage());
                     }
                 }
             }
-//        }
+        }
         if (xlInput != null) {
             try {
                 /** Create a workbook using the File System**/
-                wB = new HSSFWorkbook(xlInput);
+                wB = new XSSFWorkbook(xlInput);
             } catch (Exception e) {
                 controller.showError("Some problem in Reading/saving Fuel Trend file\n" + e.getMessage());
             }
 
             /** Get the first sheet from workbook**/
-            HSSFSheet sh = wB.getSheet("Fuel Trend");
+            Sheet sh = wB.getSheet("Fuel Trend");
             if (sh != null) {
                 ExcelStyles styles = new ExcelStyles(wB);
                 try {
@@ -718,62 +528,9 @@ public class ZonalFuelProfile {
         if (wB != null) {
             controller.showMessage("Existing fuel profile read in and appended");
             saveFuelTrendToXL(wB);
-//            FileOutputStream outFile = new FileOutputStream(filePath);
-//                    wB.write(outFile);
-//                    outFile.close();
-//                } catch (FileNotFoundException e) {
-//                    controller.showError("Some problem in Reading/saving Fuel Trend file\n" + e.getMessage());
-//                } catch (IOException e) {
-//                    controller.showError("Some problem in Reading/saving Fuel Trend file\n" + e.getMessage());
-//                }
-//            }
         }
     }
 
-//    void appendFuelTrendToXLOLD() {
-//        FileOutputStream out = null;
-//        FileDialog fileDlg =
-//                new FileDialog(controller.mainF, "Appending Fuel Trend Table to Excel",
-//                        FileDialog.LOAD);
-//        fileDlg.setFile("*.xls");
-//        fileDlg.setVisible(true);
-//        String bareFile = fileDlg.getFile();
-//        if (bareFile != null) {
-//            boolean bXL = (bareFile.length() > 4) && (bareFile.substring(bareFile.length() - 4).equalsIgnoreCase(".xls"));
-//            if (bXL) {
-//                String filePath = fileDlg.getDirectory() + bareFile;
-//                if (!filePath.equals("nullnull")) {
-//                    FileInputStream xlInput = null;
-//                    HSSFWorkbook wB = null;
-//                    try {
-//                        xlInput = new FileInputStream(filePath);
-//                        /** Create a workbook using the File System**/
-//                        wB = new HSSFWorkbook(xlInput);
-//                    } catch (Exception e) {
-//                        controller.showError("Some problem in Reading/saving Fuel Trend file\n" + e.getMessage());
-//                    }
-//
-//                    /** Get the first sheet from workbook**/
-//                    HSSFSheet sh = wB.getSheet("Fuel Trend");
-//                    if (sh != null) {
-//                        ExcelStyles styles = new ExcelStyles(wB);
-//                        try {
-//                            xlFuelCharacteristicReport(sh, styles);
-//                            xlInput.close();
-//                            FileOutputStream outFile = new FileOutputStream(filePath);
-//                            wB.write(outFile);
-//                            outFile.close();
-//                        } catch (FileNotFoundException e) {
-//                            controller.showError("Some problem in Reading/saving Fuel Trend file\n" + e.getMessage());
-//                        } catch (IOException e) {
-//                            controller.showError("Some problem in Reading/saving Fuel Trend file\n" + e.getMessage());
-//                        }
-//                    }
-//                }
-//            } else
-//                controller.showMessage("Choose *.xls file");
-//        }
-//    }
 }
 
 
