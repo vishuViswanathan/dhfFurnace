@@ -331,23 +331,23 @@ public class ZonalFuelProfile {
     }
 
     void addReportColumns(Reporter report, boolean bBot) {
-        report.addColumn(Reporter.ColType.NUMBER, 50, 1500, "#,##0.0", "Speed m/m");
-        report.addColumn(Reporter.ColType.NUMBER, 50, 1500, "#,##0.0", "Output t/h");
-        report.addColumn(Reporter.ColType.NUMBER, 50, 1500, "#,##0.0", "TotFuel");
+        report.addColumn(Reporter.ColType.NUMBER, 50, 2500, "#,##0.0", "Speed m/m");
+        report.addColumn(Reporter.ColType.NUMBER, 50, 2500, "#,##0.0", "Output t/h");
+        report.addColumn(Reporter.ColType.NUMBER, 50, 2500, "#,##0.0", "TotFuel");
 //        report.addColumn(Reporter.ColType.NUMBER, 50, 1500, "#.00.0e#", "Fuel+APH heat");
         int nZones = (bBot) ? nBotZones : nTopZones;
         for (int z =0; z < nZones; z++)
-            report.addColumn(Reporter.ColType.NUMBER, 50, 1500, "#,##0.0", "Zone#" + ("" + (z + 1)).trim());
+            report.addColumn(Reporter.ColType.NUMBER, 50, 2500, "#,##0.0", "Zone#" + ("" + (z + 1)).trim());
     }
 
     void addFHReportColumns(Reporter report, boolean bBot) {
-        report.addColumn(Reporter.ColType.NUMBER, 50, 1500, "#,##0.0", "Speed m/m");
-        report.addColumn(Reporter.ColType.NUMBER, 50, 1500, "#,##0.0", "Output t/h");
-        report.addColumn(Reporter.ColType.NUMBER, 50, 1500, "0.00E00", "TotHeat");
+        report.addColumn(Reporter.ColType.NUMBER, 50, 2500, "#,##0.0", "Speed m/m");
+        report.addColumn(Reporter.ColType.NUMBER, 50, 2500, "#,##0.0", "Output t/h");
+        report.addColumn(Reporter.ColType.NUMBER, 50, 2500, "0.00E00", "TotHeat");
 //        report.addColumn(Reporter.ColType.NUMBER, 50, 1500, "#.00.0e#", "Fuel+APH heat");
         int nZones = (bBot) ? nBotZones : nTopZones;
         for (int z =0; z < nZones; z++)
-            report.addColumn(Reporter.ColType.NUMBER, 50, 1500, "0.00E00", "Zone#" + ("" + (z + 1)).trim());
+            report.addColumn(Reporter.ColType.NUMBER, 50, 2500, "0.00E00", "Zone#" + ("" + (z + 1)).trim());
     }
 
     void addReportData(Reporter report, boolean bBot) {
