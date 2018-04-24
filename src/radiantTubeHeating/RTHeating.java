@@ -9,7 +9,7 @@ import mvUtils.display.*;
 import mvUtils.jsp.JSPComboBox;
 import mvUtils.jsp.JSPConnection;
 import mvUtils.math.XYArray;
-import netscape.javascript.JSObject;
+//import netscape.javascript.JSObject;
 import protection.CheckAppKey;
 
 
@@ -76,7 +76,7 @@ public class RTHeating extends JApplet implements InputControl{
     String title = "Radiant Tube Heated Furnace 20170901";
     public int appCode = 101;
     boolean canNotify = true;
-    JSObject win;
+//    JSObject win;
     String header;
     boolean itsON = false;
     JFrame mainF;
@@ -118,12 +118,12 @@ public class RTHeating extends JApplet implements InputControl{
             }
             else {
                 if (runCheck.getStatus() == DataStat.Status.WithErrorMsg)
-                    showError("Access Check: " + runCheck.getErrorMessage());
+                    showError("Access Check",runCheck.getErrorMessage());
                 else
-                    showError("Some problem in getting Application permissions");
+                    showError("Access Check","Some problem in getting Application permissions");
             }
         } else
-            showError("Unable to connect to Server");
+            showError("Access Check", "Unable to connect to Server");
         return retVal;
     }
 
@@ -848,8 +848,18 @@ public class RTHeating extends JApplet implements InputControl{
         return mainF;
     }
 
+    public void showError(String title, String msg) {
+        showError(title, msg, mainF);
+    }
+
     public void showError(String msg) {
         showError(msg, mainF);
+    }
+
+    public static void showError(String title, String msg, Window w){
+        SimpleDialog.showError(w, title, msg);
+        if (w != null)
+            w.toFront();
     }
 
     public static void showError(String msg, Window w){

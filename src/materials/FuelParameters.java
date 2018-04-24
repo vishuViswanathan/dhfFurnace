@@ -6,6 +6,7 @@ import display.*;
 import mvUtils.display.InputControl;
 import mvUtils.display.MultiPairColPanel;
 import mvUtils.display.NumberTextField;
+import mvUtils.display.SimpleDialog;
 import mvUtils.math.XYArrayWithFract;
 import mvUtils.mvXML.XMLmv;
 
@@ -75,6 +76,9 @@ public class FuelParameters {
             saveButt = new JButton("Save Fuel Data");
             saveButt.addActionListener(buttL);
             saveButt.setEnabled(false);
+            deleteButt = new JButton("Delete Fuel");
+            deleteButt.addActionListener(buttL);
+            deleteButt.setEnabled(false);
         }
         editButt = new JButton("Edit Fuel Data");
         editButt.addActionListener(buttL);
@@ -153,7 +157,7 @@ public class FuelParameters {
     }
 
     JTextField tfFuelName, tfUnits;
-    JButton editButt, saveButt, resetButt, quitButt;
+    JButton editButt, saveButt, resetButt, quitButt, deleteButt;
     JPanel headPanel() {
         MultiPairColPanel fp = new MultiPairColPanel(60, 300);
         tfFuelName = new JTextField(fuel.name, 40);
@@ -234,6 +238,8 @@ public class FuelParameters {
         if (bCanEdit) {
             gbc.gridx++;
             jp.add(saveButt, gbc);
+            gbc.gridx++;
+            jp.add(deleteButt, gbc);
         }
         gbc.gridx++;
         ins.set(1, 50, 1, 5);
@@ -340,6 +346,8 @@ public class FuelParameters {
         if (bNew)
             tfFuelName.setEditable(true);
         resetButt.setEnabled(true);
+        if (bCanEdit && !bNew)
+            deleteButt.setEnabled(true);
         editButt.setEnabled(false);
         bInEdit = true;
         propControl.inEdit(bInEdit);
@@ -365,6 +373,8 @@ public class FuelParameters {
         }
         updateUI();
         resetButt.setEnabled(false);
+        if (bCanEdit)
+            deleteButt.setEnabled(false);
         editButt.setEnabled(true);
         tfFuelName.setEditable(false);
         bInEdit = false;
@@ -404,6 +414,20 @@ public class FuelParameters {
         retVal.append(XMLmv.putTag("O2fract", "" + fractO2)); //  O2fract$
 //        retVal.append(XMLmv.putTag("hContSt",  getHContStr()));
         return retVal.toString();
+    }
+
+    public String basicDataInXML() {
+        StringBuilder retVal = new StringBuilder();
+        retVal.append(XMLmv.putTag("ID", ("" + fuel.getId()).trim()));
+        retVal.append(XMLmv.putTag("FuelName", name.trim()));  //  FuelName$
+        retVal.append(XMLmv.putTag("FuelType", type));  //  FuelType$
+        retVal.append(XMLmv.putTag("Units", fuel.units));  //  Units$
+        retVal.append(XMLmv.putTag("CalVal", "" + fuel.calVal));  //  CalVal$
+        return retVal.toString();
+    }
+
+    boolean deleteFuel() {
+        return propControl.deleteData(this);
     }
 
     String getHContStr() {
@@ -449,7 +473,15 @@ public class FuelParameters {
     class ButtonListener implements  ActionListener {
         public void actionPerformed(ActionEvent e) {
             String command = e.getActionCommand();
-            if (command.equals("Save Fuel Data"))  {
+            Object src = e.getSource();
+            if (src == deleteButt) {
+                if (deleteFuel()) {
+                    fuelCopy = null;
+                    compoCopy = null;
+                    resetButt.doClick();
+                }
+            }
+            else if (src == saveButt)  {
                 noteIt();
                 if (compoOK) {
                     if (trySavingFuel()) {
@@ -459,13 +491,13 @@ public class FuelParameters {
                     }
                 }
             }
-            else if (command.equals("Edit Fuel Data")) {
+            else if (src == editButt) {
                 getReadyToEdit();
             }
-            else if (command.equals("Reset Fuel Data")) {
+            else if (src == resetButt) {
                 resetFuelData();
             }
-            else if (command.equals("Exit") ) {
+            else if (src == quitButt) {
                 propControl.quit();
             }
         }

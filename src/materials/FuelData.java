@@ -5,12 +5,12 @@ import basic.Fuel;
 import mvUtils.display.DataStat;
 import mvUtils.display.DataWithStatus;
 import mvUtils.display.InputControl;
+import mvUtils.display.SimpleDialog;
 import mvUtils.http.PostToWebSite;
 import mvUtils.math.XYArray;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import mvUtils.security.MiscUtil;
-import netscape.javascript.JSObject;
 import protection.CheckAppKey;
 
 import javax.swing.*;
@@ -29,17 +29,14 @@ import java.util.Vector;
  * User: M Viswanathan
  * Date: 12-Jun-17
  * Time: 9:56 AM
+ * Modified: 06-Apr-18
  * To change this template use File | Settings | File Templates.
  */
-public class FuelData extends JApplet implements InputControl, PropertyControl {
+public class FuelData implements InputControl, PropertyControl {
     public int appCode = 0;
-    //    static public String jspBase = "HYPWAP02:9080/fceCalculations/jsp/";
     static public String jspBase = "localhost:9080/fceCalculations/jsp/";
     boolean bCanEdit = false;
-    JSObject win;
     JFrame mainF;
-    boolean onTest = false;
-    InputControl controller;
     Vector<FuelComponent> fuelComponents;
     Vector<FuelParameters> fuelParemeters;
     boolean itsON = false;
@@ -87,9 +84,9 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
             }
             else {
                 if (runCheck.getStatus() == DataStat.Status.WithErrorMsg)
-                    showError("Access Check: " + runCheck.getErrorMessage());
+                    showError("Access Check: ", runCheck.getErrorMessage());
                 else
-                    showError("Some problem in getting Application permissions");
+                    showError("Access Check: ","Some problem in getting Application permissions");
             }
         }
         return retVal;
@@ -117,6 +114,12 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
     String newFuelName = "..... CREATE NEW FUEL";
     FuelParameters newFuelParameters;
     void populateCBFuel() {
+        cbFuels = new JComboBox(fuelParemeters);
+        cbFuels.setSelectedIndex(0);
+        cbFuels.addActionListener(new CBFuelListener());
+    }
+
+    private void addNewFuelChoice() {
         if (bCanEdit) {
             try {
                 Fuel newF = new Fuel(newFuelName);
@@ -126,10 +129,7 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
             } catch (Exception e) {
             }
         }
-//        cbFuels = new JComboBox(fuelParemeters.toArray());
-        cbFuels = new JComboBox(fuelParemeters);
-        cbFuels.setSelectedIndex(0);
-        cbFuels.addActionListener(new CBFuelListener());
+
     }
 
     void createUIs() {
@@ -139,8 +139,6 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
 
             topP.add(cbFuels);
             mainF.add(topP, BorderLayout.NORTH);
-//            mainF.addWindowListener(new winListener());
-//            setMenuOptions();
             setDetailsPanel();
             mainF.setLocation(20, 10);
             mainF.pack();
@@ -158,14 +156,6 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
 
     boolean getAllData() {
         return getFuelComponents() && getAllFuelAllDetails();
-//        PostToWebSite jspSrc = new PostToWebSite(jspBase);
-//        HashMap<String, String> params = new HashMap<>();
-//        params.put("user", user);
-//        String xmlComponents = jspSrc.getByPOSTRequest("getAllFuelComponents.jsp", params, 1000000);
-//        setFuelComponentsFromXMl(xmlComponents);
-//        String xmlAllFuelParameters = jspSrc.getByPOSTRequest("getAllFuelAllDetails.jsp", params, 1000000);
-//        setAllFuelsDetailsFromXMl(xmlAllFuelParameters);
-//        return true;
     }
 
     boolean getFuelComponents() {
@@ -183,17 +173,6 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
         params.put("user", user);
         String xmlAllFuelParameters = jspSrc.getByPOSTRequest("getAllFuelAllDetails.jsp", params, 1000000);
         getAllFuelsDetailsFromXML(xmlAllFuelParameters, false);
-        return true;
-
-    }
-
-    boolean getOneFuelAllDetails(int fuelID) {
-        PostToWebSite jspSrc = new PostToWebSite("http://" + jspBase);
-        HashMap<String, String> params = new HashMap<>();
-        params.put("user", user);
-        params.put("fuelID", "" + fuelID);
-        String xmlAllFuelParameters = jspSrc.getByPOSTRequest("getOneFuelAllDetails.jsp", params, 1000000);
-        getOneFuelsDetailsFromXML(xmlAllFuelParameters, true);
         return true;
 
     }
@@ -227,7 +206,7 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
                         retVal = false;
                 }
                 if (!retVal)
-                    showError("Some error in getting Fel Components");
+                    showError("Some error in getting Fuel Components");
             }
         } else {
             if (vp.val.equalsIgnoreCase("Error")) {
@@ -241,13 +220,10 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
     }
 
     boolean getAllFuelsDetailsFromXML(String xmlStr, boolean update) {
+        fuelParemeters.clear();
         boolean retVal = false;
         ValAndPos vp;
         int nF;
-//        ValAndPos localVp;
-//        String[] keys = {"ID", "FuelName", "FuelType", "Units", "CalVal",  "AirFuelRatio",
-//                "FlueFuelRatio", "HeatContStr", "CO2fract", "H2Ofract", "SO2fract", "N2fract", "O2fract",
-//                "H2", "CO", "CH4", "C2H6", "C2H2", "C3H8", "C4H10", "N2", "H2O", "CO2", "O2", "C", "S", "Ash"};
         LinkedHashMap<String, String> pHash = new LinkedHashMap<>();
         String oneElement;
         vp = XMLmv.getTag(xmlStr, "Status", 0);
@@ -260,20 +236,13 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
                     vp = XMLmv.getTag(xmlStr, "FuelData", vp.endPos);
                     oneElement = vp.val;
                     retVal = setOneFuelsDetailsFromXML(oneElement, update);
-//                    if (oneElement.length() > 0) {
-//                        for (String key:keys) {
-//                            pHash.put(key, XMLmv.getStringVal(oneElement, key));
-//                        }
-//                        String[] p = pHash.values().toArray(new String[]{""});
-//                        addFuelData(p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8],p[9], p[10], p[11], p[12],
-//                                p[13], p[14], p[15], p[16], p[17], p[18], p[19], p[20],p[21], p[22], p[23], p[24],
-//                                p[25], p[26], update);
-//                        retVal = true;
-//                    }
-////                    else
-////                        retVal = false;
                 }
-                if (!retVal)
+                if (retVal) {
+                    addNewFuelChoice();
+                    if (cbFuels != null)
+                        cbFuels.updateUI();
+                }
+                else
                     showError("Some error in getting Fuel details");
             }
         }
@@ -289,47 +258,8 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
         return retVal;
     }
 
-    boolean getOneFuelsDetailsFromXML(String xmlStr, boolean update) {
-        boolean retVal = false;
-        ValAndPos vp;
-        int nF;
-        LinkedHashMap<String, String> pHash = new LinkedHashMap<>();
-        String oneElement;
-        vp = XMLmv.getTag(xmlStr, "Status", 0);
-        if (vp.val.equalsIgnoreCase("OK")) {
-            vp = XMLmv.getTag(xmlStr, "FuelData", vp.endPos);
-            oneElement = vp.val;
-            retVal = setOneFuelsDetailsFromXML(oneElement, update);
-        }
-        else {
-            if (vp.val.equalsIgnoreCase("Error")) {
-                vp = XMLmv.getTag(xmlStr, "Msg", vp.endPos);
-                showError(vp.val);
-            }
-            else
-                showError("Unknown response from server for Fuel Details");
-        }
-        return retVal;
-    }
-
     boolean setOneFuelsDetailsFromXML(String xmlStr, boolean update) {
-        boolean retVal = false;
-        ValAndPos vp;
-        String[] keys = {"ID", "FuelName", "FuelType", "Units", "CalVal",  "AirFuelRatio",
-                "FlueFuelRatio", "HeatContStr", "CO2fract", "H2Ofract", "SO2fract", "N2fract", "O2fract",
-                "H2", "CO", "CH4", "C2H6", "C2H2", "C3H8", "C4H10", "N2", "H2O", "CO2", "O2", "C", "S", "Ash"};
-        LinkedHashMap<String, String> pHash = new LinkedHashMap<>();
-        if (xmlStr.length() > 0) {
-            for (String key:keys) {
-                pHash.put(key, XMLmv.getStringVal(xmlStr, key));
-            }
-            String[] p = pHash.values().toArray(new String[]{""});
-            addFuelData(p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8],p[9], p[10], p[11], p[12],
-                    p[13], p[14], p[15], p[16], p[17], p[18], p[19], p[20],p[21], p[22], p[23], p[24],
-                    p[25], p[26], update);
-            retVal = true;
-        }
-        return retVal;
+        return addFuelData(xmlStr, update);
     }
 
     public void displayIt() {
@@ -367,57 +297,56 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
         return retVal;
     }
 
-    public String addFuelData(String idStr, String name, String type, String units, String calValStr, String airFuelRatioStr,
-                              String flueFuelRatioStr, String sensHeatPair,
-                              String fractCO2str, String fractH2Ostr, String fractN2str, String fractO2str, String fractSO2str,
-                              String h2Str, String coStr, String ch4Str,
-                              String c2h6Str, String c2h2Str, String c3h8Str, String c4h10Str,
-                              String n2Str, String h2oStr, String co2Str, String o2Str, String cStr, String sStr, String ashStr,
-                              boolean update)  {
-        String retVal = "OK";
+    public boolean addFuelData(String xmlStr, boolean update)  {
         int id;
         double calVal, airFuelRatio, flueFuelRatio;
         double fractCO2, fractH2O, fractN2, fractO2, fractSO2;
         double h2, co, ch4, c2h6, c2h2, c3h8, c4h10, n2, h2o, co2, o2;
         XYArray sensHeat = null;
+
+        String name = XMLmv.getStringVal(xmlStr, "FuelName");
+        String sensHeatPair =  XMLmv.getStringVal(xmlStr, "HeatContStr");
+        String type =  XMLmv.getStringVal(xmlStr, "FuelType");
+        String units =  XMLmv.getStringVal(xmlStr, "Units");
         if (sensHeatPair.trim().length() > 0)
             sensHeat = new XYArray(sensHeatPair);
         try {
-            id = Integer.valueOf(idStr);
-            calVal = Double.valueOf(calValStr);
-            airFuelRatio = Double.valueOf(airFuelRatioStr);
-            flueFuelRatio = Double.valueOf(flueFuelRatioStr);
-            fractCO2 = Double.valueOf(fractCO2str);
-            fractH2O = Double.valueOf(fractH2Ostr);
-            fractN2 = Double.valueOf(fractN2str);
-            fractO2 = Double.valueOf(fractO2str);
-            fractSO2 = Double.valueOf(fractSO2str);
-            h2 = Double.valueOf(h2Str);
-            co = Double.valueOf(coStr);
-            ch4 = Double.valueOf(ch4Str);
-            c2h6 = Double.valueOf(c2h6Str);
-            c2h2 = Double.valueOf(c2h2Str);
-            c3h8 = Double.valueOf(c3h8Str);
-            c4h10 = Double.valueOf(c4h10Str);
-            n2 = Double.valueOf(n2Str);
-            h2o = Double.valueOf(h2oStr);
-            co2 = Double.valueOf(co2Str);
-            o2 = Double.valueOf(o2Str);
+            id = Integer.valueOf(XMLmv.getTag(xmlStr, "ID").val);
+            calVal = Double.valueOf(XMLmv.getTag(xmlStr, "CalVal").val);
+            airFuelRatio = Double.valueOf(XMLmv.getTag(xmlStr, "AirFuelRatio").val);
+            flueFuelRatio = Double.valueOf(XMLmv.getTag(xmlStr, "FlueFuelRatio").val);
+            fractCO2 = Double.valueOf(XMLmv.getTag(xmlStr, "CO2fract").val);
+            fractH2O = Double.valueOf(XMLmv.getTag(xmlStr, "H2Ofract").val);
+            fractN2 = Double.valueOf(XMLmv.getTag(xmlStr, "N2fract").val);
+            fractO2 = Double.valueOf(XMLmv.getTag(xmlStr, "O2fract").val);
+            fractSO2 = Double.valueOf(XMLmv.getTag(xmlStr, "SO2fract").val);
+            h2 = Double.valueOf(XMLmv.getTag(xmlStr, "H2").val);
+            co = Double.valueOf(XMLmv.getTag(xmlStr, "CO").val);
+            ch4 = Double.valueOf(XMLmv.getTag(xmlStr, "CH4").val);
+            c2h6 = Double.valueOf(XMLmv.getTag(xmlStr, "C2H6").val);
+            c2h2 = Double.valueOf(XMLmv.getTag(xmlStr, "C2H2").val);
+            c3h8 = Double.valueOf(XMLmv.getTag(xmlStr, "C3H8").val);
+            c4h10 = Double.valueOf(XMLmv.getTag(xmlStr, "C4H10").val);
+            n2 = Double.valueOf(XMLmv.getTag(xmlStr, "N2").val);
+            h2o = Double.valueOf(XMLmv.getTag(xmlStr, "H2O").val);
+            co2 = Double.valueOf(XMLmv.getTag(xmlStr, "CO2").val);
+            o2 = Double.valueOf(XMLmv.getTag(xmlStr, "O2").val);
         } catch (NumberFormatException e) {
-            retVal = "ERROR: Number Format in Fuel Data!";
-            return retVal;
+            showError("Number Format in Fuel Data!");
+            return false;
         }
-        FlueComposition flueComp = null;
+        FlueComposition flueComp;
         try {
             flueComp = new FlueComposition("Flue of " + name, fractCO2, fractH2O, fractN2, fractO2, fractSO2);
         } catch (Exception e) {
-            return ("ERROR:" + e.getMessage());
+            showError ("ERROR:" + e.getMessage());
+            return false;
         }
         Fuel fuel = new Fuel(name, units, calVal, airFuelRatio, flueFuelRatio, sensHeat, flueComp);
         fuel.setID(id);
         FuelParameters fDet = new FuelParameters(this, this, fuel, type, fuelComponents, false, bCanEdit);
 //debug("fuelType " + type + " for fuel " + name);
-        if (type.equals("G"))  {
+        if (type.equals("G")) {
 //debug("setting fuel composition for " + name);
             boolean bResp = fDet.setComposition(h2, co, ch4, c2h6, c2h2, c3h8, c4h10, n2, h2o, co2, o2);
             if (bResp)
@@ -425,10 +354,12 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
                     updateOneFuel(fDet);
                 else
                     fuelParemeters.add(fDet);
-            else
-                retVal = "ERROR: in fuel Composition!";
+            else {
+                showError("ERROR: in fuel Composition!");
+                return false;
+            }
         }
-        return retVal;
+        return true;
     }
 
     boolean updateOneFuel(FuelParameters fDet) {
@@ -480,19 +411,16 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
             mainF.toFront();
     }
 
-    void showMessage(String msg) {
-        JOptionPane.showMessageDialog(parent(), msg, "FOR INFORMATION", JOptionPane.INFORMATION_MESSAGE);
+    public void showError(String title, String msg) {
+        JOptionPane.showMessageDialog(parent(), msg, title, JOptionPane.ERROR_MESSAGE);
         if (mainF != null)
             mainF.toFront();
     }
 
-
-    @Override
-    public void destroy() {
-        debug("In Destroy");
-        super.destroy();
-        if (!onTest)
-            win.eval("gettingOut()");
+    void showMessage(String msg) {
+        JOptionPane.showMessageDialog(parent(), msg, "FOR INFORMATION", JOptionPane.INFORMATION_MESSAGE);
+        if (mainF != null)
+            mainF.toFront();
     }
 
     void close() {
@@ -556,7 +484,44 @@ public class FuelData extends JApplet implements InputControl, PropertyControl {
         }
         if (retVal) {
             showMessage("Data saved");
-            getOneFuelAllDetails(((FuelParameters)cbFuels.getSelectedItem()).getFuelID());
+            getAllData();
+            cbFuels.setSelectedIndex(0);
+//            getOneFuelAllDetails(((FuelParameters)cbFuels.getSelectedItem()).getFuelID());
+        }
+        return retVal;
+    }
+
+    public boolean deleteData(Object o) {
+        boolean retVal = false;
+        if (decide("Deleting a Fuel",
+                "Do you want to PERMANENTLY DELETE this Fuel") &&
+                decide("DELETING FUEL",  "RE-CONFIRM Fuel DELETION")) {
+            showMessage("Deleting Fuel");
+            if (o instanceof FuelParameters) {
+                FuelParameters fD = (FuelParameters)o;
+                String xmlStr = fD.basicDataInXML();
+                PostToWebSite jspSrc = new PostToWebSite("http://" + jspBase);
+                HashMap<String, String> params = new HashMap<>();
+                params.put("user", user);
+                params.put("allData", xmlStr);
+                String response = jspSrc.getByPOSTRequest("deleteFuel.jsp", params, 1000000);
+                String status = XMLmv.getStringVal(response, "Status");
+                if (status.equalsIgnoreCase("OK")) {
+                    retVal = true;
+                }
+                else {
+                    if (status.equalsIgnoreCase("ERROR"))
+                        showError(XMLmv.getStringVal(response, "Msg"));
+                    else
+                        showError("Unknown response from server: " + response);
+                }
+            }
+            if (retVal) {
+                showMessage("Fuel Deleted");
+                getAllData();
+                cbFuels.setSelectedIndex(0);
+//            getOneFuelAllDetails(((FuelParameters)cbFuels.getSelectedItem()).getFuelID());
+            }
         }
         return retVal;
     }

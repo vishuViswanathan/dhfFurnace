@@ -86,9 +86,9 @@ public class ThermalProperties extends JApplet implements InputControl {
             }
             else {
                 if (runCheck.getStatus() == DataStat.Status.WithErrorMsg)
-                    showError("Access Check: " + runCheck.getErrorMessage());
+                    showError("Access Check: ", runCheck.getErrorMessage());
                 else
-                    showError("Some problem in getting Application permissions");
+                    showError("Access Check", "Some problem in getting Application permissions");
             }
         }
         return retVal;
@@ -666,6 +666,12 @@ public class ThermalProperties extends JApplet implements InputControl {
 
     public void showError(String msg) {
         JOptionPane.showMessageDialog(parent(), msg, "ERROR", JOptionPane.ERROR_MESSAGE);
+        if (mainF != null)
+            mainF.toFront();
+    }
+
+    public void showError(String title, String msg) {
+        JOptionPane.showMessageDialog(parent(), msg, title, JOptionPane.ERROR_MESSAGE);
         if (mainF != null)
             mainF.toFront();
     }

@@ -132,13 +132,13 @@ public class L2Configurator extends StripHeating {
             }
             else {
                 if (runCheck.getStatus() == DataStat.Status.WithErrorMsg)
-                    showError("Access Check: " + runCheck.getErrorMessage());
+                    showError("Access Check" , runCheck.getErrorMessage());
                 else
-                    showError("Some problem in getting Application permissions");
+                    showError("Access Check", "Some problem in getting Application permissions");
             }
         }
         else
-            showError("Unable to connect to Server");
+            showError("Access Check", "Unable to connect to Server");
         return retVal;
     }
 

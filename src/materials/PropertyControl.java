@@ -10,6 +10,6 @@ package materials;
 public interface PropertyControl {
     boolean saveData(Object o);
     void inEdit(boolean bInEdit);
-
+    boolean deleteData(Object o);
     void quit();
 }

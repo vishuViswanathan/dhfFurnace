@@ -9,7 +9,6 @@ import mvUtils.mvXML.XMLmv;
 import mvUtils.security.GCMCipher;
 import mvUtils.security.MachineCheck;
 import mvUtils.security.MiscUtil;
-import net.sf.antcontrib.walls.SilentCopy;
 
 import javax.swing.*;
 import java.io.*;
@@ -78,7 +77,7 @@ public class CheckAppKey {
             case WRONGMACHINEID:
                 if (SimpleDialog.decide(null, "Problem in Access Control File",
                         "Access for this application was not installed for this system\n" +
-                        "Do you want to delete Access Control File and Re-install all Applications?") == JOptionPane.YES_OPTION) {
+                        "Do you want to delete Access Control File and Re-install all Thermal Applications?") == JOptionPane.YES_OPTION) {
                     if (deleteSoftwareAccessFile())
                         SimpleDialog.showMessage("Problem in Access Control File", "Access Control File delted.\n" +
                         "    Try restarting all applications after getting Access settings reset by Administrator");
@@ -129,13 +128,33 @@ public class CheckAppKey {
                 else {
                     switch (MachineCheck.MachineStat.getEnum(cipher.decryptStringWithKey2(vp.val, encryptedKey))) {
                         case CANNOTRUN:
-                            retVal.setErrorMsg("You care not authorised to run this Application");
+                            retVal.setErrorMsg("You are not authorised to run this Application");
                             break;
                         case DIFFERENTMACHINE:
                             retVal.setErrorMsg("Server record shows your installation on another system");
                             break;
                         case NOMACHINERECORD:
+/*
                             retVal.setErrorMsg("Server does not have record of installations on you system");
+                            retVal.setErrorMsg("<html>Server does not have record of installations on you system" +
+                                "<br>In case you have officially changed your system. You can try to delete the " +
+                                "<br>existing access records and relaunch your application");
+*/
+
+                            if (SimpleDialog.decide(null, "Access Rcord on Server",
+                                    "<html>Server does not have record of installations on you system" +
+                                            "<br>In case you have officially changed your system. You can try to delete the " +
+                                            "<br>existing access records and relaunch your application" +
+                                            "<br>Do you want to proceed with DELETING local Access Records for TIPL Furnace Applications ?") == JOptionPane.YES_OPTION) {
+                                if (deleteSoftwareAccessFile())
+                                    retVal.setErrorMsg("<html>Local Access Records deleted" +
+                                            "<br>Try restarting all applications after getting Access settings reset by Administrator</html>");
+                                else
+                                    retVal.setErrorMsg("Unable to delete Access Control File");
+                            }
+                            else
+                                retVal.setErrorMsg("<html>Server does not have record of installations on you system</html>");
+
                             break;
                     }
                 }
@@ -263,8 +282,7 @@ public class CheckAppKey {
                             retVal.setValue(true);
                         }
                         else {
-                            retVal.addErrorMessage("Unable to make entry to Access Control file:\n   " + fileSaveResp.getErrorMessage() +
-                            "\n  If earlier Access Data Exists in Server, get Administrator to reset Access Data");
+                            retVal.addErrorMessage("Unable to make entry to Access Control file:\n   " + fileSaveResp.getErrorMessage());
                         }
                     }
                     break;

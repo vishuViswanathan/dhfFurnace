@@ -18,8 +18,8 @@ public class OfflineAccessControl extends L2AccessControl {
         super(intensity);
         this.mainF = mainF;
         this.asJNLP = asJNLP;
-        if (asJNLP)
-            accessControl.setAsJNLP();
+//        if (asJNLP)
+//            accessControl.setAsJNLP();
         accessControl.setSuggestedExtension(L2AccessControl.installerAccessFileExtension);
     }
 

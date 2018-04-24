@@ -17,7 +17,7 @@ import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLgroupStat;
 import mvUtils.mvXML.XMLmv;
 import mvUtils.math.XYArray;
-import netscape.javascript.JSObject;
+//import netscape.javascript.JSObject;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 // 20180323 import org.apache.poi.hssf.usermodel.*;
@@ -165,7 +165,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = " 20180330";
+    protected String releaseDate = " 20180423";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -362,13 +362,13 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             }
             else {
                 if (runCheck.getStatus() == DataStat.Status.WithErrorMsg)
-                    showError("Access Check: " + runCheck.getErrorMessage());
+                    showError("Access Check: ",  runCheck.getErrorMessage());
                 else
-                    showError("Some problem in getting Application permissions");
+                    showError("Access Check", "Some problem in getting Application permissions");
             }
         }
         else
-            showError("Unable to connect to Server");
+            showError("Access Check", "Unable to connect to Server");
         return retVal;
     }
 
@@ -3040,9 +3040,20 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         showError(msg, parent());
     }
 
+    public void showError(String title, String msg) {
+        showError(title, msg, parent());
+    }
+
     public void showError(String msg, Window w){
         logError(msg);
         SimpleDialog.showError(w, "", msg);
+        if (w != null)
+            w.toFront();
+    }
+
+    public void showError(String title, String msg, Window w){
+        logError(msg);
+        SimpleDialog.showError(w, title, msg);
         if (w != null)
             w.toFront();
     }
