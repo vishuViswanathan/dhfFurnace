@@ -441,6 +441,7 @@ public class Level2Launcher {
                 }
                 if (allOK) {
                     StatusWithMessage stm = installerAccessControl.authenticate(Level2Installer.defaultLevel());
+//                    StatusWithMessage stm = installerAccessControl.authenticate(L2AccessControl.AccessLevel.INSTALLER);
                     if (stm.getDataStatus() == DataStat.Status.OK) {
                         new WaitMsg(mainF, "Starting Level2Installer. Please wait ...", new ActInBackground() {
                             public void doInBackground() {

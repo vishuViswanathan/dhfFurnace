@@ -1,6 +1,7 @@
 package directFiredHeating;
 
-import FceElements.RegenBurner;
+//import FceElements.RegenBurner;
+import FceElements.RegenBurner1;
 import basic.*;
 import directFiredHeating.applications.L2Configurator;
 import directFiredHeating.billetWH.SampleWHFurnace;
@@ -165,7 +166,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = " 20180423";
+    protected String releaseDate = " 20180731"; // " 20180615"
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -190,7 +191,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     NumberTextField tfExcessAir;
     protected LossNameChangeListener lNameListener = new LossNameChangeListener();
     InputChangeListener inputChangeListener = new InputChangeListener();
-    RegenBurner regenBurnerStudy;
+    RegenBurner1 regenBurnerStudy;
     Locale locale;
     public boolean asApplication = false;
     public static boolean asJNLP = false;
@@ -354,7 +355,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                     switchPage(DFHDisplayPageType.INPUTPAGE);
                     displayIt();
                     fuelMixP = Fuel.mixedFuelPanel(this, jspConnection, fuelList);
-                    regenBurnerStudy = new RegenBurner(fuelList, jspConnection, this);
+                    regenBurnerStudy = new RegenBurner1(fuelList, jspConnection, this);
                     logInfo("DFHeating initiated");
                     enableDataEdit();
                     retVal = true;
