@@ -189,7 +189,7 @@ public class OneStripDFHProcess {
                 if (unitOutput > maxExtendedUnitOutput)
                     outputWithStatus.setValue(maxExtendedUnitOutput * width, "Limited by Maximum Unit Output");
                 else if (unitOutput < minUnitOutput)
-                    outputWithStatus.setErrorMsg(String.format("Unit Output is low <%5.2f tph/m>", output));
+                    outputWithStatus.setErrorMsg(String.format("Unit Output is low <%5.2f tph/m>", unitOutput));
                 else
                     outputWithStatus.setValue(output);
             }
