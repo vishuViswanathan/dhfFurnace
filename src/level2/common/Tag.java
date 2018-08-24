@@ -2,12 +2,10 @@ package level2.common;
 
 import TMopcUa.*;
 import com.prosysopc.ua.client.MonitoredDataItem;
-import level2.common.L2ParamGroup;
 
 import javax.swing.*;
 import java.awt.*;
 import java.text.DecimalFormat;
-import java.util.LinkedHashMap;
 
 /**
  * Created by IntelliJ IDEA.
@@ -142,6 +140,9 @@ public class Tag {
             return getEnum(name + ("" + index).trim());
         }
     }
+
+    int displayErrorCount = 0;
+    int displayErrorLimit = 5;
 
     int datW = 4; // this is overwritten elsewhere
     BooleanDisplay booleanStat;
@@ -325,7 +326,15 @@ public class Tag {
          value.stringValue = newValue;
          processData.setValue(value);
          return value;
-     }
+    }
+
+    public String totalPath() {
+        return processData.getTotalPath();
+    }
+
+    public String elementAndTag() {
+        return element.name() + '.' + tagName;
+    }
 
     public String toString() {
         return tagName.toString();
@@ -373,31 +382,40 @@ public class Tag {
     }
 
     public void updateUI() {
-        switch(tagName) {
-            case Auto:
-            case Remote:
-            case Enabled:
-            case Running:
-            case Noted:
-            case Ready:
-            case Mode:
-            case Response:
-                ((JTextField)displayComponent).setText(booleanStat.statusString());
-                break;
-            case BaseProcess:
-                ((JTextField)displayComponent).setText(getValue().stringValue);
-                break;
-            case Msg:
-                ((JTextArea)displayComponent).setText(getValue().stringValue);
-                break;
-            default:
-                ProcessValue pv = getValue();
-                ((JTextField)displayComponent).setText(format.format(pv.floatValue));
-                if (pv.valid)
-                    displayComponent.setBackground(Color.WHITE);
-                else
-                    displayComponent.setBackground(Color.red);
-                break;
+        try {
+            switch (tagName) {
+                case Auto:
+                case Remote:
+                case Enabled:
+                case Running:
+                case Noted:
+                case Ready:
+                case Mode:
+                case Response:
+                    ((JTextField) displayComponent).setText(booleanStat.statusString());
+                    break;
+                case BaseProcess:
+                    ((JTextField) displayComponent).setText(getValue().stringValue);
+                    break;
+                case Msg:
+                    ((JTextArea) displayComponent).setText(getValue().stringValue);
+                    break;
+                default:
+                    ProcessValue pv = getValue();
+                    ((JTextField) displayComponent).setText(format.format(pv.floatValue));
+                    if (pv.valid)
+                        displayComponent.setBackground(Color.WHITE);
+                    else
+                        displayComponent.setBackground(Color.red);
+                    break;
+            }
+            displayErrorCount = 0;
+        }
+        catch (Exception e) {
+            if (displayErrorCount++ > displayErrorLimit) {
+                displayErrorCount = 0;
+                throw(e);
+            }
         }
     }
 

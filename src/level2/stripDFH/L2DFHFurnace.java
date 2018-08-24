@@ -1101,7 +1101,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     }
 
     public void logError(String msg) {
-        l2DFHeating.l2Error("L2DFHFurnace: " + msg);
+        l2DFHeating.l2Error(msg);
     }
 
     public void showError(String msg) {
@@ -1121,8 +1121,15 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                updateUIDisplay();
+//                try {
+                    updateUIDisplay();
+//                }
+//                catch (Exception e) {
+//                    logError("L2DFHFurnace.L2DisplayUpdater.1128: " + e.getMessage());
+//                }
+//                logInfo("L2DFHFurnace.L2DisplayUpdater is ON");
             }
+            logError("L2DFHFurnace.L2DisplayUpdater exited!");
         }
     }
 
@@ -1324,7 +1331,9 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         }
 
         public void onTimeout(Subscription s) {
-            l2DFHeating.showMessage(String.format("In L2Furnace (%s) %s timeout at %tc, last alive at %tc ",
+//            l2DFHeating.showMessage(String.format("In L2Furnace (%s) %s timeout at %tc, last alive at %tc ",
+//                    l2DFHeating.releaseDate(), s, Calendar.getInstance(), s.getLastAlive()));
+            logInfo(String.format("In L2Furnace (%s) %s timeout at %tc, last alive at %tc ",
                     l2DFHeating.releaseDate(), s, Calendar.getInstance(), s.getLastAlive()));
         }
     }

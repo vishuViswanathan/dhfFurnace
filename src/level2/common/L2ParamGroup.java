@@ -184,6 +184,10 @@ public class L2ParamGroup {
         l2Interface.logInfo("L2DataGroup: " + msg);
     }
 
+    public void logError(String msg) {
+        l2Interface.logError(msg);
+    }
+
     protected void showError(String msg) {
         l2Interface.logError("L2Zone: " + msg);
     }

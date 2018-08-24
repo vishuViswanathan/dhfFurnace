@@ -64,16 +64,58 @@ public class L2OneParameterZone extends L2ParamGroup implements L2Display {
     }
 
     public void updateProcessDisplay() {
-        if (withDisplay) {
-            for (Tag t : processTags)
-                t.updateUI();
+        String errorTags = "";
+        boolean errorsExist = false;
+        for (Tag tag: processTags) {
+            try {
+                tag.updateUI();
+
+            } catch (Exception e) {
+                errorTags += tag.elementAndTag() + "; ";
+                errorsExist = true;
+            }
         }
+        if (errorsExist)
+            logError("ProcessDisplay-Tag/s : " + groupName + ": " + errorTags + " had some display problem");
     }
 
     public void updateLevel2Display() {
-        for (Tag t : level2Tags)
-            t.updateUI();
+        String errorTags = "";
+        boolean errorsExist = false;
+        for (Tag tag: level2Tags) {
+            try {
+                tag.updateUI();
+            } catch (Exception e) {
+                errorTags += tag.elementAndTag() + "; ";
+                errorsExist = true;
+            }
+        }
+        if (errorsExist)
+            logError("L2Display-Tag/s : " + groupName + ": " + errorTags + " had some display problem");
     }
+
+
+//    public void updateProcessDisplay() {
+//        if (withDisplay) {
+//            for (Tag t : processTags) {
+//                try {
+//                    t.updateUI();
+//                } catch (Exception e) {
+//                    logError("ProcessDisplay-Tag " + t.totalPath() + " had some display problem");
+//                }
+//            }
+//        }
+//    }
+//
+//    public void updateLevel2Display() {
+//        for (Tag t : level2Tags){
+//            try {
+//                t.updateUI();
+//            } catch (Exception e) {
+//                logError("L2Display-Tag " + t.totalPath() + " had some display problem");
+//            }
+//        }
+//    }
 
     public Container getProcessDisplay() {
         return processDisplayPanel;

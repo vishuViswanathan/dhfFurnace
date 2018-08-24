@@ -298,25 +298,36 @@ public class L2DFHDisplay implements L2Display{
     }
 
     public void updateProcessDisplay() {
+        String errorTags = "";
+        boolean errorsExist = false;
         for (Tag tag: processTags) {
             try {
                 tag.updateUI();
+
             } catch (Exception e) {
-                System.out.println("Tag : " + tag + " had some display problem");
-//                e.printStackTrace();
+                errorTags += tag.elementAndTag() + "; ";
+                errorsExist = true;
+//                l2DFHZone.logError("ProcessDisplay-Tag : " + tag.totalPath() + " had some display problem");
             }
         }
+        if (errorsExist)
+            l2DFHZone.logError("ProcessDisplay-Tag/s : " + l2DFHZone.groupName + ": " + errorTags + " had some display problem");
     }
 
     public void updateLevel2Display() {
+        String errorTags = "";
+        boolean errorsExist = false;
         for (Tag tag: l2Tags) {
             try {
                 tag.updateUI();
             } catch (Exception e) {
-                System.out.println("Tag : " + tag + " had some display problem");
-//                e.printStackTrace();
+                errorTags += tag.elementAndTag()  + "; ";
+                errorsExist = true;
+//                l2DFHZone.logError("L2Display-Tag : " + tag.totalPath() + " had some display problem");
             }
         }
+        if (errorsExist)
+            l2DFHZone.logError("L2Display-Tag/s : " + l2DFHZone.groupName + ": " +  errorTags + " had some display problem");
 
     }
 

@@ -437,7 +437,6 @@ public class L2StripZone extends L2ParamGroup {
         t = paramStripNowSpeed.getProcessTag(Tag.TagName.PV);
         processTags.add(t);
         mp.addItemPair(t.toString(), t.displayComponent());
-        processTags.add(t);
         t = paramStripNowStatus.getProcessTag(Tag.TagName.Length);
         processTags.add(t);
         mp.addItemPair(t.toString(), t.displayComponent());
@@ -537,26 +536,59 @@ public class L2StripZone extends L2ParamGroup {
 
 
     public void updateProcessDisplay() {
+        String errorTags = "";
+        boolean errorsExist = false;
         for (Tag tag: processTags) {
             try {
                 tag.updateUI();
+
             } catch (Exception e) {
-                System.out.println("Tag : " + tag + " had some display problem");
-//                e.printStackTrace();
+                errorTags += tag.elementAndTag() + "; ";
+                errorsExist = true;
             }
         }
+        if (errorsExist)
+            logError("ProcessDisplay-Tag/s : " + groupName + ": " +  errorTags + " had some display problem");
     }
 
     public void updateLevel2Display() {
+        String errorTags = "";
+        boolean errorsExist = false;
         for (Tag tag: l2Tags) {
             try {
                 tag.updateUI();
             } catch (Exception e) {
-                System.out.println("Tag : " + tag + " had some display problem");
-//                e.printStackTrace();
+                errorTags += tag.elementAndTag() + "; ";
+                errorsExist = true;
             }
         }
+        if (errorsExist)
+            logError("L2Display-Tag/s : " + groupName + ": " +  errorTags + " had some display problem");
     }
+
+//    public void updateProcessDisplay() {
+//        for (Tag tag: processTags) {
+//            try {
+//                tag.updateUI();
+//            } catch (Exception e) {
+//                logError("ProcessDisplay-Tag : " + tag.totalPath() + " had some display problem");
+////                System.out.println("Tag : " + tag + " had some display problem");
+////                e.printStackTrace();
+//            }
+//        }
+//    }
+//
+//    public void updateLevel2Display() {
+//        for (Tag tag: l2Tags) {
+//            try {
+//                tag.updateUI();
+//            } catch (Exception e) {
+//                logError("L2Display-Tag : " + tag.totalPath() + " had some display problem");
+////                System.out.println("Tag : " + tag + " had some display problem");
+////                e.printStackTrace();
+//            }
+//        }
+//    }
 
     public void prepareForDisconnection()throws ServiceException {
         stripSub.removeItems();
