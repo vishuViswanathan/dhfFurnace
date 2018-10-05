@@ -36,6 +36,7 @@ public class Performance {
         CHMATERIAL("Charge Material"),
         CHEMMFACTOR("Charge Emmissvity Factor"),
         LOSSFACTOR("Loss Factor"),
+        WALLONLYFACTOR("Wall Only Factor"),
         STRIPWIDTH("Strip Width"),
         STRIPTHICK("Strip Thickness"),
         STRIPSPEED("Strip Speed"),
@@ -146,7 +147,13 @@ public class Performance {
             return botZones.get(sec).lossFactor;
         else
             return topZones.get(sec).lossFactor;
+    }
 
+    public double getWallOnlyFactor(int sec, boolean bBot) {
+        if (bBot)
+            return botZones.get(sec).wallOnlyFactor;
+        else
+            return topZones.get(sec).wallOnlyFactor;
     }
 
     public Performance(ProductionData production, Fuel fuel, double airTemp, Vector<OneZone> topZones,

@@ -92,6 +92,8 @@ public class UnitFceArray {
             ColNumAndData alphaWall = null;
             ColNumAndData alphaGas = null;
             ColNumAndData alphaAbsorb = null;
+            ColNumAndData totAlphaTOW = null;
+            ColNumAndData wallOnlyFactor = null;
 //            ColNumAndData chargeHeat = null;
 //            ColNumAndData heatToCharge = null;
 //            ColNumAndData heatFromWall = null;
@@ -99,10 +101,12 @@ public class UnitFceArray {
 //            ColNumAndData heatAbsorbed = null;
 
             if (onTest) {
-                totAlpha = new ColNumAndData(suffix + "TotAlpha", "#,###");
-                alphaWall = new ColNumAndData(suffix + "AlphaWall", "#,###");
-                alphaGas = new ColNumAndData(suffix + "AlphaGas", "#,###");
-                alphaAbsorb = new ColNumAndData(suffix + "AlphaAbsorb", "#,###");
+                totAlpha = new ColNumAndData(suffix + "TotAlpha", "#,###.00");
+                alphaWall = new ColNumAndData(suffix + "AlphaWall", "#,###.00");
+                alphaGas = new ColNumAndData(suffix + "AlphaGas", "#,###.00");
+                alphaAbsorb = new ColNumAndData(suffix + "AlphaAbsorb", "#,###.00");
+                totAlphaTOW = new ColNumAndData(suffix + "TotAlphaTOW", " #,###.00");
+                wallOnlyFactor = new ColNumAndData(suffix + "WOnlyFact", "#0.000");
 //                chargeHeat = new ColNumAndData(suffix + "chargeHeat", "#,###");
 //                heatToCharge = new ColNumAndData(suffix + "heatToCharge", "#,###");
 //                heatFromWall = new ColNumAndData(suffix + "heatFromWall", "#,###");
@@ -121,10 +125,12 @@ public class UnitFceArray {
                  chMeanT.addData(u, uf.dpTempWmean);
                  posTime.addData(u, uf.dpEndTime);
                  if (onTest) {
-                    totAlpha.addData(u, uf.dpTotAlpha);
-                    alphaWall.addData(u, uf.dpAlphaWall);
-                    alphaGas.addData(u, uf.dpAlphaGas);
-//                    alphaAbsorb.addData(u, uf.dpAlphaAbsorb);
+                     totAlpha.addData(u, uf.dpTotAlpha);
+                     alphaWall.addData(u, uf.dpAlphaWall);
+                     alphaGas.addData(u, uf.dpAlphaGas);
+                     totAlphaTOW.addData(u, uf.dpAlphaTOW);
+                     alphaAbsorb.addData(u, uf.dpAlphaAbsorb);
+                     wallOnlyFactor.addData(u, uf.dpWallOnlyFactor);
 //                    chargeHeat.addData(u, uf.dpChargeHeat);
 //                    heatToCharge.addData(u, uf.dpHeatToCharge);
 //                    heatFromWall.addData(u, uf.dpHeatFromWall);
@@ -145,6 +151,8 @@ public class UnitFceArray {
                 alphaWall.fillMultiColData();
                 alphaGas.fillMultiColData();
                 alphaAbsorb.fillMultiColData();
+                totAlphaTOW.fillMultiColData();
+                wallOnlyFactor.fillMultiColData();
 //                chargeHeat.fillMultiColData();
 //                heatToCharge.fillMultiColData();
 //                heatFromWall.fillMultiColData();

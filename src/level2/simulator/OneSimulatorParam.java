@@ -70,8 +70,18 @@ public class OneSimulatorParam extends OneDataGroup {
     }
 
     public void updateUI() {
+        String errorTags = "";
+        boolean errorsExist = false;
         for (TagWithDisplay tag : tagList)
-            tag.updateUI();
+            try {
+                tag.updateUI();
+            }
+            catch (Exception e) {
+                errorTags += tag.elementAndTag() + "; ";
+                errorsExist = true;
+            }
+        if (errorsExist)
+            error("OneSimulatorParam-Tag/s : " + paramName + ": " + errorTags + " had some display problem");
     }
 
     ErrorStatAndMsg checkConnections() {
@@ -87,4 +97,10 @@ public class OneSimulatorParam extends OneDataGroup {
         return retVal;
     }
 
-}
+    public void info(String msg) {
+        TMuaClient.info("OneDataGroup:" + msg);
+    }
+
+    public void error(String msg) {
+        TMuaClient.error("OneDataGroup:" + msg);
+    }}

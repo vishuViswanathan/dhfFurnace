@@ -84,6 +84,51 @@ public class OpcSimulator implements InputControl, L2Interface {
            }
      }
 
+    static public enum TagAttribNEW {
+        NAME("common.ALLTYPES_NAME"),
+        DATATYPE("servermain.TAG_DATA_TYPE"),
+        RW("servermain.TAG_READ_WRITE_ACCESS>"),
+
+        TAG("element"), // also "element"
+        TAGLIST("tags"),
+
+        TAGGROUP("element"),
+        TAGGROUPLIST("tag_Groups"),
+
+        CHANNELLIST("channels"),
+        CHANNEL("element"),
+
+        DEVICELIST("devices"),
+        DEVICE("element"),
+        NOTFOUND("None");
+        private final String modeName;
+
+        TagAttribNEW(String modeName) {
+            this.modeName = modeName;
+        }
+
+        public String getValue() {
+            return name();
+        }
+
+        @Override
+        public String toString() {
+            return modeName;
+        }
+
+        public static TagAttribNEW getEnum(String text) {
+            TagAttribNEW retVal = NOTFOUND;
+            if (text != null) {
+                for (TagAttribNEW b : TagAttribNEW.values()) {
+                    if (text.equalsIgnoreCase(b.modeName)) {
+                        retVal = b;
+                        break;
+                    }
+                }
+            }
+            return retVal;
+        }
+    }
     String urlID;
     JFrame mainF;
     TMuaClient source;

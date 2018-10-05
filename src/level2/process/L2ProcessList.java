@@ -59,17 +59,14 @@ public class L2ProcessList extends StripDFHProcessList{
 
     public int sendListToLevel1() {
         int p = 0;
+        cleanup();
         for (OneStripDFHProcess oneP: list) {
-            if (oneP.isPerformanceAvailable()) {
-                if (processZones.get(p).sendToLevel1(oneP))
-                    p++;
-                else {
-                    p = 0;
-                    break;
-                }
+            if (processZones.get(p).sendToLevel1(oneP))
+                p++;
+            else {
+                p = 0;
+                break;
             }
-            else
-                l2Furnace.showError("Process " + oneP + " is not sent to Level1 since performance data is not available");
         }
         return p;
     }

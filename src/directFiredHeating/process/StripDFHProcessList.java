@@ -202,6 +202,22 @@ public class StripDFHProcessList {
         list.clear();
     }
 
+    /**
+     * remove processes which do not have performance data
+     */
+    public void cleanup() {
+        Vector<OneStripDFHProcess> deletedProcesses = new Vector<OneStripDFHProcess>();
+        for (OneStripDFHProcess oneP : list) {
+            if (!oneP.isPerformanceAvailable()) {
+                deletedProcesses.add(oneP);
+            }
+        }
+        for (OneStripDFHProcess delP: deletedProcesses) {
+            list.remove(delP);
+            dfHeating.logInfo("StripDFHProcessList.cleanup removing " + delP);
+        }
+    }
+
     public int getCount() {
         return list.size();
     }
@@ -234,6 +250,7 @@ public class StripDFHProcessList {
     public DataWithStatus<OneStripDFHProcess> addFieldProcess(String baseName, double stripExitT, double thick, double width, double speed) {
         DataWithStatus<OneStripDFHProcess> retVal = new DataWithStatus<>();
         String title = "Creating New Field Process";
+        dfHeating.logTrace("StripDFHProcessList.253: in addFieldProcess");
         if (list.size() < maxListLenFP) {
             if (stripExitT <= maxStripExitTempFP) {
                 if (thick <= maxStripThicknessFP && thick >= minStripThicknessFP) {
@@ -342,7 +359,7 @@ public class StripDFHProcessList {
         return oneProcess;
     }
 
-    public OneStripDFHProcess getDFHProcess(String baseProcessNameX, double tempDFHExitX,
+    public OneStripDFHProcess  getDFHProcess(String baseProcessNameX, double tempDFHExitX,
                                              double stripWidth, double stripThick) {
         OneStripDFHProcess oneProcess = null;
         for (OneStripDFHProcess proc: list) {
@@ -495,12 +512,13 @@ public class StripDFHProcessList {
 
     public boolean addOneDFHProcess(OneStripDFHProcess oneProcess) {
         boolean newOne = true;
-        for (OneStripDFHProcess proc: list) {
-            if (proc.baseProcessName.equalsIgnoreCase(oneProcess.baseProcessName)) {
-                newOne = false;
-                break;
-            }
-        }
+        newOne = !checkDuplication(oneProcess).inError;
+//        for (OneStripDFHProcess proc: list) {
+//            if (proc.baseProcessName.equalsIgnoreCase(oneProcess.baseProcessName)) {
+//                newOne = false;
+//                break;
+//            }
+//        }
         if (newOne)
             newOne = addAProcess(oneProcess);    // was list.add(oneProcess);
         return newOne;
@@ -509,6 +527,7 @@ public class StripDFHProcessList {
     boolean addAProcess(OneStripDFHProcess process) {
         boolean retVal = false;
         if (list.size() < maxListLenFP) {
+            dfHeating.logTrace("StripDFHProcessList.528: added Process <" + process + ">");
             list.add(process);
             retVal = true;
         }

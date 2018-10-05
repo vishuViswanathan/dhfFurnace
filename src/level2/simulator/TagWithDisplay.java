@@ -33,6 +33,8 @@ public class TagWithDisplay extends Tag implements ActionListener, FocusListener
     JComboBox<String> comboBox;
     boolean uiReady = false;
     boolean isBeingEdited = false;
+    int displayErrorCount = 0;
+    int displayErrorLimit = 5;
 
     public TagWithDisplay(L2ParamGroup.Parameter element, TagName tagName, boolean rw, boolean subscribe,
                           String formatStr, InputControl controller) {
@@ -148,20 +150,28 @@ public class TagWithDisplay extends Tag implements ActionListener, FocusListener
     public void updateUI() {
         if (uiReady && !isBeingEdited) {
             ProcessValue pv = getValue();
-            switch (dataType) {
-                case BOOLEAN:
-                    if (bSubscribe)
-                        booleanStatus.setText(pv.booleanValue ? "Yes" : "No");
-                    else
+            try {
+                switch (dataType) {
+                    case BOOLEAN:
+                        if (bSubscribe)
+                            booleanStatus.setText(pv.booleanValue ? "Yes" : "No");
+                        else
 //                    System.out.println(tagName + " - value = " + processData.getBooleanValue());
-                        comboBox.setSelectedIndex((pv.booleanValue) ? 1 : 0);
-                    break;
-                case FLOAT:
-                    numberText.setData(pv.floatValue);
-                    break;
-                case STRING:
-                    textArea.setText(pv.stringValue);
-                    break;
+                            comboBox.setSelectedIndex((pv.booleanValue) ? 1 : 0);
+                        break;
+                    case FLOAT:
+                        numberText.setData(pv.floatValue);
+                        break;
+                    case STRING:
+                        textArea.setText(pv.stringValue);
+                        break;
+                }
+            }
+            catch (Exception e) {
+                if (displayErrorCount++ > displayErrorLimit) {
+                    displayErrorCount = 0;
+                    throw(e);
+                }
             }
         }
     }

@@ -318,6 +318,19 @@ public class DFHFurnace {
         productionData.setChEmmissCorrectionFactor(factor);
     }
 
+    protected void setWallOnlyFactor(Performance refP) {
+        for (int s = 0; s < nTopActiveSecs; s++)
+            topSections.get(s).setWallOnlyFactor(refP.getWallOnlyFactor(s, false));
+        if (bTopBot)
+            for (int s = 0; s < nBotActiveSecs; s++)
+                botSections.get(s).setWallOnlyFactor(refP.getWallOnlyFactor(s, true));
+    }
+
+    protected void resetWallOnlyFactor() {
+        for (FceSection sec: topSections)
+            sec.resetWallOnlyFactor();
+    }
+
     boolean setWallTemperatures() {
         ZoneTemperatureDlg dlg = new ZoneTemperatureDlg(controller.parent(), false);
         dlg.setLocation(400, 100);
@@ -533,18 +546,6 @@ public class DFHFurnace {
                         combiTrendsP = getCombiTrendsPanel();
                     }
                 }
-
-                if (allOk && inPerformanceBaseMode) {
-                    savePerformanceIfDue();
-                    inPerformanceBaseMode = false;
-                    if (resetToRequiredProduction()) {
-                        resetResults();
-                        addMsg = "Final Calculation ";
-                        reDo = true;
-                        continue;
-                    }
-                }
-//                controller.logTrace("DFHFurnace.550: exiting while(true)");
                 break;
             }
             if  (allOk & canRun()) {
@@ -576,6 +577,16 @@ public class DFHFurnace {
         if (bTopBot) {
             uf = vBotUnitFces.get(0);
             uf.tempWO = uf.tempWmean = uf.tempWcore = temp;
+        }
+    }
+
+    void setEntrySlotChargeTemperaturesForWallOnlyFactor() {
+        UnitFurnace uf = vTopUnitFces.get(0);
+        double temp = productionData.entryTemp;
+        uf.unitFceForWallOnlyFactor.tempWO = uf.unitFceForWallOnlyFactor.tempWmean = temp;
+        if (bTopBot) {
+            uf = vBotUnitFces.get(0);
+            uf.unitFceForWallOnlyFactor.tempWO = uf.unitFceForWallOnlyFactor.tempWmean = temp;
         }
     }
 
@@ -616,6 +627,62 @@ public class DFHFurnace {
         bBaseOnOnlyWallRadiation = false;
         return (allOk & canRun());
     }
+
+    boolean evalWallOnlyFactor()  {
+        boolean allOk = true;
+        boolean reDo = true;
+        resetResults();
+        boolean bStart = true;
+        String addMsg = "";
+        setEntrySlotChargeTemperaturesForWallOnlyFactor();
+        while (true) {
+            while (allOk && reDo) {
+                allOk = evalTopOrBottomForWallOnlyFactor(false, bStart, addMsg);
+                if (allOk && bTopBot && canRun())
+                    allOk = evalTopOrBottomForWallOnlyFactor(true, bStart, addMsg);
+                bStart = false;
+                reDo = false;
+            }
+            break;
+        }
+        return (allOk & canRun());
+    }
+
+    boolean evalTopOrBottomForWallOnlyFactor(boolean bBot, boolean bStart, String addMsg) {
+        boolean allOk = true;
+        Vector<FceSection> vSec;
+        int nActiveSecs;
+        if (bBot) {
+            vSec = botSections;
+            nActiveSecs = nBotActiveSecs;
+        } else {
+            vSec = topSections;
+            nActiveSecs = nTopActiveSecs;
+        }
+        String statusHead = (bBot) ? "Bottom Zone " : "Top Zone ";
+//        setAverageTemperatureRate();
+        FceSection theSection;
+        FceEvaluator.EvalStat response;
+        while (allOk && canRun()) {
+            FceSection nextSection;
+            for (int iSec = 0; iSec < nActiveSecs; iSec++) {
+                showStatus(statusHead + (iSec + 1));
+                theSection = vSec.get(iSec);
+                response = theSection.evalWallOnlyFactor();
+                if (!(response == FceEvaluator.EvalStat.OK)) {
+                    allOk = false;
+                    break;
+                }
+                if (iSec < (nActiveSecs - 1)) {
+                    nextSection = vSec.get(iSec + 1);
+                    nextSection.copyFromPrevSectionForWallOnlyFactor();
+                }
+            }
+            break;
+        }
+        return allOk;
+    }
+
 
     protected ChargeStatus chargeAtExit(boolean bBot)  {
         FceSection exitSection = (bBot) ? botSections.get(nBotActiveSecs - 1) :  topSections.get(nTopActiveSecs - 1);
@@ -694,6 +761,10 @@ public class DFHFurnace {
                 controller.addResult(DFHResult.Type.LOSSDETAILS, lossValueDetPan());
             }
             controller.resultsReady(getObservations(), switchDisplayto);
+            if (!tuningParams.bBaseOnZonalTemperature) {
+                setTempOForAllSlots(); // evaluated temperature profile based on temp at zonal thermocouple locations
+                evalWallOnlyFactor();
+            }
             resultsReady = true;
             //            savePerformanceIfDue();
             if (bDisplayResults)
@@ -749,10 +820,10 @@ public class DFHFurnace {
         return observations;
     }
 
-    void savePerformanceIfDue() {
-        if (refFromPerfBase == PerformanceGroup.SAMEWIDTH)
-            addResultsToPerfBase(true);
-    }
+//    void savePerformanceIfDue() {
+//        if (refFromPerfBase == PerformanceGroup.SAMEWIDTH)
+//            addResultsToPerfBase(true);
+//    }
 
     void enablePeformMenu(boolean ena) {
         if ((controller.furnaceFor == DFHTuningParams.FurnaceFor.STRIP) && !bTopBot
@@ -891,7 +962,7 @@ public class DFHFurnace {
         performBase = null;
         perfBaseReady = false;
         chTempProfAvailable = false;
-        refFromPerfBase = PerformanceGroup.NODATA;
+//        refFromPerfBase = PerformanceGroup.NODATA;
         controller.enableCreatePerform(resultsReady);
     }
 
@@ -998,28 +1069,11 @@ public class DFHFurnace {
     }
 
     boolean bUnableToUsePerfData = false;
-    int refFromPerfBase = PerformanceGroup.NODATA;
-
     // the following two used for temporary storage of data while calculating base performance
     ProductionData tempProductionData;
-    boolean inPerformanceBaseMode = false;  // TODO This is not clear (is always false)
     boolean inPerfTableMode = false;
 
-    boolean resetToRequiredProduction() {
-        boolean retVal = false;
-        if (tempProductionData != null) {
-            productionData.copyFrom(tempProductionData);
-            getReadyToCalcul();
-            setAverageTemperatureRate();
-            retVal = true;
-        }
-        tempProductionData = null;
-        inPerformanceBaseMode = false;
-        return retVal;
-    }
-
     boolean preDefChTemp = true;
-//    double[] chInTempProfile;
     boolean honorLastZoneMinFceTemp = false;
     boolean considerChTempProfile = false;
     boolean skipReferenceDataCheck = false;
@@ -1387,7 +1441,7 @@ public class DFHFurnace {
                 }
                 if (iSec < (nActiveSecs - 1)) {
                     nextSection = vSec.get(iSec + 1);
-                    nextSection.copyFromPrevSection(theSection);
+                    nextSection.copyFromPrevSection();
                 }
             }
             break;
@@ -1633,7 +1687,7 @@ public class DFHFurnace {
             }
             if(s != iFirstFiredSec || copyForward) {
                 nextSec = vSec.get(s + 1);
-                nextSec.copyFromPrevSection(sec);
+                nextSec.copyFromPrevSection();
                 setInitialChHeat(s + 1, uptoSec, sec.chEndTemp(), vSec.get(uptoSec + 1).chEntryTemp(), bBot);
                 nextSec.fluePassThrough = flueFromDEndApprox(sec.getEnteringGasTemp(), s, bBot);
             }

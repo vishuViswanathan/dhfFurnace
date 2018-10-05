@@ -327,6 +327,7 @@ public class FceSection {
     LossListWithVal lossValList;
     double burnerFlueExhFract = 0;
     double burnerFlueHeat;
+    double wallOnlyFactor = 1.0;
     ProductionData productionData;
     NumberTextField tfFlueExhPercent, tfRegenPHtemp, tfExcessAir, tfFuelTemp;
     NumberTextField tfTCLocation;
@@ -358,7 +359,6 @@ public class FceSection {
     boolean bPanelReady = false;
     DFHeating controller;
     boolean enabled = false;
-    UnitFurnace[] unitFurnaces;
     public Vector<UnitFurnace> vUnitFurnaces;
     double cumLossDischEnd;
     boolean bAllowSecFuel = false;
@@ -756,11 +756,18 @@ public class FceSection {
         slotTo.copyChTemps(slotFrom);
     }
 
-    void copyFromPrevSection(FceSection prevSec) {  // TODO param prevSec to be removed
+    void copyFromPrevSection() {
         UnitFurnace slotFrom, slotTo;
         slotTo = vUnitFurnaces.get(firstSlot - 1);
         slotFrom = vUnitFurnaces.get(firstSlot - 2);
         slotTo.copyChTemps(slotFrom);
+    }
+
+    void copyFromPrevSectionForWallOnlyFactor() {
+        UnitFurnace slotFrom, slotTo;
+        slotTo = vUnitFurnaces.get(firstSlot - 1);
+        slotFrom = vUnitFurnaces.get(firstSlot - 2);
+        slotTo.unitFceForWallOnlyFactor.copyChTemps(slotFrom);
     }
 
     public void setFuelFiring(FuelFiring fuelFiringData) {
@@ -894,6 +901,18 @@ public class FceSection {
     public void evalSlotRadiationSumm() {
         for (int s = firstSlot; s <= lastSlot; s++)
             vUnitFurnaces.get(s).evalSlotRadiationSumm();
+    }
+
+    public void resetWallOnlyFactor() {
+        wallOnlyFactor = 1.0;
+    }
+
+    public void setWallOnlyFactor(double factor) {
+        wallOnlyFactor = factor;
+    }
+
+    public double getWallOnlyFactor() {
+        return wallOnlyFactor;
     }
 
     String checkData() {
@@ -2249,6 +2268,43 @@ public class FceSection {
         if (response == FceEvaluator.EvalStat.OK)
             heatToCharge();
         updateUI();
+        return response;
+    }
+
+    public FceEvaluator.EvalStat evalWallOnlyFactor() {
+        FceEvaluator.EvalStat response = FceEvaluator.EvalStat.OK;
+        double two;
+        UnitFurnace theSlot, prevSlot;
+        prevSlot = vUnitFurnaces.get(firstSlot - 1);
+        two = prevSlot.unitFceForWallOnlyFactor.tempWO;
+        if (firstSlot > 1) prevSlot.unitFceForWallOnlyFactor.tempWO = two;
+        double diff;
+        UnitFurnace lastUf = vUnitFurnaces.get(lastSlot);
+        double entryTempWmean = prevSlot.unitFceForWallOnlyFactor.tempWmean;
+        double exitTempWmeanReqd = getExitChMeanTemp();
+        resetWallOnlyFactor();
+        while (true) {
+            prevSlot = vUnitFurnaces.get(firstSlot - 1);
+            for (int iSlot = firstSlot; iSlot <= lastSlot; iSlot++) {
+                theSlot = vUnitFurnaces.get(iSlot);
+                response = theSlot.evalForWallOnlyFactor((iSlot == firstSlot), prevSlot);
+                if (response != FceEvaluator.EvalStat.OK)
+                    break;
+                prevSlot = theSlot;
+            }
+            if (response == FceEvaluator.EvalStat.OK) {
+                diff = exitTempWmeanReqd - lastUf.unitFceForWallOnlyFactor.tempWmean;
+                if (Math.abs(diff) <= tuning.exitTempTolerance) {
+                    break;
+                }
+                else {
+                    wallOnlyFactor *= (exitTempWmeanReqd - entryTempWmean) /
+                            (lastUf.unitFceForWallOnlyFactor.tempWmean - entryTempWmean);
+                }
+            }
+            else
+                break;
+        }
         return response;
     }
 

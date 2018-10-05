@@ -32,6 +32,7 @@ public class OneZone {
     double unitFuel; // fuel/unit output
     boolean interpolated = false;
     double lossFactor = 1.0;
+    public double wallOnlyFactor = 1.0;
     FceSection fceSection;
 
     public OneZone() {
@@ -46,12 +47,14 @@ public class OneZone {
         this.bBot = section.botSection;
         this.bRecuType = section.bRecuType;
         this.lossFactor = section.getLossFactor();
+        wallOnlyFactor = section.getWallOnlyFactor();
     }
 
     public OneZone(OneZone oneZone) {
         this.bBot = oneZone.bBot;
         this.bRecuType = oneZone.bRecuType;
         this.lossFactor = oneZone.lossFactor;
+        this.wallOnlyFactor = oneZone.wallOnlyFactor;
     }
 
     public OneZone(DFHFurnace furnace, FceSection section) {
@@ -124,6 +127,8 @@ public class OneZone {
             xmlStr += XMLmv.putTag("heatFromPassingFlue", heatFromPassingFlue);
             xmlStr += XMLmv.putTag("losses", losses);
             xmlStr += XMLmv.putTag("lossFactor", lossFactor);
+            xmlStr += XMLmv.putTag("wallOnlyFactor", wallOnlyFactor);
+
 
             xmlStr += XMLmv.putTag("combustHeat", fuelCombustionHeat);
             xmlStr += XMLmv.putTag("fuelSensible", fuelSensibleHeat);
@@ -158,6 +163,8 @@ public class OneZone {
             losses = (vp.val.length() > 1) ? Double.valueOf(vp.val): 0;
             vp = XMLmv.getTag(xmlStr, "lossFactor", 0);
             lossFactor = (vp.val.length() > 0) ? Double.valueOf(vp.val): 1;
+            vp = XMLmv.getTag(xmlStr, "wallOnlyFactor", 0);
+            wallOnlyFactor = (vp.val.length() > 0) ? Double.valueOf(vp.val): 1;
             getNetHeatDueToFuel();
             vp = XMLmv.getTag(xmlStr, "combustHeat", 0);
             fuelCombustionHeat = (vp.val.length() > 1) ? Double.valueOf(vp.val): 0;
@@ -233,11 +240,14 @@ public class OneZone {
 //        grpPan.add(sL, gbcL);
 //        gbcL.gridy++;
 //        sL = sizedLabel("" + Performance.Params.ZONEFLUEHEAT + " (kcal/h)", colHeadSize);
-        gbcL.gridy++;
-        sL = sizedLabel("" + Performance.Params.ZONEFUELHEAT + " (kcal/h)", colHeadSize);
-        grpPan.add(sL, gbcL);
+//        gbcL.gridy++;
+//        sL = sizedLabel("" + Performance.Params.ZONEFUELHEAT + " (kcal/h)", colHeadSize);
+//        grpPan.add(sL, gbcL);
         gbcL.gridy++;
         sL = sizedLabel("" + Performance.Params.LOSSFACTOR , colHeadSize);
+        grpPan.add(sL, gbcL);
+        gbcL.gridy++;
+        sL = sizedLabel("" + Performance.Params.WALLONLYFACTOR , colHeadSize);
         grpPan.add(sL, gbcL);
 
         rowHead.add(grpPan, gbcH);
@@ -247,6 +257,9 @@ public class OneZone {
     double getNumberParam(Performance.Params param) {
         double retVal = -1;
         switch(param) {
+            case WALLONLYFACTOR:
+                retVal = wallOnlyFactor;
+                break;
             case LOSSFACTOR:
                 retVal = lossFactor;
                 break;
@@ -351,11 +364,14 @@ public class OneZone {
 //        grpPan.add(nL, gbcL);
 //        gbcL.gridy++;
 //        nL = new NumberLabel(getNumberParam(Performance.Params.ZONEFLUEHEAT), datW, "0.00E0");
-        gbcL.gridy++;
-        nL = new NumberLabel(getNumberParam(Performance.Params.ZONEFUELHEAT), datW, "0.00E0");
-        grpPan.add(nL, gbcL);
+//        gbcL.gridy++;
+//        nL = new NumberLabel(getNumberParam(Performance.Params.ZONEFUELHEAT), datW, "0.00E0");
+//        grpPan.add(nL, gbcL);
         gbcL.gridy++;
         nL = new NumberLabel(getNumberParam(Performance.Params.LOSSFACTOR), datW, "0.00E0");
+        grpPan.add(nL, gbcL);
+        gbcL.gridy++;
+        nL = new NumberLabel(getNumberParam(Performance.Params.WALLONLYFACTOR), datW, "0.00");
         grpPan.add(nL, gbcL);
         gbc.gridy++;
 

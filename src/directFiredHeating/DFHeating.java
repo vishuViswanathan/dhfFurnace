@@ -2455,6 +2455,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         Thread evalThread = null;
         if (bCheckData) {
             if (checkData()) {
+                logTrace("DFHeating.2458: Data Checked ");
                 if (furnace.showZoneDataMsgIfRequired(pbCalculate)) {
                     if (!commFuel.bMixedFuel && fuelTemp > 0 && !tuningParams.bOnProductionLine
                             && !commFuel.isSensHeatSpecified(this, fuelTemp)) {
@@ -2467,6 +2468,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                     setProductionData(theCharge, tph * 1000);
                     proceed = true;
                 }
+                else
+                    logTrace("DFHeating.2472: false from showZoneDataMsgIfRequired ");
             }
         } else
             proceed = true;

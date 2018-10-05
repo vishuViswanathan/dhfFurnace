@@ -33,12 +33,7 @@ import java.util.Vector;
  * Time: 10:28 AM
  * To change this template use File | Settings | File Templates.
  */
-// The furnace is considered with 3 Firing zones and one Recu zone
 public class PerformanceGroup implements ActionListener{
-    public static final int NODATA = 0;
-    public static final int SAMEWIDTH = 1;
-    public static final int DIFFWIDTH = 2;
-
     Vector<Performance> refPerformance;
     public boolean canInterpolate = false;
     public boolean chTempProfAvailable = false;
@@ -229,16 +224,10 @@ public class PerformanceGroup implements ActionListener{
 
     public Performance getRefPerformance(ProductionData forProduction, Fuel withFuel) {
         Performance refP = null;
-//        double requiredUP = forProduction.production / forProduction.charge.getLength();
         int compareOn = Performance.EXITTEMP + Performance.MATERIAL + Performance.FUEL;
         for (Performance p: refPerformance) {
             if (p.isProductionComparable(forProduction, withFuel, compareOn, tuningParams.exitTempTolerance)) {
-                // check unit production limits
-//                if (requiredUP <= (p.unitOutput * tuningParams.overUP) &&
-//                            requiredUP >= (p.unitOutput * tuningParams.underUP) )   {
-                    refP = p;
-//                    break;
-//                }
+                refP = p;
             }
         }
         return refP;
@@ -272,37 +261,6 @@ public class PerformanceGroup implements ActionListener{
         }
         return refP;
     }
-
-
-    // @TODO -  suggestZoneFuels() is not used
-    public int suggestZoneFuels(ProductionData forProduction, Fuel withFuel, double[] zoneFuelSuggestion) {
-        int retVal = NODATA;
-        Performance pSel = null;
-        for (Performance p:refPerformance) {
-            if (p.isProductionComparable(forProduction, withFuel, Performance.MATERIAL + Performance.FUEL + Performance.EXITTEMP,
-                    1.0)) {
-                pSel = p;
-                break;
-            }
-        }
-        if (pSel != null)
-            if (pSel.getSuggestedFuels(forProduction.production, zoneFuelSuggestion))
-                retVal = DIFFWIDTH;
-        return retVal;
-    }
-
-//    double[] chInTempProfile;
-
-//    public int getChInTempProfile(ProductionData forProduction, Fuel withFuel, double[] chInTempProfile) {
-//        Performance refP = getRefPerformance(forProduction, withFuel);
-//        int retVal = 0;
-//        if (refP != null) {
-//            retVal = refP.getChInTempProfile(chInTempProfile, forProduction.exitTemp);
-//            if (retVal > 0)
-//                forProduction.setChEmmissCorrectionFactor(refP.chEmmCorrectionFactor);
-//        }
-//        return retVal;
-//    }
 
     public boolean isItToBeSaved() { // new data added
         return tobeSaved;

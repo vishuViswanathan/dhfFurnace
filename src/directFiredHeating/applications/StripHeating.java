@@ -134,8 +134,10 @@ public abstract class StripHeating extends DFHeating {
                         } else
                             retVal.addErrorMsg("\n   ABORTING");
                     } else
-                        retVal.addErrorMsg("\n   Charge material could not be obtained from Process Data (may be thickness not in range");
+                        retVal.addErrorMsg("\n   StripHeating.137: Charge material could not be obtained from Process Data (may be thickness not in range\n" +
+                                oneProc + " now Thickness " + chThickness * 1000);
                 } else {
+                    logTrace("StripHeating.140: Process not available in DFH Process List");
                     retVal.addErrorMsg("\n   Process not available in DFH Process List");
                 }
             } else

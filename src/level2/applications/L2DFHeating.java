@@ -533,6 +533,7 @@ public class L2DFHeating extends StripHeating {
                 file = new File(fceDataLocation + profileCode + " performanceData." + performanceExtension);
             }
             deleteParticularFiles("" + fceDataLocation, profileCode, performanceExtension);
+            dfhProcessList.cleanup();
             try {
                 BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(file));
                 oStream.write(("# Performance Data saved on " + dateFormat.format(new Date()) + " \n\n").getBytes());
@@ -556,6 +557,7 @@ public class L2DFHeating extends StripHeating {
         FileLock lock;
         int count = 5;
         boolean gotTheLock = false;
+        logTrace("About to save Field Performance Data");
         while (--count > 0) {
             lock = getTheLock();
             if (lock == null) {
@@ -573,6 +575,7 @@ public class L2DFHeating extends StripHeating {
             break;
         }
         if (onProductionLine && saved) {
+            logTrace("Saved Field Performance Data, to inform Runtime");
             l2Furnace.informProcessDataModified();
         } else if (!gotTheLock)
             showError("Facing some problem in getting Lock");
@@ -743,6 +746,7 @@ public class L2DFHeating extends StripHeating {
     public boolean setFieldProductionData(FieldResults oneFieldResult) {
         fillChargeInFurnaceUI(oneFieldResult.production);
         fillRecuDataUI(oneFieldResult.commonAirTemp, oneFieldResult.commonFuelTemp);
+        logTrace("L2DFHeating.749: setting Field Production data with Process <" + oneFieldResult.stripDFHProc + ">");
         setSelectedProcess(oneFieldResult.stripDFHProc);
         return true;
     }

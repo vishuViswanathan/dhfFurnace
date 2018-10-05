@@ -775,16 +775,18 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         double exitTempRequired = refP.exitTemp();
         Charge ch = new Charge(controller.getSelChMaterial(refP.chMaterial), stripWidth, 1, stripThick);
         ChargeStatus chStatus = new ChargeStatus(ch, 0, exitTempRequired);
-        double outputAssumed = 0;
+        double outputEstimated = 0;
         tuningParams.setSelectedProc(controller.furnaceFor);
         FieldResults fieldData = new FieldResults(this, false);
         if (fieldData.inError)   {
             logError("L2DfhFurnace..755: Facing some problem in reading furnace field data: " + fieldData.errMsg);
         }
         else {
-            outputAssumed = getOutputWithFurnaceTemperatureStatus(fieldData, chStatus, refP, exitTempRequired);
+            setWallOnlyFactor(refP);
+            outputEstimated = getOutputWithFurnaceTemperatureStatus(fieldData, chStatus, refP, exitTempRequired);
+            resetWallOnlyFactor();
         }
-        return outputAssumed;
+        return outputEstimated;
     }
 
     private double getOutputWithFurnaceTemperatureStatus(FieldResults fieldData, ChargeStatus chStatus, Performance refP, double exitTempRequired) {
@@ -800,7 +802,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             double nowExitTemp, diff;
             int trials = 0;
             setChEmmissCorrectionFactor(refP.chEmmCorrectionFactor);
-//            logTrace("L2DFHFurnace.824: chEmmCorrectionFactor = " + refP.chEmmCorrectionFactor);
+            logTrace("L2DFHFurnace.803: chEmmCorrectionFactor = " + refP.chEmmCorrectionFactor);
             while (!done && trials < 1000) {
 //                logTrace("L2DfhFurnace.778: in the loop " + trials + ", " + outputAssumed);
                 trials++;
@@ -848,6 +850,12 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             double tempAllowance = 2;
             double nowExitTemp, diff;
             int trials = 0;
+            OneStripDFHProcess stripDFHproc = fieldData.stripDFHProc;
+            if (stripDFHproc.isPerformanceAvailable()) {
+                setWallOnlyFactor(stripDFHproc.getPerformance());
+            }
+            else
+                resetWallOnlyFactor();
             while (!done) {
                 trials++;
                 setChEmmissCorrectionFactor(chEmmissCorrectionFactor);
@@ -874,6 +882,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             }
 //            logTrace("L2DfhFurnace.844: setEmmissFactorBasedOnFieldResults:" +
 //                    "Trials in setEmmissFactorBasedOnFieldResults = " + trials);
+            resetWallOnlyFactor();
         } else
             logError("L2DfhFurnace.847: Facing problem in creating calculation steps");
 //        logTrace("L2DfhFurnace.848; Emm Factor = " + chEmmissCorrectionFactor + ",  " +
@@ -1121,15 +1130,10 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-//                try {
-                    updateUIDisplay();
-//                }
-//                catch (Exception e) {
-//                    logError("L2DFHFurnace.L2DisplayUpdater.1128: " + e.getMessage());
-//                }
-//                logInfo("L2DFHFurnace.L2DisplayUpdater is ON");
+                updateUIDisplay();
             }
-            logError("L2DFHFurnace.L2DisplayUpdater exited!");
+            if (l2DisplayON)
+                logError("L2DFHFurnace.L2DisplayUpdater exited while l2DisplayON is ON!");
         }
     }
 
@@ -1264,6 +1268,10 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                                                     resetLossFactor();
                                                     logTrace("L2DfhFurnace.1218: lossFactors reset" );
                                                 }
+                                                else {
+                                                    showError("Unable to adjust Calculations to match Field Fuel data");
+                                                    addErrorMsg("Unable to adjust Calculations to match Field Fuel data");
+                                                }
                                             } else {
 //                                                if (eval1.isAborted())
 //                                                    showError("Aborted from Model Calculation" );
@@ -1273,6 +1281,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                                             e.printStackTrace();
                                         }
                                     } else {
+                                        logTrace("L2DFurnave.1284:Unable to do Calculation from Model");
                                         showError("Unable to do Calculation from Model");
                                         addErrorMsg("Unable to do Calculation from Model");
                                     }
