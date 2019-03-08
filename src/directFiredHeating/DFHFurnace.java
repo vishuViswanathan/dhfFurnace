@@ -763,7 +763,8 @@ public class DFHFurnace {
             controller.resultsReady(getObservations(), switchDisplayto);
             if (!tuningParams.bBaseOnZonalTemperature) {
                 setTempOForAllSlots(); // evaluated temperature profile based on temp at zonal thermocouple locations
-                evalWallOnlyFactor();
+                if ((controller.furnaceFor == DFHTuningParams.FurnaceFor.STRIP))
+                    evalWallOnlyFactor();
             }
             resultsReady = true;
             //            savePerformanceIfDue();
@@ -3179,6 +3180,172 @@ public class DFHFurnace {
     public double gTop, gBot, gTopAS;
 
     protected void evalChUnitArea() {
+        int YSTEPS = 1000;
+        int XSTEPS = 1000;
+        double FCEHEIGHT = 10; // TODO this does not affect the result
+        double gap, effSideH = 0;
+        Charge ch = productionData.charge;
+        if (ch.type == Charge.ChType.SOLID_CIRCLE)
+            evalChUnitAreaForCylinder();
+        else {
+            gap = productionData.chPitch - ch.width;
+            if (controller.heatingMode == DFHeating.HeatingMode.TOPBOTSTRIP) {
+                chUAreaTop = (ch.length * productionData.nChargeRows) * ch.width * 2;
+                // total surface is taken since the strip is top and bottom heated
+            } else {
+                if (gap == 0) {
+                    chUAreaTop = (ch.length * productionData.nChargeRows) * ch.width;
+                    if (bTopBot)
+                        chUAreaBot = chUAreaTop * (1 - productionData.bottShadow);
+                    sideAlphaFactor = 0;
+                }
+                else {
+                    double heightStep = ch.height / YSTEPS;
+                    double y = 0;
+                    for (int ys = 0; ys < YSTEPS; ys++, y += heightStep) {
+                        double localFact = 0;
+                        double xMin = 0;
+                        double xMax = gap * (FCEHEIGHT - y) / (ch.height - y);
+                        double xStep = (xMax - xMin) / XSTEPS;
+                        double x = 0;
+                        for (int xs = 0; xs < XSTEPS; xs++, x += xStep) {
+                            localFact += (x / Math.pow((x * x + Math.pow((FCEHEIGHT - y), 2)), 1.5)) * xStep;
+                        }
+                        effSideH += (FCEHEIGHT - y) * heightStep * localFact / 2;
+                        //  20180115 Divide by 2 in the step above is based on Techint Manual,
+                        // it matches the View factor calculation from 'Radiation View Factors.pdf in D:\thermalCalculations'
+                    }
+                    if (!bTopBot){
+                        double gapByH = gap / ch.height;
+                        double fact2 = (1 + gapByH - Math.sqrt(1 + Math.pow(gapByH, 2))) /
+                                (2 * (1 + (1 + gapByH - Math.sqrt(1 + Math.pow(gapByH, 2))) /
+                                        (Math.sqrt(1 + Math.pow(gapByH, 2)) - 1)));
+                        effSideH += fact2 * ch.height;
+                    }
+                    chUAreaTop = (ch.length * productionData.nChargeRows) * (ch.width + 2 * effSideH);
+                    if (bTopBot) {
+                        chUAreaBot = chUAreaTop * (1 - productionData.bottShadow);
+                        sideAlphaFactor = (2 * effSideH) / ch.height;
+                    } else
+                        sideAlphaFactor = effSideH / ch.height;
+                }
+            }
+            endAlphaFactor = sideAlphaFactor;
+            double fact = effSideH / ch.height;
+            if (fact > 0.5) // this should not happen
+                s152Start = 2;
+            else
+                s152Start = 1.52 + (2 - 1.52) * fact;
+
+            effectiveChThick = (ch.unitWt * productionData.nChargeRows) / chUAreaTop / ch.chMaterial.density;
+
+            double xMin; // heat penetration depth
+            xMin = ch.width / 2;
+            if (bTopBot) {
+                if (ch.height < ch.width)
+                    xMin = ch.height / 2;
+                xMin *= 2;   // gRatio of top or bottom section takes care of share(gRatio nominal value is 0.5)
+            } else {
+                if (ch.height < ch.width / 2)
+                    xMin = ch.height;
+            }
+            if (effectiveChThick < xMin)
+                effectiveChThick = xMin;
+            gTop = (ch.unitWt * productionData.nChargeRows) / chUAreaTop;
+            if (bTopBot)
+                gBot = (ch.unitWt * productionData.nChargeRows) / chUAreaBot;
+            if (bTopBot && bAddTopSoak)
+                forAddedSoak();
+        }
+    }
+
+    void evalChUnitAreaForCylinder() {
+        int THETASTEPS = 100;
+        int XSTEPS = 100;
+        double gap, effSideH = 0;
+        Charge ch = productionData.charge;
+        double radius = ch.diameter / 2;
+        double thetaMin = 0; // vertical at billet top point
+        double theta; // angle of point on billet surface measured thetaMin;
+        double thetaMax;
+        double phi; // ray angle wrt roof normal
+        double gama; // ray angle wrt billet surface normal
+        double H = 10 * radius; // roof from hearth, the value should not affect result
+        double h = H - radius; // roof from billet center
+        double x; // length along roof measured for vertical up from charge surface point 'x0'
+        double xMin;  // measured fro x0
+        double xMax; // measured from x0
+
+        double pitch = productionData.chPitch;
+        double XLIMIT = 40 * radius; // wrt the billet center
+        gap = pitch - 2 * radius;
+        if (gap == 0) {
+            chUAreaTop = (ch.length * productionData.nChargeRows) * ch.diameter;
+            if (bTopBot)
+                chUAreaBot = chUAreaTop * (1 - productionData.bottShadow);
+            sideAlphaFactor = 0;
+        }
+        else {
+//            if (bTopBot)
+//                thetaMax = Math.PI / 2; // take only the top half
+//            else
+                thetaMax = Math.PI - Math.asin(radius / (pitch / 2));
+            double delTheta = (thetaMax - thetaMin) / THETASTEPS;
+            double effSurfL = 0; // effective surface length
+            theta = thetaMin;
+            double line_1_7, line_2_7, line_7_3, line_2_15, line_2_3;
+
+            for (int t = 0; t < THETASTEPS; t++, theta += delTheta)  {
+                line_1_7 = radius * Math.sin(theta);
+                line_2_7 = radius * Math.cos(theta);
+                line_7_3 = pitch - line_1_7;
+                line_2_15 = h - line_2_7;
+                if (theta == 0)
+                    xMin = - XLIMIT;
+                else if (theta == Math.PI / 2)
+                    xMin = 0;
+                else {
+                    xMin = Math.max(-(XLIMIT + line_1_7), -line_2_15 / Math.tan(theta));
+//                    xMin = Math.max(-line_1_7, -line_2_15 / Math.tan(theta));
+                }
+                double angle_a = Math.atan(line_2_7 / line_7_3);
+                line_2_3 = line_7_3 / Math.cos(angle_a);
+                double angle_b = Math.acos(radius / line_2_3);
+                double angle_c = Math.PI / 2 - (angle_a + angle_b);
+                xMax = Math.min((XLIMIT - line_1_7) , line_2_15 / Math.tan(angle_c));
+                double integral = 0;
+                double deltaX = (xMax - xMin) / XSTEPS;
+                x = xMin;
+                for (int nx = 0; nx < XSTEPS; nx++, x += deltaX) {
+                    double angle_phi = Math.atan(x / line_2_15);
+                    double angle_gama = theta - angle_phi;
+//                    double delI = Math.cos(angle_phi) * Math.cos(angle_gama) / (x / Math.sin(angle_phi)) * deltaX;
+                    double delI = Math.cos(angle_phi) * Math.cos(angle_gama) / (2 * Math.sqrt(x * x + line_2_15 * line_2_15)) * deltaX;
+                    //  ('2 *' --- added after understanding calculation of vew factor between infinitely long strips
+                    if (delI < 0) {
+                        System.out.println("delI is < 0 !!!");
+                    }
+                    integral += delI;
+                }
+                double delSurfL = integral * radius * delTheta;
+                effSurfL += delSurfL;
+            }
+            chUAreaTop = effSurfL * 2 * (ch.length * productionData.nChargeRows);
+            if (bTopBot)
+                chUAreaBot = chUAreaTop * (1 - productionData.bottShadow);
+        }
+        s152Start = 2;
+        effectiveChThick = (ch.unitWt * productionData.nChargeRows) / chUAreaTop / ch.chMaterial.density;
+        if (effectiveChThick < radius)
+            effectiveChThick = radius;
+        gTop = (ch.unitWt * productionData.nChargeRows) / chUAreaTop;
+        if (bTopBot)
+            gBot = (ch.unitWt * productionData.nChargeRows) / chUAreaBot;
+        if (bTopBot && bAddTopSoak)
+            forAddedSoakForCylinder();
+    }
+
+    protected void evalChUnitAreaOLD() {
         double gap, effSideH = 0;
         Charge ch = productionData.charge;
         if (ch.type == Charge.ChType.SOLID_CIRCLE)
@@ -3244,7 +3411,49 @@ public class DFHFurnace {
         }
     }
 
-    void evalChUnitAreaForCylinder() {
+    void evalChUnitAreaForCylinderOLDmodified() {
+        double gap, effSideH = 0;
+        Charge ch = productionData.charge;
+        gap = productionData.chPitch - ch.diameter;
+        double theta, projectedLen;
+        double radius = ch.diameter / 2;
+        if (gap == 0) {
+            chUAreaTop = (ch.length * productionData.nChargeRows) * ch.diameter;
+            if (bTopBot)
+                chUAreaBot = chUAreaTop * (1 - productionData.bottShadow);
+            sideAlphaFactor = 0;
+        } else {
+/*
+            if (bTopBot)
+                theta = Math.acos(radius / (productionData.chPitch - radius));
+            else
+                theta = Math.acos(radius * 2 / productionData.chPitch);
+            projectedLen = 2 * radius * (1 + theta);
+*/
+            theta = Math.acos(radius * 2 / productionData.chPitch);
+            if (bTopBot)
+                projectedLen = 2 * ((radius - (productionData.chPitch / 2 - radius) * Math.cos(theta)) + radius * theta);
+            else
+                projectedLen = 2 * radius * (1 + theta);
+            chUAreaTop = projectedLen * (ch.length * productionData.nChargeRows);
+            if (bTopBot)
+                chUAreaBot = chUAreaTop * (1 - productionData.bottShadow);
+        }
+        s152Start = 2;
+        effectiveChThick = (ch.unitWt * productionData.nChargeRows) / chUAreaTop / ch.chMaterial.density;
+
+        double xMin; // heat penetration depth
+        xMin = ch.diameter / 2;
+        if (effectiveChThick < xMin)
+            effectiveChThick = xMin;
+        gTop = (ch.unitWt * productionData.nChargeRows) / chUAreaTop;
+        if (bTopBot)
+            gBot = (ch.unitWt * productionData.nChargeRows) / chUAreaBot;
+        if (bTopBot && bAddTopSoak)
+            forAddedSoakForCylinder();
+    }
+
+    void evalChUnitAreaForCylinderOLD() {
         double gap, effSideH = 0;
         Charge ch = productionData.charge;
         gap = productionData.chPitch - ch.diameter;

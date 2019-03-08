@@ -702,7 +702,7 @@ public class DFHTuningParams {
         jp.addItemPair("Evaluate Internal Radiation", cBSlotRadInCalcul);
         jp.addItemPair("Evaluate EndWall Radiation", cBTakeEndWalls);
         jp.addBlank();
-        jp.addItem(new JLabel("CAUTION: Choice below is on TRIAL"));
+        jp.addItem(new JLabel("CAUTION: Choice below is on TRIAL and only for STRIP heating"));
         jp.addItemPair("Use Zonal Temperature (NO Heat Balance)", cBbaseOnZonalTemperature);
         return jp;
     }

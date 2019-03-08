@@ -33,12 +33,24 @@ public class RadUnitFurnace {
         deltaT = baseUf.fceSec.lastRate;
         RadUnitFurnace prevRadUnitFceSlot = prevSlot.unitFceForWallOnlyFactor;
         tWMassume = prevRadUnitFceSlot.tempWmean + deltaT * baseUf.delTime;
+        if (tWMassume > baseUf.tempO)
+            tWMassume = baseUf.tempO - 1;
         double alpha;
+        double tempDiffOWOprev = (baseUf.tempO - prevRadUnitFceSlot.tempWO);
+        if (tempDiffOWOprev < 0)
+            tempDiffOWOprev = 1;
         while (!done  && baseUf.furnace.canRun()) {
             chHeat = baseUf.production.production * baseUf.gRatio *
                     (baseUf.ch.getHeatFromTemp(tWMassume) - baseUf.ch.getHeatFromTemp(prevRadUnitFceSlot.tempWmean));
             two = chargeSurfTempWithOnlyWallRadiation(tWMassume);
-            lmDiff = SPECIAL.lmtd((baseUf.tempO - two), (baseUf.tempO - prevRadUnitFceSlot.tempWO));
+
+            // was lmDiff = SPECIAL.lmtd((baseUf.tempO - two), (baseUf.tempO - prevRadUnitFceSlot.tempWO));
+            lmDiff = SPECIAL.lmtd((baseUf.tempO - two), tempDiffOWOprev);
+            if (Double.isNaN(lmDiff)) {
+                baseUf.fceSec.showError("RadUnitFurnave.45: LMTD returned NAN: \ntempO = " + baseUf.tempO + ", tempWO = " + prevRadUnitFceSlot.tempWO);
+                status = FceEvaluator.EvalStat.ABORT;
+                break;
+            }
             twmAvg = baseUf.tempO - lmDiff;
             alpha = baseUf.getSimpleAlpha(twmAvg);
             tau = baseUf.evalTau(alpha, baseUf.ch.getTk(twmAvg), baseUf.furnace.effectiveChThick * baseUf.gRatio);
@@ -54,7 +66,7 @@ public class RadUnitFurnace {
                 break;
             }
         }
-        if (status == FceEvaluator.EvalStat.OK) {
+         if (status == FceEvaluator.EvalStat.OK) {
             tempWO = two;
             tempWmean = tWMrevised;
 //            chargeHeat = chHeat;
@@ -77,6 +89,8 @@ public class RadUnitFurnace {
             else
                 twoAssume = twoRevised;
         }
+        if (twoAssume > baseUf.tempO)
+            baseUf.fceSec.showError("RadUnitFurnace.83: twoAssume > baseUf.tempO " + twoAssume + baseUf.tempO);
         return twoAssume;
     }
 

@@ -166,7 +166,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = " 20180731"; // " 20180615"
+    protected String releaseDate = " 20190118"; // " 20180615"
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -3333,20 +3333,20 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             if (sh != null) {
                 Row r = sh.getRow(0);
                 Cell cell = r.getCell(0);
-                if (cell.getCellTypeEnum() == CellType.STRING) {
+                if (cell.getCellType() == CellType.STRING) {
                     if (cell.getStringCellValue().equals("mv7414")) {
                         r = sh.getRow(1);
                         cell = r.getCell(0);
-                        if (cell.getCellTypeEnum() == CellType.NUMERIC)  { // data is multi column
+                        if (cell.getCellType() == CellType.NUMERIC)  { // data is multi column
                             int nCols = (int)cell.getNumericCellValue();
                             for (int c = 1; c <= nCols; c++) {
                                 cell = r.getCell(c);
-                                if (cell.getCellTypeEnum() ==CellType.STRING)
+                                if (cell.getCellType() ==CellType.STRING)
                                     data += cell.getStringCellValue();
                             }
                         }
                         else {         // kept for backward compatibility
-                            if (cell.getCellTypeEnum() ==CellType.STRING)
+                            if (cell.getCellType() ==CellType.STRING)
                                 data = cell.getStringCellValue();
                         }
                     }
