@@ -1376,6 +1376,10 @@ public class DFHFurnace {
                         }
                     }
                 } else {
+                    if (bFirstTime && canRun() && hasRegenBurner(bBot) && tuningParams.bSlotRadInCalcul) {
+                        // This is to have some heat IN the first zone to compensate fpr low flue volume of Regen burner
+                        evalInterSlotRadiation(bBot);
+                    }
                     allOk = firstZoneInRev(bBot);
                 }
             }
@@ -1807,6 +1811,7 @@ public class DFHFurnace {
             if (bRetVal) {
                 if (loopBack || redoIt) {
                     loopBack = false;
+                    bTrial1 = true;
                     continue;
                 }
                 if (response == FceEvaluator.EvalStat.TOOLOWGAS) {
@@ -1863,6 +1868,27 @@ public class DFHFurnace {
         if (bTopBot)
             fUsed += getCommonFuelUsed(true);
         return fUsed;
+    }
+
+    boolean hasRegenBurner(boolean bBot) {
+        boolean itHas = false;
+        if (bBot) {
+            for (int s = 0; s < nBotActiveSecs; s++) {
+                if (botSections.get(s).hasRegenBurner()) {
+                    itHas = true;
+                    break;
+                }
+            }
+        }
+        else {
+            for (int s = 0; s < nTopActiveSecs; s++) {
+                if (botSections.get(s).hasRegenBurner()) {
+                    itHas = true;
+                    break;
+                }
+            }
+        }
+        return itHas;
     }
 
     JPanel heatSummary, topSecwiseP, botSecwiseP, topResultsP, botResultsP, combiResultsP;

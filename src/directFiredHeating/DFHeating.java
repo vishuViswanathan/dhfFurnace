@@ -166,7 +166,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = " 20190118"; // " 20180615"
+    protected String releaseDate = " 20190308"; // " 20180615"
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -1440,6 +1440,32 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     void showResultsPanel(String command) {
+        DFHResult.Type type = DFHResult.Type.getEnum(command);
+        if (type != null) {
+            ResultPanel rP;
+            rP = resultPanels.get(type);
+            if (SwingUtilities.isEventDispatchThread()) {
+                slate.setViewportView(rP.getPanel());
+                // debugLocal("in EventDispatchThread");
+            }
+            else {
+                // debugLocal("NOT in EventDispatchThread");
+                try {
+                    SwingUtilities.invokeAndWait(new Runnable() {
+                        public void run() {
+                            slate.setViewportView(rP.getPanel());
+                        }
+                    });
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (InvocationTargetException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    void showResultsPanelOLD(String command) {
         DFHResult.Type type = DFHResult.Type.getEnum(command);
         if (type != null) {
             ResultPanel rP;

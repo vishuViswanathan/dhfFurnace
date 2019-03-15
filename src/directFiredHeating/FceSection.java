@@ -469,6 +469,10 @@ public class FceSection {
         }
     }
 
+    public boolean hasRegenBurner() {
+        return bRegenBurner;
+    }
+
     public FceSection(DFHeating controller, DFHFurnace furnace, boolean botSection, int secNum, boolean bRecuType) {
         this(controller, furnace, botSection, bRecuType);
         setSectionID(secNum);
