@@ -122,6 +122,19 @@ public class LossListWithVal {
             gbc.gridy++;
             shaded = !shaded;
         }
+        loss = list.get(LossTypeList.FIXEDLOSS);
+        if (loss != null)
+            val = loss.val();
+        else
+            val = 0;
+        lab = new NumberLabel(val,  70, "#,##0");
+        if (shaded) {
+            lab.setBackground(Color.PINK);
+            lab.setOpaque(true);
+        }
+        lossValsXL.add(lab);
+        pan.add(lab, gbc);
+        gbc.gridy++;
         JScrollPane sp = new JScrollPane();
         sp.setPreferredSize(new Dimension(80, 210));
         sp.setViewportView(pan);

@@ -186,6 +186,10 @@ public class LossTypeList  {
             gbc.gridy++;
             shaded = !shaded;
         }
+        lab = new SizedLabel("FIXED LOSSES", colHeadSize, true, shaded);
+        rowHeadXL.add(lab);
+        pan.add(lab, gbc);
+        gbc.gridy++;
         JScrollPane sp = new JScrollPane();
         sp.getVerticalScrollBar().setUnitIncrement(20);
         sp.setPreferredSize(new Dimension(colHeadSize.width + 20, 210));
