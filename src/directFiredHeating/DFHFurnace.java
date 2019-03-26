@@ -33,6 +33,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.reflect.InvocationTargetException;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -1048,8 +1049,23 @@ public class DFHFurnace {
     }
 
     public void updateUI() {
-        if (bDisplayResults)
-            progressGraph.updateUI();
+        if (bDisplayResults) {
+            if (SwingUtilities.isEventDispatchThread())
+                progressGraph.updateUI();
+            else {
+                try {
+                    SwingUtilities.invokeAndWait(new Runnable() {
+                        public void run() {
+                            progressGraph.updateUI();
+                        }
+                    });
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (InvocationTargetException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     void setAllowSecFuel(boolean allow) {
