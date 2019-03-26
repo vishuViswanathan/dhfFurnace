@@ -1702,6 +1702,7 @@ public class DFHFurnace {
 
     boolean firstZoneInRev(boolean bBot) {
         boolean bRetVal = true;
+        int balanceTrials = 50;
         FceEvaluator.EvalStat lastResponse, response;
         String statusHead;
         Vector<FceSection> vSec;
@@ -1747,7 +1748,7 @@ public class DFHFurnace {
         double diff;
         double tgNow, tgLast = 0;
         double reqdChTempM = productionData.entryTemp;
-        while (!done && canRun()) {
+        while (!done && canRun() && (balanceTrials-- > 0)) {
             redoIt = false;
             firstFsec.setLastSlotGasTemp(tempGZ1Assume);
             for (int s = iFirstFiredSec; s >= 0; s--) {
@@ -1842,6 +1843,11 @@ public class DFHFurnace {
             }
             else
                 break;
+        }
+        if (!done && balanceTrials <= 0) {
+            showError("Unable to converge on results.\n   Try reducing Calculation Step Size in Calculate block \n" +
+                    "   OR breakup the First section into smaller sub sections");
+            bRetVal = false;
         }
         if (bRetVal) {
             entrySec.setEntryChTemps(reqdChTempM, reqdChTempM, reqdChTempM);
