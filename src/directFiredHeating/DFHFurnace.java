@@ -2844,6 +2844,8 @@ public class DFHFurnace {
         tp.add(new JLabel("ZONE LOSS DETAILS"));
         outerPRowHead.add(tp, rowHeadGbc);
         rowHeadGbc.gridy++;
+        outerPRowHead.add(new JLabel(" "), rowHeadGbc);
+        rowHeadGbc.gridy++;
         JPanel rowHead = FceSubSection.lossDetailTopRowHead();
         outerPRowHead.add(rowHead, rowHeadGbc);
         outerP.add(outerPRowHead, outerGbc);
