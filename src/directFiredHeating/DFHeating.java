@@ -166,7 +166,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = " 20190308"; // " 20180615"
+    protected String releaseDate = " 20190326"; // " 20180615"
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;

@@ -23,7 +23,7 @@ import java.awt.event.WindowListener;
  * Created by viswanathanm on 11-08-2017.
  */
 public class ApplicationLauncher {
-    String title = "Thermal Applications 20190308";
+    String title = "Thermal Applications 20190326";
     int textFieldWidth = 400;
 
     JButton launchDFHFunace = new JButton("DFH Furnace Module");
