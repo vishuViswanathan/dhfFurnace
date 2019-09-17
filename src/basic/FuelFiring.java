@@ -1,6 +1,7 @@
 package basic;
 
 import directFiredHeating.DFHeating;
+import mvUtils.math.SPECIAL;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 
@@ -16,6 +17,9 @@ import java.util.Vector;
 public class FuelFiring {
     public Fuel fuel;
     double excessAir;
+    boolean o2EnrichedAirUsed = false;
+    double o2inAirFraction = SPECIAL.o2InAir;
+    FlueComposition oxydiser;
     public double airTemp;
     public double airHeatPerUfuel;
     public double fuelTemp, fuelTempAdded;
@@ -28,9 +32,18 @@ public class FuelFiring {
     public boolean inError = false;
 
     public FuelFiring(Fuel fuel, boolean bRegenBurner, double excessAir, double airTemp, double fuelTemp) {
-        this.fuel = fuel;
+        this(fuel, bRegenBurner, excessAir, false, SPECIAL.o2InAir, airTemp, fuelTemp);
+     }
+
+    public FuelFiring(Fuel fuel, boolean bRegenBurner, double excessAir, boolean o2EnrichedAirUsed, double o2inAirFraction,
+                      double airTemp, double fuelTemp) {
+        this.fuel =  new Fuel(fuel);
+//        this.fuel.changeForEnrichedAir(o2inAirFraction);
         this.bRegen = bRegenBurner;
+        this.o2EnrichedAirUsed = o2EnrichedAirUsed;
+        this.o2inAirFraction = o2inAirFraction;
         evalFlue(excessAir);
+        oxydiser = new FlueComposition(true, o2inAirFraction );
         setTemperatures(airTemp, fuelTemp);
     }
 
@@ -39,10 +52,12 @@ public class FuelFiring {
             inError = true;
             errMsg = "FuelFiring :" + errMsg;
         }
+        oxydiser = new FlueComposition(true, o2inAirFraction );
     }
 
     public FuelFiring(FuelFiring copyFrom, boolean bRegenBurner) {
-        this(copyFrom.fuel, bRegenBurner, copyFrom.excessAir, copyFrom.airTemp, copyFrom.fuelTemp);
+        this(copyFrom.fuel, bRegenBurner, copyFrom.excessAir, copyFrom.o2EnrichedAirUsed, copyFrom.o2inAirFraction,
+                copyFrom.airTemp, copyFrom.fuelTemp);
     }
 
     public double unitAirFlow() {
@@ -56,8 +71,9 @@ public class FuelFiring {
     public void setTemperatures(double airTemp, double fuelTemp) {
         this.airTemp = airTemp;
         this.fuelTemp = fuelTemp;
-        airHeatPerUfuel = FlueComposition.hContAir.getYat(airTemp) * actAFRatio;
-        // fuelTemp is neglected if the fuel is a mix
+//        airHeatPerUfuel = FlueComposition.hContAir.getYat(airTemp) * actAFRatio;
+        airHeatPerUfuel = oxydiser.sensHeatFromTemp(airTemp) * actAFRatio;
+        // fuelTemp is neglcted if the fuel is a mix
         fuelSensibleHeat = fuel.sensHeatFromTemp(fuelTemp);
         effCalValNoFlue = fuel.calVal + airHeatPerUfuel + fuelSensibleHeat;
     }
@@ -102,9 +118,20 @@ public class FuelFiring {
 */
     public void evalFlue(double excessAir) {
         this.excessAir = excessAir;
-        flue = fuel.getFlue(excessAir);
-        actAFRatio = fuel.airFuelRatio * (1 + excessAir);
-        actFFratio = fuel.flueFuelRatio + fuel.airFuelRatio * excessAir;
+        FlueComposition stdFlue = fuel.getFlue();
+        if (o2EnrichedAirUsed) {
+            flue = new FlueComposition(
+                    "Flue Of " + fuel.name + " with Excess Air " + (excessAir * 100) + " and o2 in Air " + (o2inAirFraction * 100),
+                    fuel, o2inAirFraction, excessAir);
+            actAFRatio = fuel.airFuelRatio * (SPECIAL.o2InAir / o2inAirFraction) * (1 + excessAir);
+            actFFratio = flue.effectiveFFratio;
+         }
+        else {
+            flue = new FlueComposition("Flue Of " + fuel.name + " with Excess Air " + (excessAir * 100),
+                    stdFlue, excessAir);
+            actAFRatio = fuel.airFuelRatio * (1 + excessAir);
+            actFFratio = fuel.flueFuelRatio + fuel.airFuelRatio * excessAir;
+        }
     }
 
     public double flueHeatPerUFuel(double temp) {
@@ -205,10 +232,18 @@ public class FuelFiring {
         {
             try {
                 vp = XMLmv.getTag(xmlStr, "fuel");
-                fuel = dfHeating.getSelFuel(vp.val);
+                fuel = new Fuel(dfHeating.getSelFuel(vp.val));
                 if (fuel != null) {
                     vp = XMLmv.getTag(xmlStr, "excessAir");
                     excessAir = Double.valueOf(vp.val);
+                    vp = XMLmv.getTag(xmlStr, "FFo2EnrichedAirUsed");
+                    o2EnrichedAirUsed = (vp.val.equals("1"));
+                    if (o2EnrichedAirUsed) {
+                        vp = XMLmv.getTag(xmlStr, "FFo2inAirFraction");
+                        o2inAirFraction = Double.valueOf(vp.val);
+                    }
+                    else
+                        o2inAirFraction = SPECIAL.o2InAir;
                     vp = XMLmv.getTag(xmlStr, "airTemp");
                     airTemp = Double.valueOf(vp.val);
                     vp = XMLmv.getTag(xmlStr, "fuelTemp");
@@ -232,6 +267,8 @@ public class FuelFiring {
     public StringBuilder dataInXML() {
         StringBuilder xmlStr = new StringBuilder(XMLmv.putTag("fuel", fuel.toString()));
         xmlStr.append(XMLmv.putTag("excessAir", excessAir));
+        xmlStr.append(XMLmv.putTag("FFo2EnrichedAirUsed",  (o2EnrichedAirUsed) ? "1" : "0"));
+        xmlStr.append(XMLmv.putTag("FFo2inAirFraction", o2inAirFraction));
         xmlStr.append(XMLmv.putTag("airTemp", airTemp));
         xmlStr.append(XMLmv.putTag("fuelTemp", fuelTemp));
         xmlStr.append(XMLmv.putTag("bRegen", (bRegen) ? "1" : "0"));

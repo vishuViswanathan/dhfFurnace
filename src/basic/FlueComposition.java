@@ -2,6 +2,7 @@ package basic;
 
 import mvUtils.display.MultiPairColPanel;
 import mvUtils.display.NumberLabel;
+import mvUtils.display.TimedMessage;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import mvUtils.math.DoublePoint;
@@ -20,7 +21,6 @@ public class FlueComposition extends Fluid {
     static TwoDTable emissCO2, emissH2O;
     static XYArray hContCO2, hContH2O, hContN2, hContO2, hContSO2;
     static public XYArray hContAir;
-    static public final double o2InAir = 0.21;
     public double fractCO2 = 0, fractH2O = 0, fractN2 = 0, fractO2 = 0, fractSO2 = 0;
     XYArray flueHcont;
     public double alphaFactor;
@@ -29,6 +29,9 @@ public class FlueComposition extends Fluid {
     public String name;
     FlueComposition stoicFlue = null;
     boolean bOnlyAir = false;
+    // take care, this is available only in case of o2Enriched air
+    double effectiveFFratio = 1;
+    // property of actual "air' could be o2 enriched
 
     public FlueComposition(String name, double fractCO2, double fractH2O, double fractN2, double fractO2, double fractSO2)
             throws Exception {
@@ -83,6 +86,17 @@ public class FlueComposition extends Fluid {
         calculateAlphaFactor();
     }
 
+    public FlueComposition(boolean bOnlyAir, double o2InAir) {
+        this.bOnlyAir = bOnlyAir;
+        initStaticData();
+        name = "Air";
+        fractO2 = o2InAir;
+        fractN2 = 1 - fractO2;
+//        flueHcont = new XYArray(hContAir);
+        setFlueHcontArr();
+        calculateAlphaFactor();
+    }
+
     public FlueComposition(FlueComposition refComp) {
         initStaticData();
         this.name = refComp.name;
@@ -98,6 +112,11 @@ public class FlueComposition extends Fluid {
     public FlueComposition(String name, FlueComposition flueComp, double addAirFract) {
         initStaticData();
         takeValues(name, flueComp, addAirFract);
+    }
+
+    public FlueComposition(String name, Fuel fuel, double o2FractInAir, double addAirFract) {
+        initStaticData();
+        takeValues(name, fuel, o2FractInAir, addAirFract);
     }
 
     public FlueComposition(Fuel fuel, double excessAirFract) {
@@ -151,13 +170,49 @@ public class FlueComposition extends Fluid {
         double factor = 1 + addAirFract;
         this.fractCO2 = flueComp.fractCO2 / factor;
         this.fractH2O = flueComp.fractH2O / factor;
-        this.fractN2 = (flueComp.fractN2 + addAirFract * (1 - o2InAir)) / factor;
-        this.fractO2 = (flueComp.fractO2 + addAirFract * o2InAir) / factor;
+        this.fractN2 = (flueComp.fractN2 + addAirFract * (1 - SPECIAL.o2InAir)) / factor;
+        this.fractO2 = (flueComp.fractO2 + addAirFract * SPECIAL.o2InAir) / factor;
         this.fractSO2 = flueComp.fractSO2 / factor;
         this.stoicFlue = flueComp;
         setFlueHcontArr();
         calculateAlphaFactor();
+    }
 
+    void takeValues(String name, Fuel fuel, double o2FactInAir, double addAirFract){
+        this.name = name;
+        FlueComposition flueCompWithStdAir = fuel.flueComp;
+        double ff1 = fuel.flueFuelRatio;
+        double af1 = fuel.airFuelRatio;
+        double af2 = af1 * SPECIAL.o2InAir / o2FactInAir;
+        // for unit fuel
+        double co2 = flueCompWithStdAir.fractCO2 * ff1;
+        double h2o = flueCompWithStdAir.fractH2O * ff1;
+        double so2 = flueCompWithStdAir.fractSO2 * ff1;
+        double o2 = flueCompWithStdAir.fractO2 * ff1;
+        double n2 = flueCompWithStdAir.fractN2 * ff1;
+        double n2FromFuel = n2 - af1 * (1- SPECIAL.o2InAir);
+        double nowN2 = n2FromFuel + af2 * (1 - o2FactInAir);
+        double ff2 = ff1 - n2 + nowN2;
+        this.fractCO2 = co2 / ff2;
+        this.fractH2O = h2o / ff2;
+        this.fractSO2 = so2 / ff2;
+        this.fractO2 = o2 / ff2;
+        this.fractN2 = nowN2 / ff2;
+        try {
+            this.stoicFlue = new FlueComposition("Stoic " + name, fractCO2, fractH2O, fractN2, fractO2, fractSO2);
+        }
+        catch (Exception e) {
+            showMessage("Some Error in creating stoicFlue in #204", 3000);
+        }
+        effectiveFFratio = ff2 + af2 * addAirFract;
+        double factor = (ff2 + addAirFract * af2) / ff2;
+        fractCO2 = co2 / effectiveFFratio;
+        fractH2O = h2o / effectiveFFratio;
+        fractSO2 = so2 / effectiveFFratio;
+        fractN2 = (nowN2 + addAirFract * af2 * (1 - o2FactInAir)) / effectiveFFratio;
+        fractO2 = (o2 + addAirFract * af2 * o2FactInAir) / effectiveFFratio;
+        setFlueHcontArr();
+        calculateAlphaFactor();
     }
 
     public double getDilutionAir(double flueQty, double flueTemp, double tempReqd, double airTemp) {
@@ -177,6 +232,10 @@ public class FlueComposition extends Fluid {
     }
 
     static void setAirHcontArr() {
+        setAirHcontArr(SPECIAL.o2InAir);
+    }
+
+    static void setAirHcontArr(double o2Fraction) {
         hContAir = new XYArray();
         double temp;
         double hO2;
@@ -187,7 +246,7 @@ public class FlueComposition extends Fluid {
             temp = hContN2.getXat(t);
             hO2 = hContO2.getYat(temp);
             hN2 = hContN2.getYat(temp);
-            hC = SPECIAL.o2InAir * hO2 + (1 - SPECIAL.o2InAir) * hN2;
+            hC = o2Fraction * hO2 + (1 - o2Fraction) * hN2;
             hContAir.add(new DoublePoint(temp, hC));
         }
     }
@@ -487,5 +546,10 @@ public class FlueComposition extends Fluid {
     public static double alphaGasBasic(double temp1, double temp2, XYArray arrCo2, XYArray arrH2O) {
         return(alphaGasBasic(temp1, temp2, arrCo2, arrH2O, true));
     }
+
+    void showMessage(String msg, int forTime) {
+        (new TimedMessage("In FlueComposition", msg, TimedMessage.INFO, null, forTime)).show();
+    }
+
 
 }

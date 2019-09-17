@@ -18,7 +18,7 @@ import java.util.Vector;
  */
 public class FuelsAndUsage {
     Hashtable<Fuel, FuelNameAndFlow> normalTable;
-    Hashtable<Fuel, FuelNameAndFlow> regenTable;
+    Hashtable<Fuel, FuelNameAndFlow>  regenTable;
     Hashtable<Fuel, FuelNameAndFlow> combiTable;
 
     public FuelsAndUsage() {

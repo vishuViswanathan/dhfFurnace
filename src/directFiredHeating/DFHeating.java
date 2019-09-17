@@ -3,7 +3,6 @@ package directFiredHeating;
 //import FceElements.RegenBurner;
 import FceElements.RegenBurner1;
 import basic.*;
-import directFiredHeating.applications.L2Configurator;
 import directFiredHeating.billetWH.SampleWHFurnace;
 import directFiredHeating.process.OneStripDFHProcess;
 import directFiredHeating.process.StripDFHProcessList;
@@ -13,6 +12,7 @@ import mvUtils.file.WaitMsg;
 import mvUtils.jsp.*;
 import mvUtils.display.*;
 //import mvUtils.jnlp.JNLPFileHandler;
+import mvUtils.math.SPECIAL;
 import mvUtils.mvXML.DoubleWithErrStat;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLgroupStat;
@@ -49,8 +49,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -189,6 +187,9 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected JComboBox<HeatingMode> cbHeatingMode;
     protected JSPComboBox cbFuel;
     NumberTextField tfExcessAir;
+    double o2inAirFraction = SPECIAL.o2InAir;
+    boolean o2EnrichedAirUsed = false;
+    NumberTextField tfO2Enrich;
     protected LossNameChangeListener lNameListener = new LossNameChangeListener();
     InputChangeListener inputChangeListener = new InputChangeListener();
     RegenBurner1 regenBurnerStudy;
@@ -545,39 +546,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             }
         }
         return (fuelList.size() > 0 && vChMaterial.size() > 0);
-    }
-
-    // for Applet version
-    public String addFuelChoice(String name, String units, String calValStr, String airFuelRatioStr, String flueFuelRatioStr,
-                                String sensHeatPair,
-                                String percCO2str, String percH2Ostr, String percN2str, String percO2str, String percSO2str) {
-        double calVal, airFuelRatio, flueFuelRatio;
-        double percCO2, percH2O, percN2, percO2, percSO2;
-        XYArray sensHeat = null;
-        if (sensHeatPair.trim().length() > 0)
-            sensHeat = new XYArray(sensHeatPair);
-        try {
-            calVal = Double.valueOf(calValStr);
-            airFuelRatio = Double.valueOf(airFuelRatioStr);
-            flueFuelRatio = Double.valueOf(flueFuelRatioStr);
-            percCO2 = Double.valueOf(percCO2str);
-            percH2O = Double.valueOf(percH2Ostr);
-            percN2 = Double.valueOf(percN2str);
-            percO2 = Double.valueOf(percO2str);
-            percSO2 = Double.valueOf(percSO2str);
-        } catch (NumberFormatException e) {
-            return ("ERROR: Number format in addFuelChoice - " + e.getMessage());
-        }
-        FlueComposition flueComp = null;
-        try {
-            flueComp = new FlueComposition("Flue of " + name, percCO2 / 100, percH2O / 100, percN2 / 100, percO2 / 100, percSO2 / 100);
-        } catch (Exception e) {
-            return ("ERROR:" + e.getMessage());
-        }
-        Fuel fuel = new Fuel(name, units, calVal, airFuelRatio, flueFuelRatio, sensHeat, flueComp);
-        if (commFuel == null) commFuel = fuel;
-        fuelList.add(fuel);
-        return "OK";
     }
 
     public String addLossType(String lossNumStr, String lossName, String factorStr, String basisStr, String tempActStr) {
@@ -1076,6 +1044,32 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         });
         cbFuel.setPreferredSize(new Dimension(200, 20));
         tfExcessAir = new NumberTextField(this, excessAir * 100, 5, false, 0, 100, "###", "Excess Air (%) ");
+        tfO2Enrich = new NumberTextField(this, o2inAirFraction * 100, 5, false,
+                0, 100, "###.00", "O2 % in Air");
+        tfO2Enrich.addActionAndFocusListener(new ActionAndFocusListener(){
+            public void focusLost(FocusEvent e)  {
+//                checkData();
+            }
+
+            public void focusGained(FocusEvent e)  {
+            }
+
+            public void actionPerformed(ActionEvent e)  {
+                checkData();
+            }
+
+            void checkData() {
+                boolean reset = false;
+                double o2Fract =  tfO2Enrich.getData() / 100;
+                if (o2Fract != SPECIAL.o2InAir) {
+                    reset = !decide("O2 Fraction", "No Standard Air, Do you want to proceed ?");
+                    if (!reset && o2Fract < SPECIAL.o2InAir)
+                        reset = !decide("O2 Fraction", "O2% less than Standard Air, Do you still want to proceed ?");
+                }
+                if (reset)
+                    tfO2Enrich.setData(SPECIAL.o2InAir * 100);
+            }
+        });
 
         cbChType = new XLComboBox(Charge.ChType.values());
         cbChType.setSelectedItem(Charge.ChType.SOLID_RECTANGLE);
@@ -1580,12 +1574,13 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
     MultiPairColPanel commonDataP;
 
-    MultiPairColPanel fceCommDataPanel() {
+    MultiPairColPanel  fceCommDataPanel() {
         commonDataP = new MultiPairColPanel("");
         commonDataP.addItemPair("Heating Mode ", cbHeatingMode);
         commonDataP.addItemPair(ntfWidth);
         commonDataP.addItemPair("Common Fuel ", cbFuel);
         commonDataP.addItemPair(tfExcessAir);
+        commonDataP.addItemPair(tfO2Enrich);
         mpFceCommDataPanel = commonDataP;
         return commonDataP;
     }
@@ -1889,25 +1884,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return mainF;
     }
 
-    // for Applet version
-    public String addChMaterial(String matName, String matID, String density, String tempTkPairStr, String tempHcPairStr,
-                                String tempEmPairStr) {
-        String retVal = "";
-        double den = 0;
-        try {
-            den = Double.valueOf(density);
-            if (matName.length() > 2 && matID.length() > 2 && den != 0 && tempTkPairStr.length() > 0 &&
-                    tempHcPairStr.length() > 0 && tempEmPairStr.length() > 0) {
-                vChMaterial.add(new ChMaterial(matName, matID, den, tempTkPairStr, tempHcPairStr, tempEmPairStr));
-                retVal = "OK";
-            } else {
-                retVal = "ERROR in data of Material!";
-            }
-        } catch (NumberFormatException e) {
-            retVal = "ERROR in number format in Material Density!";
-        }
-        return retVal;
-    }
 
     public String addFuel(String name, String units, String calValStr, String afRatioStr, String ffRatioStr,
                           String sensHeatPair,
@@ -1943,45 +1919,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return retVal;
     }
 
-    // for Applet version
-    public String chargeBasic(String matName, String matID, String density, String width, String thickness) {
-        double w = 0;
-        double th = 0;
-        double den = 0;
-        String retVal = "";
-        try {
-            w = Double.valueOf(width);
-            th = Double.valueOf(thickness);
-            den = Double.valueOf(density);
-            if (tk != null && hC != null && emiss != null) {
-                material = new ChMaterial(matName, matID, den, tk, hC, emiss);
-                theCharge = new Charge(material, 1.0, w, th);
-                retVal = "OK";
-            } else
-                retVal = "ERROR: Properties not set!";
-        } catch (NumberFormatException e) {
-            retVal = "ERROR in number format in chargeBasic!";
-        }
-        return retVal;
-    }
-
-    // for applet version
-    public String setChargeHeatCont(String heatCont) {
-        hC = new XYArray(heatCont);
-        return "OK " + hC.arrLen;
-    }
-
-    // for applet version
-    public String setChargeTk(String thermalC) {
-        tk = new XYArray(thermalC);
-        return "OK " + tk.arrLen;
-    }
-
-    // for applet version
-    public String setChargeEmiss(String emissivity) {
-        emiss = new XYArray(emissivity);
-        return "OK " + emiss.arrLen;
-    }
 
     public static void debugLocal(String msg) {
 //        if (!asJNLP) {
@@ -2030,7 +1967,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         furnace.setFceWidth(fceWidth);
         commFuel = (Fuel) cbFuel.getSelectedItem();
         excessAir = tfExcessAir.getData() / 100;
-
+        o2inAirFraction = tfO2Enrich.getData() / 100;
         chWidth = tfChWidth.getData() / 1000;
         chLength = tfChLength.getData() / 1000;
         chThickness = tfChThickness.getData() / 1000;
@@ -2225,6 +2162,27 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return new ErrorStatAndMsg(!ok, msg);
     }
 
+    ErrorStatAndMsg isRegenBurnerUsed() {
+        boolean ok = true;
+        String msg = "";
+        if (furnace.anyRegen() > 0) {
+            ok = false;
+            msg = "\n   Regen Burner is not allowed with O2 Enriched Air";
+        }
+        return new ErrorStatAndMsg(!ok, msg);
+    }
+
+    ErrorStatAndMsg isIndividualFuelUsed() {
+        boolean ok = true;
+        String msg = "";
+        if (furnace.anyIndividualFuel() > 0) {
+            ok = false;
+            msg = "\n   Only Common Fuel is allowed with O2 Enriched Air";
+        }
+        return new ErrorStatAndMsg(!ok, msg);
+    }
+
+
     ErrorStatAndMsg isFuelOK() {
         boolean ok = true;
         String msg = "";
@@ -2305,11 +2263,27 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return new ErrorStatAndMsg(!ok, msg);
     }
 
+
+
     boolean checkData() {
         String msg = "ERROR : ";
         boolean retVal = true;
         double val;
         ErrorStatAndMsg em;
+        System.out.println("" + o2inAirFraction + "," +SPECIAL.o2InAir);
+        o2EnrichedAirUsed = (o2inAirFraction != SPECIAL.o2InAir);
+        if (o2EnrichedAirUsed) {
+            if (!decide("Special Air", "Do you want to proceed with O2 Enriched air (" + o2inAirFraction * 100 + "% )?"))
+                return false;
+            if ((em = isRegenBurnerUsed()).inError)  {
+                msg += nlSpace + em.msg;
+                retVal = false;
+            }
+            if ((em = isIndividualFuelUsed()).inError)  {
+                msg += nlSpace + em.msg;
+                retVal = false;
+            }
+        }
         if ((em = isFuelOK()).inError) {
             msg += nlSpace + em.msg;
             retVal = false;
@@ -2487,7 +2461,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                             && !commFuel.isSensHeatSpecified(this, fuelTemp)) {
                         commFuel.getSpHtData(this, tfFuelTemp);
                     }
-                    furnace.setCommonFuel(new FuelFiring(commFuel, false, excessAir, airTemp, fuelTemp));  // as normal burner
+                    furnace.setCommonFuel(new FuelFiring(commFuel, false, excessAir,
+                            o2EnrichedAirUsed, o2inAirFraction, airTemp, fuelTemp));  // as normal burner
                     //                theCharge = new Charge(selChMaterial, chLength, chWidth, chThickness);
                     theCharge = new Charge(selChMaterial, chLength, chWidth, chThickness, chDiameter, (Charge.ChType) cbChType.getSelectedItem());
 

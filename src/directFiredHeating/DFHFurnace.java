@@ -2117,12 +2117,18 @@ public class DFHFurnace {
         Recuperator recuperator;
         if (existingHeatExch != null)
             recuperator = new Recuperator(existingHeatExch, flue, ((bEntryDone) ? flue.flueTemp : controller.maxFlueAtRecu),
-                    new FlueComposition(true), commonAirFlow, airTempIn, getAmbTemp());
+                    new FlueComposition(true, controller.o2inAirFraction), commonAirFlow, airTempIn, getAmbTemp());
+//            recuperator = new Recuperator(existingHeatExch, flue, ((bEntryDone) ? flue.flueTemp : controller.maxFlueAtRecu),
+//                    new FlueComposition(true), commonAirFlow, airTempIn, getAmbTemp());
         else {
             airTempAfterRecu = airTempBurner + airTempLoss;
             recuperator =
-                    new Recuperator(flue, ((bEntryDone) ? flue.flueTemp : controller.maxFlueAtRecu), commonAirFlow,
+                    new Recuperator(flue, ((bEntryDone) ? flue.flueTemp : controller.maxFlueAtRecu),
+                            new FlueComposition(true, controller.o2inAirFraction),commonAirFlow,
                             airTempIn, airTempAfterRecu, getAmbTemp());
+//            recuperator =
+//                    new Recuperator(flue, ((bEntryDone) ? flue.flueTemp : controller.maxFlueAtRecu), commonAirFlow,
+//                            airTempIn, airTempAfterRecu, getAmbTemp());
         }
         if (recuperator.bInError)
             showError("AIR RECUPERATOR: " + recuperator.errMsg);
@@ -2237,11 +2243,11 @@ public class DFHFurnace {
         return count;
     }
 
-    int anyRegen() {
+    public int anyRegen() {
         return anyRegen(false) + ((bTopBot) ? anyRegen(true) : 0);
     }
 
-    int anyIndividualFuel() {
+    public int anyIndividualFuel() {
         return anyIndividualFuel(false) + ((bTopBot) ? anyIndividualFuel(true) : 0);
     }
 
@@ -2510,7 +2516,10 @@ public class DFHFurnace {
 
     JPanel spHeatConPan() {
         int labW = labelWidth + 130;
-        MultiPairColPanel jp = new MultiPairColPanel("Summary", labW, valLabelW);
+        String title = "Summary";
+        if (controller.o2EnrichedAirUsed)
+            title = ("<html>Summary <font color='red'>(WARNING: O2 Enriched Air Used)</html>");
+        MultiPairColPanel jp = new MultiPairColPanel(title, labW, valLabelW);
         nlSpHeatCon = new NumberLabel(controller, spHeatCons, valLabelW, "#,###", true);
         nlEff1 = new NumberLabel(controller, effChHeatVsFuel * 100, valLabelW, "##.00");
         nlEff2 = new NumberLabel(controller, effChHeatAndLossVsFuel * 100, valLabelW, "##.00");

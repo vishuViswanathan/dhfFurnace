@@ -4,6 +4,7 @@ import display.*;
 import mvUtils.jsp.JSPConnection;
 import mvUtils.display.*;
 import mvUtils.display.TimedMessage;
+import mvUtils.math.SPECIAL;
 import mvUtils.mvXML.XMLmv;
 import mvUtils.math.XYArray;
 
@@ -30,6 +31,8 @@ public class Fuel extends Fluid{
     public double airFuelRatio;
     public double flueFuelRatio;
     public FlueComposition flueComp;
+//    boolean o2EnrichedAir = false;
+//    double o2FractInAir = SPECIAL.o2InAir;
     XYArray airHeatCont;
     XYArray flueHeatCont;
     XYArray sensHeat = null;
@@ -135,41 +138,14 @@ public class Fuel extends Fluid{
 
     public Fuel(String xmlStr, boolean itIsXML) throws Exception{
         if (!takeDataFromXML(xmlStr))
-//        mvUtils.mvXML.ValAndPos vp;
-//        boolean inError = true;
-//        vp = mvUtils.mvXML.XMLmv.getTag(xmlStr, "Name", 0);
-//        name = vp.val;
-//        if (name.length() >  2) {
-//            vp = mvUtils.mvXML.XMLmv.getTag(xmlStr, "units", 0);
-//            units = vp.val;
-//            vp = mvUtils.mvXML.XMLmv.getTag(xmlStr, "calVal", 0);
-//            try {
-//                calVal = Double.valueOf(vp.val);
-//                vp = mvUtils.mvXML.XMLmv.getTag(xmlStr, "airFuelRatio", 0);
-//                airFuelRatio = Double.valueOf(vp.val);
-//                vp = XMLmv.getTag(xmlStr, "flueFuelRatio", 0);
-//                flueFuelRatio = Double.valueOf(vp.val);
-//                if (calVal > 0 && airFuelRatio > 0 && flueFuelRatio > 0) {
-//                    vp = XMLmv.getTag(xmlStr, "sensHeat", 0);
-//                    if (vp.val.length() > 2)
-//                        sensHeat = new XYArray(vp.val);
-//                    vp = XMLmv.getTag(xmlStr, "flueCompo", 0);
-//                    if (vp.val.length() > 30) {
-//                        try {
-//                            flueComp = new FlueComposition("", vp.val) ;
-//                            inError = false;
-//                        } catch (Exception e) {
-//                            inError = true;
-//                        }
-//                    }
-//                }
-//            } catch (NumberFormatException e) {
-//                inError = true;
-//            }
-//        }
-//        if (inError)
             throw new Exception("ERROR: In Fuel Specifications from xml :" + xmlStr);
     }
+
+//    public void changeForEnrichedAir(double o2Fract) {
+//        o2FractInAir = o2Fract;
+//        o2EnrichedAir = o2FractInAir != SPECIAL.o2InAir;
+//
+//    }
 
     protected boolean takeDataFromXML(String xmlStr) {
         boolean retVal = false;
@@ -477,10 +453,19 @@ public class Fuel extends Fluid{
         sensHeatAdded = addedFuel.sensHeat;
     }
 
-    public FlueComposition getFlue(double excessAirFract) {
-        return new FlueComposition("Flue of " + name + " with " + excessAirFract * 100 + "% Excess Air", flueComp,
-                excessAirFract * airFuelRatio / flueFuelRatio);
+    public FlueComposition getFlue() {
+        return new FlueComposition(flueComp);
     }
+
+//    public FlueComposition getFlue(double excessAirFract) {
+//        if (o2EnrichedAir)
+//            return new FlueComposition("Flue of " + name + " with " + excessAirFract * 100 + "% Excess Air", this,
+//                    o2FractInAir,
+//                    excessAirFract * airFuelRatio / flueFuelRatio);
+//        else
+//            return new FlueComposition("Flue of " + name + " with " + excessAirFract * 100 + "% Excess Air", flueComp,
+//                excessAirFract * airFuelRatio / flueFuelRatio);
+//    }
 
     public double sensHeatFromTemp(double temperature) {
         if (bMixedFuel)
