@@ -30,7 +30,9 @@ public class FlueComposition extends Fluid {
     FlueComposition stoicFlue = null;
     boolean bOnlyAir = false;
     // take care, this is available only in case of o2Enriched air
-    double effectiveFFratio = 1;
+    double stoicFFratio = 0;
+    double effectiveFFratio = 0;
+
     // property of actual "air' could be o2 enriched
 
     public FlueComposition(String name, double fractCO2, double fractH2O, double fractN2, double fractO2, double fractSO2)
@@ -108,15 +110,16 @@ public class FlueComposition extends Fluid {
         setFlueHcontArr();
         calculateAlphaFactor();
     }
-
+    // addAirFract is air as fraction of flue before addtion of tghis air
     public FlueComposition(String name, FlueComposition flueComp, double addAirFract) {
         initStaticData();
         takeValues(name, flueComp, addAirFract);
     }
 
-    public FlueComposition(String name, Fuel fuel, double o2FractInAir, double addAirFract) {
+    // addAirFract is air as fraction of flue before addtion of tghis air
+    public FlueComposition(String name, Fuel fuel, double o2FractInAir, double excessAir) {
         initStaticData();
-        takeValues(name, fuel, o2FractInAir, addAirFract);
+        takeValues(name, fuel, o2FractInAir, excessAir);
     }
 
     public FlueComposition(Fuel fuel, double excessAirFract) {
@@ -165,6 +168,7 @@ public class FlueComposition extends Fluid {
         return xmlStr;
     }
 
+    // addAirFract is air as fraction of flue before addtion of tghis air
     void takeValues(String name, FlueComposition flueComp, double addAirFract){
         this.name = name;
         double factor = 1 + addAirFract;
@@ -178,7 +182,7 @@ public class FlueComposition extends Fluid {
         calculateAlphaFactor();
     }
 
-    void takeValues(String name, Fuel fuel, double o2FactInAir, double addAirFract){
+    void takeValues(String name, Fuel fuel, double o2FactInAir, double excessAir){
         this.name = name;
         FlueComposition flueCompWithStdAir = fuel.flueComp;
         double ff1 = fuel.flueFuelRatio;
@@ -204,13 +208,14 @@ public class FlueComposition extends Fluid {
         catch (Exception e) {
             showMessage("Some Error in creating stoicFlue in #204", 3000);
         }
-        effectiveFFratio = ff2 + af2 * addAirFract;
-        double factor = (ff2 + addAirFract * af2) / ff2;
+        stoicFFratio = ff2;
+        effectiveFFratio = ff2 + af2 * excessAir;
+        double factor = (ff2 + excessAir * af2) / ff2;
         fractCO2 = co2 / effectiveFFratio;
         fractH2O = h2o / effectiveFFratio;
         fractSO2 = so2 / effectiveFFratio;
-        fractN2 = (nowN2 + addAirFract * af2 * (1 - o2FactInAir)) / effectiveFFratio;
-        fractO2 = (o2 + addAirFract * af2 * o2FactInAir) / effectiveFFratio;
+        fractN2 = (nowN2 + excessAir * af2 * (1 - o2FactInAir)) / effectiveFFratio;
+        fractO2 = (o2 + excessAir * af2 * o2FactInAir) / effectiveFFratio;
         setFlueHcontArr();
         calculateAlphaFactor();
     }

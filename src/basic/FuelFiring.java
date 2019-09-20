@@ -25,6 +25,7 @@ public class FuelFiring {
     public double fuelTemp, fuelTempAdded;
     public FlueComposition flue;
     public double actAFRatio, actFFratio;
+    public double stoicAFratio, stoicFFratio;
     public double fuelSensibleHeat = 0;
     double effCalValNoFlue;
     boolean bRegen = false;
@@ -123,14 +124,19 @@ public class FuelFiring {
             flue = new FlueComposition(
                     "Flue Of " + fuel.name + " with Excess Air " + (excessAir * 100) + " and o2 in Air " + (o2inAirFraction * 100),
                     fuel, o2inAirFraction, excessAir);
-            actAFRatio = fuel.airFuelRatio * (SPECIAL.o2InAir / o2inAirFraction) * (1 + excessAir);
+            stoicAFratio = fuel.airFuelRatio * (SPECIAL.o2InAir / o2inAirFraction);
+            actAFRatio = stoicAFratio * (1 + excessAir);
+            stoicFFratio = flue.stoicFFratio;
             actFFratio = flue.effectiveFFratio;
          }
         else {
             flue = new FlueComposition("Flue Of " + fuel.name + " with Excess Air " + (excessAir * 100),
-                    stdFlue, excessAir);
+                    stdFlue, excessAir * fuel.airFuelRatio / fuel.flueFuelRatio);
+            stoicAFratio = fuel.airFuelRatio;
             actAFRatio = fuel.airFuelRatio * (1 + excessAir);
+            stoicFFratio = fuel.flueFuelRatio;
             actFFratio = fuel.flueFuelRatio + fuel.airFuelRatio * excessAir;
+
         }
     }
 
