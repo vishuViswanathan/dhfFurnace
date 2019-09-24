@@ -38,7 +38,7 @@ public class FuelFiring {
 
     public FuelFiring(Fuel fuel, boolean bRegenBurner, double excessAir, boolean o2EnrichedAirUsed, double o2inAirFraction,
                       double airTemp, double fuelTemp) {
-        this.fuel =  new Fuel(fuel);
+        this.fuel =  fuel ; // new Fuel(fuel);
 //        this.fuel.changeForEnrichedAir(o2inAirFraction);
         this.bRegen = bRegenBurner;
         this.o2EnrichedAirUsed = o2EnrichedAirUsed;
@@ -209,25 +209,32 @@ public class FuelFiring {
 
         if (bSplitIfMixed && fuel.bMixedFuel) {
             Fuel baseF = fuel.baseFuel;
-            fuelFlow = flow;
-            airFlow = flow * baseF.airFuelRatio * (1 + excessAir);
-            airSensible = airFlow *FlueComposition.hContAir.getYat(airTemp);
-            fuelSensible = fuelFlow * baseF.sensHeatFromTemp(fuel.baseFuelTemp);
-            fuelsAndUsage.addFuel(baseF, bRegen, fuel.baseFuelTemp, fuelFlow, airFlow, airSensible, fuelSensible);
             Fuel addF = fuel.addedFuel;
-            fuelFlow = flow * fuel.fractAddedFuel;
-            airFlow = fuelFlow * addF.airFuelRatio * (1 + excessAir);
-            airSensible = airFlow *FlueComposition.hContAir.getYat(airTemp);
-            fuelSensible = fuelFlow * addF.sensHeatFromTemp(fuel.addFuelTemp);
-            fuelsAndUsage.addFuel(addF, bRegen, fuel.addFuelTemp, fuelFlow, airFlow, airSensible, fuelSensible);
-//            fuelsAndUsage.addFuel(fuel, 0, 0, 0, 0, 0);
+            double flowBaseF = flow;
+            double flowAddF = flow * fuel.fractAddedFuel;
+            double baseFuelStdStoicAirFlow = flowBaseF * baseF.airFuelRatio;
+            double addFuelStdStoicAirFlow = flowAddF * addF.airFuelRatio;
+            double totalAirFlow = flow * actAFRatio;
+            double actualToStdStoiRatio = totalAirFlow / (baseFuelStdStoicAirFlow + addFuelStdStoicAirFlow);
+            double totalAirSensible = flow * airHeatPerUfuel;
+            double airFlowForBaseF = baseFuelStdStoicAirFlow * actualToStdStoiRatio;
+            airSensible = totalAirSensible * airFlowForBaseF / totalAirFlow;
+            fuelSensible = flowBaseF * baseF.sensHeatFromTemp(fuel.baseFuelTemp);
+            fuelsAndUsage.addFuel(baseF, bRegen, fuel.baseFuelTemp, flowBaseF, airFlowForBaseF, o2inAirFraction,
+                    airSensible, fuelSensible);
+            double airFlowForAddF =addFuelStdStoicAirFlow * actualToStdStoiRatio;
+            airSensible = totalAirSensible * airFlowForAddF / totalAirFlow;
+            fuelSensible = flowAddF * addF.sensHeatFromTemp(fuel.addFuelTemp);
+            fuelsAndUsage.addFuel(addF, bRegen, fuel.addFuelTemp, flowAddF, airFlowForAddF, o2inAirFraction,
+                    airSensible, fuelSensible);
+
         }
         else {
             fuelFlow = flow;
             airFlow = flow * actAFRatio;
             airSensible = fuelFlow * airHeatPerUfuel;
             fuelSensible = fuelFlow * fuelSensibleHeat;
-            fuelsAndUsage.addFuel(fuel, bRegen, fuelTemp, fuelFlow, airFlow, airSensible, fuelSensible);
+            fuelsAndUsage.addFuel(fuel, bRegen, fuelTemp, fuelFlow, airFlow, o2inAirFraction, airSensible, fuelSensible);
         }
     }
 

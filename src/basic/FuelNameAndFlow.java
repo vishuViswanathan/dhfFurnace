@@ -1,5 +1,7 @@
 package basic;
 
+import mvUtils.math.SPECIAL;
+
 /**
  * Created by IntelliJ IDEA.
  * User: M Viswanathan
@@ -12,7 +14,7 @@ public class FuelNameAndFlow {
     public String units;
     public double temperature;
     Fuel fuel;
-    public String name;
+    public String name = "@@@";
     public double fuelSensibleHeat = 0;
     public double combustHeat = 0;
     double airFlow = 0;
@@ -38,17 +40,19 @@ public class FuelNameAndFlow {
         units = fuel.units;
     }
 
-    public FuelNameAndFlow(Fuel fuel, double fuelFlow, double airFlow, double airSensible, double fuelSensible) {
+    public FuelNameAndFlow(Fuel fuel, double fuelFlow, double airFlow, double o2inAirFraction, double airSensible, double fuelSensible) {
         this(fuel);
-        addValues(fuelFlow, airFlow, airSensible, fuelSensible);
+        addValues(fuelFlow, airFlow, o2inAirFraction, airSensible, fuelSensible);
     }
 
-    public void addValues(double fuelFlow, double airFlow, double airSensible, double fuelSensible) {
+    public void addValues(double fuelFlow, double airFlow, double o2inAirFraction, double airSensible, double fuelSensible) {
         this.fuelFlow += fuelFlow;
         this.airFlow += airFlow;
         this.airSensibleHeat += airSensible;
         this.fuelSensibleHeat += fuelSensible;
         combustHeat = fuel.calVal * this.fuelFlow;
-        effExcessAir = this.airFlow / (this.fuelFlow * fuel.airFuelRatio) - 1;
+        FuelFiring ff = new FuelFiring(fuel, false, 0,
+                (o2inAirFraction != SPECIAL.o2InAir), o2inAirFraction, 0, 0);
+        effExcessAir = this.airFlow / (this.fuelFlow * ff.stoicAFratio) - 1;
     }
 }

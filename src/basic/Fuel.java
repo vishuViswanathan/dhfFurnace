@@ -70,6 +70,15 @@ public class Fuel extends Fluid{
         this.flueFuelRatio = refFuel.flueFuelRatio;
         this.flueComp = new FlueComposition(refFuel.flueComp);
         this.bMixedFuel = refFuel.bMixedFuel;
+        if (bMixedFuel) {
+            this.baseFuel = refFuel.baseFuel;
+            this.addedFuel = refFuel.addedFuel;
+            this.baseFuelTemp = refFuel.baseFuelTemp;
+            this.addFuelTemp = refFuel.addFuelTemp;
+            this.bFlowSharing = refFuel.bFlowSharing;
+            this.baseHshare = refFuel.baseHshare;
+            this.fractAddedFuel = refFuel.fractAddedFuel;
+        }
         this.id = refFuel.id;
         if (refFuel.sensHeat != null)
             this.sensHeat = new XYArray(refFuel.sensHeat);

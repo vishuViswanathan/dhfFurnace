@@ -42,21 +42,21 @@ public class FuelsAndUsage {
 //        addFuel(fuel, false, fuelTemp, fuelFlow, airFlow, airSensible, fuelSensible);
 //    }
 
-    public void addFuel(Fuel fuel, boolean bRegen, double fuelTemp, double fuelFlow, double airFlow,
+    public void addFuel(Fuel fuel, boolean bRegen, double fuelTemp, double fuelFlow, double airFlow, double o2inAirFraction,
                         double airSensible, double fuelSensible) {
-        if (bRegen) {
+          if (bRegen) {
             if (!regenTable.containsKey(fuel))
                 regenTable.put(fuel, new FuelNameAndFlow(fuel, fuelTemp));
-            regenTable.get(fuel).addValues(fuelFlow, airFlow, airSensible, fuelSensible);
+            regenTable.get(fuel).addValues(fuelFlow, airFlow, o2inAirFraction, airSensible, fuelSensible);
         }
         else {
             if (!normalTable.containsKey(fuel))
                 normalTable.put(fuel, new FuelNameAndFlow(fuel, fuelTemp));
-            normalTable.get(fuel).addValues(fuelFlow, airFlow, airSensible, fuelSensible);
+            normalTable.get(fuel).addValues(fuelFlow, airFlow, o2inAirFraction, airSensible, fuelSensible);
         }
         if (!combiTable.containsKey(fuel))
             combiTable.put(fuel, new FuelNameAndFlow(fuel, fuelTemp));
-        combiTable.get(fuel).addValues(fuelFlow, airFlow, airSensible, fuelSensible);
+        combiTable.get(fuel).addValues(fuelFlow, airFlow, o2inAirFraction, airSensible, fuelSensible);
 
     }
 

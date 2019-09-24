@@ -2182,7 +2182,6 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return new ErrorStatAndMsg(!ok, msg);
     }
 
-
     ErrorStatAndMsg isFuelOK() {
         boolean ok = true;
         String msg = "";
