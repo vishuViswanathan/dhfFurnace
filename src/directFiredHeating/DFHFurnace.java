@@ -33,6 +33,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.TextListener;
 import java.lang.reflect.InvocationTargetException;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
@@ -2518,7 +2519,7 @@ public class DFHFurnace {
         int labW = labelWidth + 130;
         String title = "Summary";
         if (controller.o2EnrichedAirUsed)
-            title = ("<html>Summary <font color='red'>(WARNING: O2 Enriched Air Used)</html>");
+            title = ("Summary (WARNING: O2 Enriched Air Used)");
         MultiPairColPanel jp = new MultiPairColPanel(title, labW, valLabelW);
         nlSpHeatCon = new NumberLabel(controller, spHeatCons, valLabelW, "#,###", true);
         nlEff1 = new NumberLabel(controller, effChHeatVsFuel * 100, valLabelW, "##.00");
@@ -2677,6 +2678,7 @@ public class DFHFurnace {
     }
 
     Vector<XLcellData> fuelSummTopTexts;
+    Vector<XLcellData> zoneFuelSummaryTopTexts = new Vector<XLcellData>();
 
     void getFuelPanels() {
         fuelSummTopTexts = new Vector<XLcellData>();
@@ -2708,10 +2710,17 @@ public class DFHFurnace {
         fuelSummaryP.add(l2, gbc);
         fuelSummTopTexts.add(l2);
         gbc.gridy++;
+        if (controller.o2EnrichedAirUsed) {
+            TextLabel l3 = new TextLabel("WARNING: O2 Enriched Air is used", true);
+            fuelSummaryP.add(l3, gbc);
+            fuelSummTopTexts.add(l3);
+            gbc.gridy++;
+        }
+
         fuelSummaryP.add(fuelUsage.getSummaryPanel("FUEL DETAILS", (nRegen == 0), (nIndivFuel == 0), commonAirTemp, true), gbc);
     }
 
-    void setSecFuelsPanel(boolean bBot) {
+    void  setSecFuelsPanel(boolean bBot) {
         FramedPanel outerP = new FramedPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
@@ -2720,6 +2729,13 @@ public class DFHFurnace {
         int nActive = (bBot) ? nBotActiveSecs : nTopActiveSecs;
         String title = "Fuel Details for " + topBotName(bBot) + "Zone ";
         FceSection sec;
+        if (controller.o2EnrichedAirUsed) {
+            TextLabel l3 = new TextLabel("WARNING: O2 Enriched Air is used", true);
+            outerP.add(l3, gbc);
+            gbc.gridy++;
+            zoneFuelSummaryTopTexts.add(l3);
+        }
+
         for (int s = 0; s < nActive; s++) {
             sec = vSec.get(s);
             if (!sec.bRecuType) {
@@ -4750,6 +4766,7 @@ public class DFHFurnace {
         cell.setCellValue("FUEL SUMMARY OF " + topBotName(bBot, true) + " SECTIONS");
         int topRow = 4, row;
         int leftCol = 1;
+        topRow = styles.xlAddXLCellData(sheet, topRow, leftCol, zoneFuelSummaryTopTexts);
         Vector<FceSection> vSec = getVsecs(bBot);
         FceSection sec;
         int nValid = (bBot) ? nBotActiveSecs : nTopActiveSecs;

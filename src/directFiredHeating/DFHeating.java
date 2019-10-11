@@ -2172,6 +2172,16 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return new ErrorStatAndMsg(!ok, msg);
     }
 
+    ErrorStatAndMsg isItTopBotStripFce() {
+        boolean ok = true;
+        String msg = "";
+        if (heatingMode == HeatingMode.TOPBOTSTRIP) {
+            ok = false;
+            msg = "\n   Strip Furnace is not allowed with O2 Enriched Air";
+        }
+        return new ErrorStatAndMsg(!ok, msg);
+    }
+
     ErrorStatAndMsg isIndividualFuelUsed() {
         boolean ok = true;
         String msg = "";
@@ -2278,10 +2288,16 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                 msg += nlSpace + em.msg;
                 retVal = false;
             }
-            if ((em = isIndividualFuelUsed()).inError)  {
+
+            if ((em = isItTopBotStripFce()).inError) {
                 msg += nlSpace + em.msg;
                 retVal = false;
             }
+
+//            if ((em = isIndividualFuelUsed()).inError)  {
+//                msg += nlSpace + em.msg;
+//                retVal = false;
+//            }
         }
         if ((em = isFuelOK()).inError) {
             msg += nlSpace + em.msg;
@@ -4082,6 +4098,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                             if (dataStat == DataStat.Status.WithInfoMsg)
                                 showMessage(profileStatMsg.getInfoMessage());
                             switchPage(DFHDisplayPageType.INPUTPAGE);
+                            showMessage("Furnace Profile is loaded \nFuel, O2 Enrichment, Excess Air and \n" +
+                                            "Charge material are all TO BE SET before Running the calculation");
                             enableDataEntry(true);
                         }
                         else

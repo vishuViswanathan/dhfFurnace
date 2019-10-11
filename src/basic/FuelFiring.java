@@ -17,8 +17,8 @@ import java.util.Vector;
 public class FuelFiring {
     public Fuel fuel;
     double excessAir;
-    boolean o2EnrichedAirUsed = false;
-    double o2inAirFraction = SPECIAL.o2InAir;
+    public boolean o2EnrichedAirUsed = false;
+    public double o2inAirFraction = SPECIAL.o2InAir;
     FlueComposition oxydiser;
     public double airTemp;
     public double airHeatPerUfuel;

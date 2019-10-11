@@ -778,8 +778,12 @@ public class FceSection {
         double airPHTemp = (furnace.tuningParams.bAllowRegenAirTemp && bRegenBurner && !bAPHCommonRecu) ? regenPHTemp : fuelFiringData.airTemp;
 
         if (bIndividualFuel) {
-            fuelFiring = new FuelFiring(fuelInSection, bRegenBurner, excessAir, airPHTemp, fuelTemp);
+//            fuelFiring = new FuelFiring(fuelInSection, bRegenBurner, excessAir, airPHTemp, fuelTemp);
+            boolean o2EnrichedAirUsed = fuelFiringData.o2EnrichedAirUsed;
+            double o2inAirFraction = fuelFiringData.o2inAirFraction;
+            fuelFiring = new FuelFiring(fuelInSection, bRegenBurner, excessAir, o2EnrichedAirUsed, o2inAirFraction, airPHTemp, fuelTemp);
             flueComposition = this.fuelFiring.flue;
+
         } else {
             fuelFiring = new FuelFiring(fuelFiringData, bRegenBurner);
             fuelFiring.setTemperatures(airPHTemp);
