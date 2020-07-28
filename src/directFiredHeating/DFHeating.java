@@ -164,7 +164,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = " 20190917"; // was " 20190326";
+    protected String releaseDate = " 20200128";  //was 20190917";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -1062,7 +1062,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                 boolean reset = false;
                 double o2Fract =  tfO2Enrich.getData() / 100;
                 if (o2Fract != SPECIAL.o2InAir) {
-                    reset = !decide("O2 Fraction", "No Standard Air, Do you want to proceed ?");
+                    reset = !decide("O2 Fraction", "Not Standard Air, Do you want to proceed ?");
                     if (!reset && o2Fract < SPECIAL.o2InAir)
                         reset = !decide("O2 Fraction", "O2% less than Standard Air, Do you still want to proceed ?");
                 }
