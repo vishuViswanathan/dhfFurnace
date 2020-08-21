@@ -225,7 +225,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected JMenuItem mISaveFuelSpecs;
     protected JMenuItem mISaveSteelSpecs;
 
-    Vector<PanelAndName> heatBalances, allTrends;
+    Vector<PanelAndName> heatBalances;
+    public Vector<PanelAndName> allTrends;
     FramedPanel lossPanel;
     GridBagConstraints gbcLoss;
     JScrollPane lossScroll;
@@ -2400,7 +2401,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         return retVal;
     }
 
-    protected void enableResultsMenu(boolean enable) {
+    public void enableResultsMenu(boolean enable) {
         if (resultsMenu != null)
             resultsMenu.setEnabled(enable);
         if (printMenu != null)
@@ -3022,6 +3023,11 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
     void initPrintGroups() {
         heatBalances = new Vector<PanelAndName>();
+        initAllTrendsGroup();
+//        allTrends = new Vector<PanelAndName>();
+    }
+
+    public void initAllTrendsGroup() {
         allTrends = new Vector<PanelAndName>();
     }
 
@@ -3048,7 +3054,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                 default:
                     break;
             }
-            if (heatBalances.size() > 1)
+            if (heatBalances != null && heatBalances.size() > 1)
                 printPanels.get(DFHResult.Type.ALLBALANCES).setPanel(null);
             if (allTrends.size() > 1)
                 printPanels.get(DFHResult.Type.ALLtempTRENDS).setPanel(null);

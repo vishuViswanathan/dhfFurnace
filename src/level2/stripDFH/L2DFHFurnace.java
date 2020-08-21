@@ -740,11 +740,15 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
      * @return
      */
     public ChargeStatus processInFurnace(ChargeStatus chargeStatus) {
+//        logDebug("#745 processInFurnace");
         if (controller.heatingMode == DFHeating.HeatingMode.TOPBOTSTRIP) {
             setOnlyWallRadiation(true);
-            setDisplayResults(false);
+//            setDisplayResults(false);
+            setDisplayCalculation(true, false);
             chargeStatus.setProductionData(productionData);
             getReadyToCalcul(true); // do not create new slots if already created
+//            getBasicsForCalculation();
+//            prepareForLiveCalculation();
             setEntrySlotChargeTemperature(productionData.entryTemp);
             setProductionBasedSlotParams();
             if (doTheCalculationWithOnlyWallRadiation()) {
@@ -782,12 +786,61 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             logError("L2DfhFurnace..755: Facing some problem in reading furnace field data: " + fieldData.errMsg);
         }
         else {
+            l2DFHeating.initTrendsDisplay();
             setWallOnlyFactor(refP);
             outputEstimated = getOutputWithFurnaceTemperatureStatus(fieldData, chStatus, refP, exitTempRequired);
             resetWallOnlyFactor();
         }
         return outputEstimated;
     }
+
+    public boolean getBasicsForCalculation() {
+        boolean bRetVal = false;
+        if (l2DFHeating.accessLevel == L2AccessControl.AccessLevel.RUNTIME) {
+            this.calculStep = calculStep;
+//            evalTotTime();
+            evalChUnitArea();
+            FceSection sec;
+            evalActiveSecs();
+            for (int s = 0; s < nTopActiveSecs; s++) {
+                sec = topSections.get(s);
+                if (sec.isEnabled())
+                    sec.getReadyToCalcul();
+                else
+                    break;
+            }
+            firedCount(false);
+            if (bTopBot) {
+                for (int s = 0; s < nBotActiveSecs; s++) {
+                    sec = botSections.get(s);
+                    if (sec.isEnabled())
+                        sec.getReadyToCalcul();
+                    else
+                        break;
+                }
+                firedCount(true);
+            }
+            boolean bNew = false;
+            bNew = prepareSlots();
+            logInfo("#825 before bNew");
+            if (bNew) {
+                logInfo("#826 before getTrendGraphPanel, it is bNew");
+                topTrends = getTrendGraphPanel(false);
+                if (bTopBot) {
+                    botTrends = getTrendGraphPanel(true);
+                    combiTrends = getCombiGraphsPanel();
+                }
+            }
+            bRetVal = true;
+        }
+        logInfo("#834 returning from getBasicsForCalculation" + bRetVal);
+        return bRetVal;
+    }
+
+    private void prepareForLiveCalculation() {
+        evalTotTime();
+    }
+
 
     private double getOutputWithFurnaceTemperatureStatus(FieldResults fieldData, ChargeStatus chStatus, Performance refP, double exitTempRequired) {
         long stTimeNano = System.nanoTime();
@@ -824,6 +877,12 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             }
             if (trials < 1000) {
                 resetChEmmissCorrectionFactor();
+                if (controller.heatingMode == DFHeating.HeatingMode.TOPBOTSTRIP) {
+                    controller.addResult(DFHResult.Type.COMBItempTRENDS, topTrendsP);
+                    l2DFHeating.setResultsReady(true);
+                    l2DFHeating.enableResultsMenu(bDisplayResults);
+                    topTrendsP.updateUI();
+                }
 //            logTrace("L2DFHFurnace.797: Trials in getOutputWithFurnaceStatus = " + trials);
             }
             else
@@ -896,6 +955,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     void prepareSlotsWithTempO(FieldResults results) {
         results.copyTempAtTCtoSection();
         setTempOForAllSlots();
+        logDebug("#908 topTResults colFceTemp " + topUfsArray.colFceTemp + ", tempO " + topUfsArray.getMultiColdata().getYat(topUfsArray.colFceTemp, 2));
     }
 
     public void handleNextStrip() {

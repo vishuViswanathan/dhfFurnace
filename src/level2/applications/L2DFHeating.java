@@ -74,7 +74,7 @@ public class L2DFHeating extends StripHeating {
         bAtSite = true;
         bAllowProfileChange = false;
         userActionAllowed = false;
-        releaseDate = "20170320";
+        releaseDate = "20200812";
         onProductionLine = true;
         asApplication = true;
         this.equipment = equipment;
@@ -842,6 +842,11 @@ public class L2DFHeating extends StripHeating {
     public FceEvaluator calculateFce() {
         userActionAllowed = (accessLevel == L2AccessControl.AccessLevel.EXPERT || accessLevel == L2AccessControl.AccessLevel.INSTALLER);
         return super.calculateFce();
+    }
+
+    public void initTrendsDisplay() {
+        if (allTrends == null)
+            initAllTrendsGroup();
     }
 
     protected boolean getUserResponse(OneStripDFHProcess oneProc, ChMaterial material) {

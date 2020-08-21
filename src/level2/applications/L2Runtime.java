@@ -1,5 +1,6 @@
 package level2.applications;
 
+import directFiredHeating.DFHResult;
 import directFiredHeating.accessControl.L2AccessControl;
 import level2.common.ReadyNotedParam;
 import mvUtils.display.DataStat;
@@ -65,6 +66,7 @@ public class L2Runtime extends L2DFHeating {
         JMenuBar mb = new JMenuBar();
         mb.add(createFileMenu());
         mb.add(createLiveDisplayMenu());
+        mb.add(createShowResultsMenu());
         return mb;
     }
 

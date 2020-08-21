@@ -51,7 +51,7 @@ public class UnitFceArray {
           }
     }
 
-    int colFceTemp = 0, colGasTemp = 0, colChTempMean = 0;
+    public int colFceTemp = 0, colGasTemp = 0, colChTempMean = 0;
     protected DFHTuningParams.FurnaceFor furnaceFor;
 
     public UnitFceArray(boolean bBot, DFHTuningParams.FurnaceFor furnaceFor) {

@@ -68,7 +68,7 @@ public class DFHFurnace {
     public FuelFiring commFuelFiring;
     public ProductionData productionData;
 
-    UnitFceArray topUfsArray, botUfsArray;
+    public UnitFceArray topUfsArray, botUfsArray;
     UnitFceArray ufsArrAS; // for added Soak
     protected Vector<UnitFurnace> vTopUnitFces, vBotUnitFces;
     Vector<UnitFurnace> vASUnitFces; // UnitFurnaces of added TopSoak
@@ -81,7 +81,8 @@ public class DFHFurnace {
     LossListWithVal topLossValList, botLossValList, combiLossValList;
     boolean bBaseOnOnlyWallRadiation = false;
     boolean resultsReady = false;
-    boolean bDisplayResults = true;
+    public boolean bDisplayResults = true;
+    boolean bDisplayCalculationProgress = true;
     public FurnaceSettings furnaceSettings;
 
     public DFHFurnace(DFHeating controller, boolean bTopBot, boolean bAddTopSoak, ActionListener listener) {
@@ -432,13 +433,15 @@ public class DFHFurnace {
         }
         else
             bNew = prepareSlots();
-        if (bNew) {
+//        debug("#436 before getTrendGraphPanel");
+//        if (bNew) {
+//            debug("#436 before getTrendGraphPanel, it is bNew");
             topTrends = getTrendGraphPanel(false);
             if (bTopBot) {
                 botTrends = getTrendGraphPanel(true);
                 combiTrends = getCombiGraphsPanel();
             }
-        }
+//        }
         boolean skipUserEntry = false;
         if (tuningParams.bBaseOnZonalTemperature) {
             if (resultsReady) {
@@ -617,7 +620,9 @@ public class DFHFurnace {
                 reDo = false;
             }
 
+//            if (allOk && canRun() && bDisplayResults) {
             if (allOk && canRun() && bDisplayResults) {
+//                debug("#621 before trendsP");
                 topTrendsP = getTrendsPanel(false);
                 if (bTopBot) {
                     botTrendsP = getTrendsPanel(true);
@@ -701,7 +706,9 @@ public class DFHFurnace {
 
     synchronized public boolean evaluate(FceEvaluator master, boolean bShowResults) {
         enablePeformMenu(false);
-        setDisplayResults(bShowResults);
+//        setDisplayResults(bShowResults);
+        setDisplayCalculation(bShowResults, bShowResults);
+        debug("#711 evauate() bShowResults " + bShowResults);
         this.masterEvaluator = master;
         inPerfTableMode = false;
         tuningParams.takeValuesFromUI();
@@ -772,18 +779,29 @@ public class DFHFurnace {
             //            savePerformanceIfDue();
             if (bDisplayResults)
                 enablePeformMenu(true);
-            setDisplayResults(true);
+            setDisplayCalculation(true, true);
+//            setDisplayResults(true);
             return true;
         } else {
             if (canRun())
                 controller.abortingCalculation("Some Error in Calculation in DFHFurnace 01");
-            setDisplayResults(true);
+//            setDisplayResults(true);
+            setDisplayCalculation(true, true);
             return false;
         }
     }
 
+    public void setDisplayCalculation(boolean bResults, boolean bProgress) {
+        setDisplayResults(bResults);
+        setDisplayCalculationProgress(bProgress);
+    }
+
     public void setDisplayResults (boolean bShowResults) {
         this.bDisplayResults = bShowResults;
+    }
+
+    public void setDisplayCalculationProgress (boolean bShow) {
+        this.bDisplayCalculationProgress = bShow;
     }
 
     public boolean evaluate(FceEvaluator master, double forOutput, double stripWidth) {
@@ -1050,7 +1068,8 @@ public class DFHFurnace {
     }
 
     public void updateUI() {
-        if (bDisplayResults) {
+//        if (bDisplayResults) {
+        if (bDisplayCalculationProgress) {
             if (SwingUtilities.isEventDispatchThread())
                 progressGraph.updateUI();
             else {
@@ -1079,7 +1098,8 @@ public class DFHFurnace {
     TrendsPanel progressGraph;
 
     public boolean canRun() {
-        return (bDisplayResults) ? masterEvaluator.isRunOn() : true;
+//        return (bDisplayResults) ? masterEvaluator.isRunOn() : true;
+        return (bDisplayCalculationProgress) ? masterEvaluator.isRunOn() : true;
     }
 
     void abortIt(String reason) {
@@ -1187,7 +1207,8 @@ public class DFHFurnace {
         String mainTitle = getMainTitle();
         double chTempProfileFactor = 1;    // for correction if (honorLastZoneMinFceTemp)
         double chInTempReqd;
-        if (bDisplayResults && (tuningParams.bSlotProgress || tuningParams.bSectionProgress))
+//        if (bDisplayResults && (tuningParams.bSlotProgress || tuningParams.bSectionProgress))
+        if (bDisplayCalculationProgress && (tuningParams.bSlotProgress || tuningParams.bSectionProgress))
             masterEvaluator.setProgressGraph(getProcessName(), mainTitle, title + add2ToTilte + addToTitle, progressGraph);
         String statusHead = (bBot) ? "Bottom Zone " : "Top Zone ";
         FceEvaluator.EvalStat response;
@@ -1447,7 +1468,8 @@ public class DFHFurnace {
         setAverageTemperatureRate();
         FceSection theSection;
         String mainTitle = getMainTitle();
-        if (bDisplayResults && (tuningParams.bSlotProgress || tuningParams.bSectionProgress))
+//        if (bDisplayResults && (tuningParams.bSlotProgress || tuningParams.bSectionProgress))
+        if (bDisplayCalculationProgress && (tuningParams.bSlotProgress || tuningParams.bSectionProgress))
             masterEvaluator.setProgressGraph(getProcessName(), mainTitle, title + add2ToTilte + addToTitle, progressGraph);
         String statusHead = (bBot) ? "Bottom Zone " : "Top Zone ";
         FceEvaluator.EvalStat response;
@@ -1874,7 +1896,8 @@ public class DFHFurnace {
     }
 
     void showStatus(String msg) {
-        if (bDisplayResults)
+//        if (bDisplayResults)
+        if (bDisplayCalculationProgress)
             masterEvaluator.showStatus(msg);
     }
 
@@ -1915,9 +1938,9 @@ public class DFHFurnace {
     }
 
     JPanel heatSummary, topSecwiseP, botSecwiseP, topResultsP, botResultsP, combiResultsP;
-    JPanel topTrendsP, botTrendsP, combiTrendsP;
+    public JPanel topTrendsP, botTrendsP, combiTrendsP;
     JPanel recuBalance;
-    TrendsPanel topTrends, botTrends, combiTrends;
+    protected TrendsPanel topTrends, botTrends, combiTrends;
     JPanel fuelSummaryP, topFuelsP, botFuelsP;
     JPanel heatSummaryInt, topSecwiseInt, botSecwiseInt, topResultsInt, botResultsInt, combiResultsInt;
 
@@ -3131,7 +3154,7 @@ public class DFHFurnace {
     CombiMultiColData combiTrendData;
     double dischEndExtension = 0.5;
 
-    TrendsPanel getTrendGraphPanel(boolean bBot) {
+    protected TrendsPanel getTrendGraphPanel(boolean bBot) {
         dischEndExtension = (controller.furnaceFor == DFHTuningParams.FurnaceFor.STRIP) ? 0 : 0.5;
         MultiColData results;
         results = (bBot) ? getBotTResults() : getTopTResults();
@@ -3181,7 +3204,7 @@ public class DFHFurnace {
 
     int tTopGas = 0, tTopFce = 1, tBotGas = 5, tBotFce = 6;  // trace numbers
 
-    TrendsPanel getCombiGraphsPanel() {     // a combined trend
+    protected TrendsPanel getCombiGraphsPanel() {     // a combined trend
         CombiMultiColData results;
         TrendsPanel proGraph = null;
         results = new CombiMultiColData(topTResults, botTResults);
@@ -3760,7 +3783,7 @@ public class DFHFurnace {
 
     public int nTopActiveSecs, nBotActiveSecs;
 
-    void evalActiveSecs() {
+    protected void evalActiveSecs() {
         evalActiveSecs(false);
         if (bTopBot)
             evalActiveSecs(true);
