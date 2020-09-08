@@ -368,6 +368,9 @@ public class FceSection {
     double tcLocationFromZoneStart; // location of thermocouple fro the section start in m
     public double tempAtTCLocation = 0;
 
+    public String toString() {
+        return(sectionName());
+    }
     public FceSection(DFHeating controller, DFHFurnace furnace, boolean botSection, boolean bRecuType) {
         this.controller = controller;
         FceSection.furnace = furnace;
@@ -2269,8 +2272,10 @@ public class FceSection {
         for (int iSlot = firstSlot; iSlot <= lastSlot; iSlot++) {
             theSlot = vUnitFurnaces.get(iSlot);
             response = theSlot.evalWithWallRadiationInFwd((iSlot == firstSlot), prevSlot);
-            if (response != FceEvaluator.EvalStat.OK)
+            if (response != FceEvaluator.EvalStat.OK) {
+                debug("#2276 Section " + this + " iSlot: " + iSlot + " got NOt OK response");
                 break;
+            }
             prevSlot = theSlot;
         }
         if (response == FceEvaluator.EvalStat.OK)

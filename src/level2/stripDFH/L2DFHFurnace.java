@@ -86,6 +86,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     boolean processListSetOnLevel1 = false;
 
     long displayUpdateInterval = 1000; // 1 sec
+    boolean trendPinited = false;
 
     public L2DFHFurnace(L2DFHeating l2DFHEating, boolean bTopBot, boolean bAddTopSoak, ActionListener listener) {
         super(l2DFHEating, bTopBot, bAddTopSoak, listener);
@@ -735,6 +736,54 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             return null;
     }
 
+    protected boolean doTheCalculationWithOnlyWallRadiation() {
+        boolean retVal = false;
+        boolean allOk = true;
+        boolean reDo = true;
+        resetResults();
+        boolean bStart = true;
+        String addMsg = "";
+        resultsReady = false;
+        setEntrySlotChargeTemperatures();
+        while (true) {
+            while (allOk && reDo) {
+                allOk = false;
+                if (tuningParams.bEvalBotFirst && !bAddTopSoak) {
+                    if (bTopBot)
+                        allOk = evalTopOrBottomWithOnlyWallRadiation(true, bStart, addMsg);
+                    if (allOk && canRun())
+                        allOk = evalTopOrBottomWithOnlyWallRadiation(false, bStart, addMsg);
+                } else {
+                    allOk = evalTopOrBottomWithOnlyWallRadiation(false, bStart, addMsg);
+                    if (allOk && bTopBot && canRun())
+                        allOk = evalTopOrBottomWithOnlyWallRadiation(true, bStart, addMsg);
+                }
+                bStart = false;
+                reDo = false;
+            }
+
+//            if (allOk && canRun() && bDisplayResults) {
+            if (allOk && canRun() && bDisplayResults ) { // && !trendPinited) {
+                logDebug("#766 before trendsP");
+                topTrendsP = getTrendsPanel(false);
+                if (bTopBot) {
+                    botTrendsP = getTrendsPanel(true);
+                    combiTrendsP = getCombiTrendsPanel();
+                }
+                trendPinited = true;
+            }
+            break;
+        }
+        bBaseOnOnlyWallRadiation = false;
+        retVal = allOk & canRun();
+        if (!retVal)
+            logDebug("#778, allOk = " + allOk + ", canRun() = " + canRun());
+        return (retVal);
+    }
+
+
+
+    boolean itIsReadyForCalculation = false;
     /**
      * Evaluating charge exit conditions for the existing furnace temperautures
      * @return
@@ -746,7 +795,10 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
 //            setDisplayResults(false);
             setDisplayCalculation(true, false);
             chargeStatus.setProductionData(productionData);
-            getReadyToCalcul(true); // do not create new slots if already created
+//            if (!itIsReadyForCalculation)
+                itIsReadyForCalculation =  getReadyToCalcul(true); // do not create new slots if already created
+//            else
+//                prepareForLiveCalculation();
 //            getBasicsForCalculation();
 //            prepareForLiveCalculation();
             setEntrySlotChargeTemperature(productionData.entryTemp);
@@ -798,7 +850,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         boolean bRetVal = false;
         if (l2DFHeating.accessLevel == L2AccessControl.AccessLevel.RUNTIME) {
             this.calculStep = calculStep;
-//            evalTotTime();
+            evalTotTime();
             evalChUnitArea();
             FceSection sec;
             evalActiveSecs();
@@ -824,7 +876,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             bNew = prepareSlots();
             logInfo("#825 before bNew");
             if (bNew) {
-                logInfo("#826 before getTrendGraphPanel, it is bNew");
+                logInfo("#826 before getTrendGraphPanel, it is bNew, topTrends = " + topTrends);
                 topTrends = getTrendGraphPanel(false);
                 if (bTopBot) {
                     botTrends = getTrendGraphPanel(true);
@@ -838,9 +890,11 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     }
 
     private void prepareForLiveCalculation() {
+        evalChUnitArea();
         evalTotTime();
     }
 
+    boolean resultsFirstTime = true;
 
     private double getOutputWithFurnaceTemperatureStatus(FieldResults fieldData, ChargeStatus chStatus, Performance refP, double exitTempRequired) {
         long stTimeNano = System.nanoTime();
@@ -870,6 +924,8 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                         outputAssumed = outputAssumed * (nowExitTemp - chTempIN) / (exitTempRequired - chTempIN);
                 }
                 else {
+                    logInfo("processInfurnace returned with error, outputAssumed = " +
+                            outputAssumed + ", chStatus.output = " + chStatus.output);
                     showError("processInfurnace returned with error!");
                     outputAssumed = 0;
                     break;
@@ -877,11 +933,13 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             }
             if (trials < 1000) {
                 resetChEmmissCorrectionFactor();
+//                if (resultsFirstTime && controller.heatingMode == DFHeating.HeatingMode.TOPBOTSTRIP) {
                 if (controller.heatingMode == DFHeating.HeatingMode.TOPBOTSTRIP) {
                     controller.addResult(DFHResult.Type.COMBItempTRENDS, topTrendsP);
                     l2DFHeating.setResultsReady(true);
                     l2DFHeating.enableResultsMenu(bDisplayResults);
                     topTrendsP.updateUI();
+//                    resultsFirstTime = false;
                 }
 //            logTrace("L2DFHFurnace.797: Trials in getOutputWithFurnaceStatus = " + trials);
             }
@@ -955,7 +1013,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     void prepareSlotsWithTempO(FieldResults results) {
         results.copyTempAtTCtoSection();
         setTempOForAllSlots();
-        logDebug("#908 topTResults colFceTemp " + topUfsArray.colFceTemp + ", tempO " + topUfsArray.getMultiColdata().getYat(topUfsArray.colFceTemp, 2));
+        logDebug("#960 topTResults colFceTemp " + topUfsArray.colFceTemp + ", tempO " + topUfsArray.getMultiColdata().getYat(topUfsArray.colFceTemp, 2));
     }
 
     public void handleNextStrip() {

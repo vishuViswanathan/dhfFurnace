@@ -56,7 +56,7 @@ public class DFHFurnace {
     static public int MAXSECTIONS = 6;
     double fceWidth;
     public boolean bTopBot;
-    boolean bAddTopSoak = false;
+    protected boolean bAddTopSoak = false;
     protected Vector<FceSection> topSections, botSections;
     FceSection addedTopSoak = null;
     ActionListener listener;
@@ -79,8 +79,8 @@ public class DFHFurnace {
     boolean bRecalculBot, bRecalculTop;
     double tempGZ1Bot, tempGZ1Top; // old value for recalculation
     LossListWithVal topLossValList, botLossValList, combiLossValList;
-    boolean bBaseOnOnlyWallRadiation = false;
-    boolean resultsReady = false;
+    protected boolean bBaseOnOnlyWallRadiation = false;
+    protected boolean resultsReady = false;
     public boolean bDisplayResults = true;
     boolean bDisplayCalculationProgress = true;
     public FurnaceSettings furnaceSettings;
@@ -470,7 +470,7 @@ public class DFHFurnace {
         }
     }
 
-    void resetResults() {
+    protected void resetResults() {
         honorLastZoneMinFceTemp = false;
         considerChTempProfile = false;
         for (FceSection sec : topSections)
@@ -575,7 +575,7 @@ public class DFHFurnace {
     }
 
 
-    void setEntrySlotChargeTemperatures() {
+    protected void setEntrySlotChargeTemperatures() {
         UnitFurnace uf = vTopUnitFces.get(0);
         double temp = productionData.entryTemp;
         uf.tempWO = uf.tempWmean = uf.tempWcore = temp;
@@ -596,6 +596,7 @@ public class DFHFurnace {
     }
 
     protected boolean doTheCalculationWithOnlyWallRadiation() {
+        boolean retVal = false;
         boolean allOk = true;
         boolean reDo = true;
         resetResults();
@@ -622,7 +623,7 @@ public class DFHFurnace {
 
 //            if (allOk && canRun() && bDisplayResults) {
             if (allOk && canRun() && bDisplayResults) {
-//                debug("#621 before trendsP");
+                debug("#621 before trendsP");
                 topTrendsP = getTrendsPanel(false);
                 if (bTopBot) {
                     botTrendsP = getTrendsPanel(true);
@@ -632,7 +633,10 @@ public class DFHFurnace {
             break;
         }
         bBaseOnOnlyWallRadiation = false;
-        return (allOk & canRun());
+        retVal = allOk & canRun();
+        if (!retVal)
+            debug("#638, allOk = " + allOk + ", canRun() = " + canRun());
+        return (retVal);
     }
 
     boolean evalWallOnlyFactor()  {
@@ -792,6 +796,7 @@ public class DFHFurnace {
     }
 
     public void setDisplayCalculation(boolean bResults, boolean bProgress) {
+        debug("#795 setDisplayCalculation, bResults = " + bResults + ", bProgress = " + bProgress );
         setDisplayResults(bResults);
         setDisplayCalculationProgress(bProgress);
     }
@@ -1447,7 +1452,7 @@ public class DFHFurnace {
         return allOk;
     }
 
-    boolean evalTopOrBottomWithOnlyWallRadiation(boolean bBot, boolean bStart, String addMsg) {
+    protected boolean evalTopOrBottomWithOnlyWallRadiation(boolean bBot, boolean bStart, String addMsg) {
         boolean allOk = true;
         Vector<FceSection> vSec;
         String title;
@@ -3127,7 +3132,7 @@ public class DFHFurnace {
 
 // ===Progress Panel below======================================
 
-    JPanel getTrendsPanel(boolean bBot) {
+    protected JPanel getTrendsPanel(boolean bBot) {
         TrendsPanel gp; //  = setTrendPanel(bBot);
         String title;
         if (bBot) {
@@ -3186,7 +3191,7 @@ public class DFHFurnace {
     }
 
 
-    JPanel getCombiTrendsPanel() {
+    protected JPanel getCombiTrendsPanel() {
         TrendsPanel gp = combiTrends;
         FramedPanel outerPan = new FramedPanel(new BorderLayout());
         JPanel titleP = new JPanel();
