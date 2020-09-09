@@ -844,9 +844,11 @@ public class L2DFHeating extends StripHeating {
         return super.calculateFce();
     }
 
-    public void initTrendsDisplay() {
-        if (allTrends == null)
-            initAllTrendsGroup();
+    public void addResult(DFHResult.Type type, JPanel panel) {
+        ResultPanel rp;
+        rp = resultPanels.get(type);
+        if (rp != null)
+            rp.setPanel(panel);
     }
 
     protected boolean getUserResponse(OneStripDFHProcess oneProc, ChMaterial material) {

@@ -86,7 +86,6 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     boolean processListSetOnLevel1 = false;
 
     long displayUpdateInterval = 1000; // 1 sec
-    boolean trendPinited = false;
 
     public L2DFHFurnace(L2DFHeating l2DFHEating, boolean bTopBot, boolean bAddTopSoak, ActionListener listener) {
         super(l2DFHEating, bTopBot, bAddTopSoak, listener);
@@ -770,7 +769,6 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                     botTrendsP = getTrendsPanel(true);
                     combiTrendsP = getCombiTrendsPanel();
                 }
-                trendPinited = true;
             }
             break;
         }
@@ -795,10 +793,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
 //            setDisplayResults(false);
             setDisplayCalculation(true, false);
             chargeStatus.setProductionData(productionData);
-//            if (!itIsReadyForCalculation)
-                itIsReadyForCalculation =  getReadyToCalcul(true); // do not create new slots if already created
-//            else
-//                prepareForLiveCalculation();
+            getReadyToCalcul(true); // do not create new slots if already created
 //            getBasicsForCalculation();
 //            prepareForLiveCalculation();
             setEntrySlotChargeTemperature(productionData.entryTemp);
@@ -838,7 +833,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             logError("L2DfhFurnace..755: Facing some problem in reading furnace field data: " + fieldData.errMsg);
         }
         else {
-            l2DFHeating.initTrendsDisplay();
+//            l2DFHeating.initTrendsDisplay();
             setWallOnlyFactor(refP);
             outputEstimated = getOutputWithFurnaceTemperatureStatus(fieldData, chStatus, refP, exitTempRequired);
             resetWallOnlyFactor();
@@ -894,8 +889,6 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         evalTotTime();
     }
 
-    boolean resultsFirstTime = true;
-
     private double getOutputWithFurnaceTemperatureStatus(FieldResults fieldData, ChargeStatus chStatus, Performance refP, double exitTempRequired) {
         long stTimeNano = System.nanoTime();
         double outputAssumed = 0;
@@ -933,13 +926,11 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             }
             if (trials < 1000) {
                 resetChEmmissCorrectionFactor();
-//                if (resultsFirstTime && controller.heatingMode == DFHeating.HeatingMode.TOPBOTSTRIP) {
                 if (controller.heatingMode == DFHeating.HeatingMode.TOPBOTSTRIP) {
                     controller.addResult(DFHResult.Type.COMBItempTRENDS, topTrendsP);
                     l2DFHeating.setResultsReady(true);
                     l2DFHeating.enableResultsMenu(bDisplayResults);
                     topTrendsP.updateUI();
-//                    resultsFirstTime = false;
                 }
 //            logTrace("L2DFHFurnace.797: Trials in getOutputWithFurnaceStatus = " + trials);
             }

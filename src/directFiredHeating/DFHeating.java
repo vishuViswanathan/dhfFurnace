@@ -178,7 +178,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     boolean bAddTopSoak = true;
     Fuel commFuel;
     String nlSpace = ErrorStatAndMsg.nlSpace;
-    Hashtable<DFHResult.Type, ResultPanel> resultPanels, printPanels;
+    protected Hashtable<DFHResult.Type, ResultPanel> resultPanels;
+    Hashtable<DFHResult.Type, ResultPanel> printPanels;
     public DFHTuningParams.FurnaceFor furnaceFor = DFHTuningParams.FurnaceFor.BILLETS;
     protected DFHTuningParams tuningParams;
     protected JTextField tfReference, tfFceTitle, tfCustomer;
@@ -3995,7 +3996,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         }
     }
 
-    class ResultPanel {
+    protected class ResultPanel {
         DFHResult.Type type;
         JMenuItem mI;
         JPanel panel;
@@ -4027,7 +4028,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             return panel;
         }
 
-        void setPanel(JPanel panel) {
+        public void setPanel(JPanel panel) {
             this.panel = panel;
             mI.setEnabled(true);
         }
