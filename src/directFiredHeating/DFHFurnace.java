@@ -433,15 +433,15 @@ public class DFHFurnace {
         }
         else
             bNew = prepareSlots();
-//        debug("#436 before getTrendGraphPanel");
-//        if (bNew) {
-//            debug("#436 before getTrendGraphPanel, it is bNew");
+        debug("#436 before getTrendGraphPanel");
+        if (bNew) {
+            debug("#438 before getTrendGraphPanel, it is bNew");
             topTrends = getTrendGraphPanel(false);
             if (bTopBot) {
                 botTrends = getTrendGraphPanel(true);
                 combiTrends = getCombiGraphsPanel();
             }
-//        }
+        }
         boolean skipUserEntry = false;
         if (tuningParams.bBaseOnZonalTemperature) {
             if (resultsReady) {
@@ -796,7 +796,6 @@ public class DFHFurnace {
     }
 
     public void setDisplayCalculation(boolean bResults, boolean bProgress) {
-        debug("#795 setDisplayCalculation, bResults = " + bResults + ", bProgress = " + bProgress );
         setDisplayResults(bResults);
         setDisplayCalculationProgress(bProgress);
     }

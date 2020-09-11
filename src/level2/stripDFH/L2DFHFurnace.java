@@ -25,6 +25,7 @@ import performance.stripFce.StripProcessAndSize;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Calendar;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
@@ -735,6 +736,8 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             return null;
     }
 
+    boolean trendPinited = false;
+
     protected boolean doTheCalculationWithOnlyWallRadiation() {
         boolean retVal = false;
         boolean allOk = true;
@@ -762,13 +765,14 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             }
 
 //            if (allOk && canRun() && bDisplayResults) {
-            if (allOk && canRun() && bDisplayResults ) { // && !trendPinited) {
+            if (allOk && canRun() && bDisplayResults && !trendPinited) {
                 logDebug("#766 before trendsP");
                 topTrendsP = getTrendsPanel(false);
                 if (bTopBot) {
                     botTrendsP = getTrendsPanel(true);
                     combiTrendsP = getCombiTrendsPanel();
                 }
+                trendPinited = true;
             }
             break;
         }
@@ -793,9 +797,12 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
 //            setDisplayResults(false);
             setDisplayCalculation(true, false);
             chargeStatus.setProductionData(productionData);
-            getReadyToCalcul(true); // do not create new slots if already created
-//            getBasicsForCalculation();
-//            prepareForLiveCalculation();
+//            getReadyToCalcul(true); // do not create new slots if already created
+            if (!itIsReadyForCalculation) {
+                getBasicsForCalculation(true);
+                itIsReadyForCalculation = true;
+            }
+            prepareForLiveCalculation();
             setEntrySlotChargeTemperature(productionData.entryTemp);
             setProductionBasedSlotParams();
             if (doTheCalculationWithOnlyWallRadiation()) {
@@ -841,7 +848,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         return outputEstimated;
     }
 
-    public boolean getBasicsForCalculation() {
+    public boolean getBasicsForCalculation(boolean doNotCreateNewSlots) {
         boolean bRetVal = false;
         if (l2DFHeating.accessLevel == L2AccessControl.AccessLevel.RUNTIME) {
             this.calculStep = calculStep;
@@ -866,27 +873,60 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                         break;
                 }
                 firedCount(true);
+//                if (bAddTopSoak)
+//                    addedTopSoak.getReadyToCalcul();
             }
+//            bRecalculBot = false;
+//            bRecalculTop = false;
             boolean bNew = false;
-            bNew = prepareSlots();
-            logInfo("#825 before bNew");
-            if (bNew) {
-                logInfo("#826 before getTrendGraphPanel, it is bNew, topTrends = " + topTrends);
+            if (doNotCreateNewSlots) {
+                if (vTopUnitFces == null)
+                    bNew = prepareSlots();
+            }
+            else
+                bNew = prepareSlots();
+            logDebug("#881 before getTrendGraphPanel");
+//            if (bNew) {
+                logDebug("#883 before getTrendGraphPanel, bNew not used");
                 topTrends = getTrendGraphPanel(false);
                 if (bTopBot) {
                     botTrends = getTrendGraphPanel(true);
                     combiTrends = getCombiGraphsPanel();
                 }
             }
-            bRetVal = true;
-        }
-        logInfo("#834 returning from getBasicsForCalculation" + bRetVal);
+//        }
         return bRetVal;
     }
 
     private void prepareForLiveCalculation() {
         evalChUnitArea();
         evalTotTime();
+    }
+
+    void updateTopTrends() {
+        if (SwingUtilities.isEventDispatchThread())
+            topTrends.updateUI();
+        else {
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    public void run() {
+                        topTrends.updateUI();
+                    }
+                });
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    boolean slotsPrepared = false;
+
+    protected boolean prepareSlots() {
+        if (!slotsPrepared)
+            slotsPrepared =  super.prepareSlots();
+        return slotsPrepared;
     }
 
     private double getOutputWithFurnaceTemperatureStatus(FieldResults fieldData, ChargeStatus chStatus, Performance refP, double exitTempRequired) {
@@ -902,9 +942,9 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             double nowExitTemp, diff;
             int trials = 0;
             setChEmmissCorrectionFactor(refP.chEmmCorrectionFactor);
-            logTrace("L2DFHFurnace.803: chEmmCorrectionFactor = " + refP.chEmmCorrectionFactor);
+//            logTrace("L2DFHFurnace.945: chEmmCorrectionFactor = " + refP.chEmmCorrectionFactor);
             while (!done && trials < 1000) {
-//                logTrace("L2DfhFurnace.778: in the loop " + trials + ", " + outputAssumed);
+//                logTrace("L2DfhFurnace.947: in the loop " + trials + ", " + outputAssumed);
                 trials++;
                 chStatus.output = outputAssumed;
                 processInFurnace(chStatus);
@@ -930,15 +970,15 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                     controller.addResult(DFHResult.Type.COMBItempTRENDS, topTrendsP);
                     l2DFHeating.setResultsReady(true);
                     l2DFHeating.enableResultsMenu(bDisplayResults);
+                    updateTopTrends();
                     topTrendsP.updateUI();
+//                    logDebug("#975 topTrends = " + topTrends);
                 }
-//            logTrace("L2DFHFurnace.797: Trials in getOutputWithFurnaceStatus = " + trials);
             }
             else
                 outputAssumed = -1;
         } else
             logInfo("L2DFHFurnace.847: Facing problem in creating calculation steps");
-//        logTrace("L2DFHFurnace.785: Nano seconds for calculation = " + (System.nanoTime() - stTimeNano));
         return outputAssumed;
     }
 
@@ -1004,7 +1044,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     void prepareSlotsWithTempO(FieldResults results) {
         results.copyTempAtTCtoSection();
         setTempOForAllSlots();
-        logDebug("#960 topTResults colFceTemp " + topUfsArray.colFceTemp + ", tempO " + topUfsArray.getMultiColdata().getYat(topUfsArray.colFceTemp, 2));
+//        logDebug("#1047 topTResults colFceTemp " + topUfsArray.colFceTemp + ", tempO " + topUfsArray.getMultiColdata().getYat(topUfsArray.colFceTemp, 2));
     }
 
     public void handleNextStrip() {
@@ -1124,12 +1164,12 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         l2DFHeating.enablePerfMenu(false);
         FceEvaluator eval = controller.calculateForPerformanceTable(perform);
         if (eval != null) {
-//            logTrace("L2DfhFurnace.975: eval for Performance table is ok");
+//            logTrace("L2DfhFurnace.1185: eval for Performance table is ok");
             try {
                 eval.awaitThreadToExit();
-//                logTrace("L2DfhFurnace.978: eval for Performance table is completed");
+//                logTrace("L2DfhFurnace.1188: eval for Performance table is completed");
                 if (eval.healthyExit()) {
-//                    logTrace("L2DfhFurnace.980: eval for Performance table had healthy exit");
+//                    logTrace("L2DfhFurnace.1190 eval for Performance table had healthy exit");
                     if (replace) {
                         retVal = performBase.replaceExistingPerformance(perform);
                     }
@@ -1140,7 +1180,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                 e.printStackTrace();
             }
         } else
-            logInfo("L2DfhFurnace.991: eval for Performance table is null");
+            logInfo("L2DfhFurnace.1201: eval for Performance table is null");
         return retVal;
     }
 
