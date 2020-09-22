@@ -231,7 +231,8 @@ public class L2StripZone extends L2ParamGroup {
                 Performance refP = oneProcess.getPerformance();
                 if (refP != null) {
                     theStrip.refP = refP;
-                    double output = l2Furnace.getOutputWithFurnaceTemperatureStatus( theStrip.refP, theStrip.width, theStrip.thickness);
+                    double output = l2Furnace.getOutputWithFurnaceTemperatureStatus( theStrip.refP,
+                            theStrip.width, theStrip.thickness, "With Running Strip");
 //                    l2Furnace.logTrace("L2StripZone.216: Running Strip capacity Based On temperature= " + (output / 1000) + "t/h");
                     if (output > 0) {
                         DataWithStatus<Double> speedData = oneProcess.getRecommendedSpeed(output, theStrip.width, theStrip.thickness);
@@ -283,7 +284,8 @@ public class L2StripZone extends L2ParamGroup {
                 Performance refP = oneProcess.getPerformance();
                 if (refP != null) {
                     theStrip.refP = refP;
-                    double output = l2Furnace.getOutputWithFurnaceTemperatureStatus(theStrip.refP, theStrip.width, theStrip.thickness);
+                    double output = l2Furnace.getOutputWithFurnaceTemperatureStatus(theStrip.refP,
+                            theStrip.width, theStrip.thickness, "For Strip in Waiting");
                     l2Furnace.logTrace("l2StripZone.268: capacity Based On temperature= " + (output / 1000) + "t/h");
                     if (output > 0) {
                         DataWithStatus<Double> speedData = oneProcess.getRecommendedSpeed(output, theStrip.width, theStrip.thickness);

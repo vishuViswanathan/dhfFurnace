@@ -486,7 +486,7 @@ public class DFHFurnace {
     public boolean doTheCalculation() {
         // Zone gas temperature presets,  if required to be cleared, is taken care by the caller
         if (bBaseOnOnlyWallRadiation)
-            return doTheCalculationWithOnlyWallRadiation();
+            return doTheCalculationWithOnlyWallRadiation("");
         else {
             boolean allOk = true;
             boolean reDo = true;
@@ -595,7 +595,7 @@ public class DFHFurnace {
         }
     }
 
-    protected boolean doTheCalculationWithOnlyWallRadiation() {
+    protected boolean doTheCalculationWithOnlyWallRadiation(String title) {
         boolean retVal = false;
         boolean allOk = true;
         boolean reDo = true;

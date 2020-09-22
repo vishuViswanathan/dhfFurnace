@@ -85,7 +85,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
     public L2DFHeating l2DFHeating;
     boolean itIsRuntime = false;
     boolean processListSetOnLevel1 = false;
-
+    PanelWithTitle rtTrendsP;
     long displayUpdateInterval = 1000; // 1 sec
 
     public L2DFHFurnace(L2DFHeating l2DFHEating, boolean bTopBot, boolean bAddTopSoak, ActionListener listener) {
@@ -738,7 +738,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
 
     boolean trendPinited = false;
 
-    protected boolean doTheCalculationWithOnlyWallRadiation() {
+    protected boolean doTheCalculationWithOnlyWallRadiation(String title) {
         boolean retVal = false;
         boolean allOk = true;
         boolean reDo = true;
@@ -772,8 +772,10 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                     botTrendsP = getTrendsPanel(true);
                     combiTrendsP = getCombiTrendsPanel();
                 }
+                rtTrendsP = new PanelWithTitle(topTrends, "FURNACE TRENDS");
                 trendPinited = true;
             }
+            rtTrendsP.setTitle(title);
             break;
         }
         bBaseOnOnlyWallRadiation = false;
@@ -790,7 +792,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
      * Evaluating charge exit conditions for the existing furnace temperautures
      * @return
      */
-    public ChargeStatus processInFurnace(ChargeStatus chargeStatus) {
+    public ChargeStatus processInFurnace(ChargeStatus chargeStatus, String title) {
 //        logDebug("#745 processInFurnace");
         if (controller.heatingMode == DFHeating.HeatingMode.TOPBOTSTRIP) {
             setOnlyWallRadiation(true);
@@ -805,7 +807,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             prepareForLiveCalculation();
             setEntrySlotChargeTemperature(productionData.entryTemp);
             setProductionBasedSlotParams();
-            if (doTheCalculationWithOnlyWallRadiation()) {
+            if (doTheCalculationWithOnlyWallRadiation(title)) {
                 chargeAtExit(chargeStatus, false);
                 chargeStatus.setStatus(true);
             }
@@ -829,7 +831,8 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         return zFP.recommendedSpeed(totFuel, false);
     }
 
-    public double getOutputWithFurnaceTemperatureStatus(Performance refP, double stripWidth, double stripThick) {
+    public double getOutputWithFurnaceTemperatureStatus(Performance refP, double stripWidth, double stripThick,
+                                                        String title) {
         double exitTempRequired = refP.exitTemp();
         Charge ch = new Charge(controller.getSelChMaterial(refP.chMaterial), stripWidth, 1, stripThick);
         ChargeStatus chStatus = new ChargeStatus(ch, 0, exitTempRequired);
@@ -842,7 +845,8 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         else {
 //            l2DFHeating.initTrendsDisplay();
             setWallOnlyFactor(refP);
-            outputEstimated = getOutputWithFurnaceTemperatureStatus(fieldData, chStatus, refP, exitTempRequired);
+            outputEstimated = getOutputWithFurnaceTemperatureStatus(fieldData, chStatus, refP,
+                    exitTempRequired, title);
             resetWallOnlyFactor();
         }
         return outputEstimated;
@@ -929,7 +933,8 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         return slotsPrepared;
     }
 
-    private double getOutputWithFurnaceTemperatureStatus(FieldResults fieldData, ChargeStatus chStatus, Performance refP, double exitTempRequired) {
+    private double getOutputWithFurnaceTemperatureStatus(FieldResults fieldData, ChargeStatus chStatus, Performance refP, double exitTempRequired,
+                                                         String title) {
         long stTimeNano = System.nanoTime();
         double outputAssumed = 0;
         this.calculStep = controller.calculStep;
@@ -947,7 +952,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
 //                logTrace("L2DfhFurnace.947: in the loop " + trials + ", " + outputAssumed);
                 trials++;
                 chStatus.output = outputAssumed;
-                processInFurnace(chStatus);
+                processInFurnace(chStatus, title);
                 if (chStatus.isValid()) {
                     nowExitTemp = chStatus.tempWM;
                     diff = exitTempRequired - nowExitTemp;
@@ -967,7 +972,8 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             if (trials < 1000) {
                 resetChEmmissCorrectionFactor();
                 if (controller.heatingMode == DFHeating.HeatingMode.TOPBOTSTRIP) {
-                    controller.addResult(DFHResult.Type.COMBItempTRENDS, topTrendsP);
+//                    controller.addResult(DFHResult.Type.COMBItempTRENDS, topTrendsP);
+                    controller.addResult(DFHResult.Type.COMBItempTRENDS, rtTrendsP);
                     l2DFHeating.setResultsReady(true);
                     l2DFHeating.enableResultsMenu(bDisplayResults);
                     updateTopTrends();
@@ -1007,7 +1013,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             while (!done) {
                 trials++;
                 setChEmmissCorrectionFactor(chEmmissCorrectionFactor);
-                processInFurnace(chStatus);
+                processInFurnace(chStatus, "No title");
                 if (chStatus.isValid()) {
                     nowExitTemp = chStatus.tempWM;
                     diff = exitTempRequired - nowExitTemp;
@@ -1605,5 +1611,25 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
 
     public boolean informLevel2Ready() {
         return (basicZone.setValue(L2ParamGroup.Parameter.L2Stat, Tag.TagName.Ready, tagLevel2Enabled.getValue().booleanValue)).booleanValue;
+    }
+
+    class PanelWithTitle extends FramedPanel {
+        JLabel titleLabel;
+        PanelWithTitle(JPanel innerPanel, String title) {
+            super(new BorderLayout());
+            JPanel tP = new JPanel();
+            JPanel titleP = new JPanel(new GridLayout(1, 1));
+            titleP.setPreferredSize(new Dimension(300, 50));
+            titleLabel = new JLabel();
+            setTitle(title);
+            titleP.add(titleLabel);
+            tP.add(titleP);
+            add(tP, BorderLayout.NORTH);
+            add(innerPanel, BorderLayout.CENTER);
+         }
+
+         void setTitle(String title) {
+            titleLabel.setText("<html><b><font size='5'>" + title + "</font></b></html>");
+         }
     }
 }
