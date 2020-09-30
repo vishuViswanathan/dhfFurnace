@@ -37,6 +37,6 @@ public class StripProcessAndSize {
     }
 
     public String toString() {
-        return "Strip " + width + " x " + thickness + " for process " + processBaseName + ", exitTemp " + exitTemp;
+        return "Strip " + width * 1000 + "mm x " + thickness * 1000 + "mm for process " + processBaseName + ", exitTemp " + exitTemp;
     }
 }

@@ -738,7 +738,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
 
     boolean trendPinited = false;
 
-    protected boolean doTheCalculationWithOnlyWallRadiation(String title) {
+    protected boolean doTheCalculationWithOnlyWallRadiation() {
         boolean retVal = false;
         boolean allOk = true;
         boolean reDo = true;
@@ -775,7 +775,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
                 rtTrendsP = new PanelWithTitle(topTrends, "FURNACE TRENDS");
                 trendPinited = true;
             }
-            rtTrendsP.setTitle(title);
+//            rtTrendsP.setTitle(title);
             break;
         }
         bBaseOnOnlyWallRadiation = false;
@@ -792,7 +792,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
      * Evaluating charge exit conditions for the existing furnace temperautures
      * @return
      */
-    public ChargeStatus processInFurnace(ChargeStatus chargeStatus, String title) {
+    public ChargeStatus processInFurnace(ChargeStatus chargeStatus) {
 //        logDebug("#745 processInFurnace");
         if (controller.heatingMode == DFHeating.HeatingMode.TOPBOTSTRIP) {
             setOnlyWallRadiation(true);
@@ -807,7 +807,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             prepareForLiveCalculation();
             setEntrySlotChargeTemperature(productionData.entryTemp);
             setProductionBasedSlotParams();
-            if (doTheCalculationWithOnlyWallRadiation(title)) {
+            if (doTheCalculationWithOnlyWallRadiation()) {
                 chargeAtExit(chargeStatus, false);
                 chargeStatus.setStatus(true);
             }
@@ -831,8 +831,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         return zFP.recommendedSpeed(totFuel, false);
     }
 
-    public double getOutputWithFurnaceTemperatureStatus(Performance refP, double stripWidth, double stripThick,
-                                                        String title) {
+    public double getOutputWithFurnaceTemperatureStatus(Performance refP, double stripWidth, double stripThick) {
         double exitTempRequired = refP.exitTemp();
         Charge ch = new Charge(controller.getSelChMaterial(refP.chMaterial), stripWidth, 1, stripThick);
         ChargeStatus chStatus = new ChargeStatus(ch, 0, exitTempRequired);
@@ -846,7 +845,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
 //            l2DFHeating.initTrendsDisplay();
             setWallOnlyFactor(refP);
             outputEstimated = getOutputWithFurnaceTemperatureStatus(fieldData, chStatus, refP,
-                    exitTempRequired, title);
+                    exitTempRequired);
             resetWallOnlyFactor();
         }
         return outputEstimated;
@@ -933,8 +932,8 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
         return slotsPrepared;
     }
 
-    private double getOutputWithFurnaceTemperatureStatus(FieldResults fieldData, ChargeStatus chStatus, Performance refP, double exitTempRequired,
-                                                         String title) {
+    private double getOutputWithFurnaceTemperatureStatus(FieldResults fieldData, ChargeStatus chStatus, Performance refP,
+                                                         double exitTempRequired) {
         long stTimeNano = System.nanoTime();
         double outputAssumed = 0;
         this.calculStep = controller.calculStep;
@@ -952,7 +951,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
 //                logTrace("L2DfhFurnace.947: in the loop " + trials + ", " + outputAssumed);
                 trials++;
                 chStatus.output = outputAssumed;
-                processInFurnace(chStatus, title);
+                processInFurnace(chStatus);
                 if (chStatus.isValid()) {
                     nowExitTemp = chStatus.tempWM;
                     diff = exitTempRequired - nowExitTemp;
@@ -971,21 +970,34 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             }
             if (trials < 1000) {
                 resetChEmmissCorrectionFactor();
-                if (controller.heatingMode == DFHeating.HeatingMode.TOPBOTSTRIP) {
-//                    controller.addResult(DFHResult.Type.COMBItempTRENDS, topTrendsP);
-                    controller.addResult(DFHResult.Type.COMBItempTRENDS, rtTrendsP);
-                    l2DFHeating.setResultsReady(true);
-                    l2DFHeating.enableResultsMenu(bDisplayResults);
-                    updateTopTrends();
-                    topTrendsP.updateUI();
-//                    logDebug("#975 topTrends = " + topTrends);
-                }
+//                if (itIsRuntime) {
+////                    controller.addResult(DFHResult.Type.COMBItempTRENDS, topTrendsP);
+//                    controller.addResult(DFHResult.Type.COMBItempTRENDS, rtTrendsP);
+//                    l2DFHeating.setResultsReady(true);
+//                    l2DFHeating.enableResultsMenu(bDisplayResults);
+//                    updateTopTrends();
+//                    topTrendsP.updateUI();
+////                    logDebug("#975 topTrends = " + topTrends);
+//                }
             }
             else
                 outputAssumed = -1;
         } else
             logInfo("L2DFHFurnace.847: Facing problem in creating calculation steps");
         return outputAssumed;
+    }
+
+    public void enableTrendDisplay(String title, StripProcessAndSize strip) {
+        if (itIsRuntime) {
+//                    controller.addResult(DFHResult.Type.COMBItempTRENDS, topTrendsP);
+            rtTrendsP.setTitle(title);
+            rtTrendsP.setDetails(strip);
+            controller.addResult(DFHResult.Type.COMBItempTRENDS, rtTrendsP);
+            l2DFHeating.setResultsReady(true);
+            l2DFHeating.enableResultsMenu(bDisplayResults);
+            updateTopTrends();
+            topTrendsP.updateUI();
+        }
     }
 
     public DataWithStatus<Double> setEmmissFactorBasedOnFieldResults(FieldResults fieldData) {
@@ -1013,7 +1025,7 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
             while (!done) {
                 trials++;
                 setChEmmissCorrectionFactor(chEmmissCorrectionFactor);
-                processInFurnace(chStatus, "No title");
+                processInFurnace(chStatus);
                 if (chStatus.isValid()) {
                     nowExitTemp = chStatus.tempWM;
                     diff = exitTempRequired - nowExitTemp;
@@ -1615,21 +1627,47 @@ public class L2DFHFurnace extends StripFurnace implements L2Interface {
 
     class PanelWithTitle extends FramedPanel {
         JLabel titleLabel;
-        PanelWithTitle(JPanel innerPanel, String title) {
+        JLabel jlProcess;
+        JLabel jlSize;
+        JLabel jlSpeed;
+        JLabel jlOutput;
+        PanelWithTitle(JPanel mainPanel, String title) {
             super(new BorderLayout());
-            JPanel tP = new JPanel();
+            JPanel outerTitlePanel = new JPanel(new GridLayout(1, 2));
             JPanel titleP = new JPanel(new GridLayout(1, 1));
-            titleP.setPreferredSize(new Dimension(300, 50));
+            titleP.setPreferredSize(new Dimension(700, 50));
             titleLabel = new JLabel();
             setTitle(title);
             titleP.add(titleLabel);
-            tP.add(titleP);
-            add(tP, BorderLayout.NORTH);
-            add(innerPanel, BorderLayout.CENTER);
+            outerTitlePanel.add(titleP);
+            outerTitlePanel.add(detailsP());
+            add(outerTitlePanel, BorderLayout.NORTH);
+            add(mainPanel, BorderLayout.CENTER);
+         }
+
+         JPanel detailsP() {
+             jlProcess = new JLabel("ABCDEF");
+             jlSize = new JLabel("wwww mm x tt.tt mm");
+             MultiPairColPanel procSizeP = new MultiPairColPanel(150, 200);
+             procSizeP.addItemPair("Process", jlProcess);
+             procSizeP.addItemPair("Strip Size", jlSize);
+             jlSpeed = new JLabel("sss");
+             jlOutput = new JLabel("ooo.oo");
+             MultiPairColPanel speedOutputP = new MultiPairColPanel(150, 200);
+             speedOutputP.addItemPair("Strip Speed m/min", jlSpeed);
+             speedOutputP.addItemPair("Output t/h", jlOutput);
+
+             MultiPairColPanel p = new MultiPairColPanel(400, 400);
+             p.addItemPair(procSizeP, speedOutputP);
+             return p;
          }
 
          void setTitle(String title) {
             titleLabel.setText("<html><b><font size='5'>" + title + "</font></b></html>");
+         }
+
+         void setDetails(StripProcessAndSize strip) {
+
          }
     }
 }

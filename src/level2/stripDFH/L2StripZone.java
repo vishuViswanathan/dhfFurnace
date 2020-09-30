@@ -232,7 +232,7 @@ public class L2StripZone extends L2ParamGroup {
                 if (refP != null) {
                     theStrip.refP = refP;
                     double output = l2Furnace.getOutputWithFurnaceTemperatureStatus( theStrip.refP,
-                            theStrip.width, theStrip.thickness, "With Running Strip");
+                            theStrip.width, theStrip.thickness);
 //                    l2Furnace.logTrace("L2StripZone.216: Running Strip capacity Based On temperature= " + (output / 1000) + "t/h");
                     if (output > 0) {
                         DataWithStatus<Double> speedData = oneProcess.getRecommendedSpeed(output, theStrip.width, theStrip.thickness);
@@ -245,6 +245,7 @@ public class L2StripZone extends L2ParamGroup {
                                         (float) ((oneProcess.getLimitSpeed(theStrip.thickness) / 60)));
                             }else
                                 status.setErrorMessage("Running Strip: Unable to set recommended speed" + responseSpeed.errorMessage);
+                            l2Furnace.enableTrendDisplay("With Running Strip", theStrip);
                         } else
                             status.setErrorMessage("Running Strip: Unable to get recommended speed: " + speedData.getErrorMessage());
                     } else
@@ -285,7 +286,7 @@ public class L2StripZone extends L2ParamGroup {
                 if (refP != null) {
                     theStrip.refP = refP;
                     double output = l2Furnace.getOutputWithFurnaceTemperatureStatus(theStrip.refP,
-                            theStrip.width, theStrip.thickness, "For Strip in Waiting");
+                            theStrip.width, theStrip.thickness);
                     l2Furnace.logTrace("l2StripZone.268: capacity Based On temperature= " + (output / 1000) + "t/h");
                     if (output > 0) {
                         DataWithStatus<Double> speedData = oneProcess.getRecommendedSpeed(output, theStrip.width, theStrip.thickness);
@@ -308,6 +309,8 @@ public class L2StripZone extends L2ParamGroup {
                                         status.setErrorMessage("Unable to set Strip Exit Temperature : " + responseTempSp.errorMessage);
                                 } else
                                     status.setErrorMessage("Unable to set Strip Speed Limit" + responseSpeedLimit.errorMessage);
+                                l2Furnace.enableTrendDisplay("For Strip in Waiting", theStrip);
+
                             }else
                                 status.setErrorMessage("Unable to set recommended speed" + responseSpeed.errorMessage);
                         } else
