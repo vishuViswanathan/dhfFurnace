@@ -73,7 +73,7 @@ public class RTHeating extends JPanel implements InputControl{
         INPUTPAGE, RESULTSPAGE
     }
 
-    String title = "Radiant Tube Heated Furnace 20200930";
+    String title = "Radiant Tube Heated Furnace 20201002";
     public int appCode = 101;
     boolean canNotify = true;
 //    JSObject win;
