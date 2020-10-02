@@ -65,7 +65,7 @@ public class RadiantTube {
     NumberTextField ntRadiantTubeRating;
     NumberTextField ntRadiantTubeEmiss;
     boolean radiantTubeFieldsSet = false;
-    JPanel dataPanel;
+    MultiPairColPanel dataPanel;
 
     public JPanel radiantTubesP(InputControl ipc) {
         if (!radiantTubeFieldsSet) {
@@ -85,6 +85,10 @@ public class RadiantTube {
             dataPanel = pan;
             radiantTubeFieldsSet = true;
         }
+        return dataPanel;
+    }
+
+    public MultiPairColPanel getDataPanel() {
         return dataPanel;
     }
 

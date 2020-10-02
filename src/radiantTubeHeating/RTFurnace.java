@@ -7,6 +7,9 @@ import mvUtils.display.*;
 import mvUtils.math.DoublePoint;
 import mvUtils.math.DoubleRange;
 import mvUtils.mvXML.XMLmv;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -74,7 +77,7 @@ public class RTFurnace extends GraphInfoAdapter {
     NumberTextField ntUsefullLength;
     NumberTextField ntLossPerMeter;
     boolean fceDataFieldsSet = false;
-    JPanel fceDetailsPanel;
+    MultiPairColPanel fceDetailsPanel;
     Vector<NumberTextField> fceDetailsFields;
 
     public JPanel fceDetailsP(InputControl ipc) {
@@ -98,6 +101,49 @@ public class RTFurnace extends GraphInfoAdapter {
             fceDataFieldsSet = true;
         }
         return fceDetailsPanel;
+    }
+
+    boolean xlFurnaceData(Sheet sheet, ExcelStyles styles) {
+        Cell cell;
+        Row r;
+        r = sheet.createRow(0);
+        cell = r.createCell(0);
+        cell.setCellStyle(styles.csHeader1);
+        cell.setCellValue("Furnace Details");
+
+        sheet.setColumnWidth(1, 10000);
+        sheet.setColumnWidth(2, 3000);
+        sheet.setColumnWidth(3, 500);
+        sheet.setColumnWidth(4, 9000);
+        sheet.setColumnWidth(5, 3000);
+        int topRow = 4, row, rRow;
+        int col = 1;
+        row = styles.xlMultiPairColPanel(fceDetailsPanel, sheet, topRow, col);
+        rRow = styles.xlMultiPairColPanel(rth.chargeP, sheet, topRow, col + 3);
+        row = Math.max(row, rRow);
+        row = Math.max(row, rRow);
+        topRow = row + 1;
+        row = styles.xlMultiPairColPanel(rt.getDataPanel(), sheet, topRow, col);
+        rRow = styles.xlMultiPairColPanel(rth.productionPanel, sheet, topRow, col + 3);
+        row = Math.max(row, rRow);
+        topRow = row + 1;
+        row = styles.xlMultiPairColPanel(radiantTubeInFceP, sheet, topRow, col);
+        rRow = styles.xlMultiPairColPanel(rth.calculModeP, sheet, topRow, col + 3);
+        return true;
+    }
+
+    boolean xlTempProfile(Sheet sheet, ExcelStyles styles) {
+        Cell cell;
+        Row r;
+        r = sheet.createRow(0);
+        cell = r.createCell(0);
+        cell.setCellStyle(styles.csHeader1);
+        cell.setCellValue("TEMPERATURE PROFILE OF SECTIONS");
+        int topRow = 4;
+        int leftCol = 1;
+        JTable table = getResultTable();
+        int row = styles.xlAddXLCellData(sheet, topRow, leftCol, table);
+        return true;
     }
 
     public boolean takeFceDetailsFromUI() {
@@ -191,12 +237,12 @@ public class RTFurnace extends GraphInfoAdapter {
     NumberTextField ntTubesPerFceLength;
     NumberTextField ntRadiantTubeChargeDistance;
     boolean radiantTubeFieldsSet = false;
-    JPanel radiantTubeInFceP;
+    MultiPairColPanel radiantTubeInFceP;
     Vector<NumberTextField> tubesInFceFields;
 
     public JPanel radiantTubesP(InputControl ipc) {
         if (!radiantTubeFieldsSet) {
-            MultiPairColPanel pan = new MultiPairColPanel("Radiant Tube Data");
+            MultiPairColPanel pan = new MultiPairColPanel("Radiant Tubes in Furnace");
             pan.addItem(rt.radiantTubesP(ipc));
             tubesInFceFields = new Vector<>();
             tubesInFceFields.add(ntTubesPerFceLength = new NumberTextField(ipc, rtPerM, 6, false,
@@ -461,6 +507,7 @@ public class RTFurnace extends GraphInfoAdapter {
     public String resultsInCVS() {
         return "\n\n\n" + tableModel.getResultsCVS();
     }
+
 
     public String fceDataToSave() {
         String retVal;

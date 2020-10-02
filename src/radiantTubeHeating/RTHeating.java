@@ -10,6 +10,9 @@ import mvUtils.jsp.JSPComboBox;
 import mvUtils.jsp.JSPConnection;
 import mvUtils.math.XYArray;
 //import netscape.javascript.JSObject;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import protection.CheckAppKey;
 
 
@@ -21,21 +24,18 @@ import java.awt.Color;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.Vector;
 
 /**
  * Created by IntelliJ IDEA.
  * User: M Viswanathan
- * Date: 4/19/12
+ * Date: 4/19/12 Modified 30 Sep 2020
  * Time: 1:28 PM
  * To change this template use File | Settings | File Templates.
  */
 
-public class RTHeating extends JApplet implements InputControl{
+public class RTHeating extends JPanel implements InputControl{
     public enum LimitMode {
         RTTEMP("RT Temperature"),
         RTHEAT("RT Heat Release");
@@ -73,7 +73,7 @@ public class RTHeating extends JApplet implements InputControl{
         INPUTPAGE, RESULTSPAGE
     }
 
-    String title = "Radiant Tube Heated Furnace 20170901";
+    String title = "Radiant Tube Heated Furnace 20200930";
     public int appCode = 101;
     boolean canNotify = true;
 //    JSObject win;
@@ -340,12 +340,14 @@ public class RTHeating extends JApplet implements InputControl{
     JMenu fileMenu;
     JMenu inputMenu;
     JMenu resultsMenu;
+    protected JMenuItem mIGetFceProfile;
+    JMenuItem mISaveToXL;
+    JMenuItem mIExit;
     boolean resultsReady = false;
 
     void setMenuOptions() {
         JMenuBar mb = new JMenuBar();
         OnePropertyTrace oneT;
-        JMenuItem mI;
         MenuActions mAction = new MenuActions();
         fileMenu = new JMenu("File");
 //        mI = new JMenuItem("Save Results");
@@ -355,9 +357,20 @@ public class RTHeating extends JApplet implements InputControl{
 //        mI.addActionListener(mAction);
 //        fileMenu.add(mI);
 //        fileMenu.addSeparator();
-        mI = new JMenuItem("Exit");
-        mI.addActionListener(mAction);
-        fileMenu.add(mI);
+        mIExit = new JMenuItem("Exit");
+        mIExit.addActionListener(mAction);
+        mIGetFceProfile = new JMenuItem("Load Furnace");
+        mIGetFceProfile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, KeyEvent.CTRL_DOWN_MASK));
+        mIGetFceProfile.addActionListener(mAction);
+        mISaveToXL = new JMenuItem("Save Results and Furnace Data to Excel");
+        mISaveToXL.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, KeyEvent.CTRL_DOWN_MASK));
+        mISaveToXL.addActionListener(mAction);
+        mISaveToXL.setEnabled(false);
+        fileMenu.add(mIGetFceProfile);
+        fileMenu.add(mISaveToXL);
+        fileMenu.addSeparator();
+        fileMenu.add(mIExit);
+
         mb.add(fileMenu);
         inputMenu = new JMenu("input Data");
         resultsMenu = new JMenu("Results");
@@ -425,6 +438,7 @@ public class RTHeating extends JApplet implements InputControl{
         pbEdit.setEnabled(!ena);
         resultsReady = !ena;
         resultsMenu.setEnabled(!ena);
+        mISaveToXL.setEnabled(!ena);
     }
 
     void close() {
@@ -435,9 +449,18 @@ public class RTHeating extends JApplet implements InputControl{
 
     class MenuActions implements ActionListener {
         public void actionPerformed(ActionEvent e) {
-            String command = e.getActionCommand();
-            if (command.equals("Exit"))
-                close();
+            Object src = e.getSource();
+            menuBlk:
+            {
+                if (src == mIExit) {
+                    close();
+                    break menuBlk;
+                }
+                if (src == mISaveToXL) {
+                    excelResultsFile();
+                    break menuBlk;
+                }
+            }
         } // actionPerformed
     } // class TraceActionListener
 
@@ -565,7 +588,7 @@ public class RTHeating extends JApplet implements InputControl{
 
     JSPComboBox<ChMaterial> cbChMaterial;
     Vector<ChMaterial> vChMaterial;
-    JPanel chargeP;
+    MultiPairColPanel chargeP;
     double stripWidth = 1.25;
     double stripThick = 0.0006;
     NumberTextField ntStripWidth;
@@ -619,7 +642,7 @@ public class RTHeating extends JApplet implements InputControl{
     NumberTextField ntOutput;
     NumberTextField ntChEntryTemp;
     NumberTextField ntChExitTemp;
-    JPanel productionPanel;
+    MultiPairColPanel productionPanel;
     boolean productionFieldsSet = false;
     Vector<NumberTextField> productionFields;
 
@@ -754,8 +777,8 @@ public class RTHeating extends JApplet implements InputControl{
 //        return retVal;
 //    }
 
-    JPanel calculModeP;
-    JComboBox<LimitMode> cbLimitMode;
+    MultiPairColPanel calculModeP;
+    JComboBox<LimitMode> cbLimitMode; // moade XLComboBox
     NumberTextField ntMaxRtTemp;
     NumberTextField ntMaxRtHeat;
     NumberTextField ntUfceLen;
@@ -766,7 +789,7 @@ public class RTHeating extends JApplet implements InputControl{
         if (!calculFieldsSet) {
             MultiPairColPanel pan = new MultiPairColPanel("Calculation Mode");
             calculFields = new Vector<>();
-            cbLimitMode = new JComboBox<>(LimitMode.values());
+            cbLimitMode = new XLComboBox(LimitMode.values());
             pan.addItemPair("Calculation Limiting Mode", cbLimitMode);
             calculFields.add(ntMaxRtTemp = new NumberTextField(ipc, rtLimitTemp, 6, false,
                     200, 2000, "#,###", "Radiant Tube Temperature Limit (C)"));
@@ -833,6 +856,69 @@ public class RTHeating extends JApplet implements InputControl{
 //        return furnace.resultsInCVS();
 //    }
 
+    void excelResultsFile() {
+        //  create a new workbook
+//        Workbook wb = new HSSFWorkbook();
+        Workbook wb = new XSSFWorkbook();
+        int nSheet = 0;
+        //  create a new sheet
+        ExcelStyles styles = new ExcelStyles(wb);
+        wb.createSheet("Furnace Data");
+        furnace.xlFurnaceData(wb.getSheetAt(nSheet), styles);
+//        nSheet++;
+//        wb.createSheet("Heat Summary");
+//        furnace.xlHeatSummary(wb.getSheetAt(nSheet), styles);
+//        nSheet++;
+//        wb.createSheet("Sec Summary");
+//        furnace.xlSecSummary(wb.getSheetAt(nSheet), styles, false);
+//        nSheet++;
+//        wb.createSheet("Loss Details");
+//        furnace.xlLossDetails(wb.getSheetAt(nSheet), styles);
+//
+        nSheet++;
+        wb.createSheet("Temp Profile");
+        furnace.xlTempProfile(wb.getSheetAt(nSheet), styles);
+        nSheet++;
+        wb.createSheet("Furnace Profile");
+        wb.setSheetHidden(nSheet, true);
+        Sheet sh = wb.getSheetAt(nSheet);
+//        xlFceProfile(sh, styles);
+
+//        nSheet++;
+        //  create a new file
+        FileOutputStream out = null;
+        FileDialog fileDlg =
+                new FileDialog(mainF, "Saving Results to Excel",
+                        FileDialog.SAVE);
+
+        fileDlg.setFile("Test workbook from Java.xlsx");
+        fileDlg.setVisible(true);
+        String bareFile = fileDlg.getFile();
+        if (bareFile != null) {
+            int len = bareFile.length();
+            if ((len < 4) || !(bareFile.substring(len - 5).equalsIgnoreCase(".xlsx"))) {
+                showMessage("Adding '.xlsx' to file name");
+                bareFile = bareFile + ".xlsx";
+            }
+            String fileName = fileDlg.getDirectory() + bareFile;
+            try {
+                out = new FileOutputStream(fileName);
+            } catch (FileNotFoundException e) {
+                showError("Some problem in file.\n" + e.getMessage());
+                return;
+            }
+            try {
+                wb.write(out);
+                out.close();
+            } catch (IOException e) {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                showError("Some problem with file.\n" + e.getMessage());
+            }
+        }
+        parent().toFront();
+    }
+
+
     @Override
     public boolean canNotify() {
         return canNotify;
@@ -867,6 +953,31 @@ public class RTHeating extends JApplet implements InputControl{
         if (w != null)
             w.toFront();
     }
+
+    public void showMessage(String msg) {
+        showMessage("", msg);
+    }
+
+    public void showMessage(String title, String msg) {
+        SimpleDialog.showMessage(parent(), title, msg);
+        Window w = parent();
+        if (w != null)
+            w.toFront();
+    }
+
+    public boolean decide(String title, String msg) {
+        return decide(title, msg, true);
+    }
+
+    public boolean decide(String title, String msg, boolean defaultOption) {
+        int resp = SimpleDialog.decide(parent(), title, msg, defaultOption);
+        return resp == JOptionPane.YES_OPTION;
+    }
+
+    public boolean decide(String title, String msg, int forTime) {
+        return SimpleDialog.decide(this, title, msg, forTime);
+    }
+
 
     class WinListener implements WindowListener {
         public void windowOpened(WindowEvent e) {

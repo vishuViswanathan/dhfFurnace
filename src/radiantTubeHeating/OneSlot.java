@@ -21,6 +21,7 @@ public class OneSlot {
     double HEATERRLIMIT = 0.001;
 
     public static String[] colName = {"Time", "LenPos", "TempHE", "tempFce", "tempCh", "HeatCh", "HeatLoss", "HeatHE"};
+    public static String[] fmtStr = {"0.000", "#.000", "#,###.0", "#,###.0", "#,###.0", "#,###", "#,###", "#,###"};
     static int nColumn = colName.length;
     double lPos;
     Charge charge;
@@ -97,21 +98,21 @@ public class OneSlot {
     public String getColData(int col) {
          switch(col) {
             case 0:
-                return formatNumber(endTime, "00.000");
+                return formatNumber(endTime, fmtStr[col]);
             case 1:
-                return formatNumber(lPos, "#0.00");
+                return formatNumber(lPos, fmtStr[col]);
             case 2:
-                return formatNumber(tempHe - 273, "#,###");
+                return formatNumber(tempHe - 273, fmtStr[col]);
             case 3:
-                return formatNumber(tempFce - 273, "#,###");
+                return formatNumber(tempFce - 273, fmtStr[col]);
             case 4:
-                return formatNumber(tempChEnd - 273, "#,###");
+                return formatNumber(tempChEnd - 273, fmtStr[col]);
             case 5:
-                return formatNumber(heatCh);
+                return formatNumber(heatCh, fmtStr[col]);
             case 6:
-                return formatNumber(heatLoss);
+                return formatNumber(heatLoss, fmtStr[col]);
             case 7:
-                return formatNumber(heatHe);
+                return formatNumber(heatHe, fmtStr[col]);
             default:
                 return "NO DATA";
          }
