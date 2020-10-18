@@ -35,8 +35,11 @@ public class RTFurnace extends GraphInfoAdapter {
     public RadiantTube rt;
     double rtPerM = 3;
     double topRTperM, botRTperM;
+    double rollPitch = 0;
+    double rollDia = 0;
 
     public Charge charge;
+    public int nChargeAlongFceWidth = 1;
     double production = 20, unitTime;
     double maxFceLen = 50, unitLen = 1;
     double unitLoss;
@@ -45,11 +48,11 @@ public class RTFurnace extends GraphInfoAdapter {
     public double uAreaChHe, uAreaHeCh;
     double uAreaWalls;
     double gapHeCh ;
-    Vector<OneSlot> allSlots;
+    Vector<OneRTslot> allSlots;
     int maxSlots;
     public int nSlots = 0;
     MyTableModel tableModel;
-    OneSlot startSlot;
+    OneRTslot startSlot;
 
     public RTFurnace(RTHeating rth) {
         this.rth = rth;
@@ -172,61 +175,34 @@ public class RTFurnace extends GraphInfoAdapter {
 
     }
 
-    public void setProduction(Charge charge, double production, double maxFceLen, double unitLen, double unitLoss, RTHeating.LimitMode iCalculMode) {
+    public void setProduction(Charge charge, int nItemsInFceWidth, double production,
+                              double unitLen, RTHeating.LimitMode iCalculMode) {
         this.charge = charge;
-        this.production = production;
-        this.unitLen = unitLen;
-        this.maxFceLen = maxFceLen;
-        this.unitLoss = unitLoss;
-        this.iLimitMode = iCalculMode;
-        uAreaChTot = charge.getLength() * 2 * unitLen; // 20170802 earlier had an error of calling getWidth(), length of charge is along fce width
-        uAreaChHe = uAreaChTot;
-        uAreaHeTot = rt.getTotHeatingSurface() * (topRTperM + botRTperM) * unitLen;
-        uAreaHeCh = uAreaHeTot / 2;
-        uAreaWalls = (width + 2 * heightAbove + charge.getHeight()) * 2 *unitLen;
-        gapHeCh = rtCenterAbove - rt.dia / 2;
-        maxSlots = (int) (maxFceLen / unitLen);
-        allSlots = new Vector<>();
-        double lPos = unitLen;
-        OneSlot slot;
-        double endTime = 0;
-        double uWt = charge.unitWt;
-        unitTime = unitLen / (production / 60 / uWt);
-        OneSlot prevSlot = null;
-        for (int i = 0; i < maxSlots; i++) {
-            endTime += unitTime;
-            slot = new OneSlot(this, lPos, prevSlot);
-            slot.setCharge(charge, uWt, unitTime, endTime);
-            allSlots.add(slot);
-            lPos += unitLen;
-            prevSlot = slot;
-        }
-    }
-
-    public void setProduction(Charge charge, double production, double unitLen, RTHeating.LimitMode iCalculMode) {
-        this.charge = charge;
+        this.nChargeAlongFceWidth = nItemsInFceWidth;
         this.production = production;
         this.unitLen = unitLen;
 //        this.maxFceLen = maxFceLen;
         this.unitLoss = lossPerM * unitLen;
         this.iLimitMode = iCalculMode;
-        uAreaChTot = charge.getLength() * 2 * unitLen;
+//        uAreaChTot = charge.getLength() * 2 * unitLen * nItemsInFceWidth;
+        uAreaChTot = charge.getProjectedTopArea() * 2 *  nItemsInFceWidth;
         uAreaChHe = uAreaChTot;
         uAreaHeTot = rt.getTotHeatingSurface() * (topRTperM + botRTperM) * unitLen;
-        uAreaHeCh = uAreaHeTot / 2;
+        uAreaHeCh = uAreaHeTot / 2; // ?? * 2 / (Math.PI / 2); // 20201014
         uAreaWalls = (width + 2 * heightAbove + charge.getHeight()) * 2 *unitLen;
-        gapHeCh = rtCenterAbove - rt.dia / 2;
+        gapHeCh = rtCenterAbove; // was before 20201014 rtCenterAbove - rt.dia / 2;
         maxSlots = (int) (maxFceLen / unitLen);
-        allSlots = new Vector<OneSlot>();
+        allSlots = new Vector<OneRTslot>();
         double lPos = unitLen;
-        OneSlot slot;
+        OneRTslot slot;
         double endTime = 0;
-        double uWt = charge.unitWt;
+        double uWt = charge.unitWt * nItemsInFceWidth;
         unitTime = unitLen / (production / 60 / uWt);
-        OneSlot prevSlot = null;
+        OneRTslot prevSlot = null;
         for (int i = 0; i < maxSlots; i++) {
             endTime += unitTime;
-            slot = new OneSlot(this, lPos, prevSlot);
+//            slot = new OneRTslot(this, lPos, prevSlot);
+            slot = new OneRTslot(this, lPos, prevSlot, unitLen, rtPerM, 0, 0);
             slot.setCharge(charge, uWt, unitTime, endTime);
             allSlots.add(slot);
             lPos += unitLen;
@@ -249,6 +225,7 @@ public class RTFurnace extends GraphInfoAdapter {
                     0, 100, "#.000", "Number of Tube per m of Furnace Length"));
             tubesInFceFields.add(ntRadiantTubeChargeDistance = new NumberTextField(ipc, rtCenterAbove * 1000, 6, false,
                     0, 10000, "#,###", "RT Centerline above Charge Surface (mm)"));
+            pan.addItem("<html><B>Tubes to have a minimum gap of One Dia between the legs</B></html>");
             pan.addItemPair(ntTubesPerFceLength);
             pan.addItemPair(ntRadiantTubeChargeDistance);
             radiantTubeInFceP = pan;
@@ -265,6 +242,12 @@ public class RTFurnace extends GraphInfoAdapter {
             rtPerM = ntTubesPerFceLength.getData();
             rtCenterAbove = ntRadiantTubeChargeDistance.getData() / 1000;
             retVal = rt.takeFromUI();
+            if (retVal) {
+                if (heightAbove <= (rtCenterAbove + rt.dia)) {
+                    rth.showError("Error in Furnace Height/ Radiant tube location");
+                    retVal = false;
+                }
+            }
         }
         return retVal;
     }
@@ -277,7 +260,7 @@ public class RTFurnace extends GraphInfoAdapter {
         this.chEndTemp = chEndTemp;
         this.srcTemp = srcTemp;
         this.rtHeat = rtHeat;
-        OneSlot slot = allSlots.get(0);
+        OneRTslot slot = allSlots.get(0);
         double srcHeat = rtHeat * 860 * (topRTperM + botRTperM) * unitLen;
         double exitTemp = slot.calculate(chStTemp, srcTemp, 0, srcHeat, iLimitMode);
         nSlots = 1;
@@ -286,7 +269,7 @@ public class RTFurnace extends GraphInfoAdapter {
             exitTemp = slot.calculate();
             nSlots++;
         }
-        startSlot = new OneSlot(allSlots.get(0), 0);
+        startSlot = new OneRTslot(allSlots.get(0), 0);
         setDataForTraces();
         return true;
     }
@@ -303,7 +286,7 @@ public class RTFurnace extends GraphInfoAdapter {
         }
 
         public int getColumnCount() {
-            return OneSlot.nColumn;
+            return OneRTslot.nColumn;
         }
 
         public int getRowCount() {
@@ -311,15 +294,15 @@ public class RTFurnace extends GraphInfoAdapter {
         }
 
         public String getColumnName(int col) {
-            if (col < OneSlot.nColumn)
-                return OneSlot.colName[col];
+            if (col < OneRTslot.nColumn)
+                return OneRTslot.colName[col];
             else
                 return "UNKNOWN";
         }
 
         public Object getValueAt(int row, int col) { // was(int xPos, int yPos) {
             String data;
-            OneSlot slot;
+            OneRTslot slot;
 
             if (row >= 0 && row < allSlots.size() + 1) {
                 if (row == 0)
@@ -334,7 +317,7 @@ public class RTFurnace extends GraphInfoAdapter {
 
         public double getdoubleValueAt(int row, int col) { // was(int xPos, int yPos) {
             double data;
-            OneSlot slot;
+            OneRTslot slot;
 
             if (row >= 0 && row < allSlots.size() + 1) {
                 if (row == 0)
@@ -350,8 +333,8 @@ public class RTFurnace extends GraphInfoAdapter {
         String getResultsCVS() {
             String cvs = "";
             int c;
-            int columns = OneSlot.nColumn;
-            for (c = 0; c < OneSlot.nColumn; c++) {
+            int columns = OneRTslot.nColumn;
+            for (c = 0; c < OneRTslot.nColumn; c++) {
                 cvs += getColumnName(c) + ((c == (columns - 1) ? "\n" : ","));
             }
             int rows = getRowCount();
@@ -389,7 +372,7 @@ public class RTFurnace extends GraphInfoAdapter {
     DoubleRange commonX, commonY;
 
     void setDataForTraces() {
-        OneSlot slot;
+        OneRTslot slot;
         tempHe = new DoublePoint[nSlots + 1];
         tempFce = new DoublePoint[nSlots + 1];
         tempCh = new DoublePoint[nSlots + 1];

@@ -786,6 +786,7 @@ public class DFHFurnace {
         this.bDisplayResults = bShowResults;
     }
 
+//    The following called from Performance (valid for strip only)
     public boolean evaluate(FceEvaluator master, double forOutput, double stripWidth) {
         boolean retVal = false;
         enablePeformMenu(false);

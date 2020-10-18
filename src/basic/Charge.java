@@ -1,8 +1,11 @@
 package basic;
 
 import directFiredHeating.DFHeating;
+import mvUtils.display.SimpleDialog;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
+
+import java.awt.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -12,9 +15,10 @@ import mvUtils.mvXML.XMLmv;
  * To change this template use File | Settings | File Templates.
  */
 public class Charge {
-    static public enum ChType {
+    public enum ChType {
         SOLID_RECTANGLE("Rectangular solid"),
-        SOLID_CIRCLE("Circular solid");
+        SOLID_CIRCLE("Circular solid"),
+        TUBULAR("Tubular");
 
         private final String chTypeName;
 
@@ -47,18 +51,20 @@ public class Charge {
 
     public double width, height, length;
     public double diameter;
+    public double wallThickness;
     public ChMaterial chMaterial;
     public double unitWt;  // in kg
     public ChType type = ChType.SOLID_RECTANGLE;
 
     public Charge(ChMaterial chMaterial, double length,
-                  double width, double height, double diameter, ChType type) {
-        setData(chMaterial, length, width, height, diameter, type);
+                  double width, double height, double diameter,
+                  double wallThickness, ChType type) {
+        setData(chMaterial, length, width, height, diameter, wallThickness, type);
     }
 
     public Charge(ChMaterial chMaterial, double length,
                   double width, double height) {
-        this(chMaterial, length, width, height, 0.2, ChType.SOLID_RECTANGLE);
+        this(chMaterial, length, width, height, 0.2, 0, ChType.SOLID_RECTANGLE);
 
     }
 
@@ -79,10 +85,11 @@ public class Charge {
     }
 
     private void setData(ChMaterial chMaterial, double length,
-                      double width, double height, double diameter, ChType type) {
+                      double width, double height, double diameter,
+                         double wallThickness, ChType type) {
         this.chMaterial = chMaterial;
         this.type = type;
-        setSize(length, width, height, diameter);
+        setSize(length, width, height, diameter, wallThickness);
     }
 
     public Charge(Charge fromCharge) {
@@ -91,20 +98,21 @@ public class Charge {
 
     public void copyFrom(Charge fromCharge) {
         Charge fC = fromCharge;
-        setData(fC.chMaterial, fC.length, fC.width, fC.height, fC.diameter, fC.type);
+        setData(fC.chMaterial, fC.length, fC.width, fC.height, fC.diameter, fC.wallThickness, fC.type);
     }
 
     public void setSize(double length,
                           double width, double height)  {
-        setSize(length, width, height, 0.2);
+        setSize(length, width, height, 0.2, 0);
     }
 
-    public void setSize(double length,
-                          double width, double height, double diameter)  {
+    public void setSize(double length, double width, double height,
+                        double diameter, double wallThickness)  {
         this.width = width;
         this.height = height;
         this.length = length;
         this.diameter = diameter;
+        this.wallThickness = wallThickness;
         evalChUnitWt();
     }
 
@@ -128,6 +136,22 @@ public class Charge {
         return length;
     }
 
+    public double getProjectedTopArea() {
+        double pArea = 0;
+        switch(type) {
+            case SOLID_RECTANGLE:
+                pArea = width * length;
+                break;
+            case SOLID_CIRCLE:
+                pArea = diameter * length;
+                break;
+            case TUBULAR:
+                pArea = diameter * width;
+                break;
+        }
+        return pArea;
+    }
+
     public double getDiameter() { return diameter;}
 
     public ChMaterial getElementType() {
@@ -140,13 +164,23 @@ public class Charge {
 
     public double getWeight(double len) {
         double wt;
+        double id;
         switch (type) {
             case SOLID_CIRCLE:
                 wt = len * (Math.PI / 4 * diameter * diameter)* chMaterial.getDensity();
                 break;
-            default:  // RECTANGULAR
+            case TUBULAR:
+                id = diameter - 2 * wallThickness;
+                wt = len * (Math.PI / 4 * (diameter * diameter - id * id)* chMaterial.getDensity());
+                break;
+            case SOLID_RECTANGLE:
                 wt = len * width * height * chMaterial.getDensity();
                 break;
+            default:
+               showError("In Charge","Unknown type in Charge");
+                wt = 0;
+                break;
+
         }
         return wt; // was before 20140611 chMaterial.getDensity() * width * height * len;
     }
@@ -191,5 +225,9 @@ public class Charge {
 
     void debug(String msg) {
         System.out.println("ChargeDef: " + msg);
+    }
+
+    public void showError(String title, String msg){
+        SimpleDialog.showError(title, msg);
     }
 }

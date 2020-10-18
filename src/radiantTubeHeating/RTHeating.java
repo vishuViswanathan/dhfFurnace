@@ -8,6 +8,7 @@ import jsp.JSPchMaterial;
 import mvUtils.display.*;
 import mvUtils.jsp.JSPComboBox;
 import mvUtils.jsp.JSPConnection;
+import mvUtils.jsp.JSPObject;
 import mvUtils.math.XYArray;
 //import netscape.javascript.JSObject;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -73,7 +74,7 @@ public class RTHeating extends JPanel implements InputControl{
         INPUTPAGE, RESULTSPAGE
     }
 
-    String title = "Radiant Tube Heated Furnace 20201002";
+    String title = "Radiant Tube Heated Furnace 20201017";
     public int appCode = 101;
     boolean canNotify = true;
 //    JSObject win;
@@ -362,6 +363,7 @@ public class RTHeating extends JPanel implements InputControl{
         mIGetFceProfile = new JMenuItem("Load Furnace");
         mIGetFceProfile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, KeyEvent.CTRL_DOWN_MASK));
         mIGetFceProfile.addActionListener(mAction);
+        mIGetFceProfile.setEnabled(false);
         mISaveToXL = new JMenuItem("Save Results and Furnace Data to Excel");
         mISaveToXL.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, KeyEvent.CTRL_DOWN_MASK));
         mISaveToXL.addActionListener(mAction);
@@ -417,7 +419,11 @@ public class RTHeating extends JPanel implements InputControl{
 
         ntStripWidth.setEditable(ena);
         ntStripThickness.setEditable(ena);
+        ntChDiameter.setEditable(ena);
+        ntNitemsAlongFceWidth.setEditable(ena);
+        ntWallThickness.setEditable(ena);
         cbChMaterial.setEnabled(ena);
+        cbChType.setEnabled(ena);
 
         ntOutput.setEditable(ena);
         ntChEntryTemp.setEditable(ena);
@@ -573,6 +579,8 @@ public class RTHeating extends JPanel implements InputControl{
 
     ChMaterial chMaterial;
     Charge theCharge;
+    protected XLComboBox cbChType;
+    Charge.ChType chType = Charge.ChType.SOLID_RECTANGLE;
     XYArray hC, tk, emiss;
     RadiantTube rt;
     RTFurnace furnace;
@@ -591,10 +599,15 @@ public class RTHeating extends JPanel implements InputControl{
     MultiPairColPanel chargeP;
     double stripWidth = 1.25;
     double stripThick = 0.0006;
+    double chDiameter = 0.05;
+    double wallThickness = 0.005;
+    public int nChargeAlongFceWidth = 1;
     NumberTextField ntStripWidth;
     NumberTextField ntStripThickness;
+    NumberTextField ntChDiameter;
+    NumberTextField ntWallThickness;
+    NumberTextField ntNitemsAlongFceWidth;
     boolean chargeFieldsSet = false;
-    Vector<NumberTextField> chargeFields;
 
     protected boolean loadChMaterialData() {
         boolean retVal = false;
@@ -607,19 +620,59 @@ public class RTHeating extends JPanel implements InputControl{
         return retVal;
     }
 
+
+
     public JPanel chargePan(InputControl ipc) {
         if (!chargeFieldsSet) {
             MultiPairColPanel pan = new MultiPairColPanel("Charge Data");
 //            if (loadChMaterialData()) {
                 cbChMaterial = new JSPComboBox<>(jspConnection, vChMaterial);
-                chargeFields = new Vector<>();
-                chargeFields.add(ntStripWidth = new NumberTextField(ipc, stripWidth * 1000, 6, false,
-                        50, 10000, "#,###", "Strip Width (mm)"));
-                chargeFields.add(ntStripThickness = new NumberTextField(ipc, stripThick * 1000, 6, false,
-                        0.001, 200, "0.000", "Strip Thickness (mm)"));
                 pan.addItemPair("Charge Material", cbChMaterial);
+                cbChType = new XLComboBox(Charge.ChType.values());
+                pan.addItemPair("Charge Cross Section", cbChType);
+                ntStripWidth = new NumberTextField(ipc, stripWidth * 1000, 6, false,
+                        50, 10000, "#,###", "Strip Width (mm)");
+                ntStripThickness = new NumberTextField(ipc, stripThick * 1000, 6, false,
+                        0.001, 200, "0.000", "Strip Thickness (mm)");
                 pan.addItemPair(ntStripWidth);
                 pan.addItemPair(ntStripThickness);
+                ntChDiameter = new NumberTextField(ipc, chDiameter * 1000, 6, false,
+                        5, 1000, "#,###", "Charge Diameter (mm)");
+                ntWallThickness = new NumberTextField(ipc, wallThickness * 1000, 6, false,
+                    1, 50, "#,###", "Tube Wall Thickness (mm)");
+                pan.addItemPair(ntChDiameter);
+                pan.addItemPair(ntWallThickness);
+                ntNitemsAlongFceWidth = new NumberTextField(ipc, nChargeAlongFceWidth, 6, true,
+                        1, 200, "#,###", "Number of items in Fce Width");
+                pan.addItemPair(ntNitemsAlongFceWidth);
+                cbChType.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        chType = (Charge.ChType)cbChType.getSelectedItem();
+                        switch (chType) {
+                            case TUBULAR:
+                                ntStripWidth.setEnabled(false);
+                                ntStripThickness.setEnabled(false);
+                                ntChDiameter.setEnabled(true);
+                                ntWallThickness.setEnabled(true);
+                                 break;
+                            case SOLID_RECTANGLE:
+                                ntStripWidth.setEnabled(true);
+                                ntStripThickness.setEnabled(true);
+                                ntChDiameter.setEnabled(false);
+                                ntWallThickness.setEnabled(false);
+                                ntNitemsAlongFceWidth.setData(1);
+                                break;
+                            case SOLID_CIRCLE:
+                                ntStripWidth.setEnabled(false);
+                                ntStripThickness.setEnabled(false);
+                                ntChDiameter.setEnabled(true);
+                                ntWallThickness.setEnabled(false);
+                                break;
+                        }
+                    }
+                });
+                cbChType.setSelectedItem(chType);
                 chargeP = pan;
                 chargeFieldsSet = true;
 //            }
@@ -627,14 +680,50 @@ public class RTHeating extends JPanel implements InputControl{
         return chargeP;
     }
 
+    public ChMaterial getSelChMaterial(String matName) {
+        ChMaterial chMat = null;
+        for (ChMaterial oneMat: vChMaterial)
+            if (matName.equalsIgnoreCase(oneMat.name)) {
+                chMat = oneMat;
+                if (chMat instanceof JSPObject)
+                    ((JSPObject)chMat).collectData(jspConnection);
+                break;
+            }
+        return chMat;
+    }
+
     boolean takeChargeFromUI() {
         chMaterial = (ChMaterial)cbChMaterial.getSelectedItem();
-        boolean retVal = (chMaterial != null);
-        for (NumberTextField f: chargeFields)
-            retVal &= !f.isInError();
+        double effectiveChWidth = 0;
+        boolean retVal = (chMaterial != null) && !ntNitemsAlongFceWidth.isInError();
         if (retVal) {
-            stripWidth = ntStripWidth.getData() / 1000;
-            stripThick = ntStripThickness.getData() / 1000;
+            nChargeAlongFceWidth = (int)(ntNitemsAlongFceWidth.getData());
+            switch (chType) {
+                case SOLID_RECTANGLE:
+                    if (!ntStripWidth.isInError() && !ntStripThickness.isInError()) {
+                        stripWidth = ntStripWidth.getData() / 1000;
+                        stripThick = ntStripThickness.getData() / 1000;
+                        effectiveChWidth = nChargeAlongFceWidth * stripWidth;
+                    }
+                    break;
+                case TUBULAR:
+                    if (!ntChDiameter.isInError() && !ntWallThickness.isInError()) {
+                        chDiameter = ntChDiameter.getData() / 1000;
+                        wallThickness = ntWallThickness.getData() / 1000;
+                        effectiveChWidth = nChargeAlongFceWidth * chDiameter;
+                    }
+                    break;
+                case SOLID_CIRCLE:
+                    if (!ntChDiameter.isInError()) {
+                        chDiameter = ntChDiameter.getData() / 1000;
+                        effectiveChWidth = nChargeAlongFceWidth * chDiameter;
+                    }
+                    break;
+            }
+            if (effectiveChWidth > 0.95 * furnace.width) {
+                showError("Cannot accommodate charge in furnace width");
+                retVal = false;
+            }
         }
         return retVal;
     }
@@ -680,102 +769,6 @@ public class RTHeating extends JPanel implements InputControl{
         }
         return retVal;
     }
-
-//    public String chargeBasic(String matName, String matID, String density, String width, String thickness) {
-//        double l = 0; // dimension along furnace width, nomenclatures as per Charge class
-//        double w = 1; // dimension along furnace length
-//        double th = 0;
-//        double den = 0;
-//        String retVal = "";
-//        try {
-//            l = Double.valueOf(width);
-//            th = Double.valueOf(thickness);
-//            den = Double.valueOf(density);
-//            if (tk != null && hC != null && emiss != null) {
-//                chMaterial = new ChMaterial(matName, matID, den, tk, hC, emiss);
-//                theCharge = new Charge(chMaterial, l, w, th);
-//                retVal = "OK";
-//            } else
-//                retVal = "ERROR: Properties not set!";
-//        } catch (NumberFormatException e) {
-//            retVal = "ERROR in number format in chargeBasic!";
-//        }
-//        return retVal;
-//    }
-//
-//    public String setChargeHeatCont(String heatCont) {
-//        hC = new XYArray(heatCont);
-//        return "OK " + hC.arrLen;
-//    }
-//
-//    public String setChargeTk(String thermalC) {
-//        tk = new XYArray(thermalC);
-//        return "OK " + tk.arrLen;
-//    }
-//
-//    public String setChargeEmiss(String emissivity) {
-//        emiss = new XYArray(emissivity);
-//        return "OK " + emiss.arrLen;
-//    }
-//
-//    public String defineRT(String od, String effLen, String rating, String emiss) {
-//        String retVal = "OK";
-//        try {
-//            double odVal = Double.valueOf(od);
-//            double effLenVal = Double.valueOf(effLen);
-//            double ratingVal = Double.valueOf(rating);
-//            double emissVal = Double.valueOf(emiss);
-//            rt = new RadiantTube(odVal, effLenVal, ratingVal, emissVal);
-//        } catch (NumberFormatException e) {
-//            retVal = "ERROR in number format in defineRT!";
-//        }
-//        return retVal;
-//    }
-//
-//    public String defineFurnace(String width, String heightAbove, String rtCenterAbove, String rtPerM, String lossPerM) {
-//        String retVal = "OK";
-//        try {
-//            double w = Double.valueOf(width);
-//            double h = Double.valueOf(heightAbove);
-//            double cl = Double.valueOf(rtCenterAbove);
-//            double rts = Double.valueOf(rtPerM);
-//            perMLoss = Double.valueOf(lossPerM);
-//            if (rt != null)
-//                furnace = new RTFurnace(w, h, cl, rt, rts);
-//            else
-//                retVal = "ERROR Radiant tube not defined in defineFurnace!";
-//        } catch (NumberFormatException e) {
-//            retVal = "ERROR in number format in defineFurnace!";
-//        }
-//        return retVal;
-//    }
-//
-//    public String defineProduction(String output, String stTempStr, String endTempStr, String maxRtTemp,
-//                                   String maxRTHeat, String maxFceLen, String uFceLen, String limitType) {
-//        String retVal = "OK";
-//        try {
-//            production = Double.valueOf(output);
-//            stTemp = Double.valueOf(stTempStr);
-//            endTemp = Double.valueOf(endTempStr);
-//            rtLimitTemp = Double.valueOf(maxRtTemp);
-//            rtLimitHeat = Double.valueOf(maxRTHeat);
-//            fceLimitLength = Double.valueOf(maxFceLen);
-//            bRtTempLimit = false;
-//            bHeatLimit = false;
-//            bFceLengthLimit = false;
-//
-//            if (limitType.equalsIgnoreCase("" + LimitMode.RTTEMP))
-//                iLimitMode = LimitMode.RTTEMP;
-//            else if (limitType.equalsIgnoreCase("" + LimitMode.RTHEAT))
-//                iLimitMode = LimitMode.RTHEAT;
-//            uLen = Double.valueOf(uFceLen);
-//            furnace.setProduction(theCharge, production, fceLimitLength, uLen, perMLoss * uLen, iLimitMode);
-//        } catch (NumberFormatException e) {
-//            retVal = "ERROR in number format in defineProduction!";
-//        }
-//
-//        return retVal;
-//    }
 
     MultiPairColPanel calculModeP;
     JComboBox<LimitMode> cbLimitMode; // moade XLComboBox
@@ -830,14 +823,32 @@ public class RTHeating extends JPanel implements InputControl{
     }
 
     public void calculateRTFce() {
+        boolean proceed = false;
         if (takeChargeFromUI() && takeProductionFromUI() && furnace.takeFceDetailsFromUI() &&
                 takeCalculModeFromUI()) {
-            theCharge = new Charge(chMaterial, stripWidth, uLen, stripThick);
-            furnace.setProduction(theCharge, production, uLen, iLimitMode);
-            furtherCalculations();
-            resultsPage = resultsPage();
-            enableDataEdit(false);
-            switchToSelectedPage(RTHDisplayPage.RESULTSPAGE);
+            switch(chType) {
+                case SOLID_RECTANGLE:
+//                    theCharge = new Charge(chMaterial, stripWidth, uLen, stripThick);
+                    theCharge = new Charge(chMaterial, uLen, stripWidth, stripThick);
+                    proceed = true;
+                    break;
+                case TUBULAR:
+                    theCharge = new Charge(chMaterial, uLen, stripWidth, stripThick,
+                            chDiameter, wallThickness, Charge.ChType.TUBULAR);
+                    proceed = true;
+                    break;
+                case SOLID_CIRCLE:
+                    showError("Not ready for this Type of Charge");
+                    break;
+
+            }
+            if (proceed) {
+                furnace.setProduction(theCharge, nChargeAlongFceWidth, production, uLen, iLimitMode);
+                furtherCalculations();
+                resultsPage = resultsPage();
+                enableDataEdit(false);
+                switchToSelectedPage(RTHDisplayPage.RESULTSPAGE);
+            }
         }
         else
             showError("Some Input Data is not acceptable");

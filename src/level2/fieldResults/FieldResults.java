@@ -117,7 +117,7 @@ public class FieldResults {
                             DataWithStatus<ChMaterial> chMatSat = stripDFHProc.getChMaterial(thick);
                             if (chMatSat.valid) {
                                 ChMaterial chMat = chMatSat.getValue();
-                                Charge ch = new Charge(chMat, width, 1.0, thick, 0.1, Charge.ChType.SOLID_RECTANGLE);
+                                Charge ch = new Charge(chMat, width, 1.0, thick, 0.1, 0, Charge.ChType.SOLID_RECTANGLE);
                                 production.charge = ch;
                                 production.chPitch = 1.0;
                                 production.production = chMat.density * width * speed * thick; //output;
