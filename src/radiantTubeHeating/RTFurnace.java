@@ -77,6 +77,9 @@ public class RTFurnace extends GraphInfoAdapter {
 
     NumberTextField ntInnerWidth;
     NumberTextField ntHeightAboveCharge;
+    NumberTextField ntRollDia;
+    NumberTextField ntRollPitch;
+
     NumberTextField ntUsefullLength;
     NumberTextField ntLossPerMeter;
     boolean fceDataFieldsSet = false;
@@ -91,13 +94,20 @@ public class RTFurnace extends GraphInfoAdapter {
                     200, 200000, "#,###", "Inner Width (mm)"));
             fceDetailsFields.add(ntHeightAboveCharge = new NumberTextField(ipc, heightAbove * 1000, 6,
                     false, 200, 200000, "#,###", "Height above Charge (mm)"));
-            fceDetailsFields.add(ntUsefullLength = new NumberTextField(ipc, maxFceLen, 6,
-                    false, 0.20, 2000, "#,###.000", "Useful Length (m)"));
+            fceDetailsFields.add(ntRollDia = new NumberTextField(ipc, rollDia * 1000, 6,
+                    false, 0, 1000, "#,###", "Support Roll dia (mm)"));
+            fceDetailsFields.add(ntRollPitch = new NumberTextField(ipc, rollPitch * 1000, 6,
+                    false, 0, 10000, "#,###", "Roll pitch (mm)"));
+            fceDetailsFields.add(ntUsefullLength = new NumberTextField(ipc, maxFceLen * 1000, 6,
+                    false, 2000, 200000, "#,###", "Maximum Length (mm)"));
             fceDetailsFields.add(ntLossPerMeter = new NumberTextField(ipc, lossPerM, 6, false,
                     -10000, 200000, "#,###", "Loss per Furnace length (kcal/h.m)"));
             pan.addItemPair(ntInnerWidth);
             pan.addItemPair(ntHeightAboveCharge);
             pan.addItemPair(ntUsefullLength);
+            pan.addBlank();
+            pan.addItemPair(ntRollDia);
+            pan.addItemPair(ntRollPitch);
             pan.addBlank();
             pan.addItemPair(ntLossPerMeter);
             fceDetailsPanel = pan;
@@ -156,7 +166,9 @@ public class RTFurnace extends GraphInfoAdapter {
         if (retVal) {
             width = ntInnerWidth.getData() / 1000;
             heightAbove = ntHeightAboveCharge.getData() / 1000;
-            maxFceLen = ntUsefullLength.getData();
+            maxFceLen = ntUsefullLength.getData() / 1000;
+            rollDia = ntRollDia.getData() / 1000;
+            rollPitch = ntRollPitch.getData() / 1000;
             lossPerM = ntLossPerMeter.getData();
             retVal = takeRTinFceFromUI();
             updateData();
@@ -202,7 +214,7 @@ public class RTFurnace extends GraphInfoAdapter {
         for (int i = 0; i < maxSlots; i++) {
             endTime += unitTime;
 //            slot = new OneRTslot(this, lPos, prevSlot);
-            slot = new OneRTslot(this, lPos, prevSlot, unitLen, rtPerM, 0, 0);
+            slot = new OneRTslot(this, lPos, prevSlot, unitLen, rtPerM, rollDia, rollPitch);
             slot.setCharge(charge, uWt, unitTime, endTime);
             allSlots.add(slot);
             lPos += unitLen;

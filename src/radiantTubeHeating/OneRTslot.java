@@ -18,9 +18,8 @@ import static mvUtils.math.SPECIAL.stefenBoltz;
  * To change this template use File | Settings | File Templates.
  */
 public class OneRTslot {
-
     // Reference book: Heat & mass Transfer by Dr.D. S. Kumar  9th Edition
-
+    boolean doTrace = true;
     double stefBoltz = stefenBoltz;
     double HEATERRLIMIT = 0.001;
 
@@ -34,7 +33,7 @@ public class OneRTslot {
     double slotLen = 1.0;
     double nRts = 1; // proportional number of RTs in the slot
     double rollDia = 0;
-    double nRolls = 0; // proportional number of rolls in the slot
+    double rollPitch = 0;
     double distChToRtCenter = 0.6;
 
     RTFurnace rtF;
@@ -57,14 +56,14 @@ public class OneRTslot {
     OneRTslot prevSlot;
 
     public OneRTslot(RTFurnace rtF, double lPos, OneRTslot prevSlot, double slotLen,
-                     double nRts, double nRolls, double roll_dia) {
+                     double nRts, double rollDia, double rollPitch) {
         this.rtF = rtF;
         this.charge = rtF.charge;
         this.rT = rtF.rt;
         this.distChToRtCenter = rtF.rtCenterAbove;
         this.lPos = lPos;
         this.slotLen = slotLen;
-        this.nRolls = nRolls;
+        this.rollPitch = rollPitch;
         this.nRts = nRts;
         this.rollDia = rollDia;
         this.prevSlot = prevSlot;
@@ -73,7 +72,7 @@ public class OneRTslot {
             // with RT pitch as 2 x dia, which is the minimum
             // this is conservative
         shapeFHeCh = getHeChShapeFactor(rT.dia, rT.activeLen, visibleChLength,
-                effectiveChWidth, distChToRtCenter);
+                effectiveChWidth, distChToRtCenter, rollDia, rollPitch);
 
     }
 
@@ -194,18 +193,19 @@ public class OneRTslot {
         resistWallsToCharge = 1 / (rtF.uAreaChTot * f23);
         double f13 = 1 - f12;
         resistHEtoWall = 1 / (rtF.uAreaHeTot * f13);
-
-        System.out.println("grayFactHeCh:" + grayFactHeCh);
-        System.out.println("sigGrayHeCh:" + sigGrayHeCh);
-        System.out.println("restistNearHE:" + restistNearHE);
-        System.out.println("resistTotHEtoCharge:" + resistTotHEtoCharge);
-        System.out.println("resistWallsToCharge:" + resistWallsToCharge);
-        System.out.println("resistHEtoWall:" + resistHEtoWall);
-        double rNearCh = (1 - emissCh) / (emissCh * rtF.uAreaChTot);
-        System.out.println("rNearCh:" + rNearCh);
-        System.out.println("rtF.uAreaHeTot:" + rtF.uAreaHeTot);
-        System.out.println("f12:" + f12 + ", f21:" + f21);
-        System.out.println("f13:" + f13 + ", f23:" + f23);
+        if (doTrace) {
+            System.out.println("grayFactHeCh:" + grayFactHeCh);
+            System.out.println("sigGrayHeCh:" + sigGrayHeCh);
+            System.out.println("restistNearHE:" + restistNearHE);
+            System.out.println("resistTotHEtoCharge:" + resistTotHEtoCharge);
+            System.out.println("resistWallsToCharge:" + resistWallsToCharge);
+            System.out.println("resistHEtoWall:" + resistHEtoWall);
+            double rNearCh = (1 - emissCh) / (emissCh * rtF.uAreaChTot);
+            System.out.println("rNearCh:" + rNearCh);
+            System.out.println("rtF.uAreaHeTot:" + rtF.uAreaHeTot);
+            System.out.println("f12:" + f12 + ", f21:" + f21);
+            System.out.println("f13:" + f13 + ", f23:" + f23);
+        }
 
 //        grayFactHeFc = 1 /
 //            ((1 - rT.surfEmiss) / (rtF.uAreaHeTot *  rT.surfEmiss) +
@@ -284,37 +284,35 @@ public class OneRTslot {
     }
 
     static double getHeChShapeFactor(double rt_dia, double rt_len, double surf_len, double surf_width,
-                              double dist_rtcl) {
-        // do not forget to divide by HE area
-
+                              double dist_rtcl, double roll_dia, double roll_pitch) {
         // rt_len along surf_width and parallel
-
         int rt_len_stepsN = 5;
         double del_rt_len = rt_len / rt_len_stepsN;
-//        rt_len_steps = [s - rt_len / 2 for s in arange(del_rt_len / 2, rt_len, del_rt_len)]
-
 
         double rt_r = rt_dia / 2;
         int  rt_theta_stepsN = 16;
         double del_rt_theta = 2 * Math.PI / rt_theta_stepsN;
-//        rt_theta_steps = [s for s in arange(del_rt_theta / 2, 2 * math.pi, del_rt_theta)]
 
         double unit_rt_area = rt_r * del_rt_theta * del_rt_len;
 
         int surf_w_stepsN = 5;
         double del_surf_w = surf_width / surf_w_stepsN;
-//        surf_w_steps = [s - surf_width / 2 for s in arange(del_surf_w / 2, surf_width, del_surf_w)]
 
         int surf_len_stepsN = 10;
         double del_surf_len = surf_len / surf_len_stepsN;
-//        surf_len_steps = [s - surf_len / 2 for s in arange(del_surf_len / 2, surf_len, del_surf_len)]
 
         double unit_surf_area = del_surf_w * del_surf_len;
+        // correct for roll shadow  at bottom, ie. on 50% area
+        double rollsInSurfLen = 0;
+        if (roll_pitch > 0)
+            rollsInSurfLen = surf_len / roll_pitch;
+        double shadowLen = rollsInSurfLen * roll_dia;
+        double shadowAreaFactor = shadowLen / (2 * surf_len);
+        // The adjusted unit_surf_area
+        unit_surf_area *= (1 - shadowAreaFactor);
 
         Vector3d norm2 = new Vector3d(0, 0, 1);
         double eff_surf = 0;
-//        count = -1000
-//        breakout = False
         for (double theta = del_rt_theta / 2; theta < 2 * Math.PI; theta += del_rt_theta) {
             double cos_theta = Math.cos(theta);
             double sin_theta = Math.sin(theta);
@@ -335,6 +333,28 @@ public class OneRTslot {
             }
         }
         return eff_surf / (Math.PI * rt_dia * rt_len);
+    }
+
+    double chargeEndTempOLD(double tempChIn, double tempSrc) {
+        double tempChE1, tempChE2, tempChMean;
+        double heat1, heat2, chHeat;
+        double err;
+        double ERRLIMIT = 0.1;
+        heat1 = charge.getHeatFromTemp(tempChIn - 273);
+        tempChE1 = tempChIn + 10; // assume
+        tempChMean = (tempChE1 + tempChIn) / 2;
+        heat2 = heat1 + sigGrayHeCh * (Math.pow(tempSrc, 4.0) - Math.pow(tempChMean, 4.0)) / rtF.production;
+        tempChE2 = charge.getTempFromHeat(heat2) + 273;
+        err = tempChE2 - tempChE1;
+        while (Math.abs(err) > ERRLIMIT) {
+            tempChE1 = tempChE1 + err / 2;
+            tempChMean = (tempChE1 + tempChIn) / 2;
+            heat2 = heat1 + sigGrayHeCh * (Math.pow(tempSrc, 4.0) - Math.pow(tempChMean, 4.0)) /
+                    rtF.production;
+            tempChE2 = charge.getTempFromHeat(heat2) + 273;
+            err = tempChE2 - tempChE1;
+        }
+        return tempChE2;
     }
 
     double chargeEndTemp(double tempChIn, double tempSrc) {
@@ -453,6 +473,8 @@ public class OneRTslot {
 
 
     public static void main (String[] arg) {
+        double roll_dia = 0.2;
+        double roll_pitch = 0.6;
         double rt_dia = 0.198;
         double rt_len = 1.4;
         double surf_width = 1.25;
@@ -466,12 +488,16 @@ public class OneRTslot {
         double one_rt_area = Math.PI * rt_dia * rt_len;
         double tot_rt_area = one_rt_area * nRTsPerM;
 
-        double effA = OneRTslot.effectiveArea12(area1, area2, gap, 0);
-        System.out.print("effectiveArea12() area1: " + area1 + ", area2: " + area2 + ", gap: " + gap +
-                ", EffArea: " + effA);
-        System.out.print("\nHeChFactor = " + effA / tot_rt_area);
-        System.out.print("\ngetHeChShapeFactor() factor1: " +
-                OneRTslot.getHeChShapeFactor(rt_dia, rt_len, surf_len, surf_width, dist_rtcl));
+//        double effA = OneRTslot.effectiveArea12(area1, area2, gap, 0);
+//        System.out.print("effectiveArea12() area1: " + area1 + ", area2: " + area2 + ", gap: " + gap +
+//                ", EffArea: " + effA);
+//        System.out.print("\nHeChFactor = " + effA / tot_rt_area);
+        System.out.print("\ngetHeChShapeFactor() with roll: " +
+                OneRTslot.getHeChShapeFactor(rt_dia, rt_len, surf_len, surf_width,
+                        dist_rtcl, roll_dia, roll_pitch));
+        System.out.print("\ngetHeChShapeFactor() without roll: " +
+                OneRTslot.getHeChShapeFactor(rt_dia, rt_len, surf_len, surf_width,
+                        dist_rtcl, 0, 0));
     }
 
 }
