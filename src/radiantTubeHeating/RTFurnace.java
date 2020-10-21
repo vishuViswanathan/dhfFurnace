@@ -197,7 +197,7 @@ public class RTFurnace extends GraphInfoAdapter {
         this.unitLoss = lossPerM * unitLen;
         this.iLimitMode = iCalculMode;
 //        uAreaChTot = charge.getLength() * 2 * unitLen * nItemsInFceWidth;
-        uAreaChTot = charge.getProjectedTopArea() * 2 *  nItemsInFceWidth;
+        uAreaChTot = charge.projectedTopArea * 2 *  nItemsInFceWidth;
         uAreaChHe = uAreaChTot;
         uAreaHeTot = rt.getTotHeatingSurface() * (topRTperM + botRTperM) * unitLen;
         uAreaHeCh = uAreaHeTot / 2; // ?? * 2 / (Math.PI / 2); // 20201014
@@ -379,7 +379,9 @@ public class RTFurnace extends GraphInfoAdapter {
             new TraceHeader(traceName[2], "m", "DegC")};
     DoublePoint[] tempHe;
     DoublePoint[] tempFce;
+    DoublePoint[] tempChSurf;
     DoublePoint[] tempCh;
+    DoublePoint[] tempChCore;
     Vector<OnePropertyTrace> traces;
     DoubleRange commonX, commonY;
 
@@ -387,7 +389,9 @@ public class RTFurnace extends GraphInfoAdapter {
         OneRTslot slot;
         tempHe = new DoublePoint[nSlots + 1];
         tempFce = new DoublePoint[nSlots + 1];
+        tempChSurf = new DoublePoint[nSlots + 1];
         tempCh = new DoublePoint[nSlots + 1];
+        tempChCore = new DoublePoint[nSlots + 1];
         slot = startSlot;
         double pos;
         pos = slot.lPos;
@@ -399,7 +403,9 @@ public class RTFurnace extends GraphInfoAdapter {
             pos = slot.lPos;
             tempHe[s] = new DoublePoint(pos, slot.tempHe - 273);
             tempFce[s] = new DoublePoint(pos, slot.tempFce - 273);
+            tempChSurf[s] = new DoublePoint(pos, slot.tempChSurf - 273);
             tempCh[s] = new DoublePoint(pos, slot.tempChEnd - 273);
+            tempChCore[s] = new DoublePoint(pos, slot.tempChCore - 273);
         }
         traces = new Vector<OnePropertyTrace>();
         OnePropertyTrace oneTrace;

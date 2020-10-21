@@ -54,6 +54,8 @@ public class Charge {
     public double wallThickness;
     public ChMaterial chMaterial;
     public double unitWt;  // in kg
+    public double projectedTopArea;
+    public double effectiveThickness;
     public ChType type = ChType.SOLID_RECTANGLE;
 
     public Charge(ChMaterial chMaterial, double length,
@@ -113,12 +115,12 @@ public class Charge {
         this.length = length;
         this.diameter = diameter;
         this.wallThickness = wallThickness;
-        evalChUnitWt();
+        evalProjAreaUnitWtAndEffThick();
     }
 
-    void evalChUnitWt() {
-        unitWt = getWeight(length);
-    }
+//    void evalChUnitWt() {
+//        unitWt = getWeight(length);
+//    }
 
     public double getUnitWt() {
         return unitWt;
@@ -136,7 +138,7 @@ public class Charge {
         return length;
     }
 
-    public double getProjectedTopArea() {
+    void getProjectedTopArea() {
         double pArea = 0;
         switch(type) {
             case SOLID_RECTANGLE:
@@ -149,7 +151,7 @@ public class Charge {
                 pArea = diameter * width;
                 break;
         }
-        return pArea;
+        projectedTopArea = pArea;
     }
 
     public double getDiameter() { return diameter;}
@@ -162,27 +164,31 @@ public class Charge {
         return chMaterial.getEmiss(temp);
     }
 
-    public double getWeight(double len) {
+    void evalProjAreaUnitWtAndEffThick() {
         double wt;
         double id;
+        double len = length;
+        double crossArea;
         switch (type) {
             case SOLID_CIRCLE:
-                wt = len * (Math.PI / 4 * diameter * diameter)* chMaterial.getDensity();
+                crossArea = Math.PI / 4 * diameter * diameter;
                 break;
             case TUBULAR:
                 id = diameter - 2 * wallThickness;
-                wt = len * (Math.PI / 4 * (diameter * diameter - id * id)* chMaterial.getDensity());
+                crossArea = Math.PI / 4 * (diameter * diameter - id * id);
                 break;
             case SOLID_RECTANGLE:
-                wt = len * width * height * chMaterial.getDensity();
+                crossArea = width * height;
                 break;
             default:
                showError("In Charge","Unknown type in Charge");
-                wt = 0;
+                crossArea = 0;
                 break;
 
         }
-        return wt; // was before 20140611 chMaterial.getDensity() * width * height * len;
+        unitWt = len * crossArea* chMaterial.getDensity();
+        getProjectedTopArea();
+        effectiveThickness = crossArea * len / projectedTopArea;
     }
 
     public double getHeatFromTemp(double temp) {

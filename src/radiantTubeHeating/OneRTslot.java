@@ -23,8 +23,10 @@ public class OneRTslot {
     double stefBoltz = stefenBoltz;
     double HEATERRLIMIT = 0.001;
 
-    public static String[] colName = {"Time", "LenPos", "TempHE", "tempFce", "tempCh", "HeatCh", "HeatLoss", "HeatHE"};
-    public static String[] fmtStr = {"0.000", "#.000", "#,###.0", "#,###.0", "#,###.0", "#,###", "#,###", "#,###"};
+//    public static String[] colName = {"Time", "LenPos", "TempHE", "tempFce", "tempCh", "HeatCh", "HeatLoss", "HeatHE"};
+//    public static String[] fmtStr = {"0.000", "#.000", "#,###.0", "#,###.0", "#,###.0", "#,###", "#,###", "#,###"};
+    public static String[] colName = {"Time", "LenPos", "tHe", "tFce", "tChSurf", "tChMean", "tChMin", "HeatCh", "HeatLoss", "HeatHE"};
+    public static String[] fmtStr = {"0.000", "#.000", "#,###", "#,###", "#,###", "#,###", "#,###", "#,###", "#,###", "#,###"};
     static int nColumn = colName.length;
     double lPos;
     Charge charge;
@@ -39,11 +41,14 @@ public class OneRTslot {
     RTFurnace rtF;
     // all temperatures in K
     double tempChSt, tempChEnd;
+    double chDeltaT = 0;
+    double tempChSurf = 273, tempChCore = 273;
     double tempHe, tempFce;
     double heatCh, heatLoss, heatHe;
     double unitTime, endTime;
     double shapeFHeCh;
     double uChWt;
+    double uChArea;
     double grayFactHeCh, sigGrayHeCh;
     //    double grayFactHeFc, grayFactFcCh;
 //    double relRHEtoWall; // for calculation wall temperature
@@ -67,7 +72,9 @@ public class OneRTslot {
         this.nRts = nRts;
         this.rollDia = rollDia;
         this.prevSlot = prevSlot;
-        double effectiveChWidth = rtF.nChargeAlongFceWidth * charge.getProjectedTopArea() / slotLen;
+        uChArea = rtF.nChargeAlongFceWidth * charge.projectedTopArea * 2; // top and bottom
+//        double effectiveChWidth = rtF.nChargeAlongFceWidth * charge.getProjectedTopArea() / slotLen;
+        double effectiveChWidth = uChArea / 2/ slotLen;
         double visibleChLength = 2 * (1.732 * distChToRtCenter  + rT.dia);
             // with RT pitch as 2 x dia, which is the minimum
             // this is conservative
@@ -91,6 +98,8 @@ public class OneRTslot {
         tempHe = nextSlot.tempHe;
         tempFce = nextSlot.tempFce;
         tempChEnd = nextSlot.tempChSt;
+        tempChSurf = tempChEnd;
+        tempChCore= tempChEnd;
         heatLoss = 0;
         heatHe = 0;
         endTime = 0;
@@ -114,12 +123,16 @@ public class OneRTslot {
             case 3:
                 return tempFce - 273;
             case 4:
-                return tempChEnd - 273;
+                return tempChSurf - 273;
             case 5:
-                return heatCh;
+                return tempChEnd - 273;
             case 6:
-                return heatLoss;
+                return tempChCore - 273;
             case 7:
+                return heatCh;
+            case 8:
+                return heatLoss;
+            case 9:
                 return heatHe;
             default:
                 return Double.NaN;
@@ -137,12 +150,16 @@ public class OneRTslot {
             case 3:
                 return formatNumber(tempFce - 273, fmtStr[col]);
             case 4:
-                return formatNumber(tempChEnd - 273, fmtStr[col]);
+                return formatNumber(tempChSurf - 273, fmtStr[col]);
             case 5:
-                return formatNumber(heatCh, fmtStr[col]);
+                return formatNumber(tempChEnd - 273, fmtStr[col]);
             case 6:
-                return formatNumber(heatLoss, fmtStr[col]);
+                return formatNumber(tempChCore - 273, fmtStr[col]);
             case 7:
+                return formatNumber(heatCh, fmtStr[col]);
+            case 8:
+                return formatNumber(heatLoss, fmtStr[col]);
+            case 9:
                 return formatNumber(heatHe, fmtStr[col]);
             default:
                 return "NO DATA";
@@ -368,16 +385,51 @@ public class OneRTslot {
         heat2 = heat1 + sigGrayHeCh * (Math.pow(tempSrc, 4.0) - Math.pow(tempChMean, 4.0)) / rtF.production;
         tempChE2 = charge.getTempFromHeat(heat2) + 273;
         err = tempChE2 - tempChE1;
+        double chSurfTemp;
+        double chDeltaT;
         while (Math.abs(err) > ERRLIMIT) {
             tempChE1 = tempChE1 + err / 2;
             tempChMean = (tempChE1 + tempChIn) / 2;
-            heat2 = heat1 + sigGrayHeCh * (Math.pow(tempSrc, 4.0) - Math.pow(tempChMean, 4.0)) /
+            chSurfTemp = chargeSurfTemp(tempSrc, tempChMean);
+            chDeltaT = (chSurfTemp - tempChMean) * 1.52;
+            heat2 = heat1 + sigGrayHeCh * (Math.pow(tempSrc, 4.0) - Math.pow(chSurfTemp, 4.0)) /
                     rtF.production;
             tempChE2 = charge.getTempFromHeat(heat2) + 273;
             err = tempChE2 - tempChE1;
         }
         return tempChE2;
     }
+
+    double unitHeatHeCh(double tHe, double tChSurf) {
+        double unitHeat = sigGrayHeCh * (Math.pow(tHe, 4.0) - Math.pow(tChSurf, 4.0)) / uChArea;
+        return unitHeat;
+    }
+
+    // temperatures are in degK
+    double chargeSurfTemp(double tSrc, double twm) {
+        double twoAssume, twoRevised, diff;
+        twoAssume = twm + 3;
+        if (twoAssume > tSrc) twoAssume = tSrc - 1;
+        boolean done = false;
+        double unitHeat;
+        double chTk = charge.chMaterial.getTk(twm - 273);
+        double tempSlopeAtChSurf;
+        double deltaTw = 0;
+        while (!done) {
+            unitHeat =  sigGrayHeCh * (Math.pow(tSrc, 4.0) - Math.pow(twoAssume, 4.0)) / uChArea;
+            tempSlopeAtChSurf = unitHeat / chTk;
+            deltaTw = tempSlopeAtChSurf * charge.effectiveThickness / 2;
+            twoRevised = twm + deltaTw / 1.52;
+            diff = twoRevised - twoAssume;
+            if (Math.abs(diff) <= 0.5)
+                done = true;
+            else
+                twoAssume = twoRevised;
+        }
+        chDeltaT = deltaTw;
+        return twoAssume;
+    }
+
 
 //    double furnaceTemp(double tempChMean, double tempSrc) {
 //        return Math.pow(((grayFactHeFc * Math.pow(tempSrc, 4) + grayFactFcCh * Math.pow(tempChMean, 4)) /
@@ -456,6 +508,8 @@ public class OneRTslot {
         }
         tempChMean = (tempChSt + tempChE2) / 2;
         tempChEnd = tempChE2;
+        tempChSurf = tempChEnd + chDeltaT / 1.52;
+        tempChCore = tempChSurf - chDeltaT;
         tempHe = tempHe1;
         tempFce = furnaceTemp(tempChMean, tempHe1);
         heatCh = (charge.getHeatFromTemp(tempChE2 - 273) - chHeatContB) * rtF.production;
