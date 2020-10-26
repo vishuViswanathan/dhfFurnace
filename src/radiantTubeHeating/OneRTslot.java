@@ -19,7 +19,7 @@ import static mvUtils.math.SPECIAL.stefenBoltz;
  */
 public class OneRTslot {
     // Reference book: Heat & mass Transfer by Dr.D. S. Kumar  9th Edition
-    boolean doTrace = true;
+    boolean doTrace = false;
     double stefBoltz = stefenBoltz;
     double HEATERRLIMIT = 0.001;
 
@@ -78,8 +78,9 @@ public class OneRTslot {
         double visibleChLength = 2 * (1.732 * distChToRtCenter  + rT.dia);
             // with RT pitch as 2 x dia, which is the minimum
             // this is conservative
-        shapeFHeCh = getHeChShapeFactor(rT.dia, rT.activeLen, visibleChLength,
-                effectiveChWidth, distChToRtCenter, rollDia, rollPitch);
+//        shapeFHeCh = getHeChShapeFactor(rT.dia, rT.activeLen, visibleChLength,
+//                effectiveChWidth, distChToRtCenter, rollDia, rollPitch);
+        shapeFHeCh = effectiveArea12(rtF.uAreaHeCh, rtF.uAreaChHe, rtF.gapHeCh, 0) / rtF.uAreaHeTot;
 
     }
 
@@ -222,6 +223,7 @@ public class OneRTslot {
             System.out.println("rtF.uAreaHeTot:" + rtF.uAreaHeTot);
             System.out.println("f12:" + f12 + ", f21:" + f21);
             System.out.println("f13:" + f13 + ", f23:" + f23);
+            System.out.println("charge.effectiveThickness: " + charge.effectiveThickness);
         }
 
 //        grayFactHeFc = 1 /

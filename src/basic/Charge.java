@@ -148,7 +148,7 @@ public class Charge {
                 pArea = diameter * length;
                 break;
             case TUBULAR:
-                pArea = diameter * width;
+                pArea = diameter * length;
                 break;
         }
         projectedTopArea = pArea;
@@ -171,14 +171,14 @@ public class Charge {
         double crossArea;
         switch (type) {
             case SOLID_CIRCLE:
-                crossArea = Math.PI / 4 * diameter * diameter;
+                unitWt = Math.PI / 4 * diameter * diameter * length * chMaterial.getDensity();
                 break;
             case TUBULAR:
                 id = diameter - 2 * wallThickness;
-                crossArea = Math.PI / 4 * (diameter * diameter - id * id);
+                unitWt = Math.PI / 4 * (diameter * diameter - id * id) * length * chMaterial.getDensity();
                 break;
             case SOLID_RECTANGLE:
-                crossArea = width * height;
+                unitWt = width * height * length * chMaterial.getDensity();
                 break;
             default:
                showError("In Charge","Unknown type in Charge");
@@ -186,9 +186,8 @@ public class Charge {
                 break;
 
         }
-        unitWt = len * crossArea* chMaterial.getDensity();
         getProjectedTopArea();
-        effectiveThickness = crossArea * len / projectedTopArea;
+        effectiveThickness = unitWt / projectedTopArea / chMaterial.getDensity();
     }
 
     public double getHeatFromTemp(double temp) {

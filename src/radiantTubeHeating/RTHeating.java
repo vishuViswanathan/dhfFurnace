@@ -74,7 +74,7 @@ public class RTHeating extends JPanel implements InputControl{
         INPUTPAGE, RESULTSPAGE
     }
 
-    String title = "Radiant Tube Heated Furnace 20201017";
+    String title = "Radiant Tube Heated Furnace 20201025"; // was 20201017";
     public int appCode = 101;
     boolean canNotify = true;
 //    JSObject win;
@@ -838,7 +838,10 @@ public class RTHeating extends JPanel implements InputControl{
                     proceed = true;
                     break;
                 case SOLID_CIRCLE:
-                    showError("Not ready for this Type of Charge");
+//                    showError("Not ready for this Type of Charge");
+                    theCharge = new Charge(chMaterial, uLen, stripWidth, stripThick,
+                            chDiameter, wallThickness, Charge.ChType.SOLID_CIRCLE);
+                    proceed = true;
                     break;
 
             }
