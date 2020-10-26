@@ -2481,7 +2481,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                     furnace.setCommonFuel(new FuelFiring(commFuel, false, excessAir,
                             o2EnrichedAirUsed, o2inAirFraction, airTemp, fuelTemp));  // as normal burner
                     //                theCharge = new Charge(selChMaterial, chLength, chWidth, chThickness);
-                    theCharge = new Charge(selChMaterial, chLength, chWidth, chThickness, chDiameter, (Charge.ChType) cbChType.getSelectedItem());
+                    theCharge = new Charge(selChMaterial, chLength, chWidth, chThickness, chDiameter, 0, (Charge.ChType) cbChType.getSelectedItem());
 
                     setProductionData(theCharge, tph * 1000);
                     proceed = true;
@@ -4266,6 +4266,11 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
         public void actionPerformed(ActionEvent e) {
             if (e.getSource() == cbChType) {
+                Charge.ChType type = (Charge.ChType)cbChType.getSelectedItem();
+                if (type == Charge.ChType.TUBULAR) {
+                    showMessage("Charge type", " Not yet ready for this charge type");
+                    cbChType.setSelectedItem(Charge.ChType.SOLID_RECTANGLE);
+                }
                 setChargeSizeChoice();
             }
             invalidateResults();

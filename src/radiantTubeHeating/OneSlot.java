@@ -2,7 +2,9 @@ package radiantTubeHeating;
 
 import basic.Charge;
 import basic.RadiantTube;
+import mvUtils.display.SimpleDialog;
 
+import java.awt.*;
 import java.text.DecimalFormat;
 
 /**
@@ -21,6 +23,7 @@ public class OneSlot {
     double HEATERRLIMIT = 0.001;
 
     public static String[] colName = {"Time", "LenPos", "TempHE", "tempFce", "tempCh", "HeatCh", "HeatLoss", "HeatHE"};
+    public static String[] fmtStr = {"0.000", "#.000", "#,###.0", "#,###.0", "#,###.0", "#,###", "#,###", "#,###"};
     static int nColumn = colName.length;
     double lPos;
     Charge charge;
@@ -50,7 +53,7 @@ public class OneSlot {
         this.rT = rtF.rt;
         this.lPos = lPos;
         this.prevSlot = prevSlot;
-        shapeFHeCh = shapeFactor12(rtF.uAreaHeCh, rtF.uAreaChHe, rtF.gapHeCh, 0) / rtF.uAreaHeTot;
+        shapeFHeCh = effectiveArea12(rtF.uAreaHeCh, rtF.uAreaChHe, rtF.gapHeCh, 0) / rtF.uAreaHeTot;
      }
 
     // for a dummy slot
@@ -97,21 +100,21 @@ public class OneSlot {
     public String getColData(int col) {
          switch(col) {
             case 0:
-                return formatNumber(endTime, "00.000");
+                return formatNumber(endTime, fmtStr[col]);
             case 1:
-                return formatNumber(lPos, "#0.00");
+                return formatNumber(lPos, fmtStr[col]);
             case 2:
-                return formatNumber(tempHe - 273, "#,###");
+                return formatNumber(tempHe - 273, fmtStr[col]);
             case 3:
-                return formatNumber(tempFce - 273, "#,###");
+                return formatNumber(tempFce - 273, fmtStr[col]);
             case 4:
-                return formatNumber(tempChEnd - 273, "#,###");
+                return formatNumber(tempChEnd - 273, fmtStr[col]);
             case 5:
-                return formatNumber(heatCh);
+                return formatNumber(heatCh, fmtStr[col]);
             case 6:
-                return formatNumber(heatLoss);
+                return formatNumber(heatLoss, fmtStr[col]);
             case 7:
-                return formatNumber(heatHe);
+                return formatNumber(heatHe, fmtStr[col]);
             default:
                 return "NO DATA";
          }
@@ -179,11 +182,11 @@ public class OneSlot {
 
     }
 
-    double shapeFactor12(Double area1, double area2, double gap, double angle) {
-        // considers the surfaces as sqares with centers and side aligned
+    static double effectiveArea12(Double area1, double area2, double gap, double angle) {
+        // considers the surfaces as squares with centers and side aligned
         // Presently 'angle' is not used ... assumed 0 (parallel)
-        int CALCdivs = 5;
-        int MIDdiv = 2;
+        int CALCdivs = 5; // do not change,
+        int MIDdiv = 2; // do not change, the two are related to each other, may be 11, 5 is better
         double da1da2, w1, w2, dw1;
         double dw2, h1, h2, dh1, dh2;
         double s, cosphi, mdis1;
@@ -214,6 +217,10 @@ public class OneSlot {
                     }
                 }
             }
+        }
+        if (af12sum > area1) {
+            showMessage("In OneSlot settings" , "RT to Charge view Factor is out of range, limiting it");
+            af12sum = area1;
         }
         return af12sum;
     }
@@ -259,7 +266,8 @@ public class OneSlot {
         double emissCharge = charge.getEmiss(tempChMean);
         double resistNearCharge = (1 - emissCharge) / (emissCharge * rtF.uAreaChTot);
 
-        double v3 = (resistWallsToCharge * (v1 - current * restistNearHE) + resistHEtoWall * (v2 + current * resistNearCharge)) /
+        double v3 = (resistWallsToCharge * (v1 - current * restistNearHE) +
+                resistHEtoWall * (v2 + current * resistNearCharge)) /
                 (resistWallsToCharge + resistHEtoWall);
         return Math.pow(v3, 0.25);
     }
@@ -325,4 +333,19 @@ public class OneSlot {
     double detltaChTemp() {
         return tempChEnd - tempChSt;
     }
+
+    static public void showMessage(String title, String msg) {
+        SimpleDialog.showMessage(null, title, msg);
+    }
+
+
+    public static void main (String[] arg) {
+        double area1 = 2.5;
+        double area2 = 1;
+        double gap = 0.6;
+
+        System.out.print("area1: " + area1 + ", area2: " + area2 + ", gap: " + gap +
+        ", EffArea: " + OneSlot.effectiveArea12(area1, area2, gap, 0));
+    }
+
 }

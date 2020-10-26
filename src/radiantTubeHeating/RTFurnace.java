@@ -7,6 +7,9 @@ import mvUtils.display.*;
 import mvUtils.math.DoublePoint;
 import mvUtils.math.DoubleRange;
 import mvUtils.mvXML.XMLmv;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -32,8 +35,11 @@ public class RTFurnace extends GraphInfoAdapter {
     public RadiantTube rt;
     double rtPerM = 3;
     double topRTperM, botRTperM;
+    double rollPitch = 0;
+    double rollDia = 0;
 
     public Charge charge;
+    public int nChargeAlongFceWidth = 1;
     double production = 20, unitTime;
     double maxFceLen = 50, unitLen = 1;
     double unitLoss;
@@ -42,11 +48,11 @@ public class RTFurnace extends GraphInfoAdapter {
     public double uAreaChHe, uAreaHeCh;
     double uAreaWalls;
     double gapHeCh ;
-    Vector<OneSlot> allSlots;
+    Vector<OneRTslot> allSlots;
     int maxSlots;
     public int nSlots = 0;
     MyTableModel tableModel;
-    OneSlot startSlot;
+    OneRTslot startSlot;
 
     public RTFurnace(RTHeating rth) {
         this.rth = rth;
@@ -71,10 +77,13 @@ public class RTFurnace extends GraphInfoAdapter {
 
     NumberTextField ntInnerWidth;
     NumberTextField ntHeightAboveCharge;
+    NumberTextField ntRollDia;
+    NumberTextField ntRollPitch;
+
     NumberTextField ntUsefullLength;
     NumberTextField ntLossPerMeter;
     boolean fceDataFieldsSet = false;
-    JPanel fceDetailsPanel;
+    MultiPairColPanel fceDetailsPanel;
     Vector<NumberTextField> fceDetailsFields;
 
     public JPanel fceDetailsP(InputControl ipc) {
@@ -85,19 +94,69 @@ public class RTFurnace extends GraphInfoAdapter {
                     200, 200000, "#,###", "Inner Width (mm)"));
             fceDetailsFields.add(ntHeightAboveCharge = new NumberTextField(ipc, heightAbove * 1000, 6,
                     false, 200, 200000, "#,###", "Height above Charge (mm)"));
-            fceDetailsFields.add(ntUsefullLength = new NumberTextField(ipc, maxFceLen, 6,
-                    false, 0.20, 2000, "#,###.000", "Useful Length (m)"));
+            fceDetailsFields.add(ntRollDia = new NumberTextField(ipc, rollDia * 1000, 6,
+                    false, 0, 1000, "#,###", "Support Roll dia (mm)"));
+            fceDetailsFields.add(ntRollPitch = new NumberTextField(ipc, rollPitch * 1000, 6,
+                    false, 0, 10000, "#,###", "Roll pitch (mm)"));
+            fceDetailsFields.add(ntUsefullLength = new NumberTextField(ipc, maxFceLen * 1000, 6,
+                    false, 2000, 200000, "#,###", "Maximum Length (mm)"));
             fceDetailsFields.add(ntLossPerMeter = new NumberTextField(ipc, lossPerM, 6, false,
                     -10000, 200000, "#,###", "Loss per Furnace length (kcal/h.m)"));
             pan.addItemPair(ntInnerWidth);
             pan.addItemPair(ntHeightAboveCharge);
             pan.addItemPair(ntUsefullLength);
             pan.addBlank();
+            pan.addItemPair(ntRollDia);
+            pan.addItemPair(ntRollPitch);
+            pan.addBlank();
             pan.addItemPair(ntLossPerMeter);
             fceDetailsPanel = pan;
             fceDataFieldsSet = true;
         }
         return fceDetailsPanel;
+    }
+
+    boolean xlFurnaceData(Sheet sheet, ExcelStyles styles) {
+        Cell cell;
+        Row r;
+        r = sheet.createRow(0);
+        cell = r.createCell(0);
+        cell.setCellStyle(styles.csHeader1);
+        cell.setCellValue("Furnace Details");
+
+        sheet.setColumnWidth(1, 10000);
+        sheet.setColumnWidth(2, 3000);
+        sheet.setColumnWidth(3, 500);
+        sheet.setColumnWidth(4, 9000);
+        sheet.setColumnWidth(5, 3000);
+        int topRow = 4, row, rRow;
+        int col = 1;
+        row = styles.xlMultiPairColPanel(fceDetailsPanel, sheet, topRow, col);
+        rRow = styles.xlMultiPairColPanel(rth.chargeP, sheet, topRow, col + 3);
+        row = Math.max(row, rRow);
+        row = Math.max(row, rRow);
+        topRow = row + 1;
+        row = styles.xlMultiPairColPanel(rt.getDataPanel(), sheet, topRow, col);
+        rRow = styles.xlMultiPairColPanel(rth.productionPanel, sheet, topRow, col + 3);
+        row = Math.max(row, rRow);
+        topRow = row + 1;
+        row = styles.xlMultiPairColPanel(radiantTubeInFceP, sheet, topRow, col);
+        rRow = styles.xlMultiPairColPanel(rth.calculModeP, sheet, topRow, col + 3);
+        return true;
+    }
+
+    boolean xlTempProfile(Sheet sheet, ExcelStyles styles) {
+        Cell cell;
+        Row r;
+        r = sheet.createRow(0);
+        cell = r.createCell(0);
+        cell.setCellStyle(styles.csHeader1);
+        cell.setCellValue("TEMPERATURE PROFILE OF SECTIONS");
+        int topRow = 4;
+        int leftCol = 1;
+        JTable table = getResultTable();
+        int row = styles.xlAddXLCellData(sheet, topRow, leftCol, table);
+        return true;
     }
 
     public boolean takeFceDetailsFromUI() {
@@ -107,7 +166,9 @@ public class RTFurnace extends GraphInfoAdapter {
         if (retVal) {
             width = ntInnerWidth.getData() / 1000;
             heightAbove = ntHeightAboveCharge.getData() / 1000;
-            maxFceLen = ntUsefullLength.getData();
+            maxFceLen = ntUsefullLength.getData() / 1000;
+            rollDia = ntRollDia.getData() / 1000;
+            rollPitch = ntRollPitch.getData() / 1000;
             lossPerM = ntLossPerMeter.getData();
             retVal = takeRTinFceFromUI();
             updateData();
@@ -126,61 +187,34 @@ public class RTFurnace extends GraphInfoAdapter {
 
     }
 
-    public void setProduction(Charge charge, double production, double maxFceLen, double unitLen, double unitLoss, RTHeating.LimitMode iCalculMode) {
+    public void setProduction(Charge charge, int nItemsInFceWidth, double production,
+                              double unitLen, RTHeating.LimitMode iCalculMode) {
         this.charge = charge;
-        this.production = production;
-        this.unitLen = unitLen;
-        this.maxFceLen = maxFceLen;
-        this.unitLoss = unitLoss;
-        this.iLimitMode = iCalculMode;
-        uAreaChTot = charge.getLength() * 2 * unitLen; // 20170802 earlier had an error of calling getWidth(), length of charge is along fce width
-        uAreaChHe = uAreaChTot;
-        uAreaHeTot = rt.getTotHeatingSurface() * (topRTperM + botRTperM) * unitLen;
-        uAreaHeCh = uAreaHeTot / 2;
-        uAreaWalls = (width + 2 * heightAbove + charge.getHeight()) * 2 *unitLen;
-        gapHeCh = rtCenterAbove - rt.dia / 2;
-        maxSlots = (int) (maxFceLen / unitLen);
-        allSlots = new Vector<>();
-        double lPos = unitLen;
-        OneSlot slot;
-        double endTime = 0;
-        double uWt = charge.unitWt;
-        unitTime = unitLen / (production / 60 / uWt);
-        OneSlot prevSlot = null;
-        for (int i = 0; i < maxSlots; i++) {
-            endTime += unitTime;
-            slot = new OneSlot(this, lPos, prevSlot);
-            slot.setCharge(charge, uWt, unitTime, endTime);
-            allSlots.add(slot);
-            lPos += unitLen;
-            prevSlot = slot;
-        }
-    }
-
-    public void setProduction(Charge charge, double production, double unitLen, RTHeating.LimitMode iCalculMode) {
-        this.charge = charge;
+        this.nChargeAlongFceWidth = nItemsInFceWidth;
         this.production = production;
         this.unitLen = unitLen;
 //        this.maxFceLen = maxFceLen;
         this.unitLoss = lossPerM * unitLen;
         this.iLimitMode = iCalculMode;
-        uAreaChTot = charge.getLength() * 2 * unitLen;
+//        uAreaChTot = charge.getLength() * 2 * unitLen * nItemsInFceWidth;
+        uAreaChTot = charge.projectedTopArea * 2 *  nItemsInFceWidth;
         uAreaChHe = uAreaChTot;
         uAreaHeTot = rt.getTotHeatingSurface() * (topRTperM + botRTperM) * unitLen;
-        uAreaHeCh = uAreaHeTot / 2;
+        uAreaHeCh = uAreaHeTot / 2; // ?? * 2 / (Math.PI / 2); // 20201014
         uAreaWalls = (width + 2 * heightAbove + charge.getHeight()) * 2 *unitLen;
-        gapHeCh = rtCenterAbove - rt.dia / 2;
+        gapHeCh = rtCenterAbove; // was before 20201014 rtCenterAbove - rt.dia / 2;
         maxSlots = (int) (maxFceLen / unitLen);
-        allSlots = new Vector<OneSlot>();
+        allSlots = new Vector<OneRTslot>();
         double lPos = unitLen;
-        OneSlot slot;
+        OneRTslot slot;
         double endTime = 0;
-        double uWt = charge.unitWt;
+        double uWt = charge.unitWt * nItemsInFceWidth;
         unitTime = unitLen / (production / 60 / uWt);
-        OneSlot prevSlot = null;
+        OneRTslot prevSlot = null;
         for (int i = 0; i < maxSlots; i++) {
             endTime += unitTime;
-            slot = new OneSlot(this, lPos, prevSlot);
+//            slot = new OneRTslot(this, lPos, prevSlot);
+            slot = new OneRTslot(this, lPos, prevSlot, unitLen, rtPerM, rollDia, rollPitch);
             slot.setCharge(charge, uWt, unitTime, endTime);
             allSlots.add(slot);
             lPos += unitLen;
@@ -191,18 +225,19 @@ public class RTFurnace extends GraphInfoAdapter {
     NumberTextField ntTubesPerFceLength;
     NumberTextField ntRadiantTubeChargeDistance;
     boolean radiantTubeFieldsSet = false;
-    JPanel radiantTubeInFceP;
+    MultiPairColPanel radiantTubeInFceP;
     Vector<NumberTextField> tubesInFceFields;
 
     public JPanel radiantTubesP(InputControl ipc) {
         if (!radiantTubeFieldsSet) {
-            MultiPairColPanel pan = new MultiPairColPanel("Radiant Tube Data");
+            MultiPairColPanel pan = new MultiPairColPanel("Radiant Tubes in Furnace");
             pan.addItem(rt.radiantTubesP(ipc));
             tubesInFceFields = new Vector<>();
             tubesInFceFields.add(ntTubesPerFceLength = new NumberTextField(ipc, rtPerM, 6, false,
                     0, 100, "#.000", "Number of Tube per m of Furnace Length"));
             tubesInFceFields.add(ntRadiantTubeChargeDistance = new NumberTextField(ipc, rtCenterAbove * 1000, 6, false,
                     0, 10000, "#,###", "RT Centerline above Charge Surface (mm)"));
+            pan.addItem("<html><B>Tubes to have a minimum gap of One Dia between the legs</B></html>");
             pan.addItemPair(ntTubesPerFceLength);
             pan.addItemPair(ntRadiantTubeChargeDistance);
             radiantTubeInFceP = pan;
@@ -219,6 +254,12 @@ public class RTFurnace extends GraphInfoAdapter {
             rtPerM = ntTubesPerFceLength.getData();
             rtCenterAbove = ntRadiantTubeChargeDistance.getData() / 1000;
             retVal = rt.takeFromUI();
+            if (retVal) {
+                if (heightAbove <= (rtCenterAbove + rt.dia)) {
+                    rth.showError("Error in Furnace Height/ Radiant tube location");
+                    retVal = false;
+                }
+            }
         }
         return retVal;
     }
@@ -231,7 +272,7 @@ public class RTFurnace extends GraphInfoAdapter {
         this.chEndTemp = chEndTemp;
         this.srcTemp = srcTemp;
         this.rtHeat = rtHeat;
-        OneSlot slot = allSlots.get(0);
+        OneRTslot slot = allSlots.get(0);
         double srcHeat = rtHeat * 860 * (topRTperM + botRTperM) * unitLen;
         double exitTemp = slot.calculate(chStTemp, srcTemp, 0, srcHeat, iLimitMode);
         nSlots = 1;
@@ -240,7 +281,7 @@ public class RTFurnace extends GraphInfoAdapter {
             exitTemp = slot.calculate();
             nSlots++;
         }
-        startSlot = new OneSlot(allSlots.get(0), 0);
+        startSlot = new OneRTslot(allSlots.get(0), 0);
         setDataForTraces();
         return true;
     }
@@ -257,7 +298,7 @@ public class RTFurnace extends GraphInfoAdapter {
         }
 
         public int getColumnCount() {
-            return OneSlot.nColumn;
+            return OneRTslot.nColumn;
         }
 
         public int getRowCount() {
@@ -265,15 +306,15 @@ public class RTFurnace extends GraphInfoAdapter {
         }
 
         public String getColumnName(int col) {
-            if (col < OneSlot.nColumn)
-                return OneSlot.colName[col];
+            if (col < OneRTslot.nColumn)
+                return OneRTslot.colName[col];
             else
                 return "UNKNOWN";
         }
 
         public Object getValueAt(int row, int col) { // was(int xPos, int yPos) {
             String data;
-            OneSlot slot;
+            OneRTslot slot;
 
             if (row >= 0 && row < allSlots.size() + 1) {
                 if (row == 0)
@@ -288,7 +329,7 @@ public class RTFurnace extends GraphInfoAdapter {
 
         public double getdoubleValueAt(int row, int col) { // was(int xPos, int yPos) {
             double data;
-            OneSlot slot;
+            OneRTslot slot;
 
             if (row >= 0 && row < allSlots.size() + 1) {
                 if (row == 0)
@@ -304,8 +345,8 @@ public class RTFurnace extends GraphInfoAdapter {
         String getResultsCVS() {
             String cvs = "";
             int c;
-            int columns = OneSlot.nColumn;
-            for (c = 0; c < OneSlot.nColumn; c++) {
+            int columns = OneRTslot.nColumn;
+            for (c = 0; c < OneRTslot.nColumn; c++) {
                 cvs += getColumnName(c) + ((c == (columns - 1) ? "\n" : ","));
             }
             int rows = getRowCount();
@@ -338,15 +379,19 @@ public class RTFurnace extends GraphInfoAdapter {
             new TraceHeader(traceName[2], "m", "DegC")};
     DoublePoint[] tempHe;
     DoublePoint[] tempFce;
+    DoublePoint[] tempChSurf;
     DoublePoint[] tempCh;
+    DoublePoint[] tempChCore;
     Vector<OnePropertyTrace> traces;
     DoubleRange commonX, commonY;
 
     void setDataForTraces() {
-        OneSlot slot;
+        OneRTslot slot;
         tempHe = new DoublePoint[nSlots + 1];
         tempFce = new DoublePoint[nSlots + 1];
+        tempChSurf = new DoublePoint[nSlots + 1];
         tempCh = new DoublePoint[nSlots + 1];
+        tempChCore = new DoublePoint[nSlots + 1];
         slot = startSlot;
         double pos;
         pos = slot.lPos;
@@ -358,7 +403,9 @@ public class RTFurnace extends GraphInfoAdapter {
             pos = slot.lPos;
             tempHe[s] = new DoublePoint(pos, slot.tempHe - 273);
             tempFce[s] = new DoublePoint(pos, slot.tempFce - 273);
+            tempChSurf[s] = new DoublePoint(pos, slot.tempChSurf - 273);
             tempCh[s] = new DoublePoint(pos, slot.tempChEnd - 273);
+            tempChCore[s] = new DoublePoint(pos, slot.tempChCore - 273);
         }
         traces = new Vector<OnePropertyTrace>();
         OnePropertyTrace oneTrace;
@@ -461,6 +508,7 @@ public class RTFurnace extends GraphInfoAdapter {
     public String resultsInCVS() {
         return "\n\n\n" + tableModel.getResultsCVS();
     }
+
 
     public String fceDataToSave() {
         String retVal;
