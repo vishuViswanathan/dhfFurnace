@@ -80,7 +80,7 @@ public class RadiantTube {
                     0.01, 1.0, "0.00", "Surface Emissivity");
             pan.addItemPair(ntRadiantTubeOD);
             pan.addItemPair(ntRadiantTubeLen);
-            pan.addItemPair(ntRadiantTubeRating);
+//            pan.addItemPair(ntRadiantTubeRating);
             pan.addItemPair(ntRadiantTubeEmiss);
             dataPanel = pan;
             radiantTubeFieldsSet = true;

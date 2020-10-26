@@ -740,7 +740,7 @@ public class RTHeating extends JPanel implements InputControl{
             MultiPairColPanel pan = new MultiPairColPanel("Production Data" );
             productionFields = new Vector<>();
             productionFields.add(ntOutput = new NumberTextField(ipc, production/ 1000, 6, false,
-                    0.200, 200000, "#,###", "Output (t/h)"));
+                    0.200, 200000, "#,###.000", "Output (t/h)"));
             productionFields.add(ntChEntryTemp = new NumberTextField(ipc, stTemp, 6, false,
                     -200, 2000, "#,###", "Charge Entry Temperatures (C)"));
             productionFields.add(ntChExitTemp = new NumberTextField(ipc, endTemp, 6, false,
