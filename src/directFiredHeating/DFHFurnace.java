@@ -4406,7 +4406,7 @@ public class DFHFurnace {
         }
         xmlStr += XMLmv.putTag("topSections", secStr);
         if (bTopBot) {
-            secStr = XMLmv.putTag("nActiveSec", "" + activeSections(false));
+            secStr = XMLmv.putTag("nActiveSec", "" + activeSections(true));
             for (int s = 0; s < botSections.size(); s++) {
                 sec = botSections.get(s);
                 if (sec.isActive())
