@@ -39,6 +39,7 @@ public class OneRTslot {
     double distChToRtCenter = 0.6;
 
     RTFurnace rtF;
+    RTFSection rtfSec;
     // all temperatures in K
     double tempChSt, tempChEnd;
     double chDeltaT = 0;
@@ -84,13 +85,16 @@ public class OneRTslot {
 
     }
 
-    public OneRTslot(RTFurnace rtF, double lPos, OneRTslot prevSlot) {
+    public OneRTslot(RTFurnace rtF, RTFSection rtfSec, double lPos, OneRTslot prevSlot) {
         this.rtF = rtF;
+        this.rtfSec = rtfSec;
+        this.rT = rtfSec.rt;
         this.charge = rtF.charge;
-        this.rT = rtF.rt;
         this.lPos = lPos;
+        this.rollPitch = rtF.rollPitch;
+        this.uChArea = rtF.uAreaChTot;
         this.prevSlot = prevSlot;
-        shapeFHeCh = effectiveArea12(rtF.uAreaHeCh, rtF.uAreaChHe, rtF.gapHeCh, 0) / rtF.uAreaHeTot;
+        shapeFHeCh = effectiveArea12(rtfSec.uAreaHeCh, rtF.uAreaChHe, rtfSec.rtCenterAbove, 0) / rtfSec.uAreaHeTot;
     }
 
     // for a dummy slot
@@ -196,15 +200,14 @@ public class OneRTslot {
     void getGrayFactors() {
         double emissCh = charge.getEmiss(tempChSt);
         grayFactHeCh = 1 /
-                ((1 / rT.surfEmiss - 1) + rtF.uAreaHeTot / rtF.uAreaChTot * (1 / emissCh - 1) +
-                        (rtF.uAreaHeTot + rtF.uAreaChTot - 2 * rtF.uAreaHeTot * shapeFHeCh) /
-                                (rtF.uAreaChTot - rtF.uAreaHeTot * shapeFHeCh * shapeFHeCh) );
+                ((1 / rT.surfEmiss - 1) + rtfSec.uAreaHeTot / rtF.uAreaChTot * (1 / emissCh - 1) +
+                        (rtfSec.uAreaHeTot + rtF.uAreaChTot - 2 * rtfSec.uAreaHeTot * shapeFHeCh) /
+                                (rtF.uAreaChTot - rtfSec.uAreaHeTot * shapeFHeCh * shapeFHeCh) );
         // this has been checked and found to be ok on 20170801
         // Ref page 402, 403
-        sigGrayHeCh = stefBoltz * grayFactHeCh * rtF.uAreaHeTot;
-
-        restistNearHE = (1- rT.surfEmiss) / (rtF.uAreaHeTot * rT.surfEmiss);
-        resistTotHEtoCharge = 1 / (rtF.uAreaHeTot * grayFactHeCh);
+        sigGrayHeCh = stefBoltz * grayFactHeCh * rtfSec.uAreaHeTot;
+        restistNearHE = (1- rT.surfEmiss) / (rtfSec.uAreaHeTot * rT.surfEmiss);
+        resistTotHEtoCharge = 1 / (rtfSec.uAreaHeTot * grayFactHeCh);
         double f12 = shapeFHeCh;
         double f21 = f12 * rtF.uAreaHeTot / rtF.uAreaChTot;
         double f23 = 1 - f21;

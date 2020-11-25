@@ -36,7 +36,7 @@ import java.util.Vector;
  * To change this template use File | Settings | File Templates.
  */
 
-public class RTHeating extends JPanel implements InputControl{
+public class RTHeating extends JPanel implements InputControl {
     public enum LimitMode {
         RTTEMP("RT Temperature"),
         RTHEAT("RT Heat Release");
@@ -71,13 +71,13 @@ public class RTHeating extends JPanel implements InputControl{
     }
 
     protected enum RTHDisplayPage {
-        INPUTPAGE, RESULTSPAGE
+        INPUTPAGE, TRENDSPAGE, RESULTSTABLEPAGE
     }
 
-    String title = "Radiant Tube Heated Furnace 20201025"; // was 20201017";
+    String title = "Radiant Tube Heated Furnace 20201109"; // was 20201025"; // was 20201017";
     public int appCode = 101;
     boolean canNotify = true;
-//    JSObject win;
+    //    JSObject win;
     String header;
     boolean itsON = false;
     JFrame mainF;
@@ -87,6 +87,7 @@ public class RTHeating extends JPanel implements InputControl{
     String jspBase = "HYPWAP02:9080/fceCalculations/jsp/";
     JPanel inpPage;
     JPanel resultsPage;
+    JPanel trendsPage;
     protected JScrollPane slate = new JScrollPane();
     public JButton pbEdit;
 
@@ -108,43 +109,28 @@ public class RTHeating extends JPanel implements InputControl{
 //        setTestData();
                 mainF.add(slate);
                 vChMaterial = new Vector<ChMaterial>();
-                furnace = new RTFurnace(this);
+                setDefaultFurnace();
                 if (loadChMaterialData()) {
-                    inpPage = inputPage();
+                    chargePan(this);
+                    inpPage = theFurnace.inputPage(this, chargeP);
                     switchToSelectedPage(RTHDisplayPage.INPUTPAGE);
                     mainF.pack();
                     mainF.setVisible(true);
                     retVal = true;
                 }
-            }
-            else {
+            } else {
                 if (runCheck.getStatus() == DataStat.Status.WithErrorMsg)
-                    showError("Access Check",runCheck.getErrorMessage());
+                    showError("Access Check", runCheck.getErrorMessage());
                 else
-                    showError("Access Check","Some problem in getting Application permissions");
+                    showError("Access Check", "Some problem in getting Application permissions");
             }
         } else
             showError("Access Check", "Unable to connect to Server");
         return retVal;
     }
 
-    public void setItupOLD() { // TODO check and remove
-        setUIDefaults();
-        mainF = new JFrame("RadiantTube Furnace");
-//        mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        setMenuOptions();
-//        setTestData();
-        mainF.add(slate);
-        vChMaterial = new Vector<ChMaterial>();
-        furnace = new RTFurnace(this);
-        if (getJSPbase()) {
-            if (getJSPConnection()) {
-                inpPage = inputPage();
-                switchToSelectedPage(RTHDisplayPage.INPUTPAGE);
-                mainF.pack();
-                mainF.setVisible(true);
-            }
-        }
+    private void setDefaultFurnace() {
+        theFurnace = new RTFurnace(this, nChargeAlongFceWidth);
     }
 
     protected void setUIDefaults() {
@@ -182,41 +168,21 @@ public class RTHeating extends JPanel implements InputControl{
                 });
     }
 
-
-    JPanel inputPage() {
-        JPanel inputFrame = new JPanel(new GridBagLayout());
+    JPanel trendsPage() {
+        JPanel resultsFrame = new JPanel(new GridBagLayout());
         GridBagConstraints gbcMf = new GridBagConstraints();
-
         gbcMf.anchor = GridBagConstraints.CENTER;
         gbcMf.gridx = 0;
         gbcMf.gridy = 0;
         gbcMf.insets = new Insets(0, 0, 0, 0);
         gbcMf.gridwidth = 1;
         gbcMf.gridheight = 1;
-        gbcMf.gridy++;
-        inputFrame.add(furnace.fceDetailsP(this), gbcMf);
+        resultsFrame.add(getTitlePanel(), gbcMf);
         gbcMf.gridx = 0;
         gbcMf.gridy++;
-        gbcMf.gridheight = 2;
-        inputFrame.add(furnace.radiantTubesP(this), gbcMf);
-        gbcMf.gridheight = 1;
-        gbcMf.gridx = 1;
-        gbcMf.gridy = 1;
-        inputFrame.add(chargePan(this), gbcMf);
-        gbcMf.gridy++;
-        inputFrame.add(productionP(this), gbcMf);
-        gbcMf.gridy++;
-        inputFrame.add(calculDataP(this), gbcMf);
-        gbcMf.gridx = 0;
-        gbcMf.gridwidth = 2;
-        gbcMf.gridy++;
-        JPanel buttonPanel = new JPanel();
-        jBcalculate.addActionListener(e-> {
-            calculateRTFce();
-        });
-        buttonPanel.add(jBcalculate);
-        inputFrame.add(buttonPanel, gbcMf);
-        return inputFrame;
+        resultsFrame.add(getGraphPanel(), gbcMf);
+        trendPanel.setTraceToShow(-1);
+        return resultsFrame;
     }
 
     JPanel resultsPage() {
@@ -231,13 +197,9 @@ public class RTHeating extends JPanel implements InputControl{
         resultsFrame.add(getTitlePanel(), gbcMf);
         gbcMf.gridx = 0;
         gbcMf.gridy++;
-        resultsFrame.add(getGraphPanel(), gbcMf);
-        gbcMf.gridx = 0;
-        gbcMf.gridy++;
         gbcMf.gridwidth = 1;
         gbcMf.gridheight = 2;
         resultsFrame.add(getListPanel(), gbcMf);
-        trendPanel.setTraceToShow(-1);
         return resultsFrame;
     }
 
@@ -247,7 +209,10 @@ public class RTHeating extends JPanel implements InputControl{
             case INPUTPAGE:
                 slate.setViewportView(inpPage);
                 break;
-            case RESULTSPAGE:
+            case TRENDSPAGE:
+                slate.setViewportView(trendsPage);
+                break;
+            case RESULTSTABLEPAGE:
                 slate.setViewportView(resultsPage);
                 break;
         }
@@ -288,19 +253,8 @@ public class RTHeating extends JPanel implements InputControl{
         return retVal;
     }
 
-//    void setTestData() {
-//        debug("hC " + setChargeHeatCont("0, 0, 100, 11.5, 300, 37, 450, 59.0005, 600, 85, 700, 104, 750, 117.5, 850, 137, 1000, 161, 2000, 327"));
-//        debug("tk " + setChargeTk("0, 42"));
-//        debug("emiss " + setChargeEmiss("0, 0.6, 2000, 0.6"));
-//        debug("charge Basic " + chargeBasic("TestMaterial", "0000", "" + 7.85, "" + 1.05, "" + 0.00055));
-//        debug("rt " + defineRT("" + 0.198, "" + 1.40, "" + 30, "" + 0.85));
-//        debug("furnace " + defineFurnace("" + 1.55, "" + 0.8, "" + 0.4, "" + 3.333333, "" + 4000));
-//        debug("production " + defineProduction("" + 20000, "" + 550, "" + 730, "" + 900, "" + 24, "" + 50, "" + 1.0, "RTHEAT"));
-//    }
-
-
     public void displayIt() {
-        if (!itsON && furnace != null) {
+        if (!itsON && theFurnace != null) {
             itsON = true;
             mainF = new JFrame("RT Furnace Heating");
 
@@ -344,10 +298,13 @@ public class RTHeating extends JPanel implements InputControl{
     protected JMenuItem mIGetFceProfile;
     JMenuItem mISaveToXL;
     JMenuItem mIExit;
+    JMenuItem mItrends;
+    JMenuItem mItrandList;
     boolean resultsReady = false;
 
     void setMenuOptions() {
         JMenuBar mb = new JMenuBar();
+//        mb.setLayout(new GridLayout(1, 0));
         OnePropertyTrace oneT;
         MenuActions mAction = new MenuActions();
         fileMenu = new JMenu("File");
@@ -375,15 +332,16 @@ public class RTHeating extends JPanel implements InputControl{
 
         mb.add(fileMenu);
         inputMenu = new JMenu("input Data");
-        resultsMenu = new JMenu("Results");
-        resultsMenu.setEnabled(false);
+        createResultsMenu();
+//        resultsMenu = new JMenu("Results");
+//        resultsMenu.setEnabled(false);
         MenuListener menuListener = new MenuListener() {
             @Override
             public void menuSelected(MenuEvent e) {
                 if (e.getSource() == inputMenu)
                     switchToSelectedPage(RTHDisplayPage.INPUTPAGE);
-                else if (e.getSource() == resultsMenu && resultsReady)
-                    switchToSelectedPage(RTHDisplayPage.RESULTSPAGE);
+//                else if (e.getSource() == resultsMenu && resultsReady)
+//                    switchToSelectedPage(RTHDisplayPage.RESULTSPAGE);
             }
 
             @Override
@@ -401,7 +359,8 @@ public class RTHeating extends JPanel implements InputControl{
         resultsMenu.addMenuListener(menuListener);
         mb.add(inputMenu);
         mb.add(resultsMenu);
-
+        JLabel dummy = new JLabel("--------------");
+        mb.add(dummy);
         pbEdit = new JButton("AllowDataEdit");
         pbEdit.setMnemonic(KeyEvent.VK_E);
         pbEdit.getModel().setPressed(true);
@@ -415,8 +374,31 @@ public class RTHeating extends JPanel implements InputControl{
         mainF.setJMenuBar(mb);
     }
 
-    public void enableDataEdit(boolean ena) {
+    JMenu createResultsMenu() {
+        resultsMenu = new JMenu("ViewResults");
+        mItrends = new JMenuItem("Show Temperature Trends");
+        mItrandList = new JMenuItem("Show Results Table");
+        ActionListener al = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Object src = e.getSource();
+                if (src == mItrends) {
+                    switchToSelectedPage(RTHDisplayPage.TRENDSPAGE);
+                } else if (src == mItrandList) {
+                    switchToSelectedPage(RTHDisplayPage.RESULTSTABLEPAGE);
+                }
+            }
 
+        };
+        mItrends.addActionListener(al);
+        mItrandList.addActionListener(al);
+        resultsMenu.add(mItrends);
+        resultsMenu.add(mItrandList);
+        resultsMenu.setEnabled(false);
+        return resultsMenu;
+    }
+
+    public void enableDataEdit(boolean ena) {
         ntStripWidth.setEditable(ena);
         ntStripThickness.setEditable(ena);
         ntChDiameter.setEditable(ena);
@@ -426,20 +408,9 @@ public class RTHeating extends JPanel implements InputControl{
         cbChType.setEnabled(ena);
 
         ntOutput.setEditable(ena);
-        ntChEntryTemp.setEditable(ena);
-        ntChExitTemp.setEditable(ena);
 
-        cbLimitMode.setEnabled(ena);
-        ntMaxRtTemp.setEditable(ena);
-        ntMaxRtHeat.setEditable(ena);
-        ntUfceLen.setEditable(ena);
 
-        furnace.enableDataEdit(ena);
-        jBcalculate.setEnabled(ena);
-
-//        enableDataEntry(true);
-//        enableFileMenu(true);
-//        enableDefineMenu(true);
+        theFurnace.enableDataEdit(ena);
         pbEdit.getModel().setPressed(ena);
         pbEdit.setEnabled(!ena);
         resultsReady = !ena;
@@ -503,7 +474,7 @@ public class RTHeating extends JPanel implements InputControl{
     }
 
     Panel getListPanel() {
-        resultTable = furnace.getResultTable();
+        resultTable = theFurnace.getResultTable();
         JPanel headPanel = new JPanel(new GridLayout(1, 1));
         headPanel.add(resultTable.getTableHeader());
         Panel listPanel = new Panel(new BorderLayout());
@@ -523,8 +494,8 @@ public class RTHeating extends JPanel implements InputControl{
         gP = new FramedPanel(new GridLayout(1, 0));
         trendPanel =
                 new GraphPanel(new Dimension(700, 350));
-        for (int t = 0; t < furnace.nTraces; t++)
-            trendPanel.addTrace(furnace, t, GraphDisplay.COLORS[t]);
+        for (int t = 0; t < theFurnace.nTraces; t++)
+            trendPanel.addTrace(theFurnace, t, GraphDisplay.COLORS[t]);
 //        if (traces.nTraces > 1)
         trendPanel.setTraceToShow(0);   // all
         trendPanel.prepareDisplay();
@@ -578,17 +549,14 @@ public class RTHeating extends JPanel implements InputControl{
 
 
     ChMaterial chMaterial;
-    Charge theCharge;
     protected XLComboBox cbChType;
     Charge.ChType chType = Charge.ChType.SOLID_RECTANGLE;
     XYArray hC, tk, emiss;
-    RadiantTube rt;
-    RTFurnace furnace;
-    double production, stTemp = 30, endTemp = 730, perMLoss;
+    RTFurnace theFurnace;
+    public double production;
     double rtLimitTemp = 900, rtLimitHeat = 24, fceLimitLength;
     boolean bHeatLimit, bRtTempLimit, bFceLengthLimit;
 
-    double uLen = 1;
     LimitMode iLimitMode;
 
     ScrollPane resultScroll;
@@ -621,60 +589,64 @@ public class RTHeating extends JPanel implements InputControl{
     }
 
 
-
     public JPanel chargePan(InputControl ipc) {
         if (!chargeFieldsSet) {
             MultiPairColPanel pan = new MultiPairColPanel("Charge Data");
 //            if (loadChMaterialData()) {
-                cbChMaterial = new JSPComboBox<>(jspConnection, vChMaterial);
-                pan.addItemPair("Charge Material", cbChMaterial);
-                cbChType = new XLComboBox(Charge.ChType.values());
-                pan.addItemPair("Charge Cross Section", cbChType);
-                ntStripWidth = new NumberTextField(ipc, stripWidth * 1000, 6, false,
-                        50, 10000, "#,###", "Strip Width (mm)");
-                ntStripThickness = new NumberTextField(ipc, stripThick * 1000, 6, false,
-                        0.001, 200, "0.000", "Strip Thickness (mm)");
-                pan.addItemPair(ntStripWidth);
-                pan.addItemPair(ntStripThickness);
-                ntChDiameter = new NumberTextField(ipc, chDiameter * 1000, 6, false,
-                        5, 1000, "#,###", "Charge Diameter (mm)");
-                ntWallThickness = new NumberTextField(ipc, wallThickness * 1000, 6, false,
+            cbChMaterial = new JSPComboBox<>(jspConnection, vChMaterial);
+            pan.addItemPair("Charge Material", cbChMaterial);
+            cbChType = new XLComboBox(Charge.ChType.values());
+            pan.addItemPair("Charge Cross Section", cbChType);
+            ntStripWidth = new NumberTextField(ipc, stripWidth * 1000, 6, false,
+                    50, 10000, "#,###", "Strip Width (mm)");
+            ntStripThickness = new NumberTextField(ipc, stripThick * 1000, 6, false,
+                    0.001, 200, "0.000", "Strip Thickness (mm)");
+            pan.addItemPair(ntStripWidth);
+            pan.addItemPair(ntStripThickness);
+            ntChDiameter = new NumberTextField(ipc, chDiameter * 1000, 6, false,
+                    5, 1000, "#,###", "Charge Diameter (mm)");
+            ntWallThickness = new NumberTextField(ipc, wallThickness * 1000, 6, false,
                     1, 50, "#,###", "Tube Wall Thickness (mm)");
-                pan.addItemPair(ntChDiameter);
-                pan.addItemPair(ntWallThickness);
-                ntNitemsAlongFceWidth = new NumberTextField(ipc, nChargeAlongFceWidth, 6, true,
-                        1, 200, "#,###", "Number of items in Fce Width");
-                pan.addItemPair(ntNitemsAlongFceWidth);
-                cbChType.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        chType = (Charge.ChType)cbChType.getSelectedItem();
-                        switch (chType) {
-                            case TUBULAR:
-                                ntStripWidth.setEnabled(false);
-                                ntStripThickness.setEnabled(false);
-                                ntChDiameter.setEnabled(true);
-                                ntWallThickness.setEnabled(true);
-                                 break;
-                            case SOLID_RECTANGLE:
-                                ntStripWidth.setEnabled(true);
-                                ntStripThickness.setEnabled(true);
-                                ntChDiameter.setEnabled(false);
-                                ntWallThickness.setEnabled(false);
-                                ntNitemsAlongFceWidth.setData(1);
-                                break;
-                            case SOLID_CIRCLE:
-                                ntStripWidth.setEnabled(false);
-                                ntStripThickness.setEnabled(false);
-                                ntChDiameter.setEnabled(true);
-                                ntWallThickness.setEnabled(false);
-                                break;
-                        }
+            pan.addItemPair(ntChDiameter);
+            pan.addItemPair(ntWallThickness);
+            ntNitemsAlongFceWidth = new NumberTextField(ipc, nChargeAlongFceWidth, 6, true,
+                    1, 200, "#,###", "Number of items in Fce Width");
+            pan.addItemPair(ntNitemsAlongFceWidth);
+            cbChType.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    chType = (Charge.ChType) cbChType.getSelectedItem();
+                    switch (chType) {
+                        case TUBULAR:
+                            ntStripWidth.setEnabled(false);
+                            ntStripThickness.setEnabled(false);
+                            ntChDiameter.setEnabled(true);
+                            ntWallThickness.setEnabled(true);
+                            break;
+                        case SOLID_RECTANGLE:
+                            ntStripWidth.setEnabled(true);
+                            ntStripThickness.setEnabled(true);
+                            ntChDiameter.setEnabled(false);
+                            ntWallThickness.setEnabled(false);
+                            ntNitemsAlongFceWidth.setData(1);
+                            break;
+                        case SOLID_CIRCLE:
+                            ntStripWidth.setEnabled(false);
+                            ntStripThickness.setEnabled(false);
+                            ntChDiameter.setEnabled(true);
+                            ntWallThickness.setEnabled(false);
+                            break;
                     }
-                });
-                cbChType.setSelectedItem(chType);
-                chargeP = pan;
-                chargeFieldsSet = true;
+                }
+            });
+            ntOutput = new NumberTextField(ipc, production / 1000, 6, false,
+                    0.200, 200000, "#,###.000", "Output (t/h)");
+            pan.addBlank();
+            pan.addItemPair(ntOutput);
+
+            cbChType.setSelectedItem(chType);
+            chargeP = pan;
+            chargeFieldsSet = true;
 //            }
         }
         return chargeP;
@@ -682,22 +654,22 @@ public class RTHeating extends JPanel implements InputControl{
 
     public ChMaterial getSelChMaterial(String matName) {
         ChMaterial chMat = null;
-        for (ChMaterial oneMat: vChMaterial)
+        for (ChMaterial oneMat : vChMaterial)
             if (matName.equalsIgnoreCase(oneMat.name)) {
                 chMat = oneMat;
                 if (chMat instanceof JSPObject)
-                    ((JSPObject)chMat).collectData(jspConnection);
+                    ((JSPObject) chMat).collectData(jspConnection);
                 break;
             }
         return chMat;
     }
 
     boolean takeChargeFromUI() {
-        chMaterial = (ChMaterial)cbChMaterial.getSelectedItem();
+        chMaterial = (ChMaterial) cbChMaterial.getSelectedItem();
         double effectiveChWidth = 0;
         boolean retVal = (chMaterial != null) && !ntNitemsAlongFceWidth.isInError();
         if (retVal) {
-            nChargeAlongFceWidth = (int)(ntNitemsAlongFceWidth.getData());
+            nChargeAlongFceWidth = (int) (ntNitemsAlongFceWidth.getData());
             switch (chType) {
                 case SOLID_RECTANGLE:
                     if (!ntStripWidth.isInError() && !ntStripThickness.isInError()) {
@@ -720,7 +692,7 @@ public class RTHeating extends JPanel implements InputControl{
                     }
                     break;
             }
-            if (effectiveChWidth > 0.95 * furnace.width) {
+            if (effectiveChWidth > 0.95 * theFurnace.width) {
                 showError("Cannot accommodate charge in furnace width");
                 retVal = false;
             }
@@ -735,6 +707,7 @@ public class RTHeating extends JPanel implements InputControl{
     boolean productionFieldsSet = false;
     Vector<NumberTextField> productionFields;
 
+    /*
     public JPanel productionP(InputControl ipc) {
         if (!productionFieldsSet) {
             MultiPairColPanel pan = new MultiPairColPanel("Production Data" );
@@ -769,7 +742,7 @@ public class RTHeating extends JPanel implements InputControl{
         }
         return retVal;
     }
-
+*/
     MultiPairColPanel calculModeP;
     JComboBox<LimitMode> cbLimitMode; // moade XLComboBox
     NumberTextField ntMaxRtTemp;
@@ -777,7 +750,7 @@ public class RTHeating extends JPanel implements InputControl{
     NumberTextField ntUfceLen;
     Vector<NumberTextField> calculFields;
     boolean calculFieldsSet = false;
-
+/*
     JPanel calculDataP(InputControl ipc) {
         if (!calculFieldsSet) {
             MultiPairColPanel pan = new MultiPairColPanel("Calculation Mode");
@@ -821,10 +794,33 @@ public class RTHeating extends JPanel implements InputControl{
         }
         return retVal;
     }
+*/
 
+    public Charge getChargeDetails(double uLen) {
+        Charge theCharge = null;
+        if (takeChargeFromUI()) {
+            switch (chType) {
+                case SOLID_RECTANGLE:
+                    theCharge = new Charge(chMaterial, uLen, stripWidth, stripThick);
+                    break;
+                case TUBULAR:
+                    theCharge = new Charge(chMaterial, uLen, stripWidth, stripThick,
+                            chDiameter, wallThickness, Charge.ChType.TUBULAR);
+                    break;
+                case SOLID_CIRCLE:
+                    theCharge = new Charge(chMaterial, uLen, stripWidth, stripThick,
+                            chDiameter, wallThickness, Charge.ChType.SOLID_CIRCLE);
+                    break;
+            }
+        }
+        return theCharge;
+    }
+
+
+/*
     public void calculateRTFce() {
         boolean proceed = false;
-        if (takeChargeFromUI() && takeProductionFromUI() && furnace.takeFceDetailsFromUI() &&
+        if (takeChargeFromUI() && takeProductionFromUI() && theFurnace.takeFceDetailsFromUI() &&
                 takeCalculModeFromUI()) {
             switch(chType) {
                 case SOLID_RECTANGLE:
@@ -846,26 +842,27 @@ public class RTHeating extends JPanel implements InputControl{
 
             }
             if (proceed) {
-                furnace.setProduction(theCharge, nChargeAlongFceWidth, production, uLen, iLimitMode);
+                theFurnace.setProduction(theCharge, nChargeAlongFceWidth, production, uLen, iLimitMode);
                 furtherCalculations();
+                trendsPage = trendsPage();
                 resultsPage = resultsPage();
                 enableDataEdit(false);
-                switchToSelectedPage(RTHDisplayPage.RESULTSPAGE);
+                switchToSelectedPage(RTHDisplayPage.TRENDSPAGE);
             }
         }
         else
             showError("Some Input Data is not acceptable");
     }
-
+*/
     void debug(String msg) {
         System.out.println("RTHeating: " + msg);
     }
 
-
+/*
     void furtherCalculations() {
-        furnace.calculate(stTemp + 273, endTemp + 273, rtLimitTemp + 273, rtLimitHeat);
+        theFurnace.calculate(stTemp + 273, endTemp + 273, rtLimitTemp + 273, rtLimitHeat);
     }
-
+*/
 //    public String resultsInCVS() {
 //        return furnace.resultsInCVS();
 //    }
@@ -878,7 +875,7 @@ public class RTHeating extends JPanel implements InputControl{
         //  create a new sheet
         ExcelStyles styles = new ExcelStyles(wb);
         wb.createSheet("Furnace Data");
-        furnace.xlFurnaceData(wb.getSheetAt(nSheet), styles);
+        theFurnace.xlFurnaceData(wb.getSheetAt(nSheet), styles);
 //        nSheet++;
 //        wb.createSheet("Heat Summary");
 //        furnace.xlHeatSummary(wb.getSheetAt(nSheet), styles);
@@ -891,7 +888,7 @@ public class RTHeating extends JPanel implements InputControl{
 //
         nSheet++;
         wb.createSheet("Temp Profile");
-        furnace.xlTempProfile(wb.getSheetAt(nSheet), styles);
+        theFurnace.xlTempProfile(wb.getSheetAt(nSheet), styles);
         nSheet++;
         wb.createSheet("Furnace Profile");
         wb.setSheetHidden(nSheet, true);

@@ -4,6 +4,7 @@ import mvUtils.display.InputControl;
 import mvUtils.display.MultiPairColPanel;
 import mvUtils.display.NumberTextField;
 import mvUtils.mvXML.XMLmv;
+import radiantTubeHeating.RTFSection;
 
 import javax.swing.*;
 
@@ -66,6 +67,7 @@ public class RadiantTube {
     NumberTextField ntRadiantTubeEmiss;
     boolean radiantTubeFieldsSet = false;
     MultiPairColPanel dataPanel;
+    JTabbedPane tabbedSectionPane;
 
     public JPanel radiantTubesP(InputControl ipc) {
         if (!radiantTubeFieldsSet) {

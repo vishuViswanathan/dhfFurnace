@@ -1,8 +1,7 @@
 package radiantTubeHeating;
 
-import display.OnePropertyTrace;
-import basic.Charge;
 import basic.RadiantTube;
+import display.OnePropertyTrace;
 import mvUtils.display.*;
 import mvUtils.math.DoublePoint;
 import mvUtils.math.DoubleRange;
@@ -20,144 +19,54 @@ import java.util.Vector;
 /**
  * Created by IntelliJ IDEA.
  * User: M Viswanathan
- * Date: 4/19/12
- * Time: 10:24 AM
+ * Date: 09 Nov 2020
+ * Time: 11:02 AM
  * To change this template use File | Settings | File Templates.
  */
-public class RTFurnace extends GraphInfoAdapter {
+
+public class RTFSection {
+    int zoneNum;
+    RTFurnace furnace;
     RTHeating rth;
+    double startPos;
+    RTFSection prevSection;
     RTHeating.LimitMode iLimitMode;
-    public double width = 1.55;
-    public double heightAbove = 0.8, heightBelow = 0.8;
-    public double rtCenterAbove = 0.3, rtCenterBelow = 0.3;
+
     public RadiantTube rt;
+    public double rtCenterAbove = 0.3, rtCenterBelow = 0.3;
     double rtPerM = 3;
     double topRTperM, botRTperM;
-    public double rollPitch = 0;
-    public double rollDia = 0;
-
-    public Charge charge;
-    public int nChargeAlongFceWidth = 1;
-    double production = 20, unitTime;
-    double maxFceLen = 50, unitLen = 1;
-    public double unitLoss;
-    double lossPerM = 4000;
-    public double uAreaChTot, uAreaHeTot;
-    public double uAreaChHe, uAreaHeCh;
-    public double uAreaWalls;
-    public double chargeUwt;
-    double gapHeCh ;
-    Vector<RTFSection> sections;
-    JTabbedPane tabbedSectionsPane;
+    double uAreaHeTot;
+    double uAreaHeCh;
+    double unitLen = 1;
     Vector<OneRTslot> allSlots;
-    int maxSlots;
+    int maxSlots = 100;
     public int nSlots = 0;
-    MyTableModel tableModel;
+    RTFSection.MyTableModel tableModel;
     OneRTslot startSlot;
 
-    public RTFurnace(RTHeating rth, int nChargeAlongFceWidth) {
-        this.rth = rth;
-        this.nChargeAlongFceWidth = nChargeAlongFceWidth;
-        sections = new Vector<>();
-        sections.add(new RTFSection(this));
+    public RTFSection(RTFurnace rtF) {
+        this(rtF, 0, 1, null, new RadiantTube(), 4);
     }
 
-    public RTFurnace(double width, double heightAbove, double rtCenterAbove, RadiantTube radiantTube, double rtPerM) {
-        this.width = width;
-        this.heightAbove = heightAbove;
-        this.rtCenterAbove = rtCenterAbove;
+    public RTFSection(RTFurnace rtf, double startPos, int zoneNum, RTFSection prevSection, RadiantTube radiantTube, double rtPerM) {
+        this.furnace = rtf;
+        this.startPos = startPos;
+        this.zoneNum = zoneNum;
+        this.prevSection = prevSection;
         this.rt = radiantTube;
         this.rtPerM = rtPerM;
         updateData();
     }
 
     void updateData() {
-        this.heightBelow = this.heightAbove;
-        this.rtCenterBelow = this.rtCenterAbove;
         this.topRTperM = rtPerM / 2;
         this.botRTperM = this.topRTperM;
     }
 
-    NumberTextField ntInnerWidth;
-    NumberTextField ntHeightAboveCharge;
-    NumberTextField ntRollDia;
-    NumberTextField ntRollPitch;
-
-    NumberTextField ntUsefullLength;
-    NumberTextField ntUfceLen;
-    NumberTextField ntLossPerMeter;
-    boolean fceDataFieldsSet = false;
-    MultiPairColPanel fceDetailsPanel;
     Vector<NumberTextField> fceDetailsFields;
 
-    public JPanel inputPage(InputControl ipc, Component chargePanel) {
-        JPanel inputFrame = new JPanel(new GridBagLayout());
-        GridBagConstraints gbcMf = new GridBagConstraints();
-
-        gbcMf.anchor = GridBagConstraints.CENTER;
-        gbcMf.gridx = 0;
-        gbcMf.gridy = 0;
-        gbcMf.insets = new Insets(0, 0, 0, 0);
-        gbcMf.gridwidth = 1;
-        gbcMf.gridheight = 1;
-        gbcMf.gridy++;
-        inputFrame.add(fceDetailsP(ipc), gbcMf);
-        gbcMf.gridheight = 1;
-        gbcMf.gridx = 1;
-        gbcMf.gridy = 1;
-        inputFrame.add(chargePanel, gbcMf);
-        gbcMf.gridy++;
-        gbcMf.gridx = 0;
-        gbcMf.gridwidth = 2;
-        inputFrame.add(sectionDetailsPanel(ipc), gbcMf);
-        return inputFrame;
-    }
-
-    public JPanel fceDetailsP(InputControl ipc) {
-        if (!fceDataFieldsSet) {
-            MultiPairColPanel pan = new MultiPairColPanel("Furnace Data");
-            fceDetailsFields = new Vector<>();
-            fceDetailsFields.add(ntInnerWidth = new NumberTextField(ipc, width * 1000, 6, false,
-                    200, 200000, "#,###", "Inner Width (mm)"));
-            fceDetailsFields.add(ntHeightAboveCharge = new NumberTextField(ipc, heightAbove * 1000, 6,
-                    false, 200, 200000, "#,###", "Height above Charge (mm)"));
-            fceDetailsFields.add(ntRollDia = new NumberTextField(ipc, rollDia * 1000, 6,
-                    false, 0, 1000, "#,###", "Support Roll dia (mm)"));
-            fceDetailsFields.add(ntRollPitch = new NumberTextField(ipc, rollPitch * 1000, 6,
-                    false, 0, 10000, "#,###", "Roll pitch (mm)"));
-            fceDetailsFields.add(ntUsefullLength = new NumberTextField(ipc, maxFceLen * 1000, 6,
-                    false, 2000, 200000, "#,###", "Maximum Length (mm)"));
-            fceDetailsFields.add(ntUfceLen = new NumberTextField(ipc, unitLen * 1000, 6, false,
-                    200, 20000, "#,###", "Furnace Calculation Step Length (mm)"));
-
-
-            fceDetailsFields.add(ntLossPerMeter = new NumberTextField(ipc, lossPerM, 6, false,
-                    -10000, 200000, "#,###", "Loss per Furnace length (kcal/h.m)"));
-            pan.addItemPair(ntInnerWidth);
-            pan.addItemPair(ntHeightAboveCharge);
-            pan.addItemPair(ntUsefullLength);
-            pan.addItemPair(ntUfceLen);
-            pan.addBlank();
-            pan.addItemPair(ntRollDia);
-            pan.addItemPair(ntRollPitch);
-            pan.addBlank();
-            pan.addItemPair(ntLossPerMeter);
-            fceDetailsPanel = pan;
-            fceDataFieldsSet = true;
-        }
-        return fceDetailsPanel;
-    }
-
-    JPanel sectionDetailsPanel(InputControl ipc) {
-        FramedPanel outerP = new FramedPanel(new BorderLayout());
-        tabbedSectionsPane = new JTabbedPane();
-        tabbedSectionsPane.addTab("Sec#1", null,
-                sections.get(0).zoneDataP(ipc));
-        outerP.add(tabbedSectionsPane);
-        return outerP;
-    }
-
-    boolean xlFurnaceData(Sheet sheet, ExcelStyles styles) {
+    boolean xlSectionData(Sheet sheet, ExcelStyles styles) {
         Cell cell;
         Row r;
         r = sheet.createRow(0);
@@ -172,17 +81,10 @@ public class RTFurnace extends GraphInfoAdapter {
         sheet.setColumnWidth(5, 3000);
         int topRow = 4, row, rRow;
         int col = 1;
-        row = styles.xlMultiPairColPanel(fceDetailsPanel, sheet, topRow, col);
-        rRow = styles.xlMultiPairColPanel(rth.chargeP, sheet, topRow, col + 3);
-        row = Math.max(row, rRow);
-        row = Math.max(row, rRow);
-        topRow = row + 1;
         row = styles.xlMultiPairColPanel(rt.getDataPanel(), sheet, topRow, col);
-        rRow = styles.xlMultiPairColPanel(rth.productionPanel, sheet, topRow, col + 3);
-        row = Math.max(row, rRow);
         topRow = row + 1;
         row = styles.xlMultiPairColPanel(radiantTubeInFceP, sheet, topRow, col);
-        rRow = styles.xlMultiPairColPanel(rth.calculModeP, sheet, topRow, col + 3);
+        rRow = styles.xlMultiPairColPanel(calculModeP, sheet, topRow, col + 3);
         return true;
     }
 
@@ -200,80 +102,75 @@ public class RTFurnace extends GraphInfoAdapter {
         return true;
     }
 
-    public boolean prepareForCalculation() {
-        boolean proceed = takeFceDetailsFromUI();
-        if (proceed) {
-            charge = rth.getChargeDetails(unitLen);
-            setProduction();
-            proceed = (charge != null);
-        }
-        return proceed;
-    }
-
-    public boolean takeFceDetailsFromUI() {
-        boolean retVal = true;
-        for (NumberTextField f : fceDetailsFields)
-            retVal &= !f.isInError();
-        if (retVal) {
-            width = ntInnerWidth.getData() / 1000;
-            heightAbove = ntHeightAboveCharge.getData() / 1000;
-            maxFceLen = ntUsefullLength.getData() / 1000;
-            unitLen = ntUfceLen.getData() / 1000;
-            rollDia = ntRollDia.getData() / 1000;
-            rollPitch = ntRollPitch.getData() / 1000;
-            lossPerM = ntLossPerMeter.getData();
-//            retVal = takeRTinFceFromUI();
-            updateData();
-        }
-        return retVal;
-    }
-
     public void enableDataEdit(boolean ena) {
-        ntInnerWidth.setEditable(ena);
-        ntHeightAboveCharge.setEditable(ena);
-        ntUsefullLength.setEditable(ena);
-        ntLossPerMeter.setEditable(ena);
         ntTubesPerFceLength.setEditable(ena);
         ntRadiantTubeChargeDistance.setEditable(ena);
         rt.enableDataEdit(ena);
 
     }
 
-    public void setProduction() {
-        production = rth.production;
-        this.unitLoss = lossPerM * unitLen;
-        uAreaChTot = charge.projectedTopArea * 2 *  nChargeAlongFceWidth;
-        uAreaChHe = uAreaChTot;
-//        uAreaHeTot = rt.getTotHeatingSurface() * (topRTperM + botRTperM) * unitLen;
-//        uAreaHeCh = uAreaHeTot / 2; // ?? * 2 / (Math.PI / 2); // 20201014
-        uAreaWalls = (width + 2 * heightAbove + charge.getHeight()) * 2 *unitLen;
-//        gapHeCh = rtCenterAbove; // was before 20201014 rtCenterAbove - rt.dia / 2;
-//        maxSlots = (int) (maxFceLen / unitLen);
-//        allSlots = new Vector<OneRTslot>();
-        double lPos = unitLen;
-        OneRTslot slot;
-        double endTime = 0;
-        chargeUwt = charge.unitWt * nChargeAlongFceWidth;
-        unitTime = unitLen / (production / 60 / chargeUwt);
-        OneRTslot prevSlot = null;
-        for (int i = 0; i < maxSlots; i++) {
-            endTime += unitTime;
-//            slot = new OneRTslot(this, lPos, prevSlot);
-            slot = new OneRTslot(this, lPos, prevSlot, unitLen, rtPerM, rollDia, rollPitch);
-            slot.setCharge(charge, chargeUwt, unitTime, endTime);
-            allSlots.add(slot);
-            lPos += unitLen;
-            prevSlot = slot;
-        }
-    }
-
     NumberTextField ntTubesPerFceLength;
     NumberTextField ntRadiantTubeChargeDistance;
     boolean radiantTubeFieldsSet = false;
+    Vector<NumberTextField> calculFields;
+    Vector<NumberTextField> calculTemperatureFields;
+    JComboBox<RTHeating.LimitMode> cbLimitMode;
+    boolean calculFieldsSet = false;
     MultiPairColPanel radiantTubeInFceP;
     Vector<NumberTextField> tubesInFceFields;
+    Vector<NumberTextField> calculateFields;
+    Vector<NumberTextField> productionFields;
+    double rtLimitTemp = 900, rtLimitHeat = 24, fceLimitLength;
+    double chStTemp, chEndTemp;
+    boolean bHeatLimit, bRtTempLimit, bFceLengthLimit;
+    MultiPairColPanel calculModeP;
+    NumberTextField ntMaxRtTemp;
+    NumberTextField ntMaxRtHeat;
+    JButton jBcalculate = new JButton("Calculate this Section");
+    NumberTextField ntChEntryTemp;
+    NumberTextField ntChExitTemp;
+    JPanel calculatePanel;
 
-/*
+    public JPanel zoneDataP(InputControl ipc) {
+        JPanel detFrame = new JPanel(new GridBagLayout());
+        GridBagConstraints gbcMf = new GridBagConstraints();
+
+        gbcMf.anchor = GridBagConstraints.CENTER;
+        gbcMf.gridx = 0;
+        gbcMf.gridy = 0;
+        gbcMf.insets = new Insets(0, 0, 0, 0);
+        gbcMf.gridwidth = 1;
+
+//        if (!radiantTubeFieldsSet) {
+//            MultiPairColPanel pan = new MultiPairColPanel("Furnace Zone Section Data (Zone " + zoneNum);
+        detFrame.add(radiantTubesP(ipc), gbcMf);
+        gbcMf.gridx = 1;
+        detFrame.add(calculDataP(ipc), gbcMf);
+            radiantTubeFieldsSet = true;
+//        }
+        return detFrame;
+    }
+
+    JPanel calculDataP(InputControl ipc) {
+        if (!calculFieldsSet) {
+            productionFields = new Vector<>();
+            MultiPairColPanel pan = new MultiPairColPanel("Calculation Mode");
+            calculFields = new Vector<>();
+            cbLimitMode = new XLComboBox(RTHeating.LimitMode.values());
+            pan.addItemPair("Calculation Limiting Mode", cbLimitMode);
+            calculFields.add(ntMaxRtTemp = new NumberTextField(ipc, rtLimitTemp, 6, false,
+                    200, 2000, "#,###", "Radiant Tube Temperature Limit (C)"));
+            calculFields.add(ntMaxRtHeat = new NumberTextField(ipc, rtLimitHeat, 6, false,
+                    0, 2000, "#,###.00", "Radiant Tube Heat Limit (kW)"));
+            pan.addItemPair(ntMaxRtTemp);
+            pan.addItemPair(ntMaxRtHeat);
+            pan.addItem(calculateP(ipc));
+            calculModeP = pan;
+            calculFieldsSet = true;
+        }
+        return calculModeP;
+    }
+
     public JPanel radiantTubesP(InputControl ipc) {
         if (!radiantTubeFieldsSet) {
             MultiPairColPanel pan = new MultiPairColPanel("Radiant Tubes in Furnace");
@@ -292,51 +189,121 @@ public class RTFurnace extends GraphInfoAdapter {
         return radiantTubeInFceP;
     }
 
+    public JPanel calculateP(InputControl ipc) {
+        MultiPairColPanel pan = new MultiPairColPanel("Calculate");
+        calculTemperatureFields = new Vector<>();
+        calculTemperatureFields.add(ntChEntryTemp = new NumberTextField(ipc, chStTemp, 6, false,
+                -200, 2000, "#,###", "Charge Entry Temperatures (C)"));
+        calculTemperatureFields.add(ntChExitTemp = new NumberTextField(ipc, chEndTemp, 6, false,
+                -200, 2000, "#,###", "Charge Exit Temperatures (C)"));
+        pan.addItemPair(ntChEntryTemp);
+        pan.addItemPair(ntChExitTemp);
+        JPanel buttonPanel = new JPanel();
+        jBcalculate.addActionListener(e -> {
+            furnace.takeFceDetailsFromUI();
+            takeRTinSectionFromUI();
+            takeCalculModeFromUI();
+            calculate();
+        });
+        buttonPanel.add(jBcalculate);
+        pan.addItem(buttonPanel);
+        calculatePanel = pan;
+        return calculatePanel;
+    }
 
-    boolean takeRTinFceFromUI() {
+    boolean takeRTinSectionFromUI() {
         boolean retVal = true;
         for (NumberTextField f : tubesInFceFields)
             retVal &= !f.isInError();
         if (retVal) {
             rtPerM = ntTubesPerFceLength.getData();
-            rtCenterAbove = ntRadiantTubeChargeDistance.getData() / 1000;
             retVal = rt.takeFromUI();
-            if (retVal) {
-                if (heightAbove <= (rtCenterAbove + rt.dia)) {
-                    rth.showError("Error in Furnace Height/ Radiant tube location");
-                    retVal = false;
-                }
+        }
+        return retVal;
+    }
+
+    boolean takeCalculModeFromUI() {
+        boolean retVal = true;
+        for (NumberTextField f:calculTemperatureFields)
+            retVal &= !f.isInError();
+        for (NumberTextField f: calculFields)
+            retVal &= !f.isInError();
+        if (retVal) {
+            chStTemp = ntChEntryTemp.getData();
+            chEndTemp = ntChExitTemp.getData();
+            rtLimitTemp = ntMaxRtTemp.getData();
+            rtLimitHeat = ntMaxRtHeat.getData();
+            iLimitMode = (RTHeating.LimitMode)(cbLimitMode.getSelectedItem());
+            switch ((RTHeating.LimitMode)cbLimitMode.getSelectedItem()) {
+                case RTHEAT:
+                    bHeatLimit = true;
+                    bRtTempLimit = false;
+                    break;
+                case RTTEMP:
+                    bHeatLimit = false;
+                    bRtTempLimit = true;
+                    break;
             }
         }
         return retVal;
     }
 
-    double chStTemp, chEndTemp, srcTemp, rtHeat;
-
-    // Temperatures in K
-    public boolean calculate(double chStTemp, double chEndTemp, double srcTemp, double rtHeat) {
-        this.chStTemp = chStTemp;
-        this.chEndTemp = chEndTemp;
-        this.srcTemp = srcTemp;
-        this.rtHeat = rtHeat;
-        OneRTslot slot = allSlots.get(0);
-        double srcHeat = rtHeat * 860 * (topRTperM + botRTperM) * unitLen;
-        double exitTemp = slot.calculate(chStTemp, srcTemp, 0, srcHeat, iLimitMode);
-        nSlots = 1;
-        while ((exitTemp < chEndTemp) && (nSlots < allSlots.size())) {
-            slot = allSlots.get(nSlots);
-            exitTemp = slot.calculate();
-            nSlots++;
+    boolean prepareForCalculation() {
+        boolean proceed = false;
+        if (furnace.prepareForCalculation() &&
+                takeRTinSectionFromUI() &&
+                takeCalculModeFromUI()) {
+            proceed = prepareSlots();
         }
-        startSlot = new OneRTslot(allSlots.get(0), 0);
-        setDataForTraces();
+        return proceed;
+    }
+
+
+    boolean prepareSlots() {
+        allSlots = new Vector();
+        double lPos = startPos + unitLen;
+        OneRTslot slot;
+        double endTime = 0;
+        double uWt =  furnace.charge.unitWt * furnace.nChargeAlongFceWidth;
+        double unitTime = unitLen / (furnace.production / 60 / uWt);
+        OneRTslot prevSlot = null;
+        uAreaHeTot = rt.getTotHeatingSurface() * (topRTperM + botRTperM) * unitLen;
+        uAreaHeCh = uAreaHeTot / 2;
+        furnace.debug("maxSlots limited to " + maxSlots);
+        for (int i = 0; i < maxSlots; i++) {
+            endTime += unitTime;
+//            slot = new OneRTslot(this, lPos, prevSlot);
+            slot = new OneRTslot(furnace, this, lPos, prevSlot);
+            slot.setCharge(furnace.charge, uWt, unitTime, endTime);
+            allSlots.add(slot);
+            lPos += unitLen;
+            prevSlot = slot;
+        }
         return true;
     }
-*/
+
+    // Temperatures in K
+    public boolean calculate() {
+        if (prepareForCalculation()) {
+            OneRTslot slot = allSlots.get(0);
+            double srcHeat = rtLimitHeat * 860 * (topRTperM + botRTperM) * unitLen;
+            double exitTemp = slot.calculate(chStTemp, rtLimitTemp, 0, srcHeat, iLimitMode);
+            nSlots = 1;
+            while ((exitTemp < chEndTemp) && (nSlots < allSlots.size())) {
+                slot = allSlots.get(nSlots);
+                exitTemp = slot.calculate();
+                nSlots++;
+            }
+            startSlot = new OneRTslot(allSlots.get(0), 0);
+            setDataForTraces();
+        }
+        return true;
+    }
+
     public JTable getResultTable() {
-        tableModel = new MyTableModel();
+        tableModel = new RTFSection.MyTableModel();
         JTable table = new JTable(tableModel);
-        table.setDefaultRenderer(table.getColumnClass(1), new CellRenderer());
+        table.setDefaultRenderer(table.getColumnClass(1), new RTFSection.CellRenderer());
         return table;
     }
 
@@ -557,31 +524,15 @@ public class RTFurnace extends GraphInfoAdapter {
     }
 
 
-    public String fceDataToSave() {
-        String retVal;
-        retVal = "<furnace>" + XMLmv.putTag("width", "" + width * 1000);
-        retVal += XMLmv.putTag("heightAbove", "" + heightAbove * 1000);
-        retVal += XMLmv.putTag("maxFceLen", "" + maxFceLen * 1000);
-        retVal += XMLmv.putTag("perMLoss", "" + unitLoss / unitTime);  // TODO check
-        retVal += "</furnace>" + "\n";
-        return retVal;
-    }
-
     //chStTemp, double chEndTemp, double srcTemp, double rtHeat
     public String prodDataToSave() {
         String retVal;
-        retVal = "<production>" + XMLmv.putTag("output", "" + production);
-/*
+        retVal = "<production>" + XMLmv.putTag("output", "" + furnace.production);
         retVal += XMLmv.putTag("chStTemp", "" + (chStTemp - 273));
         retVal += XMLmv.putTag("chEndTemp", "" + (chEndTemp - 273));
-        retVal += XMLmv.putTag("rtLimitTemp", "" + (srcTemp - 273));
-        retVal += XMLmv.putTag("rtLimitHeat", "" + rtHeat);
-*/
+        retVal += XMLmv.putTag("rtLimitTemp", "" + (rtLimitTemp - 273));
+        retVal += XMLmv.putTag("rtLimitHeat", "" + rtLimitHeat);
         retVal += "</production>" + "\n";
         return retVal;
-    }
-
-    public void debug(String msg) {
-        rth.debug(msg);
     }
 }
