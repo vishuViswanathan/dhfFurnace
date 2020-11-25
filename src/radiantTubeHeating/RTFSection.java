@@ -96,18 +96,18 @@ public class RTFSection extends GraphInfoAdapter{
         return true;
     }
 
-    boolean xlTempProfile(Sheet sheet, ExcelStyles styles) {
+    public int xlTempProfile(Sheet sheet, ExcelStyles styles, int headRow) {
         Cell cell;
         Row r;
-        r = sheet.createRow(0);
+        r = sheet.createRow(headRow);
         cell = r.createCell(0);
         cell.setCellStyle(styles.csHeader1);
-        cell.setCellValue("TEMPERATURE PROFILE OF SECTIONS");
-        int topRow = 4;
+        cell.setCellValue("TEMPERATURE PROFILE OF SECTION " + zoneNum);
+        int topRow = headRow + 4;
         int leftCol = 1;
         JTable table = getResultTable();
         int row = styles.xlAddXLCellData(sheet, topRow, leftCol, table);
-        return true;
+        return row;
     }
 
     public void enableDataEdit(boolean ena) {
@@ -309,7 +309,7 @@ public class RTFSection extends GraphInfoAdapter{
             resultsPage = resultsPage();
 //            enableDataEdit(false);
 //            switchToSelectedPage(RTHDisplayPage.TRENDSPAGE);
-            furnace.switchToSelectedPage(trendsPage);
+            furnace.switchToSelectedPage(resultsPage);
 
         }
         return true;

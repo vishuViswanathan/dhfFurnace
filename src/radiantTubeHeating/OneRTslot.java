@@ -60,7 +60,7 @@ public class OneRTslot {
 
     RTHeating.LimitMode iMode;
     OneRTslot prevSlot;
-
+/*
     public OneRTslot(RTFurnace rtF, double lPos, OneRTslot prevSlot, double slotLen,
                      double nRts, double rollDia, double rollPitch) {
         this.rtF = rtF;
@@ -84,7 +84,7 @@ public class OneRTslot {
         shapeFHeCh = effectiveArea12(rtF.uAreaHeCh, rtF.uAreaChHe, rtF.gapHeCh, 0) / rtF.uAreaHeTot;
 
     }
-
+*/
     public OneRTslot(RTFurnace rtF, RTFSection rtfSec, double lPos, OneRTslot prevSlot) {
         this.rtF = rtF;
         this.rtfSec = rtfSec;
@@ -209,11 +209,11 @@ public class OneRTslot {
         restistNearHE = (1- rT.surfEmiss) / (rtfSec.uAreaHeTot * rT.surfEmiss);
         resistTotHEtoCharge = 1 / (rtfSec.uAreaHeTot * grayFactHeCh);
         double f12 = shapeFHeCh;
-        double f21 = f12 * rtF.uAreaHeTot / rtF.uAreaChTot;
+        double f21 = f12 * rtfSec.uAreaHeTot / rtF.uAreaChTot;
         double f23 = 1 - f21;
         resistWallsToCharge = 1 / (rtF.uAreaChTot * f23);
         double f13 = 1 - f12;
-        resistHEtoWall = 1 / (rtF.uAreaHeTot * f13);
+        resistHEtoWall = 1 / (rtfSec.uAreaHeTot * f13);
         if (doTrace) {
             System.out.println("grayFactHeCh:" + grayFactHeCh);
             System.out.println("sigGrayHeCh:" + sigGrayHeCh);
@@ -223,7 +223,7 @@ public class OneRTslot {
             System.out.println("resistHEtoWall:" + resistHEtoWall);
             double rNearCh = (1 - emissCh) / (emissCh * rtF.uAreaChTot);
             System.out.println("rNearCh:" + rNearCh);
-            System.out.println("rtF.uAreaHeTot:" + rtF.uAreaHeTot);
+            System.out.println("rtfSec.uAreaHeTot:" + rtfSec.uAreaHeTot);
             System.out.println("f12:" + f12 + ", f21:" + f21);
             System.out.println("f13:" + f13 + ", f23:" + f23);
             System.out.println("charge.effectiveThickness: " + charge.effectiveThickness);

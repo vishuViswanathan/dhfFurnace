@@ -222,45 +222,6 @@ public class RTHeating extends JPanel implements InputControl {
         return retVal;
     }
 
-    public void displayIt() {
-        if (!itsON && theFurnace != null) {
-            itsON = true;
-            mainF = new JFrame("RT Furnace Heating");
-
-            setMenuOptions();
-            mainPanel = new JPanel(new GridBagLayout());
-            mainF.getContentPane().add(mainPanel);
-            mainPanel.setBackground(new JPanel().getBackground());
-            GridBagConstraints gbcMf = new GridBagConstraints();
-            gbcMf.anchor = GridBagConstraints.CENTER;
-            gbcMf.gridx = 0;
-            gbcMf.gridy = 0;
-            gbcMf.insets = new Insets(0, 0, 0, 0);
-            gbcMf.gridwidth = 1;
-            gbcMf.gridheight = 1;
-            mainPanel.add(getTitlePanel(), gbcMf);
-            gbcMf.gridx = 0;
-            gbcMf.gridy++;
-            mainPanel.add(getGraphPanel(), gbcMf);
-            gbcMf.gridx = 0;
-            gbcMf.gridy++;
-            gbcMf.gridwidth = 1;
-            gbcMf.gridheight = 2;
-            mainPanel.add(getListPanel(), gbcMf);
-//            if (!onTest) {
-//                Dimension d = getSize();
-//                win.eval("setAppletSize(" + d.width + ", " + d.height + ")");
-//            }
-            mainF.setLocation(100, 100);
-            mainF.pack();
-            mainF.setFocusable(true);
-            mainF.setVisible(true);
-            mainF.requestFocus();
-            mainF.toFront(); //setAlwaysOnTop(true);
-            trendPanel.setTraceToShow(-1);
-        }
-    }
-
     JMenu fileMenu;
     JMenu inputMenu;
     JMenu resultsMenu;
@@ -442,91 +403,12 @@ public class RTHeating extends JPanel implements InputControl {
         return titlePanel;
     }
 
-    Panel getListPanel() {
-        resultTable = theFurnace.getResultTable();
-        JPanel headPanel = new JPanel(new GridLayout(1, 1));
-        headPanel.add(resultTable.getTableHeader());
-        Panel listPanel = new Panel(new BorderLayout());
-        listPanel.add(headPanel, BorderLayout.NORTH);
-        resultScroll = new ScrollPane();
-        resultScroll.setSize(new Dimension(700, 250));
-        resultScroll.add(resultTable);
-        resultScroll.repaint();
-        listPanel.add(resultScroll, BorderLayout.CENTER);
-        return listPanel;
-    }
-
-    FramedPanel gP;
-    GraphPanel trendPanel;
-
-    FramedPanel getGraphPanel() {
-        gP = new FramedPanel(new GridLayout(1, 0));
-        trendPanel =
-                new GraphPanel(new Dimension(700, 350));
-        for (int t = 0; t < theFurnace.nTraces; t++)
-            trendPanel.addTrace(theFurnace, t, GraphDisplay.COLORS[t]);
-//        if (traces.nTraces > 1)
-        trendPanel.setTraceToShow(0);   // all
-        trendPanel.prepareDisplay();
-        gP.add(trendPanel);
-        //   gP.setSize(300,300);
-        return gP;
-    }
-
-    class GraphPanel
-            extends JPanel {
-        final Insets borders = new Insets(2, 2, 2, 2);
-        GraphDisplay gDisplay;
-        Dimension size;
-        Point origin; // in % of graph area
-
-        GraphPanel(Dimension size) {
-            this.size = size;
-            setSize(size);
-            origin = new Point(0, 00);
-            gDisplay = new GraphDisplay(this, origin, null); //frameEventDespatcher);
-            //       gDisplay.setBasicCalculData(traces);
-        }
-
-
-        int addTrace(GraphInfo gInfo, int trace, Color color) {
-            gDisplay.addTrace(gInfo, trace, color);
-            return gDisplay.traceCount();
-        }
-
-        void prepareDisplay() {
-            gDisplay.prepareDisplay();
-        }
-
-        public Insets getInsets() {
-            return borders;
-        }
-
-        public Dimension getMinimumSize() {
-            return size;
-        }
-
-        public Dimension getPreferredSize() {
-            return size;
-        }
-
-        public void setTraceToShow(int t) {
-            gDisplay.setTraceToShow(t);
-//          mainF.repaint();
-        }
-    } // class GraphPanel
-
-
     ChMaterial chMaterial;
     protected XLComboBox cbChType;
     Charge.ChType chType = Charge.ChType.SOLID_RECTANGLE;
     XYArray hC, tk, emiss;
     RTFurnace theFurnace;
     public double production;
-    double rtLimitTemp = 900, rtLimitHeat = 24, fceLimitLength;
-    boolean bHeatLimit, bRtTempLimit, bFceLengthLimit;
-
-    LimitMode iLimitMode;
 
     ScrollPane resultScroll;
     JTable resultTable;
