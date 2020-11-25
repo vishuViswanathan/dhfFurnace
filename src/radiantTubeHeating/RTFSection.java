@@ -24,7 +24,7 @@ import java.util.Vector;
  * To change this template use File | Settings | File Templates.
  */
 
-public class RTFSection {
+public class RTFSection extends GraphInfoAdapter{
     int zoneNum;
     RTFurnace furnace;
     RTHeating rth;
@@ -44,6 +44,14 @@ public class RTFSection {
     public int nSlots = 0;
     RTFSection.MyTableModel tableModel;
     OneRTslot startSlot;
+
+    JPanel resultsPage;
+    JPanel trendsPage;
+    GraphPanel trendPanel;
+    protected JScrollPane slate = new JScrollPane();
+    FramedPanel gP;
+    ScrollPane resultScroll;
+    JTable resultTable;
 
     public RTFSection(RTFurnace rtF) {
         this(rtF, 0, 1, null, new RadiantTube(), 4);
@@ -120,8 +128,9 @@ public class RTFSection {
     Vector<NumberTextField> tubesInFceFields;
     Vector<NumberTextField> calculateFields;
     Vector<NumberTextField> productionFields;
-    double rtLimitTemp = 900, rtLimitHeat = 24, fceLimitLength;
-    double chStTemp, chEndTemp;
+    // temperaures in degK
+    double rtLimitTemp = 1173, rtLimitHeat = 24, fceLimitLength;
+    double chStTemp = 303, chEndTemp = 873; // all in degK
     boolean bHeatLimit, bRtTempLimit, bFceLengthLimit;
     MultiPairColPanel calculModeP;
     NumberTextField ntMaxRtTemp;
@@ -158,7 +167,7 @@ public class RTFSection {
             calculFields = new Vector<>();
             cbLimitMode = new XLComboBox(RTHeating.LimitMode.values());
             pan.addItemPair("Calculation Limiting Mode", cbLimitMode);
-            calculFields.add(ntMaxRtTemp = new NumberTextField(ipc, rtLimitTemp, 6, false,
+            calculFields.add(ntMaxRtTemp = new NumberTextField(ipc, rtLimitTemp -273, 6, false,
                     200, 2000, "#,###", "Radiant Tube Temperature Limit (C)"));
             calculFields.add(ntMaxRtHeat = new NumberTextField(ipc, rtLimitHeat, 6, false,
                     0, 2000, "#,###.00", "Radiant Tube Heat Limit (kW)"));
@@ -192,9 +201,9 @@ public class RTFSection {
     public JPanel calculateP(InputControl ipc) {
         MultiPairColPanel pan = new MultiPairColPanel("Calculate");
         calculTemperatureFields = new Vector<>();
-        calculTemperatureFields.add(ntChEntryTemp = new NumberTextField(ipc, chStTemp, 6, false,
+        calculTemperatureFields.add(ntChEntryTemp = new NumberTextField(ipc, chStTemp - 273, 6, false,
                 -200, 2000, "#,###", "Charge Entry Temperatures (C)"));
-        calculTemperatureFields.add(ntChExitTemp = new NumberTextField(ipc, chEndTemp, 6, false,
+        calculTemperatureFields.add(ntChExitTemp = new NumberTextField(ipc, chEndTemp - 273, 6, false,
                 -200, 2000, "#,###", "Charge Exit Temperatures (C)"));
         pan.addItemPair(ntChEntryTemp);
         pan.addItemPair(ntChExitTemp);
@@ -229,9 +238,9 @@ public class RTFSection {
         for (NumberTextField f: calculFields)
             retVal &= !f.isInError();
         if (retVal) {
-            chStTemp = ntChEntryTemp.getData();
-            chEndTemp = ntChExitTemp.getData();
-            rtLimitTemp = ntMaxRtTemp.getData();
+            chStTemp = ntChEntryTemp.getData() + 273;
+            chEndTemp = ntChExitTemp.getData() + 273;
+            rtLimitTemp = ntMaxRtTemp.getData() + 273;
             rtLimitHeat = ntMaxRtHeat.getData();
             iLimitMode = (RTHeating.LimitMode)(cbLimitMode.getSelectedItem());
             switch ((RTHeating.LimitMode)cbLimitMode.getSelectedItem()) {
@@ -296,8 +305,109 @@ public class RTFSection {
             }
             startSlot = new OneRTslot(allSlots.get(0), 0);
             setDataForTraces();
+            trendsPage = trendsPage();
+            resultsPage = resultsPage();
+//            enableDataEdit(false);
+//            switchToSelectedPage(RTHDisplayPage.TRENDSPAGE);
+            furnace.switchToSelectedPage(trendsPage);
+
         }
         return true;
+    }
+
+    JPanel trendsPage() {
+        JPanel resultsFrame = new JPanel(new GridBagLayout());
+        GridBagConstraints gbcMf = new GridBagConstraints();
+        gbcMf.anchor = GridBagConstraints.CENTER;
+        gbcMf.gridx = 0;
+        gbcMf.gridy = 0;
+        gbcMf.insets = new Insets(0, 0, 0, 0);
+        gbcMf.gridwidth = 1;
+        gbcMf.gridheight = 1;
+        resultsFrame.add(getTitlePanel(), gbcMf);
+        gbcMf.gridx = 0;
+        gbcMf.gridy++;
+        resultsFrame.add(getGraphPanel(), gbcMf);
+        trendPanel.setTraceToShow(-1);
+        return resultsFrame;
+    }
+
+    JPanel resultsPage() {
+        JPanel resultsFrame = new JPanel(new GridBagLayout());
+        GridBagConstraints gbcMf = new GridBagConstraints();
+        gbcMf.anchor = GridBagConstraints.CENTER;
+        gbcMf.gridx = 0;
+        gbcMf.gridy = 0;
+        gbcMf.insets = new Insets(0, 0, 0, 0);
+        gbcMf.gridwidth = 1;
+        gbcMf.gridheight = 1;
+        resultsFrame.add(getTitlePanel(), gbcMf);
+        gbcMf.gridx = 0;
+        gbcMf.gridy++;
+        gbcMf.gridwidth = 1;
+        gbcMf.gridheight = 2;
+        resultsFrame.add(getListPanel(), gbcMf);
+        return resultsFrame;
+    }
+
+    FramedPanel getTitlePanel() {
+        FramedPanel titlePanel = new FramedPanel(new GridBagLayout());
+        GridBagConstraints gbcTp = new GridBagConstraints();
+        final int hse = 4; // ends
+        final int vse = 4; // ends
+        final int hs = 0;
+        final int vs = 0;
+        Insets lt = new Insets(vs, hse, vs, hs);
+        Insets ltbt = new Insets(vs, hse, vse, hs);
+        Insets bt = new Insets(vs, hs, vse, hs);
+        Insets rtbt = new Insets(vs, hs, vse, hse);
+        Insets rt = new Insets(vs, hs, vs, hse);
+        Insets rttp = new Insets(vse, hs, vs, hse);
+        Insets lttp = new Insets(vse, hse, vs, hs);
+        Insets tp = new Insets(vse, hs, vs, hs);
+        Insets ltrt = new Insets(vs, hse, vs, hse);
+        Insets lttprt = new Insets(vse, hse, vs, hse);
+        Insets ltbtrt = new Insets(vs, hse, vse, hse);
+        Insets mid = new Insets(vs, hs, vs, hs);
+        gbcTp.anchor = GridBagConstraints.CENTER;
+        gbcTp.gridx = 0;
+        gbcTp.gridy = 0;
+        gbcTp.insets = lttp;
+        titlePanel.add(new Label("Radiant Tube Furnace"), gbcTp);
+        gbcTp.gridy++;
+        gbcTp.insets = lt;
+        JLabel jLtitle = new JLabel();
+        titlePanel.add(jLtitle, gbcTp);
+        gbcTp.gridy++;
+        return titlePanel;
+    }
+
+    Panel getListPanel() {
+        resultTable = getResultTable();
+        JPanel headPanel = new JPanel(new GridLayout(1, 1));
+        headPanel.add(resultTable.getTableHeader());
+        Panel listPanel = new Panel(new BorderLayout());
+        listPanel.add(headPanel, BorderLayout.NORTH);
+        resultScroll = new ScrollPane();
+        resultScroll.setSize(new Dimension(700, 250));
+        resultScroll.add(resultTable);
+        resultScroll.repaint();
+        listPanel.add(resultScroll, BorderLayout.CENTER);
+        return listPanel;
+    }
+
+    FramedPanel getGraphPanel() {
+        gP = new FramedPanel(new GridLayout(1, 0));
+        trendPanel =
+                new GraphPanel(new Dimension(700, 350));
+        for (int t = 0; t < nTraces; t++)
+            trendPanel.addTrace(this, t, GraphDisplay.COLORS[t]);
+//        if (traces.nTraces > 1)
+        trendPanel.setTraceToShow(0);   // all
+        trendPanel.prepareDisplay();
+        gP.add(trendPanel);
+        //   gP.setSize(300,300);
+        return gP;
     }
 
     public JTable getResultTable() {
@@ -306,6 +416,48 @@ public class RTFSection {
         table.setDefaultRenderer(table.getColumnClass(1), new RTFSection.CellRenderer());
         return table;
     }
+
+    class GraphPanel
+            extends JPanel {
+        final Insets borders = new Insets(2, 2, 2, 2);
+        GraphDisplay gDisplay;
+        Dimension size;
+        Point origin; // in % of graph area
+
+        GraphPanel(Dimension size) {
+            this.size = size;
+            setSize(size);
+            origin = new Point(0, 00);
+            gDisplay = new GraphDisplay(this, origin, null); //frameEventDespatcher);
+            //       gDisplay.setBasicCalculData(traces);
+        }
+
+        int addTrace(GraphInfo gInfo, int trace, Color color) {
+            gDisplay.addTrace(gInfo, trace, color);
+            return gDisplay.traceCount();
+        }
+
+        void prepareDisplay() {
+            gDisplay.prepareDisplay();
+        }
+
+        public Insets getInsets() {
+            return borders;
+        }
+
+        public Dimension getMinimumSize() {
+            return size;
+        }
+
+        public Dimension getPreferredSize() {
+            return size;
+        }
+
+        public void setTraceToShow(int t) {
+            gDisplay.setTraceToShow(t);
+//          mainF.repaint();
+        }
+    } // class GraphPanel
 
     class MyTableModel extends AbstractTableModel { //here
         public MyTableModel() {

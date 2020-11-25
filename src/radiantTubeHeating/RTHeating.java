@@ -168,39 +168,8 @@ public class RTHeating extends JPanel implements InputControl {
                 });
     }
 
-    JPanel trendsPage() {
-        JPanel resultsFrame = new JPanel(new GridBagLayout());
-        GridBagConstraints gbcMf = new GridBagConstraints();
-        gbcMf.anchor = GridBagConstraints.CENTER;
-        gbcMf.gridx = 0;
-        gbcMf.gridy = 0;
-        gbcMf.insets = new Insets(0, 0, 0, 0);
-        gbcMf.gridwidth = 1;
-        gbcMf.gridheight = 1;
-        resultsFrame.add(getTitlePanel(), gbcMf);
-        gbcMf.gridx = 0;
-        gbcMf.gridy++;
-        resultsFrame.add(getGraphPanel(), gbcMf);
-        trendPanel.setTraceToShow(-1);
-        return resultsFrame;
-    }
-
-    JPanel resultsPage() {
-        JPanel resultsFrame = new JPanel(new GridBagLayout());
-        GridBagConstraints gbcMf = new GridBagConstraints();
-        gbcMf.anchor = GridBagConstraints.CENTER;
-        gbcMf.gridx = 0;
-        gbcMf.gridy = 0;
-        gbcMf.insets = new Insets(0, 0, 0, 0);
-        gbcMf.gridwidth = 1;
-        gbcMf.gridheight = 1;
-        resultsFrame.add(getTitlePanel(), gbcMf);
-        gbcMf.gridx = 0;
-        gbcMf.gridy++;
-        gbcMf.gridwidth = 1;
-        gbcMf.gridheight = 2;
-        resultsFrame.add(getListPanel(), gbcMf);
-        return resultsFrame;
+    public void switchToSelectedPage(JPanel page) {
+        slate.setViewportView(page);
     }
 
     private void switchToSelectedPage(RTHDisplayPage page) {
@@ -662,6 +631,14 @@ public class RTHeating extends JPanel implements InputControl {
                 break;
             }
         return chMat;
+    }
+
+    public double getProduction() {
+        if (!ntOutput.isInError())
+            production = ntOutput.getData() * 1000;
+        else
+            production = 0;
+        return production;
     }
 
     boolean takeChargeFromUI() {

@@ -233,14 +233,12 @@ public class RTFurnace extends GraphInfoAdapter {
         ntHeightAboveCharge.setEditable(ena);
         ntUsefullLength.setEditable(ena);
         ntLossPerMeter.setEditable(ena);
-        ntTubesPerFceLength.setEditable(ena);
-        ntRadiantTubeChargeDistance.setEditable(ena);
         rt.enableDataEdit(ena);
 
     }
 
     public void setProduction() {
-        production = rth.production;
+        production = rth.getProduction();
         this.unitLoss = lossPerM * unitLen;
         uAreaChTot = charge.projectedTopArea * 2 *  nChargeAlongFceWidth;
         uAreaChHe = uAreaChTot;
@@ -267,72 +265,9 @@ public class RTFurnace extends GraphInfoAdapter {
         }
     }
 
-    NumberTextField ntTubesPerFceLength;
-    NumberTextField ntRadiantTubeChargeDistance;
-    boolean radiantTubeFieldsSet = false;
     MultiPairColPanel radiantTubeInFceP;
     Vector<NumberTextField> tubesInFceFields;
 
-/*
-    public JPanel radiantTubesP(InputControl ipc) {
-        if (!radiantTubeFieldsSet) {
-            MultiPairColPanel pan = new MultiPairColPanel("Radiant Tubes in Furnace");
-            pan.addItem(rt.radiantTubesP(ipc));
-            tubesInFceFields = new Vector<>();
-            tubesInFceFields.add(ntTubesPerFceLength = new NumberTextField(ipc, rtPerM, 6, false,
-                    0, 100, "#.000", "Number of Tube per m of Furnace Length"));
-            tubesInFceFields.add(ntRadiantTubeChargeDistance = new NumberTextField(ipc, rtCenterAbove * 1000, 6, false,
-                    0, 10000, "#,###", "RT Centerline above Charge Surface (mm)"));
-            pan.addItem("<html><B>Tubes to have a minimum gap of One Dia between the legs</B></html>");
-            pan.addItemPair(ntTubesPerFceLength);
-            pan.addItemPair(ntRadiantTubeChargeDistance);
-            radiantTubeInFceP = pan;
-            radiantTubeFieldsSet = true;
-        }
-        return radiantTubeInFceP;
-    }
-
-
-    boolean takeRTinFceFromUI() {
-        boolean retVal = true;
-        for (NumberTextField f : tubesInFceFields)
-            retVal &= !f.isInError();
-        if (retVal) {
-            rtPerM = ntTubesPerFceLength.getData();
-            rtCenterAbove = ntRadiantTubeChargeDistance.getData() / 1000;
-            retVal = rt.takeFromUI();
-            if (retVal) {
-                if (heightAbove <= (rtCenterAbove + rt.dia)) {
-                    rth.showError("Error in Furnace Height/ Radiant tube location");
-                    retVal = false;
-                }
-            }
-        }
-        return retVal;
-    }
-
-    double chStTemp, chEndTemp, srcTemp, rtHeat;
-
-    // Temperatures in K
-    public boolean calculate(double chStTemp, double chEndTemp, double srcTemp, double rtHeat) {
-        this.chStTemp = chStTemp;
-        this.chEndTemp = chEndTemp;
-        this.srcTemp = srcTemp;
-        this.rtHeat = rtHeat;
-        OneRTslot slot = allSlots.get(0);
-        double srcHeat = rtHeat * 860 * (topRTperM + botRTperM) * unitLen;
-        double exitTemp = slot.calculate(chStTemp, srcTemp, 0, srcHeat, iLimitMode);
-        nSlots = 1;
-        while ((exitTemp < chEndTemp) && (nSlots < allSlots.size())) {
-            slot = allSlots.get(nSlots);
-            exitTemp = slot.calculate();
-            nSlots++;
-        }
-        startSlot = new OneRTslot(allSlots.get(0), 0);
-        setDataForTraces();
-        return true;
-    }
-*/
     public JTable getResultTable() {
         tableModel = new MyTableModel();
         JTable table = new JTable(tableModel);
@@ -552,10 +487,13 @@ public class RTFurnace extends GraphInfoAdapter {
         }
     }
 
+    public void switchToSelectedPage(JPanel page) {
+        rth.switchToSelectedPage(page);
+    }
+
     public String resultsInCVS() {
         return "\n\n\n" + tableModel.getResultsCVS();
     }
-
 
     public String fceDataToSave() {
         String retVal;
