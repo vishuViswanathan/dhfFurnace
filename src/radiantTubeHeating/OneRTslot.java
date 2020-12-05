@@ -109,6 +109,19 @@ public class OneRTslot {
         heatHe = 0;
         endTime = 0;
     }
+
+    public OneRTslot(OneRTslot nextSlot, double lPos, double tempCh, double tempChSurf, double tempChCore) {
+        this.lPos = lPos;
+        tempHe = nextSlot.tempHe;
+        tempFce = nextSlot.tempFce;
+        tempChEnd = tempCh;
+        this.tempChSurf = tempChSurf;
+        this.tempChCore= tempChCore;
+        heatLoss = 0;
+        heatHe = 0;
+        endTime = 0;
+    }
+
     public void setCharge(Charge charge, double uChWt, double unitTime, double endTime)  {
         this.charge = charge;
         this.uChWt = uChWt;

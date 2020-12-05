@@ -61,6 +61,10 @@ public class RadiantTube {
 
     }
 
+    public RadiantTube getACopy() {
+        return new RadiantTube(function, heating, tubeType, dia, activeLen, surfEmiss, rating);
+    }
+
     NumberTextField ntRadiantTubeOD;
     NumberTextField ntRadiantTubeLen;
     NumberTextField ntRadiantTubeRating;

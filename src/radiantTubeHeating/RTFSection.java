@@ -26,9 +26,10 @@ import java.util.Vector;
 
 public class RTFSection extends GraphInfoAdapter{
     int zoneNum;
+    public boolean edited = false;
     RTFurnace furnace;
-    RTHeating rth;
-    double startPos;
+    public double startPos;
+    public double endPos;
     RTFSection prevSection;
     RTHeating.LimitMode iLimitMode;
 
@@ -47,17 +48,31 @@ public class RTFSection extends GraphInfoAdapter{
 
     JPanel resultsPage;
     JPanel trendsPage;
+    public MultiPairColPanel allResultsP;
     GraphPanel trendPanel;
     protected JScrollPane slate = new JScrollPane();
     FramedPanel gP;
     ScrollPane resultScroll;
     JTable resultTable;
+    public boolean calculationDone = false;
 
     public RTFSection(RTFurnace rtF) {
-        this(rtF, 0, 1, null, new RadiantTube(), 4);
+        this(rtF, 0, 1, null, new RadiantTube(), 3);
     }
 
-    public RTFSection(RTFurnace rtf, double startPos, int zoneNum, RTFSection prevSection, RadiantTube radiantTube, double rtPerM) {
+    public RTFSection(RTFSection prevSection) {
+        furnace = prevSection.furnace;
+        startPos = prevSection.endPos;
+        zoneNum = prevSection.zoneNum + 1;
+        this.prevSection = prevSection;
+        rt = prevSection.rt.getACopy();
+        rtPerM = prevSection.rtPerM;
+        updateData();
+        takeStartConditionsFromPrevZone();
+    }
+
+    public RTFSection(RTFurnace rtf, double startPos, int zoneNum, RTFSection prevSection,
+                      RadiantTube radiantTube, double rtPerM) {
         this.furnace = rtf;
         this.startPos = startPos;
         this.zoneNum = zoneNum;
@@ -72,6 +87,12 @@ public class RTFSection extends GraphInfoAdapter{
         this.botRTperM = this.topRTperM;
     }
 
+    void takeStartConditionsFromPrevZone() {
+        chStTemp = prevSection.actualEndTempMean;
+        chStTempSurf = prevSection.actualEndTempSurf;
+        chStTempCore = prevSection.actualEndTempCore;
+        startPos = prevSection.endPos;
+    }
     Vector<NumberTextField> fceDetailsFields;
 
     boolean xlSectionData(Sheet sheet, ExcelStyles styles) {
@@ -111,10 +132,22 @@ public class RTFSection extends GraphInfoAdapter{
     }
 
     public void enableDataEdit(boolean ena) {
+        cbLimitMode.setEnabled(ena);
         ntTubesPerFceLength.setEditable(ena);
         ntRadiantTubeChargeDistance.setEditable(ena);
         rt.enableDataEdit(ena);
+        for (Component c:calculFields)
+            c.setEnabled(ena);
+        for (Component c:calculTemperatureFields)
+            c.setEnabled(ena);
+        jBcalculate.setEnabled(ena);
+        if (ena)
+            undoResults();
+    }
 
+    void undoResults() {
+        calculationDone = false;
+        furnace.undoResults(zoneNum);
     }
 
     NumberTextField ntTubesPerFceLength;
@@ -131,11 +164,18 @@ public class RTFSection extends GraphInfoAdapter{
     // temperaures in degK
     double rtLimitTemp = 1173, rtLimitHeat = 24, fceLimitLength;
     double chStTemp = 303, chEndTemp = 873; // all in degK
+    double chStTempSurf = chStTemp;
+    double chStTempCore = chStTemp;
+    double actualEndTempMean;
+    double actualEndTempCore;
+    double actualEndTempSurf;
+
     boolean bHeatLimit, bRtTempLimit, bFceLengthLimit;
     MultiPairColPanel calculModeP;
     NumberTextField ntMaxRtTemp;
     NumberTextField ntMaxRtHeat;
     JButton jBcalculate = new JButton("Calculate this Section");
+    JButton jBredo;
     NumberTextField ntChEntryTemp;
     NumberTextField ntChExitTemp;
     JPanel calculatePanel;
@@ -267,7 +307,6 @@ public class RTFSection extends GraphInfoAdapter{
         return proceed;
     }
 
-
     boolean prepareSlots() {
         allSlots = new Vector();
         double lPos = startPos + unitLen;
@@ -294,6 +333,7 @@ public class RTFSection extends GraphInfoAdapter{
     // Temperatures in K
     public boolean calculate() {
         if (prepareForCalculation()) {
+            furnace.enableDataEdit(zoneNum, false);
             OneRTslot slot = allSlots.get(0);
             double srcHeat = rtLimitHeat * 860 * (topRTperM + botRTperM) * unitLen;
             double exitTemp = slot.calculate(chStTemp, rtLimitTemp, 0, srcHeat, iLimitMode);
@@ -303,16 +343,50 @@ public class RTFSection extends GraphInfoAdapter{
                 exitTemp = slot.calculate();
                 nSlots++;
             }
-            startSlot = new OneRTslot(allSlots.get(0), 0);
-            setDataForTraces();
-            trendsPage = trendsPage();
-            resultsPage = resultsPage();
+            noteEndConditions(slot);
+            getAllResultsPanel();
+            RTHeating.ResultsType rType = RTHeating.ResultsType.getZoneEnum(zoneNum);
+            furnace.addResult(rType, allResultsP);
 //            enableDataEdit(false);
 //            switchToSelectedPage(RTHDisplayPage.TRENDSPAGE);
-            furnace.switchToSelectedPage(resultsPage);
+            furnace.resultsReady(rType);
+            calculationDone = true;
+//            furnace.switchToSelectedPage(allResultsP);
 
         }
         return true;
+    }
+
+    void noteEndConditions(OneRTslot slot) {
+        actualEndTempMean = slot.tempChEnd;
+        actualEndTempCore = slot.tempChCore;
+        actualEndTempSurf = slot.tempChSurf;
+        endPos = slot.lPos;
+    }
+
+    JPanel getAllResultsPanel() {
+//        startSlot = new OneRTslot(allSlots.get(0), startPos);
+        startSlot = new OneRTslot(allSlots.get(0), startPos, chStTemp, chStTempSurf, chStTempCore);
+        setDataForTraces();
+        trendsPage = trendsPage();
+        resultsPage = resultsPage();
+        allResultsP = new MultiPairColPanel("Results for Zone #" + zoneNum);
+        JTabbedPane jtp= new JTabbedPane();
+        jtp.addTab("Trends", trendPanel);
+        jtp.addTab("Table", resultsPage);
+        allResultsP.addItem(jtp);
+        JPanel buttonP = new JPanel(new GridLayout());
+        jBredo = new JButton("Redo the Calculation");
+        jBredo.addActionListener(e -> {
+            furnace.resetZoneCalculation(zoneNum);
+//            furnace.showError("RTHSection", "Not ready for this!");
+        });
+        buttonP.add(new JLabel());
+        buttonP.add(new JLabel());
+        buttonP.add(new JLabel());
+        buttonP.add(jBredo);
+        allResultsP.addItem(buttonP);
+        return allResultsP;
     }
 
     JPanel trendsPage() {
