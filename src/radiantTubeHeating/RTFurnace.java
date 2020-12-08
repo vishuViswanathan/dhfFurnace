@@ -49,7 +49,7 @@ public class RTFurnace {
     public RTFurnace(RTHeating rth) {
         this.rth = rth;
         sections = new Vector<>();
-        RTFSection oneSec = new RTFSection(this);
+        RTFSection oneSec = new RTFSection(rth, this, null);
         sections.add(oneSec);
     }
 
@@ -137,10 +137,9 @@ public class RTFurnace {
         });
         jbAddZone.setEnabled(true);
         JPanel addButtP = new JPanel(new GridLayout());
-        addButtP.add(new JLabel());
-        addButtP.add(new JLabel());
-        addButtP.add(new JLabel());
         addButtP.add(jbAddZone);
+        for (int l = 0; l < 4; l++)
+            addButtP.add(new JLabel());
         outerP.add(addButtP, BorderLayout.SOUTH);
         return outerP;
     }
@@ -151,7 +150,7 @@ public class RTFurnace {
         if (lastZone < rth.maxNzones) {
             RTFSection lastSec = sections.get(lastZone - 1);
             if (lastSec.calculationDone) {
-                RTFSection newSec = new RTFSection(lastSec);
+                RTFSection newSec = new RTFSection(rth, lastSec);
                 sections.add(newSec);
                 addToTabbedSectionsPane(newSec);
                 if (sections.size() >= rth.maxNzones)
@@ -165,7 +164,7 @@ public class RTFurnace {
 
     void addToTabbedSectionsPane(RTFSection sec) {
         tabbedSectionsPane.addTab("Zone#" + sec.zoneNum, null,
-                sec.zoneDataP(ipc));
+                sec.zoneDataP());
     }
 
 
