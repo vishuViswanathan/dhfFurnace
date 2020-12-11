@@ -84,20 +84,7 @@ public class RTFSection extends GraphInfoAdapter{
             prevSection.nextSection = this;
             takeStartConditionsFromPrevZone();
         }
-//        updateData();
     }
-
-//    public RTFSection(RTFurnace rtf, double startPos, int zoneNum, RTFSection prevSection,
-//                      RadiantTube radiantTube, double rtPerM) {
-//        this.furnace = rtf;
-//        this.startPos = startPos;
-//        this.zoneNum = zoneNum;
-//        this.prevSection = prevSection;
-//        this.rt = radiantTube;
-//        this.rtPerM = rtPerM;
-//        updateData();
-//        prepareUI();
-//    }
 
     void updateData() {
         this.topRTperM = rtPerM / 2;
@@ -112,7 +99,6 @@ public class RTFSection extends GraphInfoAdapter{
         rtLimitTemp = prevSection.rtLimitTemp;
         rtLimitHeat = prevSection.rtLimitHeat;
         updateUI();
-//        enableDataEdit(true);
         startPos = prevSection.endPos;
     }
 
@@ -255,7 +241,6 @@ public class RTFSection extends GraphInfoAdapter{
             productionFields = new Vector<>();
             MultiPairColPanel pan = new MultiPairColPanel("Calculation Mode");
             calculFields = new Vector<>();
-//            cbLimitMode = new XLComboBox(RTHeating.LimitMode.values());
             pan.addItemPair("Calculation Limiting Mode", cbLimitMode);
             calculFields.add(ntMaxRtTemp);
             calculFields.add(ntMaxRtHeat);
@@ -389,7 +374,6 @@ public class RTFSection extends GraphInfoAdapter{
         furnace.debug("maxSlots limited to " + maxSlots);
         for (int i = 0; i < maxSlots; i++) {
             endTime += unitTime;
-//            slot = new OneRTslot(this, lPos, prevSlot);
             slot = new OneRTslot(furnace, this, lPos, prevSlot);
             slot.setCharge(furnace.charge, uWt, unitTime, endTime);
             allSlots.add(slot);
@@ -416,16 +400,11 @@ public class RTFSection extends GraphInfoAdapter{
             getAllResultsPanel();
             RTHeating.ResultsType rType = RTHeating.ResultsType.getZoneEnum(zoneNum);
             furnace.addResult(rType, allResultsP);
-//            enableDataEdit(false);
-//            switchToSelectedPage(RTHDisplayPage.TRENDSPAGE);
             furnace.resultsReady(rType);
             if (nextSection != null) {
                 nextSection.takeStartConditionsFromPrevZone();
-//                nextSection.enableDataEdit(true);
             }
             calculationDone = true;
-//            furnace.switchToSelectedPage(allResultsP);
-
         }
         return true;
     }
@@ -438,7 +417,6 @@ public class RTFSection extends GraphInfoAdapter{
     }
 
     JPanel getAllResultsPanel() {
-//        startSlot = new OneRTslot(allSlots.get(0), startPos);
         startSlot = new OneRTslot(allSlots.get(0), startPos, chStTemp, chStTempSurf, chStTempCore);
         setDataForTraces();
         trendsPage = trendsPage();
@@ -452,7 +430,6 @@ public class RTFSection extends GraphInfoAdapter{
         jBredo = new JButton("Redo the Calculation");
         jBredo.addActionListener(e -> {
             furnace.resetZoneCalculation(zoneNum);
-//            furnace.showError("RTHSection", "Not ready for this!");
         });
         // space them
         for (int l = 0; l < 4; l++)
@@ -549,11 +526,9 @@ public class RTFSection extends GraphInfoAdapter{
                 new GraphPanel(new Dimension(700, 350));
         for (int t = 0; t < nTraces; t++)
             trendPanel.addTrace(this, t, GraphDisplay.COLORS[t]);
-//        if (traces.nTraces > 1)
         trendPanel.setTraceToShow(0);   // all
         trendPanel.prepareDisplay();
         gP.add(trendPanel);
-        //   gP.setSize(300,300);
         return gP;
     }
 
@@ -602,7 +577,6 @@ public class RTFSection extends GraphInfoAdapter{
 
         public void setTraceToShow(int t) {
             gDisplay.setTraceToShow(t);
-//          mainF.repaint();
         }
     } // class GraphPanel
 
@@ -801,7 +775,6 @@ public class RTFSection extends GraphInfoAdapter{
         return OnePropertyTrace.getAutoRange(0, mx, true, false);  // formces minimum to 0
     }
 
-
     public double getYat(int trace, double x) {
         if (trace < nTraces) {
             return traces.get(trace).getYat(x);
@@ -821,7 +794,6 @@ public class RTFSection extends GraphInfoAdapter{
     public String resultsInCVS() {
         return "\n\n\n" + tableModel.getResultsCVS();
     }
-
 
     //chStTemp, double chEndTemp, double srcTemp, double rtHeat
     public String prodDataToSave() {

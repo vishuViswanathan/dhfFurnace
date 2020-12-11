@@ -1,6 +1,7 @@
 package radiantTubeHeating;
 
 import directFiredHeating.DFHResult;
+import display.HelpSystem;
 import display.OnePropertyTrace;
 import basic.ChMaterial;
 import basic.Charge;
@@ -28,6 +29,7 @@ import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Hashtable;
 import java.util.Vector;
+
 
 /**
  * Created by IntelliJ IDEA.
@@ -143,7 +145,7 @@ public class RTHeating extends JPanel implements InputControl {
     JPanel trendsPage;
     protected JScrollPane slate = new JScrollPane();
     public JButton pbEdit;
-
+    public JMenu helpMenu;
     public JSPConnection jspConnection;
 
     public RTHeating() {
@@ -311,10 +313,11 @@ public class RTHeating extends JPanel implements InputControl {
         MenuListener menuListener = new MenuListener() {
             @Override
             public void menuSelected(MenuEvent e) {
-                if (e.getSource() == inputMenu)
+                Object src = e.getSource();
+                if (src == inputMenu)
                     switchToInputPage();
-//                else if (e.getSource() == resultsMenu && resultsReady)
-//                    switchToInputPage(RTHDisplayPage.RESULTSPAGE);
+                else if (src == helpMenu)
+                    switchToSelectedPage(helpSystem.getHelpPanel());
             }
 
             @Override
@@ -329,6 +332,7 @@ public class RTHeating extends JPanel implements InputControl {
         };
 
         inputMenu.addMenuListener(menuListener);
+//        inputMenu.setMnemonic('I');
         resultsMenu.addMenuListener(menuListener);
         mb.add(inputMenu);
         mb.add(resultsMenu);
@@ -343,8 +347,19 @@ public class RTHeating extends JPanel implements InputControl {
             switchToInputPage();
         });
         mb.add(pbEdit);
+//        helpSystem = new HelpSystem("helpSystem\\RTHeating");
+        helpSystem = new HelpSystem(jspConnection, 101, "helpSystem\\RTHeating");
+        if (helpSystem.loadHelp()) {
+            helpMenu = new JMenu("Help");
+            helpMenu.setMnemonic(KeyEvent.VK_H);
+            helpMenu.addMenuListener(menuListener);
+            mb.add(Box.createHorizontalGlue());
+            mb.add(helpMenu);
+        }
         mainF.setJMenuBar(mb);
     }
+
+    HelpSystem helpSystem;
 
     JMenu createResultsMenu() {
         resultsMenu = new JMenu("ViewResults");
