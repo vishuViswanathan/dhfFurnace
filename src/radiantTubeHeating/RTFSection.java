@@ -5,6 +5,7 @@ import display.OnePropertyTrace;
 import mvUtils.display.*;
 import mvUtils.math.DoublePoint;
 import mvUtils.math.DoubleRange;
+import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -65,12 +66,12 @@ public class RTFSection extends GraphInfoAdapter{
 
     public RTFSection(InputControl ipc, RTFSection prevSection) {
         this.ipc = ipc;
-        prepareUI();
+        prepareUIs();
         if (prevSection == null) {
             calculationLimitMode = RTHeating.LimitMode.RTTEMP;
             startPos = 0;
             zoneNum = 1;
-            rt = new RadiantTube();
+            rt = new RadiantTube(ipc);
             rtPerM = 3;
         }
         else {
@@ -86,6 +87,21 @@ public class RTFSection extends GraphInfoAdapter{
         }
     }
 
+    public boolean copyFrom(RTFSection from) {
+        prevSection = from.prevSection;
+        zoneNum = from.zoneNum;
+        rt = from.rt.getACopy();
+        rtPerM = from.rtPerM;
+        rtCenterAbove = from.rtCenterAbove;
+        if (prevSection != null) {
+            prevSection.nextSection = this;
+            takeStartConditionsFromPrevZone();
+        }
+        updateUI();
+        updateData();
+        return true;
+    }
+
     void updateData() {
         this.topRTperM = rtPerM / 2;
         this.botRTperM = this.topRTperM;
@@ -95,14 +111,15 @@ public class RTFSection extends GraphInfoAdapter{
         chStTemp = prevSection.actualEndTempMean;
         chStTempSurf = prevSection.actualEndTempSurf;
         chStTempCore = prevSection.actualEndTempCore;
-        calculationLimitMode = prevSection.calculationLimitMode;
-        rtLimitTemp = prevSection.rtLimitTemp;
-        rtLimitHeat = prevSection.rtLimitHeat;
-        updateUI();
+//        calculationLimitMode = prevSection.calculationLimitMode;
+//        rtLimitTemp = prevSection.rtLimitTemp;
+//        rtLimitHeat = prevSection.rtLimitHeat;
+        updateUIwithprevZoneData();
         startPos = prevSection.endPos;
+        enableDataEdit(true);
     }
 
-    void prepareUI() {
+    void prepareUIs() {
         ntChEntryTemp = new NumberTextField(ipc, chStTemp - 273, 6, false,
                 -200, 2000, "#,###", "Charge Entry Temperatures (C)");
         ntChExitTemp = new NumberTextField(ipc, chEndTemp - 273, 6, false,
@@ -117,6 +134,13 @@ public class RTFSection extends GraphInfoAdapter{
                 0, 100, "#.000", "Number of Tube per m of Furnace Length");
         ntRadiantTubeChargeDistance = new NumberTextField(ipc, rtCenterAbove * 1000, 6, false,
                 0, 10000, "#,###", "RT Centre line above Charge Surface (mm)");
+        calculTemperatureFields = new Vector<>();
+        calculTemperatureFields.add(ntChEntryTemp);
+        calculTemperatureFields.add(ntChExitTemp);
+        calculFields = new Vector<>();
+        calculFields.add(ntMaxRtTemp);
+        calculFields.add(ntMaxRtHeat);
+
     }
 
     void updateUI() {
@@ -129,28 +153,24 @@ public class RTFSection extends GraphInfoAdapter{
         ntTubesPerFceLength.setData(rtPerM);
     }
 
+    void updateUIwithprevZoneData() {
+        ntChEntryTemp.setData(chStTemp - 273);
+
+    }
+
     Vector<NumberTextField> fceDetailsFields;
 
-    boolean xlSectionData(Sheet sheet, ExcelStyles styles) {
-        Cell cell;
-        Row r;
-        r = sheet.createRow(0);
-        cell = r.createCell(0);
-        cell.setCellStyle(styles.csHeader1);
-        cell.setCellValue("Furnace Details");
-
-        sheet.setColumnWidth(1, 10000);
-        sheet.setColumnWidth(2, 3000);
-        sheet.setColumnWidth(3, 500);
-        sheet.setColumnWidth(4, 9000);
-        sheet.setColumnWidth(5, 3000);
-        int topRow = 4, row, rRow;
+    int xlSectionData(Sheet sheet, ExcelStyles styles, int topRow) {
+        topRow += 1;
+        int row, rRow;
         int col = 1;
         row = styles.xlMultiPairColPanel(rt.getDataPanel(), sheet, topRow, col);
+        rRow = styles.xlMultiPairColPanel(calculModeP, sheet, topRow, col + 3);
         topRow = row + 1;
         row = styles.xlMultiPairColPanel(radiantTubeInFceP, sheet, topRow, col);
-        rRow = styles.xlMultiPairColPanel(calculModeP, sheet, topRow, col + 3);
-        return true;
+//        rRow = styles.xlMultiPairColPanel(calculModeP, sheet, topRow, col + 3);
+        rRow = styles.xlMultiPairColPanel(calculatePanel, sheet, topRow, col + 3);
+        return Math.max(row, rRow) + 1;
     }
 
     public int xlTempProfile(Sheet sheet, ExcelStyles styles, int headRow) {
@@ -159,12 +179,12 @@ public class RTFSection extends GraphInfoAdapter{
         r = sheet.createRow(headRow);
         cell = r.createCell(0);
         cell.setCellStyle(styles.csHeader1);
-        cell.setCellValue("TEMPERATURE PROFILE OF SECTION " + zoneNum);
-        int topRow = headRow + 4;
+        cell.setCellValue("TEMPERATURE PROFILE OF Zone#" + zoneNum);
+        int topRow = headRow + 1;
         int leftCol = 1;
         JTable table = getResultTable();
         int row = styles.xlAddXLCellData(sheet, topRow, leftCol, table);
-        return row;
+        return row + 2;
     }
 
     public void enableDataEdit(boolean ena) {
@@ -177,6 +197,7 @@ public class RTFSection extends GraphInfoAdapter{
         for (Component c:calculTemperatureFields)
             c.setEnabled(ena);
         jBcalculate.setEnabled(ena);
+        jBmodifyData.setEnabled(!ena);
         if (ena)
             undoResults();
     }
@@ -188,7 +209,7 @@ public class RTFSection extends GraphInfoAdapter{
 
     NumberTextField ntTubesPerFceLength;
     NumberTextField ntRadiantTubeChargeDistance;
-    boolean radiantTubeFieldsSet = false;
+//    boolean radiantTubeFieldsSet = false;
     Vector<NumberTextField> calculFields;
     Vector<NumberTextField> calculTemperatureFields;
     JComboBox<RTHeating.LimitMode> cbLimitMode;
@@ -210,11 +231,12 @@ public class RTFSection extends GraphInfoAdapter{
     MultiPairColPanel calculModeP;
     NumberTextField ntMaxRtTemp;
     NumberTextField ntMaxRtHeat;
-    JButton jBcalculate = new JButton("Calculate this Section");
+    JButton jBcalculate = new JButton("Calculate Zone");
+    JButton jBmodifyData = new JButton("Modify Data");
     JButton jBredo;
     NumberTextField ntChEntryTemp;
     NumberTextField ntChExitTemp;
-    JPanel calculatePanel;
+    MultiPairColPanel calculatePanel;
 
     public JPanel zoneDataP() {
         JPanel detFrame = new JPanel(new GridBagLayout());
@@ -231,7 +253,7 @@ public class RTFSection extends GraphInfoAdapter{
         detFrame.add(radiantTubesP(), gbcMf);
         gbcMf.gridx = 1;
         detFrame.add(calculDataP(), gbcMf);
-            radiantTubeFieldsSet = true;
+//            radiantTubeFieldsSet = true;
 //        }
         return detFrame;
     }
@@ -240,10 +262,10 @@ public class RTFSection extends GraphInfoAdapter{
         if (!calculFieldsSet) {
             productionFields = new Vector<>();
             MultiPairColPanel pan = new MultiPairColPanel("Calculation Mode");
-            calculFields = new Vector<>();
+//            calculFields = new Vector<>();
             pan.addItemPair("Calculation Limiting Mode", cbLimitMode);
-            calculFields.add(ntMaxRtTemp);
-            calculFields.add(ntMaxRtHeat);
+//            calculFields.add(ntMaxRtTemp);
+//            calculFields.add(ntMaxRtHeat);
             pan.addItemPair(ntMaxRtTemp);
             pan.addItemPair(ntMaxRtHeat);
             pan.addItem(calculateP());
@@ -254,7 +276,7 @@ public class RTFSection extends GraphInfoAdapter{
     }
 
     public JPanel radiantTubesP() {
-        if (!radiantTubeFieldsSet) {
+//        if (!radiantTubeFieldsSet) {
             MultiPairColPanel pan = new MultiPairColPanel("Radiant Tubes in Furnace");
             pan.addItem(rt.radiantTubesP(ipc));
             tubesInFceFields = new Vector<>();
@@ -264,26 +286,34 @@ public class RTFSection extends GraphInfoAdapter{
             pan.addItemPair(ntTubesPerFceLength);
             pan.addItemPair(ntRadiantTubeChargeDistance);
             radiantTubeInFceP = pan;
-            radiantTubeFieldsSet = true;
-        }
+//            radiantTubeFieldsSet = true;
+//        }
         return radiantTubeInFceP;
     }
 
     public JPanel calculateP() {
         MultiPairColPanel pan = new MultiPairColPanel("Calculate");
-        calculTemperatureFields = new Vector<>();
-        calculTemperatureFields.add(ntChEntryTemp);
-        calculTemperatureFields.add(ntChExitTemp);
+//        calculTemperatureFields = new Vector<>();
+//        calculTemperatureFields.add(ntChEntryTemp);
+//        calculTemperatureFields.add(ntChExitTemp);
         pan.addItemPair(ntChEntryTemp);
         pan.addItemPair(ntChExitTemp);
         JPanel buttonPanel = new JPanel();
         jBcalculate.addActionListener(e -> {
             furnace.takeFceDetailsFromUI();
             if (takeRTinSectionFromUI() && takeCalculModeFromUI())
-                calculate();
+                if (prevSection == null || prevSection.calculationDone)
+                    calculate();
+                else
+                    furnace.showError("Zone #" + zoneNum + " Calculation", "Zone #" + prevSection.zoneNum + " is still to be calculated");
             else
                 furnace.showError("Zone Calculation", "Some data are not proper");
         });
+        jBmodifyData.addActionListener(e -> {
+            furnace.resetZoneCalculation(zoneNum);
+        });
+        jBmodifyData.setEnabled(false);
+        buttonPanel.add(jBmodifyData);
         buttonPanel.add(jBcalculate);
         pan.addItem(buttonPanel);
         calculatePanel = pan;
@@ -297,9 +327,9 @@ public class RTFSection extends GraphInfoAdapter{
         retVal = rt.takeFromUI();
         if (retVal) {
             rtPerM = ntTubesPerFceLength.getData();
-            if (rtPerM < (unitLen / rt.dia)) {
+            if (rtPerM < (unitLen / rt.rTdia)) {
                 rtCenterAbove = ntRadiantTubeChargeDistance.getData() / 1000;
-                if (rtCenterAbove < (furnace.heightAbove - rt.dia))
+                if (rtCenterAbove < (furnace.heightAbove - rt.rTdia))
                     updateData();
                 else {
                     furnace.showError("Zone #" + zoneNum, "Radiant tube location cannot be accommodated");
@@ -371,7 +401,7 @@ public class RTFSection extends GraphInfoAdapter{
         OneRTslot prevSlot = null;
         uAreaHeTot = rt.getTotHeatingSurface() * (topRTperM + botRTperM) * unitLen;
         uAreaHeCh = uAreaHeTot / 2;
-        furnace.debug("maxSlots limited to " + maxSlots);
+//        furnace.debug("maxSlots limited to " + maxSlots);
         for (int i = 0; i < maxSlots; i++) {
             endTime += unitTime;
             slot = new OneRTslot(furnace, this, lPos, prevSlot);
@@ -791,19 +821,74 @@ public class RTFSection extends GraphInfoAdapter{
         }
     }
 
-    public String resultsInCVS() {
-        return "\n\n\n" + tableModel.getResultsCVS();
-    }
-
-    //chStTemp, double chEndTemp, double srcTemp, double rtHeat
-    public String prodDataToSave() {
-        String retVal;
-        retVal = "<production>" + XMLmv.putTag("output", "" + furnace.production);
-        retVal += XMLmv.putTag("chStTemp", "" + (chStTemp - 273));
-        retVal += XMLmv.putTag("chEndTemp", "" + (chEndTemp - 273));
-        retVal += XMLmv.putTag("rtLimitTemp", "" + (rtLimitTemp - 273));
-        retVal += XMLmv.putTag("rtLimitHeat", "" + rtLimitHeat);
-        retVal += "</production>" + "\n";
+    StatusWithMessage takeFceDataFromXML(String xmlStr) {
+        StatusWithMessage retVal = new StatusWithMessage();
+        enableDataEdit(true);
+        ValAndPos vp;
+        if (xmlStr.length() > 50) {
+            vp = XMLmv.getTag(xmlStr, "ZoneBaseData", 0);
+            retVal = takeBaseDataFromXML(vp.val);
+            if (retVal.getDataStatus() == DataStat.Status.OK)  {
+                vp = XMLmv.getTag(xmlStr, "radiantTube", vp.endPos);
+                retVal = rt.takeRadiantTubeFroXML(vp.val);
+            }
+        }
         return retVal;
     }
+
+    StatusWithMessage takeBaseDataFromXML(String xmlStr) {
+        StatusWithMessage retVal = new StatusWithMessage();
+        enableDataEdit(true);
+        String errMsg = "";
+        boolean allOK = true;
+        ValAndPos vp;
+        if (xmlStr.length() > 50) {
+            try {
+                vp = XMLmv.getTag(xmlStr, "calculationLimitMode", 0);
+                calculationLimitMode = RTHeating.LimitMode.getEnum(vp.val);
+                vp = XMLmv.getTag(xmlStr, "chStTemp", 0);
+                chStTemp = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "chEndTemp", 0);
+                chEndTemp = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "rtLimitTemp", 0);
+                rtLimitTemp = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "rtLimitHeat", 0);
+                rtLimitHeat = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "rtCenterAbove", 0);
+                rtCenterAbove = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "rtPerM", 0);
+                rtPerM = Double.valueOf(vp.val);
+                updateUI();
+            }
+            catch(Exception e) {
+                errMsg = "Taking Fce Data from xml - some problem in reading data";
+                allOK = false;
+            }
+        }
+        if (!allOK)
+            retVal.setErrorMessage(errMsg);
+        return retVal;
+    }
+
+    /*     public double rtCenterAbove = 0.3, rtCenterBelow = 0.3;
+    double rtPerM = 3;
+*/
+
+    String baseDataToSave() {
+        StringBuilder theStr =
+                new StringBuilder(XMLmv.putTag("calculationLimitMode", "" + calculationLimitMode));
+        theStr.append(XMLmv.putTag("chStTemp", "" + chStTemp)).
+                append(XMLmv.putTag("chEndTemp", "" + chEndTemp)).
+                append(XMLmv.putTag("rtLimitTemp", "" + rtLimitTemp)).
+                append(XMLmv.putTag("rtLimitHeat", "" + rtLimitHeat)).
+                append(XMLmv.putTag("rtCenterAbove", "" + rtCenterAbove)).
+                append(XMLmv.putTag("rtPerM", "" + rtPerM));
+        String retVal = XMLmv.putTag("ZoneBaseData", "\n" + theStr);
+        return retVal;
+    }
+
+    public String zoneDataToSave() {
+        return XMLmv.putTag("ZoneData", baseDataToSave() + rt.RTDataToSave());
+    }
+
 }

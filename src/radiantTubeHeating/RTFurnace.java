@@ -1,12 +1,8 @@
 package radiantTubeHeating;
 
 import basic.Charge;
-import basic.RadiantTube;
-import directFiredHeating.DFHeating;
-import display.OnePropertyTrace;
 import mvUtils.display.*;
-import mvUtils.math.DoublePoint;
-import mvUtils.math.DoubleRange;
+import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -49,6 +45,7 @@ public class RTFurnace {
     public RTFurnace(RTHeating rth) {
         this.rth = rth;
         sections = new Vector<>();
+        prepareUIs();
         RTFSection oneSec = new RTFSection(rth, this, null);
         sections.add(oneSec);
     }
@@ -88,26 +85,46 @@ public class RTFurnace {
         return inputFrame;
     }
 
+    void prepareUIs() {
+        fceDetailsFields = new Vector<>();
+        fceDetailsFields.add(ntInnerWidth = new NumberTextField(ipc, width * 1000, 6, false,
+                200, 200000, "#,###", "Inner Width (mm)"));
+        fceDetailsFields.add(ntHeightAboveCharge = new NumberTextField(ipc, heightAbove * 1000, 6,
+                false, 200, 200000, "#,###", "Height above Charge (mm)"));
+        fceDetailsFields.add(ntRollDia = new NumberTextField(ipc, rollDia * 1000, 6,
+                false, 0, 1000, "#,###", "Support Roll dia (mm)"));
+        fceDetailsFields.add(ntRollPitch = new NumberTextField(ipc, rollPitch * 1000, 6,
+                false, 0, 10000, "#,###", "Roll pitch (mm)"));
+        fceDetailsFields.add(ntUsefullLength = new NumberTextField(ipc, maxFceLen * 1000, 6,
+                false, 2000, 200000, "#,###", "Maximum Length (mm)"));
+        fceDetailsFields.add(ntUfceLen = new NumberTextField(ipc, unitLen * 1000, 6, false,
+                200, 20000, "#,###", "Furnace Calculation Step Length (mm)"));
+
+
+        fceDetailsFields.add(ntLossPerMeter = new NumberTextField(ipc, lossPerM, 6, false,
+                -10000, 200000, "#,###", "Loss per Furnace length (kcal/h.m)"));
+    }
+
     public JPanel fceDetailsP(InputControl ipc) {
         if (!fceDataFieldsSet) {
             MultiPairColPanel pan = new MultiPairColPanel("Furnace Data");
-            fceDetailsFields = new Vector<>();
-            fceDetailsFields.add(ntInnerWidth = new NumberTextField(ipc, width * 1000, 6, false,
-                    200, 200000, "#,###", "Inner Width (mm)"));
-            fceDetailsFields.add(ntHeightAboveCharge = new NumberTextField(ipc, heightAbove * 1000, 6,
-                    false, 200, 200000, "#,###", "Height above Charge (mm)"));
-            fceDetailsFields.add(ntRollDia = new NumberTextField(ipc, rollDia * 1000, 6,
-                    false, 0, 1000, "#,###", "Support Roll dia (mm)"));
-            fceDetailsFields.add(ntRollPitch = new NumberTextField(ipc, rollPitch * 1000, 6,
-                    false, 0, 10000, "#,###", "Roll pitch (mm)"));
-            fceDetailsFields.add(ntUsefullLength = new NumberTextField(ipc, maxFceLen * 1000, 6,
-                    false, 2000, 200000, "#,###", "Maximum Length (mm)"));
-            fceDetailsFields.add(ntUfceLen = new NumberTextField(ipc, unitLen * 1000, 6, false,
-                    200, 20000, "#,###", "Furnace Calculation Step Length (mm)"));
-
-
-            fceDetailsFields.add(ntLossPerMeter = new NumberTextField(ipc, lossPerM, 6, false,
-                    -10000, 200000, "#,###", "Loss per Furnace length (kcal/h.m)"));
+//            fceDetailsFields = new Vector<>();
+//            fceDetailsFields.add(ntInnerWidth = new NumberTextField(ipc, width * 1000, 6, false,
+//                    200, 200000, "#,###", "Inner Width (mm)"));
+//            fceDetailsFields.add(ntHeightAboveCharge = new NumberTextField(ipc, heightAbove * 1000, 6,
+//                    false, 200, 200000, "#,###", "Height above Charge (mm)"));
+//            fceDetailsFields.add(ntRollDia = new NumberTextField(ipc, rollDia * 1000, 6,
+//                    false, 0, 1000, "#,###", "Support Roll dia (mm)"));
+//            fceDetailsFields.add(ntRollPitch = new NumberTextField(ipc, rollPitch * 1000, 6,
+//                    false, 0, 10000, "#,###", "Roll pitch (mm)"));
+//            fceDetailsFields.add(ntUsefullLength = new NumberTextField(ipc, maxFceLen * 1000, 6,
+//                    false, 2000, 200000, "#,###", "Maximum Length (mm)"));
+//            fceDetailsFields.add(ntUfceLen = new NumberTextField(ipc, unitLen * 1000, 6, false,
+//                    200, 20000, "#,###", "Furnace Calculation Step Length (mm)"));
+//
+//
+//            fceDetailsFields.add(ntLossPerMeter = new NumberTextField(ipc, lossPerM, 6, false,
+//                    -10000, 200000, "#,###", "Loss per Furnace length (kcal/h.m)"));
             pan.addItemPair(ntInnerWidth);
             pan.addItemPair(ntHeightAboveCharge);
             pan.addItemPair(ntUsefullLength);
@@ -158,7 +175,11 @@ public class RTFurnace {
                 tabbedSectionsPane.setSelectedIndex(tabbedSectionsPane.getTabCount() - 1);
                 retVal = true;
             }
+            else
+                showError("Adding as Zone", "The last zone is not yet calculated");
         }
+        else
+            showError("Adding as Zone", "Reached the limit of " + rth.maxNzones);
         return retVal;
     }
 
@@ -363,24 +384,44 @@ public class RTFurnace {
         rRow = styles.xlMultiPairColPanel(rth.chargeP, sheet, topRow, col + 3);
         row = Math.max(row, rRow);
         row = Math.max(row, rRow);
-        topRow = row + 1;
-        rRow = styles.xlMultiPairColPanel(rth.productionPanel, sheet, topRow, col + 3);
-        row = Math.max(row, rRow);
+//        topRow = row + 1;
+//        rRow = styles.xlMultiPairColPanel(rth.productionPanel, sheet, topRow, col + 3);
+//        row = Math.max(row, rRow);
         topRow = row + 1;
         return xlSectionDetails(sheet, styles, topRow);
     }
 
     boolean xlSectionDetails(Sheet sheet, ExcelStyles styles, int topRow) {
-        debug("RTHFurnace.162: Not ready for Section details");
+        Cell cell;
+        Row r;
+        int row = topRow + 2;
+        for (RTFSection sec: sections) {
+            r = sheet.createRow(row);
+            cell = r.createCell(0);
+            cell.setCellStyle(styles.csHeader1);
+            cell.setCellValue("Zone #" + sec.zoneNum);
+            row = sec.xlSectionData(sheet, styles, row + 1);
+            row += 1;
+        }
 //        row = styles.xlMultiPairColPanel(radiantTubeInFceP, sheet, topRow, col);
 //        rRow = styles.xlMultiPairColPanel(rth.calculModeP, sheet, topRow, col + 3);
-        return false;
+        return true;
+    }
+
+    boolean areAllResultsReady() {
+        boolean ready = true;
+        for (RTFSection oneSec:sections)
+            ready &= oneSec.calculationDone;
+        return ready;
     }
 
     boolean xlTempProfile(Sheet sheet, ExcelStyles styles) {
         int row = 0;
         for (RTFSection oneSec:sections) {
-            row = oneSec.xlTempProfile(sheet, styles, row) + 1;
+            if (oneSec.calculationDone)
+                row = oneSec.xlTempProfile(sheet, styles, row) + 1;
+            else
+                break;
         }
         return row > 0;
    }
@@ -409,10 +450,18 @@ public class RTFurnace {
             rollDia = ntRollDia.getData() / 1000;
             rollPitch = ntRollPitch.getData() / 1000;
             lossPerM = ntLossPerMeter.getData();
-//            retVal = takeRTinFceFromUI();
-//            updateData();
         }
         return retVal;
+    }
+
+    void upDateUIfromData() {
+        ntInnerWidth.setData(width * 1000);
+        ntHeightAboveCharge.setData(heightAbove * 1000);
+        ntUsefullLength.setData(maxFceLen * 1000);
+        ntUfceLen.setData(unitLen * 1000);
+        ntRollDia.setData(rollDia * 1000);
+        ntRollPitch.setData(rollPitch * 1000);
+        ntLossPerMeter.setData(lossPerM);
     }
 
     public void enableDataEdit(boolean ena) {
@@ -478,13 +527,102 @@ public class RTFurnace {
         rth.resultsReady(type);
     }
 
+    public String fceDataInXML() {
+        StringBuilder fceStr =
+                new StringBuilder(fceDataToSave());
+        StringBuilder secStr = new StringBuilder();
+        for (RTFSection sec:sections) {
+            secStr.append(sec.zoneDataToSave());
+        }
+        fceStr.append(XMLmv.putTag("AllZones", "\n" + secStr));
+        return XMLmv.putTag("theFurnace",  "\n" + fceStr);
+    }
+
     public String fceDataToSave() {
-        String retVal;
-        retVal = "<furnace>" + XMLmv.putTag("width", "" + width * 1000);
-        retVal += XMLmv.putTag("heightAbove", "" + heightAbove * 1000);
-        retVal += XMLmv.putTag("maxFceLen", "" + maxFceLen * 1000);
-        retVal += XMLmv.putTag("perMLoss", "" + unitLoss / unitTime);  // TODO check
-        retVal += "</furnace>" + "\n";
+        StringBuilder theStr = new StringBuilder(XMLmv.putTag("width", "" + width));
+        theStr.append(XMLmv.putTag("heightAbove", "" + heightAbove)).
+                append(XMLmv.putTag("maxFceLen", "" + maxFceLen)).
+                append(XMLmv.putTag("unitLen", "" + unitLen)).
+                append(XMLmv.putTag("rollDia", "" + rollDia)).
+                append(XMLmv.putTag("rollPitch", "" + rollPitch)).
+                append(XMLmv.putTag("lossPerM", "" + lossPerM));
+        String retVal = XMLmv.putTag("CommonData", "\n" + theStr);
+        return retVal;
+    }
+
+    StatusWithMessage takeFceDataFromXML(String xmlStr) {
+        StatusWithMessage retVal = new StatusWithMessage();
+        enableDataEdit(true);
+        ValAndPos vp;
+        if (xmlStr.length() > 50) {
+            try {
+                vp = XMLmv.getTag(xmlStr, "CommonData", 0);
+                retVal = takeFceCommanDataFromXML(vp.val);
+                if (retVal.getDataStatus() == DataStat.Status.OK) {
+                    vp = XMLmv.getTag(xmlStr, "AllZones", vp.endPos);
+                    String allZones = vp.val;
+                    if (allZones.length() > 50) {
+                        vp = XMLmv.getTag(allZones, "ZoneData");
+                        RTFSection prevSec = null;
+                        sections.clear();
+                        while (vp.val.length() > 10) {
+                            RTFSection sec = new RTFSection(ipc, this, prevSec);
+                            retVal = sec.takeFceDataFromXML(vp.val);
+                            if (retVal.getDataStatus() == DataStat.Status.OK) {
+                                sections.add(sec);
+                                prevSec = sec;
+                                vp = XMLmv.getTag(allZones, "ZoneData", vp.endPos);
+                            }
+                            else
+                                break;
+                        }
+                    }
+                }
+            }
+            catch(Exception e) {
+                retVal.setErrorMessage("takeFceDataFroXML - Ome problem taking data");
+            }
+        }
+        else {
+            retVal.addErrorMessage("readong Fce data from xml - data too short at #546");
+        }
+        return retVal;
+    }
+
+    StatusWithMessage takeFceCommanDataFromXML(String xmlStr) {
+        StatusWithMessage retVal = new StatusWithMessage();
+        enableDataEdit(true);
+        String errMsg = "";
+        boolean allOK = true;
+        ValAndPos vp;
+        if (xmlStr.length() > 50) {
+            try {
+                vp = XMLmv.getTag(xmlStr, "width", 0);
+                width = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "heightAbove", 0);
+                heightAbove = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "maxFceLen", 0);
+                maxFceLen = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "unitLen", 0);
+                unitLen = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "rollDia", 0);
+                rollDia = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "rollPitch", 0);
+                rollPitch = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "lossPerM", 0);
+                lossPerM = Double.valueOf(vp.val);
+                upDateUIfromData();
+            }
+            catch (Exception e) {
+                allOK = false;
+                errMsg = "Reading Fce Common Data from xml - Some error in data";
+            }
+            if (!allOK)
+                retVal.setErrorMessage(errMsg);
+        }
+        else {
+            retVal.addErrorMessage("reading Fce Common data from xml - data too short at #583");
+        }
         return retVal;
     }
 
@@ -500,7 +638,7 @@ public class RTFurnace {
     }
 
     public void showError(String title, String msg) {
-        rth.showError(title, msg, null);
+        rth.showError(title, msg);
     }
 
 }

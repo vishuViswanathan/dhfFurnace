@@ -11,8 +11,11 @@ import mvUtils.jsp.JSPComboBox;
 import mvUtils.jsp.JSPConnection;
 import mvUtils.jsp.JSPObject;
 //import netscape.javascript.JSObject;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import mvUtils.mvXML.ValAndPos;
+import mvUtils.mvXML.XMLgroupStat;
+import mvUtils.mvXML.XMLmv;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import protection.CheckAppKey;
 
@@ -22,6 +25,7 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import java.awt.*;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -295,7 +299,7 @@ public class RTHeating extends JPanel implements InputControl {
         mIGetFceProfile = new JMenuItem("Load Furnace");
         mIGetFceProfile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, KeyEvent.CTRL_DOWN_MASK));
         mIGetFceProfile.addActionListener(mAction);
-        mIGetFceProfile.setEnabled(false);
+        mIGetFceProfile.setEnabled(true);
         mISaveToXL = new JMenuItem("Save Results and Furnace Data to Excel");
         mISaveToXL.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, KeyEvent.CTRL_DOWN_MASK));
         mISaveToXL.addActionListener(mAction);
@@ -425,6 +429,10 @@ public class RTHeating extends JPanel implements InputControl {
                     excelResultsFile();
                     break menuBlk;
                 }
+                if (src == mIGetFceProfile) {
+                    getFceFromFile();
+                    break menuBlk;
+                }
             }
         } // actionPerformed
     } // class TraceActionListener
@@ -471,9 +479,9 @@ public class RTHeating extends JPanel implements InputControl {
             cbChType = new XLComboBox(Charge.ChType.values());
             pan.addItemPair("Charge Cross Section", cbChType);
             ntStripWidth = new NumberTextField(ipc, stripWidth * 1000, 6, false,
-                    50, 10000, "#,###", "Strip Width (mm)");
+                    50, 10000, "#,###", "Width, along Fce width (mm)");
             ntStripThickness = new NumberTextField(ipc, stripThick * 1000, 6, false,
-                    0.001, 200, "0.000", "Strip Thickness (mm)");
+                    0.001, 200, "0.000", "Thickness (mm)");
             pan.addItemPair(ntStripWidth);
             pan.addItemPair(ntStripThickness);
             ntChDiameter = new NumberTextField(ipc, chDiameter * 1000, 6, false,
@@ -609,76 +617,293 @@ public class RTHeating extends JPanel implements InputControl {
         return theCharge;
     }
 
+    void upDateUIfromData() {
+        cbChType.setSelectedItem(chType);
+        cbChMaterial.setSelectedItem(chMaterial);
+        ntStripWidth.setData(stripWidth * 1000);
+        ntStripThickness.setData(stripThick * 1000);
+        ntChDiameter.setData(chDiameter * 1000);
+        ntWallThickness.setData(wallThickness * 1000);
+        ntNitemsAlongFceWidth.setData(nChargeAlongFceWidth);
+        ntOutput.setData(production / 1000);
+    }
+    /*
+            chMaterial = (ChMaterial) cbChMaterial.getSelectedItem();
+        double effectiveChWidth = 0;
+        boolean retVal = (chMaterial != null) && !ntNitemsAlongFceWidth.isInError();
+        if (retVal) {
+            nChargeAlongFceWidth = (int) (ntNitemsAlongFceWidth.getData());
+
+     */
+
+    public String chargeDataToSave() {
+        StringBuilder strBuff = new StringBuilder(XMLmv.putTag("chMaterial", "" + chMaterial));
+        strBuff.append(XMLmv.putTag("chType", "" + chType));
+        strBuff.append(XMLmv.putTag("stripWidth", "" + stripWidth));
+        strBuff.append(XMLmv.putTag("stripThick", "" + stripThick));
+        strBuff.append(XMLmv.putTag("chDiameter", "" + chDiameter));
+        strBuff.append(XMLmv.putTag("wallThickness", "" + wallThickness));
+        strBuff.append(XMLmv.putTag("nChargeAlongFceWidth", "" + nChargeAlongFceWidth));
+        strBuff.append(XMLmv.putTag("production", "" + production));
+        return XMLmv.putTag("ChargeData", "\n" + strBuff);
+    }
+
+    String fceDataFromXL(String filePath) {
+        String data = "";
+        try {
+            FileInputStream xlInput = new FileInputStream(filePath);
+            Workbook wB;
+            if (filePath.toLowerCase().endsWith("xlsx"))
+                wB = new XSSFWorkbook(xlInput);
+            else
+                wB = new HSSFWorkbook(xlInput);
+            Sheet sh = wB.getSheet("Furnace Profile");
+            if (sh != null) {
+                Row r = sh.getRow(0);
+                Cell cell = r.getCell(0);
+                if (cell.getCellType() == CellType.STRING) {
+                    if (cell.getStringCellValue().equals("mv7414")) {
+                        r = sh.getRow(1);
+                        cell = r.getCell(0);
+                        if (cell.getCellType() == CellType.NUMERIC)  { // data is multi column
+                            int nCols = (int)cell.getNumericCellValue();
+                            for (int c = 1; c <= nCols; c++) {
+                                cell = r.getCell(c);
+                                if (cell.getCellType() ==CellType.STRING)
+                                    data += cell.getStringCellValue();
+                            }
+                        }
+                        else {         // kept for backward compatibility
+                            if (cell.getCellType() ==CellType.STRING)
+                                data = cell.getStringCellValue();
+                        }
+                    }
+                }
+            }
+            xlInput.close();
+        } catch (Exception e) {
+            showError("Error in RTHeating:fceDataFromXL >" + e.getMessage());
+        }
+        return data;
+    }
+
+    StatusWithMessage takeProfileDataFromXml(String xmlStr) {
+        StatusWithMessage retVal = new StatusWithMessage();
+        XMLgroupStat chStat;
+        enableDataEdit(true);
+        ValAndPos vp;
+        if (xmlStr.length() > 50) {
+            try {
+                vp = XMLmv.getTag(xmlStr, "ChargeData", 0);
+                String chDataXML = vp.val;
+                if (chDataXML.length() > 0) {
+                    chStat = takeChargeDataFromXml(chDataXML);
+                    if (chStat.allOK) {
+                        vp = XMLmv.getTag(xmlStr, "theFurnace");
+                        if (vp.val.length() > 0) {
+                            setDefaultFurnace();
+                            retVal = theFurnace.takeFceDataFromXML(vp.val);
+                        }
+                    }
+                    else
+                        retVal.addErrorMessage(chStat.errMsg);
+                }
+            }
+            catch(Exception e) {
+                retVal.addErrorMessage("Data from xml - Facing some problem Reading Fce Charge data");
+            }
+        }
+        else {
+            retVal.addErrorMessage("Data len too short at #717");
+        }
+        return retVal;
+    }
+
+    XMLgroupStat takeChargeDataFromXml(String xmlStr) {
+        XMLgroupStat retVal = new XMLgroupStat();
+        enableDataEdit(true);
+        ValAndPos vp;
+        if (xmlStr.length() > 50) {
+            try {
+                vp = XMLmv.getTag(xmlStr, "chMaterial", 0);
+                chMaterial = getSelChMaterial(vp.val);
+                vp = XMLmv.getTag(xmlStr, "chType", 0);
+                chType = Charge.ChType.getEnum(vp.val);
+                vp = XMLmv.getTag(xmlStr, "stripWidth", 0);
+                stripWidth = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "stripThick", 0);
+                stripThick = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "chDiameter", 0);
+                chDiameter = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "wallThickness", 0);
+                wallThickness = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "nChargeAlongFceWidth", 0);
+                nChargeAlongFceWidth = Integer.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "production", 0);
+                production = Double.valueOf(vp.val);
+                upDateUIfromData();
+            }
+            catch (Exception e) {
+                retVal.addStat(false, "Reading Charge data from xml - Some Error in data");
+            }
+        }
+        else {
+            retVal.addStat(false, "Data size too short at #245");
+        }
+        return retVal;
+    }
+
 
     void debug(String msg) {
         System.out.println("RTHeating: " + msg);
     }
 
-//    public String resultsInCVS() {
-//        return furnace.resultsInCVS();
-//    }
+    protected StatusWithMessage getFceFromFile() {
+        StatusWithMessage retVal = new StatusWithMessage();
+        boolean bRetVal = false;
+        FileDialog fileDlg =
+                new FileDialog(mainF, "Get Profile from Read RTH results File",
+                        FileDialog.LOAD);
+        fileDlg.setFile("*.xlsx; *.xls");
+        fileDlg.setVisible(true);
+        String fileName = fileDlg.getFile();
+        if (fileName != null) {
+            String fS = fileName.toLowerCase();
+            String filePath = fileDlg.getDirectory() + fileName;
+            if (!filePath.equals("nullnull")) {
+                setResultsReady(false);
+                String fceData = fceDataFromXL(filePath);
+                retVal = takeProfileDataFromXml(fceData);
+            }
+        }
+        if (retVal.getDataStatus() == DataStat.Status.OK) {
+            upDateUIfromData();
+            inpPage = theFurnace.inputPage(this, chargeP);
+            switchToInputPage();
+        }
+        else
+            showError("Reading Furnace from file", retVal.getErrorMessage());
+        return retVal;
+    }
+
 
     void excelResultsFile() {
-        //  create a new workbook
-//        Workbook wb = new HSSFWorkbook();
-        Workbook wb = new XSSFWorkbook();
-        int nSheet = 0;
-        //  create a new sheet
-        ExcelStyles styles = new ExcelStyles(wb);
-        wb.createSheet("Furnace Data");
-        theFurnace.xlFurnaceData(wb.getSheetAt(nSheet), styles);
-//        nSheet++;
-//        wb.createSheet("Heat Summary");
-//        furnace.xlHeatSummary(wb.getSheetAt(nSheet), styles);
-//        nSheet++;
-//        wb.createSheet("Sec Summary");
-//        furnace.xlSecSummary(wb.getSheetAt(nSheet), styles, false);
-//        nSheet++;
-//        wb.createSheet("Loss Details");
-//        furnace.xlLossDetails(wb.getSheetAt(nSheet), styles);
-//
-        nSheet++;
-        wb.createSheet("Temp Profile");
-        theFurnace.xlTempProfile(wb.getSheetAt(nSheet), styles);
-        nSheet++;
-        wb.createSheet("Furnace Profile");
-        wb.setSheetHidden(nSheet, true);
-        Sheet sh = wb.getSheetAt(nSheet);
-//        xlFceProfile(sh, styles);
+        if (theFurnace.areAllResultsReady() ||
+                decide("Saving Results", "All Zones are NOT calculated \n" +
+                                "Still proceed with Save ?")) {
+            Workbook wb = new XSSFWorkbook();
+            int nSheet = 0;
+            //  create a new sheet
+            ExcelStyles styles = new ExcelStyles(wb);
+            wb.createSheet("Furnace Data");
+            theFurnace.xlFurnaceData(wb.getSheetAt(nSheet), styles);
+    //        nSheet++;
+    //        wb.createSheet("Heat Summary");
+    //        furnace.xlHeatSummary(wb.getSheetAt(nSheet), styles);
+    //        nSheet++;
+    //        wb.createSheet("Sec Summary");
+    //        furnace.xlSecSummary(wb.getSheetAt(nSheet), styles, false);
+    //        nSheet++;
+    //        wb.createSheet("Loss Details");
+    //        furnace.xlLossDetails(wb.getSheetAt(nSheet), styles);
+    //
+            nSheet++;
+            wb.createSheet("Temp Profile");
+            theFurnace.xlTempProfile(wb.getSheetAt(nSheet), styles);
+            nSheet++;
+            wb.createSheet("Furnace Profile");
+            wb.setSheetHidden(nSheet, true);
+            Sheet sh = wb.getSheetAt(nSheet);
+            xlFceProfile(sh, styles);
 
-//        nSheet++;
-        //  create a new file
-        FileOutputStream out = null;
-        FileDialog fileDlg =
-                new FileDialog(mainF, "Saving Results to Excel",
-                        FileDialog.SAVE);
+            nSheet++;
+            //  create a new file
+            FileOutputStream out = null;
+            FileDialog fileDlg =
+                    new FileDialog(mainF, "Saving Results to Excel",
+                            FileDialog.SAVE);
 
-        fileDlg.setFile("Test workbook from Java.xlsx");
-        fileDlg.setVisible(true);
-        String bareFile = fileDlg.getFile();
-        if (bareFile != null) {
-            int len = bareFile.length();
-            if ((len < 4) || !(bareFile.substring(len - 5).equalsIgnoreCase(".xlsx"))) {
-                showMessage("Adding '.xlsx' to file name");
-                bareFile = bareFile + ".xlsx";
-            }
-            String fileName = fileDlg.getDirectory() + bareFile;
-            try {
-                out = new FileOutputStream(fileName);
-            } catch (FileNotFoundException e) {
-                showError("Some problem in file.\n" + e.getMessage());
-                return;
-            }
-            try {
-                wb.write(out);
-                out.close();
-            } catch (IOException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                showError("Some problem with file.\n" + e.getMessage());
+            fileDlg.setFile("Test workbook from Java.xlsx");
+            fileDlg.setVisible(true);
+            String bareFile = fileDlg.getFile();
+            if (bareFile != null) {
+                int len = bareFile.length();
+                if ((len < 4) || !(bareFile.substring(len - 5).equalsIgnoreCase(".xlsx"))) {
+                    showMessage("Adding '.xlsx' to file name");
+                    bareFile = bareFile + ".xlsx";
+                }
+                String fileName = fileDlg.getDirectory() + bareFile;
+                try {
+                    out = new FileOutputStream(fileName);
+                } catch (FileNotFoundException e) {
+                    showError("Some problem in file.\n" + e.getMessage());
+                    return;
+                }
+                try {
+                    wb.write(out);
+                    out.close();
+                } catch (IOException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    showError("Some problem with file.\n" + e.getMessage());
+                }
             }
         }
         parent().toFront();
     }
+
+    public String inputDataXML() {
+        return XMLmv.putTag("RTHeating", "\n" + dataInXML());
+    }
+
+    String dataInXML() {
+        StringBuilder xmlStr =
+                new StringBuilder(chargeDataToSave());
+        xmlStr.append(theFurnace.fceDataInXML());
+        return xmlStr.toString();
+    }
+
+    boolean xlFceProfile(Sheet sheet, ExcelStyles styles) {
+        Cell cell;
+        Row r;
+        r = sheet.createRow(0);
+        cell = r.createCell(0);
+        cell.setCellValue("mv7414");
+        styles.hideCell(cell);
+        cell = r.createCell(1);
+        cell.setCellStyle(styles.csHeader1);
+        cell.setCellValue("FURNACE PROFILE");
+        r = sheet.createRow(1);
+        cell = r.createCell(0);
+        String xmlStr = inputDataXML();
+        int len = xmlStr.length();
+        int maxLen = 16000;
+        int col = 0;
+        if (len > maxLen) {
+            int nCells = len / maxLen;
+            int pos = 0;
+            for (int c = 0; c < nCells; c++) {
+                col++;
+                cell = r.createCell(col);
+                cell.setCellValue(xmlStr.substring(pos, pos + maxLen));
+                pos += maxLen;
+            }
+            if (pos < len) { // some more left
+                col++;
+                cell = r.createCell(col);
+                cell.setCellValue(xmlStr.substring(pos));
+            }
+        }
+        else {
+            col++;
+            cell = r.createCell(col);
+            cell.setCellValue(xmlStr);
+        }
+        cell = r.createCell(0);
+        cell.setCellValue(col);
+        sheet.protectSheet("mv7414");
+        return true;
+    }
+
 
     void showResultsPanel(String command) {
         showResultsPanel(resultsPanels.get(ResultsType.getEnum(command)));
