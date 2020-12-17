@@ -188,7 +188,8 @@ public class RTFurnace {
                 sec.zoneDataP());
     }
 
-
+// ##########################
+//    ###################
 /*
     JPanel getAllResultsPanel() {
 //        startSlot = new OneRTslot(allSlots.get(0), startPos);
@@ -232,7 +233,7 @@ public class RTFurnace {
         return resultsFrame;
     }
 
-    JPanel trendPanel;
+    GraphPanel trendPanel;
     JPanel gP;
 
     FramedPanel getGraphPanel() {
@@ -363,7 +364,50 @@ public class RTFurnace {
             return null;
         }
     }
+
+    class GraphPanel
+            extends JPanel {
+        final Insets borders = new Insets(2, 2, 2, 2);
+        GraphDisplay gDisplay;
+        Dimension size;
+        Point origin; // in % of graph area
+
+        GraphPanel(Dimension size) {
+            this.size = size;
+            setSize(size);
+            origin = new Point(0, 00);
+            gDisplay = new GraphDisplay(this, origin, null); //frameEventDespatcher);
+            //       gDisplay.setBasicCalculData(traces);
+        }
+
+        int addTrace(GraphInfo gInfo, int trace, Color color) {
+            gDisplay.addTrace(gInfo, trace, color);
+            return gDisplay.traceCount();
+        }
+
+        void prepareDisplay() {
+            gDisplay.prepareDisplay();
+        }
+
+        public Insets getInsets() {
+            return borders;
+        }
+
+        public Dimension getMinimumSize() {
+            return size;
+        }
+
+        public Dimension getPreferredSize() {
+            return size;
+        }
+
+        public void setTraceToShow(int t) {
+            gDisplay.setTraceToShow(t);
+        }
+    } // class GraphPanel
 */
+// ####################
+
 
     boolean xlFurnaceData(Sheet sheet, ExcelStyles styles) {
         Cell cell;
@@ -496,6 +540,12 @@ public class RTFurnace {
             sections.get(z).enableDataEdit(true);
         }
         tabbedSectionsPane.setSelectedIndex(zoneNum - 1);
+        rth.switchToInputPage();
+    }
+
+    void inputPageForSelectedZone(int zoneNum) {
+        if (zoneNum <= sections.size())
+            tabbedSectionsPane.setSelectedIndex(zoneNum - 1);
         rth.switchToInputPage();
     }
 

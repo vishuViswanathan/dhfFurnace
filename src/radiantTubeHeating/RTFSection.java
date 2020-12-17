@@ -41,6 +41,8 @@ public class RTFSection extends GraphInfoAdapter{
     double rtPerM = 3;
     double topRTperM, botRTperM;
     double uAreaHeTot;
+    double uWt;
+    double unitTime;
     double uAreaHeCh;
     double unitLen = 1;
     Vector<OneRTslot> allSlots;
@@ -234,6 +236,7 @@ public class RTFSection extends GraphInfoAdapter{
     JButton jBcalculate = new JButton("Calculate Zone");
     JButton jBmodifyData = new JButton("Modify Data");
     JButton jBredo;
+    JButton jBnextZone;
     NumberTextField ntChEntryTemp;
     NumberTextField ntChExitTemp;
     MultiPairColPanel calculatePanel;
@@ -386,19 +389,21 @@ public class RTFSection extends GraphInfoAdapter{
         if (furnace.prepareForCalculation() &&
                 takeRTinSectionFromUI() &&
                 takeCalculModeFromUI()) {
-            proceed = prepareSlots();
+            proceed = prepareForSlots();
+//            proceed = prepareSlots();
         }
         return proceed;
     }
 
     boolean prepareSlots() {
-        allSlots = new Vector();
+//        allSlots = new Vector();
         double lPos = startPos + unitLen;
         OneRTslot slot;
         double endTime = 0;
-        double uWt =  furnace.charge.unitWt * furnace.nChargeAlongFceWidth;
-        double unitTime = unitLen / (furnace.production / 60 / uWt);
+        uWt =  furnace.charge.unitWt * furnace.nChargeAlongFceWidth;
+        unitTime = unitLen / (furnace.production / 60 / uWt);
         OneRTslot prevSlot = null;
+        lPos += unitLen;
         uAreaHeTot = rt.getTotHeatingSurface() * (topRTperM + botRTperM) * unitLen;
         uAreaHeCh = uAreaHeTot / 2;
 //        furnace.debug("maxSlots limited to " + maxSlots);
@@ -413,16 +418,44 @@ public class RTFSection extends GraphInfoAdapter{
         return true;
     }
 
+    boolean prepareForSlots() {
+        allSlots = new Vector();
+        double lPos = startPos + unitLen;
+        OneRTslot slot;
+        double endTime = 0;
+        uWt =  furnace.charge.unitWt * furnace.nChargeAlongFceWidth;
+        unitTime = unitLen / (furnace.production / 60 / uWt);
+        uAreaHeTot = rt.getTotHeatingSurface() * (topRTperM + botRTperM) * unitLen;
+        uAreaHeCh = uAreaHeTot / 2;
+        return true;
+    }
+
     // Temperatures in K
     public boolean calculate() {
         if (prepareForCalculation()) {
             furnace.enableDataEdit(zoneNum, false);
-            OneRTslot slot = allSlots.get(0);
+            double lPos = startPos + unitLen;
+            OneRTslot slot;
+            double endTime = 0;
+            OneRTslot prevSlot = null;
+            endTime += unitTime;
+            allSlots = new Vector<>();
+            slot = new OneRTslot(furnace, this, lPos, prevSlot);
+            slot.setCharge(furnace.charge, uWt, unitTime, endTime);
+            allSlots.add(slot);
             double srcHeat = rtLimitHeat * 860 * (topRTperM + botRTperM) * unitLen;
             double exitTemp = slot.calculate(chStTemp, rtLimitTemp, 0, srcHeat, calculationLimitMode);
+            prevSlot = slot;
+            endTime += unitTime;
+            lPos += unitLen;
             nSlots = 1;
-            while ((exitTemp < chEndTemp) && (nSlots < allSlots.size())) {
-                slot = allSlots.get(nSlots);
+            while ((exitTemp < chEndTemp) && (nSlots < maxSlots)) {
+                slot = new OneRTslot(furnace, this, lPos, prevSlot);
+                slot.setCharge(furnace.charge, uWt, unitTime, endTime);
+                allSlots.add(slot);
+                prevSlot = slot;
+                endTime += unitTime;
+                lPos += unitLen;
                 exitTemp = slot.calculate();
                 nSlots++;
             }
@@ -462,9 +495,14 @@ public class RTFSection extends GraphInfoAdapter{
             furnace.resetZoneCalculation(zoneNum);
         });
         // space them
-        for (int l = 0; l < 4; l++)
-            buttonP.add(new JLabel());
         buttonP.add(jBredo);
+        for (int l = 0; l < 3; l++)
+            buttonP.add(new JLabel());
+        jBnextZone = new JButton("Next Zone");
+        jBnextZone.addActionListener(e-> {
+            furnace.inputPageForSelectedZone(zoneNum + 1);
+        });
+        buttonP.add(jBnextZone);
         allResultsP.addItem(buttonP);
         return allResultsP;
     }

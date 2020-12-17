@@ -84,6 +84,7 @@ public class RTHeating extends JPanel implements InputControl {
         ZONE4RESULTS("Zone #4 - Results"),
         ZONE5RESULTS("Zone #5 - Results"),
         ZONE6RESULTS("Zone #6 - Results"),
+        ALLZONERESULTS("All Zones - Results"),
         HEATSUMMARY("Heat Balance - Summary");
 
         private final String resultName;
@@ -137,7 +138,7 @@ public class RTHeating extends JPanel implements InputControl {
         INPUTPAGE, TRENDSPAGE, RESULTSTABLEPAGE
     }
 
-    String title = "Radiant Tube Heated Furnace 20201109"; // was 20201025"; // was 20201017";
+    String title = "Radiant Tube Heated Furnace 202011216"; // was 20201025"; // was 20201017";
     public int appCode = 101;
     boolean canNotify = true;
     JFrame mainF;
