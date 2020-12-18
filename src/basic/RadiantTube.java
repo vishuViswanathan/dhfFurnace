@@ -44,6 +44,7 @@ public class RadiantTube {
     }
 
     public RadiantTube(InputControl ipc, RTFunction function, RTSource heating, RTType tubeType, double od, double effLen, double emiss, double rating) {
+        this.ipc = ipc;
         this.function = function;
         this.heating = heating;
         this.tubeType = tubeType;

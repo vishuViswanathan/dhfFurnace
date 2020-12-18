@@ -115,9 +115,6 @@ public class RTFSection extends GraphInfoAdapter{
         chStTemp = prevSection.actualEndTempMean;
         chStTempSurf = prevSection.actualEndTempSurf;
         chStTempCore = prevSection.actualEndTempCore;
-//        calculationLimitMode = prevSection.calculationLimitMode;
-//        rtLimitTemp = prevSection.rtLimitTemp;
-//        rtLimitHeat = prevSection.rtLimitHeat;
         updateUIwithprevZoneData();
         startPos = prevSection.endPos;
         zoneStTime = prevSection.zoneEndTime;
@@ -173,7 +170,6 @@ public class RTFSection extends GraphInfoAdapter{
         rRow = styles.xlMultiPairColPanel(calculModeP, sheet, topRow, col + 3);
         topRow = row + 1;
         row = styles.xlMultiPairColPanel(radiantTubeInFceP, sheet, topRow, col);
-//        rRow = styles.xlMultiPairColPanel(calculModeP, sheet, topRow, col + 3);
         rRow = styles.xlMultiPairColPanel(calculatePanel, sheet, topRow, col + 3);
         return Math.max(row, rRow) + 1;
     }
@@ -273,10 +269,7 @@ public class RTFSection extends GraphInfoAdapter{
         if (!calculFieldsSet) {
             productionFields = new Vector<>();
             MultiPairColPanel pan = new MultiPairColPanel("Calculation Mode");
-//            calculFields = new Vector<>();
             pan.addItemPair("Calculation Limiting Mode", cbLimitMode);
-//            calculFields.add(ntMaxRtTemp);
-//            calculFields.add(ntMaxRtHeat);
             pan.addItemPair(ntMaxRtTemp);
             pan.addItemPair(ntMaxRtHeat);
             pan.addItem(calculateP());
@@ -287,26 +280,20 @@ public class RTFSection extends GraphInfoAdapter{
     }
 
     public JPanel radiantTubesP() {
-//        if (!radiantTubeFieldsSet) {
-            MultiPairColPanel pan = new MultiPairColPanel("Radiant Tubes in Furnace");
-            pan.addItem(rt.radiantTubesP(ipc));
-            tubesInFceFields = new Vector<>();
-            tubesInFceFields.add(ntTubesPerFceLength);
-            tubesInFceFields.add(ntRadiantTubeChargeDistance);
-            pan.addItem("<html><B>Tubes to have a minimum gap of One Dia between the legs</B></html>");
-            pan.addItemPair(ntTubesPerFceLength);
-            pan.addItemPair(ntRadiantTubeChargeDistance);
-            radiantTubeInFceP = pan;
-//            radiantTubeFieldsSet = true;
-//        }
+        MultiPairColPanel pan = new MultiPairColPanel("Radiant Tubes in Furnace");
+        pan.addItem(rt.radiantTubesP(ipc));
+        tubesInFceFields = new Vector<>();
+        tubesInFceFields.add(ntTubesPerFceLength);
+        tubesInFceFields.add(ntRadiantTubeChargeDistance);
+        pan.addItem("<html><B>Tubes to have a minimum gap of One Dia between the legs</B></html>");
+        pan.addItemPair(ntTubesPerFceLength);
+        pan.addItemPair(ntRadiantTubeChargeDistance);
+        radiantTubeInFceP = pan;
         return radiantTubeInFceP;
     }
 
     public JPanel calculateP() {
         MultiPairColPanel pan = new MultiPairColPanel("Calculate");
-//        calculTemperatureFields = new Vector<>();
-//        calculTemperatureFields.add(ntChEntryTemp);
-//        calculTemperatureFields.add(ntChExitTemp);
         pan.addItemPair(ntChEntryTemp);
         pan.addItemPair(ntChExitTemp);
         JPanel buttonPanel = new JPanel();
@@ -398,7 +385,6 @@ public class RTFSection extends GraphInfoAdapter{
                 takeRTinSectionFromUI() &&
                 takeCalculModeFromUI()) {
             proceed = prepareForSlots();
-//            proceed = prepareSlots();
         }
         return proceed;
     }
@@ -456,7 +442,6 @@ public class RTFSection extends GraphInfoAdapter{
             RTHeating.ResultsType rType = RTHeating.ResultsType.getZoneEnum(zoneNum);
             furnace.addResult(rType, allResultsP);
             furnace.resultsReady(rType);
-//            calculationDone = true;
         }
         return true;
     }
@@ -887,10 +872,6 @@ public class RTFSection extends GraphInfoAdapter{
             retVal.setErrorMessage(errMsg);
         return retVal;
     }
-
-    /*     public double rtCenterAbove = 0.3, rtCenterBelow = 0.3;
-    double rtPerM = 3;
-*/
 
     String baseDataToSave() {
         StringBuilder theStr =

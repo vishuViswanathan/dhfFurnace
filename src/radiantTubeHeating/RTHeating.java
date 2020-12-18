@@ -172,7 +172,7 @@ public class RTHeating extends JPanel implements InputControl {
                 setDefaultFurnace();
                 if (loadChMaterialData()) {
                     chargePan(this);
-                    inpPage = theFurnace.inputPage(this, chargeP);
+                    inpPage = theFurnace.inputPage(chargeP);
                     switchToInputPage();
                     mainF.pack();
                     mainF.setVisible(true);
@@ -780,7 +780,7 @@ public class RTHeating extends JPanel implements InputControl {
         }
         if (retVal.getDataStatus() == DataStat.Status.OK) {
             upDateUIfromData();
-            inpPage = theFurnace.inputPage(this, chargeP);
+            inpPage = theFurnace.inputPage(chargeP);
             switchToInputPage();
         }
         else

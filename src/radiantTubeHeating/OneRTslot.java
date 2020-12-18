@@ -63,31 +63,7 @@ public class OneRTslot {
 
     RTHeating.LimitMode iMode;
     OneRTslot prevSlot;
-/*
-    public OneRTslot(RTFurnace rtF, double lPos, OneRTslot prevSlot, double slotLen,
-                     double nRts, double rollDia, double rollPitch) {
-        this.rtF = rtF;
-        this.charge = rtF.charge;
-        this.rT = rtF.rt;
-        this.distChToRtCenter = rtF.rtCenterAbove;
-        this.lPos = lPos;
-        this.slotLen = slotLen;
-        this.rollPitch = rollPitch;
-        this.nRts = nRts;
-        this.rollDia = rollDia;
-        this.prevSlot = prevSlot;
-        uChArea = rtF.nChargeAlongFceWidth * charge.projectedTopArea * 2; // top and bottom
-//        double effectiveChWidth = rtF.nChargeAlongFceWidth * charge.getProjectedTopArea() / slotLen;
-        double effectiveChWidth = uChArea / 2/ slotLen;
-        double visibleChLength = 2 * (1.732 * distChToRtCenter  + rT.dia);
-            // with RT pitch as 2 x dia, which is the minimum
-            // this is conservative
-//        shapeFHeCh = getHeChShapeFactor(rT.dia, rT.activeLen, visibleChLength,
-//                effectiveChWidth, distChToRtCenter, rollDia, rollPitch);
-        shapeFHeCh = effectiveArea12(rtF.uAreaHeCh, rtF.uAreaChHe, rtF.gapHeCh, 0) / rtF.uAreaHeTot;
 
-    }
-*/
     public OneRTslot(RTFurnace rtF, RTFSection rtfSec, double lPos, OneRTslot prevSlot) {
         this.rtF = rtF;
         this.rtfSec = rtfSec;
@@ -244,22 +220,6 @@ public class OneRTslot {
             System.out.println("f13:" + f13 + ", f23:" + f23);
             System.out.println("charge.effectiveThickness: " + charge.effectiveThickness);
         }
-
-//        grayFactHeFc = 1 /
-//            ((1 - rT.surfEmiss) / (rtF.uAreaHeTot *  rT.surfEmiss) +
-//                (1 / (rtF.uAreaHeTot * (1 - shapeFHeCh))) );
-////        grayFactFcCh = 1 /
-////            ((1 - emissCh) / (rtF.uAreaChTot * emissCh) +
-////                (1 / (rtF.uAreaHeTot * (1 - shapeFHeCh * rtF.uAreaHeTot / rtF.uAreaChTot))));
-////      Corrected i=on 20170804
-//        grayFactFcCh = 1 /
-//                ((1 - emissCh) / (rtF.uAreaChTot * emissCh) +
-//                        (1 / (rtF.uAreaChTot * (1 - shapeFHeCh * rtF.uAreaHeTot / rtF.uAreaChTot))));
-//
-////        relRHEtoWall = (1- rT.surfEmiss) / (rtF.uAreaHeTot * rT.surfEmiss) +
-////                ((1 / (rtF.uAreaHeTot * shapeFHeCh) * (1 / rtF.uAreaChHe * (1 - shapeFHeCh) ))) /
-////                        ((1 / (rtF.uAreaHeTot * ((1 - shapeFHeCh)))) + (1 / (rtF.uAreaChHe * f23)));
-
     }
 
     static double effectiveArea12(Double area1, double area2, double gap, double angle) {
@@ -574,6 +534,4 @@ public class OneRTslot {
                 OneRTslot.getHeChShapeFactor(rt_dia, rt_len, surf_len, surf_width,
                         dist_rtcl, 0, 0));
     }
-
 }
-

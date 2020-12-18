@@ -52,7 +52,7 @@ public class RTFurnace extends GraphInfoAdapter{
         this.ipc = rth;
         sections = new Vector<>();
         prepareUIs();
-        RTFSection oneSec = new RTFSection(rth, this, null);
+        RTFSection oneSec = new RTFSection(ipc,this, null);
         sections.add(oneSec);
     }
 
@@ -68,7 +68,7 @@ public class RTFurnace extends GraphInfoAdapter{
     MultiPairColPanel fceDetailsPanel;
     Vector<NumberTextField> fceDetailsFields;
 
-    public JPanel inputPage(InputControl ipc, Component chargePanel) {
+    public JPanel inputPage(Component chargePanel) {
         JPanel inputFrame = new JPanel(new GridBagLayout());
         GridBagConstraints gbcMf = new GridBagConstraints();
 
@@ -79,7 +79,7 @@ public class RTFurnace extends GraphInfoAdapter{
         gbcMf.gridwidth = 1;
         gbcMf.gridheight = 1;
         gbcMf.gridy++;
-        inputFrame.add(fceDetailsP(ipc), gbcMf);
+        inputFrame.add(fceDetailsP(), gbcMf);
         gbcMf.gridheight = 1;
         gbcMf.gridx = 1;
         gbcMf.gridy = 1;
@@ -87,7 +87,7 @@ public class RTFurnace extends GraphInfoAdapter{
         gbcMf.gridy++;
         gbcMf.gridx = 0;
         gbcMf.gridwidth = 2;
-        inputFrame.add(sectionDetailsPanel(ipc), gbcMf);
+        inputFrame.add(sectionDetailsPanel(), gbcMf);
         return inputFrame;
     }
 
@@ -111,26 +111,9 @@ public class RTFurnace extends GraphInfoAdapter{
                 -10000, 200000, "#,###", "Loss per Furnace length (kcal/h.m)"));
     }
 
-    public JPanel fceDetailsP(InputControl ipc) {
+    public JPanel fceDetailsP() {
         if (!fceDataFieldsSet) {
             MultiPairColPanel pan = new MultiPairColPanel("Furnace Data");
-//            fceDetailsFields = new Vector<>();
-//            fceDetailsFields.add(ntInnerWidth = new NumberTextField(ipc, width * 1000, 6, false,
-//                    200, 200000, "#,###", "Inner Width (mm)"));
-//            fceDetailsFields.add(ntHeightAboveCharge = new NumberTextField(ipc, heightAbove * 1000, 6,
-//                    false, 200, 200000, "#,###", "Height above Charge (mm)"));
-//            fceDetailsFields.add(ntRollDia = new NumberTextField(ipc, rollDia * 1000, 6,
-//                    false, 0, 1000, "#,###", "Support Roll dia (mm)"));
-//            fceDetailsFields.add(ntRollPitch = new NumberTextField(ipc, rollPitch * 1000, 6,
-//                    false, 0, 10000, "#,###", "Roll pitch (mm)"));
-//            fceDetailsFields.add(ntUsefullLength = new NumberTextField(ipc, maxFceLen * 1000, 6,
-//                    false, 2000, 200000, "#,###", "Maximum Length (mm)"));
-//            fceDetailsFields.add(ntUfceLen = new NumberTextField(ipc, unitLen * 1000, 6, false,
-//                    200, 20000, "#,###", "Furnace Calculation Step Length (mm)"));
-//
-//
-//            fceDetailsFields.add(ntLossPerMeter = new NumberTextField(ipc, lossPerM, 6, false,
-//                    -10000, 200000, "#,###", "Loss per Furnace length (kcal/h.m)"));
             pan.addItemPair(ntInnerWidth);
             pan.addItemPair(ntHeightAboveCharge);
             pan.addItemPair(ntUsefullLength);
@@ -146,7 +129,7 @@ public class RTFurnace extends GraphInfoAdapter{
         return fceDetailsPanel;
     }
 
-    JPanel sectionDetailsPanel(InputControl ipc) {
+    JPanel sectionDetailsPanel() {
         this.ipc = ipc;
         FramedPanel outerP = new FramedPanel(new BorderLayout());
         tabbedSectionsPane = new JTabbedPane();
@@ -173,7 +156,7 @@ public class RTFurnace extends GraphInfoAdapter{
         if (lastZone < rth.maxNzones) {
             RTFSection lastSec = sections.get(lastZone - 1);
             if (lastSec.calculationDone) {
-                RTFSection newSec = new RTFSection(rth, lastSec);
+                RTFSection newSec = new RTFSection(ipc, lastSec);
                 sections.add(newSec);
                 addToTabbedSectionsPane(newSec);
                 if (sections.size() >= rth.maxNzones)
@@ -217,17 +200,6 @@ public class RTFurnace extends GraphInfoAdapter{
         jtp.addTab("Trends", trendPanel);
         jtp.addTab("Table", resultsPage);
         allResultsP.addItem(jtp);
-//        JPanel buttonP = new JPanel(new GridLayout());
-//        jBredo = new JButton("Redo the Calculation");
-//        jBredo.addActionListener(e -> {
-//            furnace.resetZoneCalculation(zoneNum);
-//            furnace.showError("RTHSection", "Not ready for this!");
-//        });
-//        buttonP.add(new JLabel());
-//        buttonP.add(new JLabel());
-//        buttonP.add(new JLabel());
-//        buttonP.add(jBredo);
-//        allResultsP.addItem(buttonP);
         return allResultsP;
     }
 
@@ -625,8 +597,6 @@ public class RTFurnace extends GraphInfoAdapter{
             row = sec.xlSectionData(sheet, styles, row + 1);
             row += 1;
         }
-//        row = styles.xlMultiPairColPanel(radiantTubeInFceP, sheet, topRow, col);
-//        rRow = styles.xlMultiPairColPanel(rth.calculModeP, sheet, topRow, col + 3);
         return true;
     }
 
@@ -688,10 +658,6 @@ public class RTFurnace extends GraphInfoAdapter{
 
     public void enableDataEdit(boolean ena) {
         rth.enableDataEdit(ena);
-//        ntInnerWidth.setEditable(ena);
-//        ntHeightAboveCharge.setEditable(ena);
-//        ntUsefullLength.setEditable(ena);
-//        ntLossPerMeter.setEditable(ena);
         for (Component c:fceDetailsFields)
             c.setEnabled(ena);
         for (RTFSection sec:sections)
@@ -700,10 +666,6 @@ public class RTFurnace extends GraphInfoAdapter{
 
     public void enableDataEdit(int zoneNum, boolean ena) {
         rth.enableDataEdit(ena);
-//        ntInnerWidth.setEditable(ena);
-//        ntHeightAboveCharge.setEditable(ena);
-//        ntUsefullLength.setEditable(ena);
-//        ntLossPerMeter.setEditable(ena);
         for (Component c:fceDetailsFields)
             c.setEnabled(ena);
         if (ena)
