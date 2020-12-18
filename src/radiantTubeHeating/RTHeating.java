@@ -84,8 +84,8 @@ public class RTHeating extends JPanel implements InputControl {
         ZONE4RESULTS("Zone #4 - Results"),
         ZONE5RESULTS("Zone #5 - Results"),
         ZONE6RESULTS("Zone #6 - Results"),
-        ALLZONERESULTS("All Zones - Results"),
-        HEATSUMMARY("Heat Balance - Summary");
+        ALLZONERESULTS("All Zones - Results");
+//        HEATSUMMARY("Heat Balance - Summary");
 
         private final String resultName;
 
@@ -138,7 +138,7 @@ public class RTHeating extends JPanel implements InputControl {
         INPUTPAGE, TRENDSPAGE, RESULTSTABLEPAGE
     }
 
-    String title = "Radiant Tube Heated Furnace 202011216"; // was 20201025"; // was 20201017";
+    String title = "Radiant Tube Heated Furnace 202011218"; // was 20201025"; // was 20201017";
     public int appCode = 101;
     boolean canNotify = true;
     JFrame mainF;
@@ -301,11 +301,12 @@ public class RTHeating extends JPanel implements InputControl {
         mIGetFceProfile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, KeyEvent.CTRL_DOWN_MASK));
         mIGetFceProfile.addActionListener(mAction);
         mIGetFceProfile.setEnabled(true);
-        mISaveToXL = new JMenuItem("Save Results and Furnace Data to Excel");
+        mISaveToXL = new JMenuItem("Save Furnace Data and Results");
         mISaveToXL.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, KeyEvent.CTRL_DOWN_MASK));
         mISaveToXL.addActionListener(mAction);
         mISaveToXL.setEnabled(false);
         fileMenu.add(mIGetFceProfile);
+        fileMenu.addSeparator();
         fileMenu.add(mISaveToXL);
         fileMenu.addSeparator();
         fileMenu.add(mIExit);

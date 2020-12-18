@@ -32,6 +32,8 @@ public class RTFSection extends GraphInfoAdapter{
     RTFurnace furnace;
     public double startPos;
     public double endPos;
+    public double zoneStTime;
+    public double zoneEndTime;
     RTFSection prevSection = null;
     RTFSection nextSection = null;
     RTHeating.LimitMode calculationLimitMode = RTHeating.LimitMode.RTTEMP;
@@ -118,6 +120,7 @@ public class RTFSection extends GraphInfoAdapter{
 //        rtLimitHeat = prevSection.rtLimitHeat;
         updateUIwithprevZoneData();
         startPos = prevSection.endPos;
+        zoneStTime = prevSection.zoneEndTime;
         enableDataEdit(true);
     }
 
@@ -184,6 +187,11 @@ public class RTFSection extends GraphInfoAdapter{
         cell.setCellValue("TEMPERATURE PROFILE OF Zone#" + zoneNum);
         int topRow = headRow + 1;
         int leftCol = 1;
+        r = sheet.createRow(topRow);
+        cell = r.createCell(leftCol);
+        cell.setCellStyle(styles.csNormalBold);
+        cell.setCellValue(OneRTslot.unitsHeader);
+        topRow++;
         JTable table = getResultTable();
         int row = styles.xlAddXLCellData(sheet, topRow, leftCol, table);
         return row + 2;
@@ -330,7 +338,7 @@ public class RTFSection extends GraphInfoAdapter{
         retVal = rt.takeFromUI();
         if (retVal) {
             rtPerM = ntTubesPerFceLength.getData();
-            if (rtPerM < (unitLen / rt.rTdia)) {
+            if (rtPerM < (1.0 / rt.rTdia)) { // considering top and bottom RTs with 1 dia gap between legs
                 rtCenterAbove = ntRadiantTubeChargeDistance.getData() / 1000;
                 if (rtCenterAbove < (furnace.heightAbove - rt.rTdia))
                     updateData();
@@ -395,36 +403,12 @@ public class RTFSection extends GraphInfoAdapter{
         return proceed;
     }
 
-    boolean prepareSlots() {
-//        allSlots = new Vector();
-        double lPos = startPos + unitLen;
-        OneRTslot slot;
-        double endTime = 0;
-        uWt =  furnace.charge.unitWt * furnace.nChargeAlongFceWidth;
-        unitTime = unitLen / (furnace.production / 60 / uWt);
-        OneRTslot prevSlot = null;
-        lPos += unitLen;
-        uAreaHeTot = rt.getTotHeatingSurface() * (topRTperM + botRTperM) * unitLen;
-        uAreaHeCh = uAreaHeTot / 2;
-//        furnace.debug("maxSlots limited to " + maxSlots);
-        for (int i = 0; i < maxSlots; i++) {
-            endTime += unitTime;
-            slot = new OneRTslot(furnace, this, lPos, prevSlot);
-            slot.setCharge(furnace.charge, uWt, unitTime, endTime);
-            allSlots.add(slot);
-            lPos += unitLen;
-            prevSlot = slot;
-        }
-        return true;
-    }
-
     boolean prepareForSlots() {
+        unitLen = furnace.unitLen;
         allSlots = new Vector();
-        double lPos = startPos + unitLen;
-        OneRTslot slot;
-        double endTime = 0;
         uWt =  furnace.charge.unitWt * furnace.nChargeAlongFceWidth;
-        unitTime = unitLen / (furnace.production / 60 / uWt);
+//        unitTime = unitLen / (furnace.production / 60 / uWt);
+        unitTime = uWt / (furnace.production / 60);
         uAreaHeTot = rt.getTotHeatingSurface() * (topRTperM + botRTperM) * unitLen;
         uAreaHeCh = uAreaHeTot / 2;
         return true;
@@ -436,7 +420,7 @@ public class RTFSection extends GraphInfoAdapter{
             furnace.enableDataEdit(zoneNum, false);
             double lPos = startPos + unitLen;
             OneRTslot slot;
-            double endTime = 0;
+            double endTime = zoneStTime;
             OneRTslot prevSlot = null;
             endTime += unitTime;
             allSlots = new Vector<>();
@@ -460,14 +444,19 @@ public class RTFSection extends GraphInfoAdapter{
                 nSlots++;
             }
             noteEndConditions(slot);
+//            getAllResultsPanel();
+//            RTHeating.ResultsType rType = RTHeating.ResultsType.getZoneEnum(zoneNum);
+//            furnace.addResult(rType, allResultsP);
+            calculationDone = true;
+//            furnace.resultsReady(rType);
+            if (nextSection != null) {
+                nextSection.takeStartConditionsFromPrevZone();
+            }
             getAllResultsPanel();
             RTHeating.ResultsType rType = RTHeating.ResultsType.getZoneEnum(zoneNum);
             furnace.addResult(rType, allResultsP);
             furnace.resultsReady(rType);
-            if (nextSection != null) {
-                nextSection.takeStartConditionsFromPrevZone();
-            }
-            calculationDone = true;
+//            calculationDone = true;
         }
         return true;
     }
@@ -477,10 +466,11 @@ public class RTFSection extends GraphInfoAdapter{
         actualEndTempCore = slot.tempChCore;
         actualEndTempSurf = slot.tempChSurf;
         endPos = slot.lPos;
+        zoneEndTime = slot.endTime;
     }
 
     JPanel getAllResultsPanel() {
-        startSlot = new OneRTslot(allSlots.get(0), startPos, chStTemp, chStTempSurf, chStTempCore);
+        startSlot = new OneRTslot(allSlots.get(0), startPos, zoneStTime,  chStTemp, chStTempSurf, chStTempCore);
         setDataForTraces();
         trendsPage = trendsPage();
         resultsPage = resultsPage();
@@ -550,25 +540,15 @@ public class RTFSection extends GraphInfoAdapter{
         final int hs = 0;
         final int vs = 0;
         Insets lt = new Insets(vs, hse, vs, hs);
-        Insets ltbt = new Insets(vs, hse, vse, hs);
-        Insets bt = new Insets(vs, hs, vse, hs);
-        Insets rtbt = new Insets(vs, hs, vse, hse);
-        Insets rt = new Insets(vs, hs, vs, hse);
-        Insets rttp = new Insets(vse, hs, vs, hse);
         Insets lttp = new Insets(vse, hse, vs, hs);
-        Insets tp = new Insets(vse, hs, vs, hs);
-        Insets ltrt = new Insets(vs, hse, vs, hse);
-        Insets lttprt = new Insets(vse, hse, vs, hse);
-        Insets ltbtrt = new Insets(vs, hse, vse, hse);
-        Insets mid = new Insets(vs, hs, vs, hs);
         gbcTp.anchor = GridBagConstraints.CENTER;
         gbcTp.gridx = 0;
         gbcTp.gridy = 0;
         gbcTp.insets = lttp;
-        titlePanel.add(new Label("Radiant Tube Furnace"), gbcTp);
+        titlePanel.add(new Label(OneRTslot.header1), gbcTp);
         gbcTp.gridy++;
         gbcTp.insets = lt;
-        JLabel jLtitle = new JLabel();
+        JLabel jLtitle = new JLabel(OneRTslot.unitsHeader);
         titlePanel.add(jLtitle, gbcTp);
         gbcTp.gridy++;
         return titlePanel;
@@ -823,7 +803,7 @@ public class RTFSection extends GraphInfoAdapter{
                 mx = (x > mx) ? x : mx;
             }
         }
-        return OnePropertyTrace.getAutoRange(0, mx, true, false);  // formces minimum to 0
+        return OnePropertyTrace.getAutoRange(mn, mx, true, false);  // formces minimum to 0
     }
 
     public DoubleRange getCommonYrange() {

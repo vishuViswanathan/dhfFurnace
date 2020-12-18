@@ -25,8 +25,11 @@ public class OneRTslot {
 
 //    public static String[] colName = {"Time", "LenPos", "TempHE", "tempFce", "tempCh", "HeatCh", "HeatLoss", "HeatHE"};
 //    public static String[] fmtStr = {"0.000", "#.000", "#,###.0", "#,###.0", "#,###.0", "#,###", "#,###", "#,###"};
-    public static String[] colName = {"Time", "LenPos", "tHe", "tFce", "tChSurf", "tChMean", "tChMin", "HeatCh", "HeatLoss", "HeatHE"};
+    public static String[] colName = {"Time(min)", "LenPos(m)", "tHe(C)", "tFce(C)", "tChSurf(C)", "tChMean(C)", "tChMin(C)", "HeatCh", "HeatLoss", "HeatHE"};
     public static String[] fmtStr = {"0.000", "#.000", "#,###", "#,###", "#,###", "#,###", "#,###", "#,###", "#,###", "#,###"};
+    public static String header1 = "Table of Temperatures and Heat flux";
+    public static String unitsHeader =
+            "Units:   Time in minutes, Position in m, Temperature in DegC and Heat Flux in kcal/h";
     static int nColumn = colName.length;
     double lPos;
     Charge charge;
@@ -110,7 +113,7 @@ public class OneRTslot {
         endTime = 0;
     }
 
-    public OneRTslot(OneRTslot nextSlot, double lPos, double tempCh, double tempChSurf, double tempChCore) {
+    public OneRTslot(OneRTslot nextSlot, double lPos, double time, double tempCh, double tempChSurf, double tempChCore) {
         this.lPos = lPos;
         tempHe = nextSlot.tempHe;
         tempFce = nextSlot.tempFce;
@@ -119,7 +122,7 @@ public class OneRTslot {
         this.tempChCore= tempChCore;
         heatLoss = 0;
         heatHe = 0;
-        endTime = 0;
+        endTime = time;
     }
 
     public void setCharge(Charge charge, double uChWt, double unitTime, double endTime)  {

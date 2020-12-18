@@ -1,7 +1,10 @@
 package radiantTubeHeating;
 
 import basic.Charge;
+import display.OnePropertyTrace;
 import mvUtils.display.*;
+import mvUtils.math.DoublePoint;
+import mvUtils.math.DoubleRange;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 import org.apache.poi.ss.usermodel.Cell;
@@ -9,6 +12,8 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 
 import javax.swing.*;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.util.Vector;
 
@@ -19,7 +24,7 @@ import java.util.Vector;
  * Time: 10:24 AM
  * To change this template use File | Settings | File Templates.
  */
-public class RTFurnace {
+public class RTFurnace extends GraphInfoAdapter{
     RTHeating rth;
     RTHeating.LimitMode iLimitMode;
     public double width = 1.55;
@@ -44,6 +49,7 @@ public class RTFurnace {
 
     public RTFurnace(RTHeating rth) {
         this.rth = rth;
+        this.ipc = rth;
         sections = new Vector<>();
         prepareUIs();
         RTFSection oneSec = new RTFSection(rth, this, null);
@@ -98,7 +104,7 @@ public class RTFurnace {
         fceDetailsFields.add(ntUsefullLength = new NumberTextField(ipc, maxFceLen * 1000, 6,
                 false, 2000, 200000, "#,###", "Maximum Length (mm)"));
         fceDetailsFields.add(ntUfceLen = new NumberTextField(ipc, unitLen * 1000, 6, false,
-                200, 20000, "#,###", "Furnace Calculation Step Length (mm)"));
+                100, 20000, "#,###", "Furnace Calculation Step Length (mm)"));
 
 
         fceDetailsFields.add(ntLossPerMeter = new NumberTextField(ipc, lossPerM, 6, false,
@@ -190,19 +196,28 @@ public class RTFurnace {
 
 // ##########################
 //    ###################
-/*
+    OneRTslot startSlot;
+    Vector<OneRTslot> allZoneSlots;
+    MultiPairColPanel allResultsP;
+    JPanel resultsPage;
+    JPanel trendsPage;
+    ScrollPane resultScroll;
+    JTable resultTable;
+    GraphPanel trendPanel;
+    FramedPanel gP;
+    int nAllZoneSlots = 0;
+    MyTableModel tableModel;
+
     JPanel getAllResultsPanel() {
-//        startSlot = new OneRTslot(allSlots.get(0), startPos);
-        startSlot = new OneRTslot(allSlots.get(0), startPos, chStTemp, chStTempSurf, chStTempCore);
         setDataForTraces();
-        JPanel trendsPage = trendsPage();
-//        resultsPage = resultsPage();
-        JPanel allResultsP = new MultiPairColPanel("Combined Results for Furnace");
+        trendsPage = trendsPage();
+        resultsPage = resultsPage();
+        allResultsP = new MultiPairColPanel("Combined Results for Furnace");
         JTabbedPane jtp= new JTabbedPane();
         jtp.addTab("Trends", trendPanel);
-//        jtp.addTab("Table", resultsPage);
-//        allResultsP.addItem(jtp);
-        JPanel buttonP = new JPanel(new GridLayout());
+        jtp.addTab("Table", resultsPage);
+        allResultsP.addItem(jtp);
+//        JPanel buttonP = new JPanel(new GridLayout());
 //        jBredo = new JButton("Redo the Calculation");
 //        jBredo.addActionListener(e -> {
 //            furnace.resetZoneCalculation(zoneNum);
@@ -233,20 +248,76 @@ public class RTFurnace {
         return resultsFrame;
     }
 
-    GraphPanel trendPanel;
-    JPanel gP;
+    JPanel resultsPage() {
+        JPanel resultsFrame = new JPanel(new GridBagLayout());
+        GridBagConstraints gbcMf = new GridBagConstraints();
+        gbcMf.anchor = GridBagConstraints.CENTER;
+        gbcMf.gridx = 0;
+        gbcMf.gridy = 0;
+        gbcMf.insets = new Insets(0, 0, 0, 0);
+        gbcMf.gridwidth = 1;
+        gbcMf.gridheight = 1;
+        resultsFrame.add(getTitlePanel(), gbcMf);
+        gbcMf.gridx = 0;
+        gbcMf.gridy++;
+        gbcMf.gridwidth = 1;
+        gbcMf.gridheight = 2;
+        resultsFrame.add(getListPanel(), gbcMf);
+        return resultsFrame;
+    }
+
+    FramedPanel getTitlePanel() {
+        FramedPanel titlePanel = new FramedPanel(new GridBagLayout());
+        GridBagConstraints gbcTp = new GridBagConstraints();
+        final int hse = 4; // ends
+        final int vse = 4; // ends
+        final int hs = 0;
+        final int vs = 0;
+        Insets lt = new Insets(vs, hse, vs, hs);
+        Insets lttp = new Insets(vse, hse, vs, hs);
+        gbcTp.anchor = GridBagConstraints.CENTER;
+        gbcTp.gridx = 0;
+        gbcTp.gridy = 0;
+        gbcTp.insets = lttp;
+        titlePanel.add(new Label(OneRTslot.header1), gbcTp);
+        gbcTp.gridy++;
+        gbcTp.insets = lt;
+        JLabel jLtitle = new JLabel(OneRTslot.unitsHeader);
+        titlePanel.add(jLtitle, gbcTp);
+        gbcTp.gridy++;
+        return titlePanel;
+    }
+
+    public JTable getResultTable() {
+        tableModel = new MyTableModel();
+        JTable table = new JTable(tableModel);
+        table.setDefaultRenderer(table.getColumnClass(1), new CellRenderer());
+        return table;
+    }
+
+    Panel getListPanel() {
+        resultTable = getResultTable();
+        JPanel headPanel = new JPanel(new GridLayout(1, 1));
+        headPanel.add(resultTable.getTableHeader());
+        Panel listPanel = new Panel(new BorderLayout());
+        listPanel.add(headPanel, BorderLayout.NORTH);
+        resultScroll = new ScrollPane();
+        resultScroll.setSize(new Dimension(700, 250));
+        resultScroll.add(resultTable);
+        resultScroll.repaint();
+        listPanel.add(resultScroll, BorderLayout.CENTER);
+        return listPanel;
+    }
 
     FramedPanel getGraphPanel() {
         gP = new FramedPanel(new GridLayout(1, 0));
         trendPanel =
-                new RTFSection.GraphPanel(new Dimension(700, 350));
+                new GraphPanel(new Dimension(700, 350));
         for (int t = 0; t < nTraces; t++)
             trendPanel.addTrace(this, t, GraphDisplay.COLORS[t]);
-//        if (traces.nTraces > 1)
         trendPanel.setTraceToShow(0);   // all
         trendPanel.prepareDisplay();
         gP.add(trendPanel);
-        //   gP.setSize(300,300);
         return gP;
     }
 
@@ -264,33 +335,35 @@ public class RTFurnace {
     DoubleRange commonX, commonY;
 
     void setDataForTraces() {
-        OneRTslot slot;
-        int nSlots = 0;
+        allZoneSlots = new Vector<>();
+        nAllZoneSlots = 0;
         for (RTFSection sec: sections) {
             if (sec.calculationDone)
-                nSlots += sec.nSlots;
+                allZoneSlots.addAll(sec.allSlots);
+            else
+                break;
         }
-        tempHe = new DoublePoint[nSlots + 1];
-        tempFce = new DoublePoint[nSlots + 1];
-        tempChSurf = new DoublePoint[nSlots + 1];
-        tempCh = new DoublePoint[nSlots + 1];
-        tempChCore = new DoublePoint[nSlots + 1];
-        slot = sections.get(0).startSlot;
+        nAllZoneSlots = allZoneSlots.size();
+        tempHe = new DoublePoint[nAllZoneSlots + 1];
+        tempFce = new DoublePoint[nAllZoneSlots + 1];
+        tempChSurf = new DoublePoint[nAllZoneSlots + 1];
+        tempCh = new DoublePoint[nAllZoneSlots + 1];
+        tempChCore = new DoublePoint[nAllZoneSlots + 1];
+        startSlot = sections.get(0).startSlot;
         double pos;
-        pos = slot.lPos;
-        tempHe[0] = new DoublePoint(pos, slot.tempHe - 273);
-        tempFce[0] = new DoublePoint(pos, slot.tempFce - 273);
-        tempCh[0] = new DoublePoint(pos, slot.tempChEnd - 273);
-        for (RTFSection sec: sections) {
-            for (int s = 1; s <= sec.nSlots; s++) {
-                slot = sec.allSlots.get(s - 1);
-                pos = slot.lPos;
-                tempHe[s] = new DoublePoint(pos, slot.tempHe - 273);
-                tempFce[s] = new DoublePoint(pos, slot.tempFce - 273);
-                tempChSurf[s] = new DoublePoint(pos, slot.tempChSurf - 273);
-                tempCh[s] = new DoublePoint(pos, slot.tempChEnd - 273);
-                tempChCore[s] = new DoublePoint(pos, slot.tempChCore - 273);
-            }
+        pos = startSlot.lPos;
+        tempHe[0] = new DoublePoint(pos, startSlot.tempHe - 273);
+        tempFce[0] = new DoublePoint(pos, startSlot.tempFce - 273);
+        tempCh[0] = new DoublePoint(pos, startSlot.tempChEnd - 273);
+        int i = 1;
+        for (OneRTslot slot:allZoneSlots) {
+            pos = slot.lPos;
+            tempHe[i] = new DoublePoint(pos, slot.tempHe - 273);
+            tempFce[i] = new DoublePoint(pos, slot.tempFce - 273);
+            tempChSurf[i] = new DoublePoint(pos, slot.tempChSurf - 273);
+            tempCh[i] = new DoublePoint(pos, slot.tempChEnd - 273);
+            tempChCore[i] = new DoublePoint(pos, slot.tempChCore - 273);
+            i++;
         }
         traces = new Vector<OnePropertyTrace>();
         OnePropertyTrace oneTrace;
@@ -313,6 +386,31 @@ public class RTFurnace {
         else
             return null;
     }
+    public TraceHeader[] getTraceHeader() {
+        return traceHeader;
+    }
+
+    public TraceHeader getTraceHeader(int trace) {
+        if (trace < nTraces)
+            return traces.get(trace).getTraceHeader();
+        else
+            return null;
+    }
+
+    public DoubleRange getXrange(int trace) {
+        if (trace < nTraces)
+            return traces.get(trace).getXrange();
+        else
+            return null;
+    }
+
+    public DoubleRange getYrange(int trace) {
+        if (trace < nTraces)
+            return traces.get(trace).getYrange();
+        else
+            return null;
+    }
+
 
     public DoubleRange getCommonXrange() {
         OnePropertyTrace tr;
@@ -328,7 +426,7 @@ public class RTFurnace {
                 mx = (x > mx) ? x : mx;
             }
         }
-        return OnePropertyTrace.getAutoRange(0, mx, true, false);  // formces minimum to 0
+        return OnePropertyTrace.getAutoRange(mn, mx, true, false);  // formces minimum to 0
     }
 
     public DoubleRange getCommonYrange() {
@@ -405,7 +503,87 @@ public class RTFurnace {
             gDisplay.setTraceToShow(t);
         }
     } // class GraphPanel
-*/
+
+    class MyTableModel extends AbstractTableModel { //here
+        public MyTableModel() {
+        }
+
+        public int getColumnCount() {
+            return OneRTslot.nColumn;
+        }
+
+        public int getRowCount() {
+            return nAllZoneSlots + 1;
+        }
+
+        public String getColumnName(int col) {
+            if (col < OneRTslot.nColumn)
+                return OneRTslot.colName[col];
+            else
+                return "UNKNOWN";
+        }
+
+        public Object getValueAt(int row, int col) { // was(int xPos, int yPos) {
+            String data;
+            OneRTslot slot;
+
+            if (row >= 0 && row < nAllZoneSlots + 1) {
+                if (row == 0)
+                    slot = startSlot;
+                else
+                    slot = allZoneSlots.get(row - 1);
+                data = slot.getColData(col);
+            } else
+                data = "NO DATA";
+            return data;
+        }
+
+        public double getdoubleValueAt(int row, int col) { // was(int xPos, int yPos) {
+            double data;
+            OneRTslot slot;
+
+            if (row >= 0 && row < allZoneSlots.size() + 1) {
+                if (row == 0)
+                    slot = startSlot;
+                else
+                    slot = allZoneSlots.get(row - 1);
+                data = slot.getColDataVal(col);
+            } else
+                data = Double.NaN;
+            return data;
+        }
+
+        String getResultsCVS() {
+            String cvs = "";
+            int c;
+            int columns = OneRTslot.nColumn;
+            for (c = 0; c < OneRTslot.nColumn; c++) {
+                cvs += getColumnName(c) + ((c == (columns - 1) ? "\n" : ","));
+            }
+            int rows = getRowCount();
+            for (int r = 0; r < rows; r++) {
+                for (c = 0; c < columns; c++) {
+                    cvs += ((String) getValueAt(r, c)).replace(",", "") + ((c == (columns - 1) ? "\n" : ","));
+                }
+            }
+            return cvs;
+        }
+
+    }  // class MyTableModel
+
+
+    public class CellRenderer extends DefaultTableCellRenderer {
+        public Component getTableCellRendererComponent(JTable table,
+                                                       Object value,
+                                                       boolean isSelected,
+                                                       boolean hasFocus,
+                                                       int row,
+                                                       int column) {
+            JLabel comp = new JLabel(value.toString());
+            return comp;
+        }
+    }    // class CellRenderer
+
 // ####################
 
 
@@ -539,6 +717,7 @@ public class RTFurnace {
         for (int z = zoneNum - 1; z < sections.size(); z++) {
             sections.get(z).enableDataEdit(true);
         }
+
         tabbedSectionsPane.setSelectedIndex(zoneNum - 1);
         rth.switchToInputPage();
     }
@@ -569,11 +748,24 @@ public class RTFurnace {
         rth.addResult(type, p);
     }
 
+    void addItTemp(RTHeating.ResultsType type, JPanel p) {
+        addResult(type, p);
+    }
+
     public void undoResults(int zoneNum) {
         rth.undoResults(RTHeating.ResultsType.getZoneEnum(zoneNum));
+        undoSummedResults();
+    }
+
+    void undoSummedResults() {
+        rth.undoResults(RTHeating.ResultsType.ALLZONERESULTS);
     }
 
     public void resultsReady(RTHeating.ResultsType type) {
+        // get all ResultsPanel Ready
+        getAllResultsPanel();
+        RTHeating.ResultsType rType = RTHeating.ResultsType.ALLZONERESULTS;
+        addResult(rType, allResultsP);
         rth.resultsReady(type);
     }
 
@@ -630,11 +822,11 @@ public class RTFurnace {
                 }
             }
             catch(Exception e) {
-                retVal.setErrorMessage("takeFceDataFroXML - Ome problem taking data");
+                retVal.setErrorMessage("takeFceDataFroXML - Some problem taking data at #824");
             }
         }
         else {
-            retVal.addErrorMessage("readong Fce data from xml - data too short at #546");
+            retVal.addErrorMessage("reading Fce data from xml - data too short at #546");
         }
         return retVal;
     }
