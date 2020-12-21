@@ -754,10 +754,12 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             switch (heatingMode) {
                 case TOPONLY:
                     bTopBot = false;
+                    showPerfMenu(false);
                     changeTopBot(false);
                     break;
                 case TOPBOT:
                     bTopBot = true;
+                    showPerfMenu(false);
                     break;
                 case TOPBOTSTRIP:
                     bTopBot = false;

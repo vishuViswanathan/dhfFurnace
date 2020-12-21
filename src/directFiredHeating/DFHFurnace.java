@@ -914,31 +914,34 @@ public class DFHFurnace {
     protected boolean addResultsToPerfBase(boolean createTable) {
         boolean retVal = true;
         Performance perform = getPerformance();
-        if (createTable) {
-            OneStripDFHProcess stripProc = controller.getStripDFHProcess(perform.processName);
-            if (stripProc != null) {
-                ErrorStatAndMsg performanceStat = stripProc.productionOkForPerformanceSave(productionData);
-                if (performanceStat.inError) {
-                    showError("Cannot save Performance, " + performanceStat.msg);
-                    retVal = false;
+        if (perform == null)
+            retVal = false;
+        else  {
+            if (createTable) {
+                OneStripDFHProcess stripProc = controller.getStripDFHProcess(perform.processName);
+                if (stripProc != null) {
+                    ErrorStatAndMsg performanceStat = stripProc.productionOkForPerformanceSave(productionData);
+                    if (performanceStat.inError) {
+                        showError("Cannot save Performance, " + performanceStat.msg);
+                        retVal = false;
+                    } else
+                        retVal = true;
                 }
-                else
-                    retVal = true;
             }
-        }
-        if (retVal && perform != null && performBase != null) {
-            retVal = performBase.noteBasePerformance(perform);
+            if (retVal && perform != null && performBase != null) {
+                retVal = performBase.noteBasePerformance(perform);
+                if (retVal) {
+                    chTempProfAvailable = performBase.chTempProfAvailable;
+                    if (!createTable)
+                        showMessage("Performance Data:" + perform);
+                }
+            }
             if (retVal) {
-                chTempProfAvailable = performBase.chTempProfAvailable;
-                if (!createTable)
-                    showMessage("Performance Data:" + perform);
-            }
-        }
-        if (retVal) {
-            if (chTempProfAvailable)
-                controller.perfBaseAvailable(true);
-            if (perform != null && createTable) {
-                calculateForPerformanceTable(perform);
+                if (chTempProfAvailable)
+                    controller.perfBaseAvailable(true);
+                if (perform != null && createTable) {
+                    calculateForPerformanceTable(perform);
+                }
             }
         }
         return retVal;
@@ -952,25 +955,31 @@ public class DFHFurnace {
     }
 
     public Performance getPerformance() {
-        Vector<OneZone> allZones = new Vector<OneZone>();
-        FceSection sec;
-        for (int s = 0; s < nTopActiveSecs; s++) {
-            sec = topSections.get(s);
-            allZones.add(sec.getZonePerfData());
-        }
-        // check it any has negative fuel
-        boolean dataOK = true;
-        for (OneZone z : allZones)
-            if (z.fuelFlow < 0) {
-                showError("One of the zones has negative Fuel Flow and cannot be saved as Performance Data", 3000);
-                dataOK = false;
-                break;
+        Performance perf = null;
+        if (productionData.processName.length() > 0) {
+            Vector<OneZone> allZones = new Vector<OneZone>();
+            FceSection sec;
+            for (int s = 0; s < nTopActiveSecs; s++) {
+                sec = topSections.get(s);
+                allZones.add(sec.getZonePerfData());
             }
-        if (dataOK) {
-            GregorianCalendar date = new GregorianCalendar();
-            return new Performance(productionData, commFuelFiring.fuel, controller.airTemp, allZones, date, this);
-        } else
-            return null;
+            // check it any has negative fuel
+            boolean dataOK = true;
+            for (OneZone z : allZones)
+                if (z.fuelFlow < 0) {
+                    showError("One of the zones has negative Fuel Flow and cannot be saved as Performance Data", 3000);
+                    dataOK = false;
+                    break;
+                }
+            if (dataOK) {
+                GregorianCalendar date = new GregorianCalendar();
+                perf = new Performance(productionData, commFuelFiring.fuel, controller.airTemp, allZones, date, this);
+            }
+        }
+        else {
+            showError("Process name is not specified in the Operation Data page!");
+        }
+        return perf;
     }
 
     /**
