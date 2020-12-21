@@ -6,6 +6,7 @@ import basic.*;
 import directFiredHeating.billetWH.SampleWHFurnace;
 import directFiredHeating.process.OneStripDFHProcess;
 import directFiredHeating.process.StripDFHProcessList;
+import display.HelpSystem;
 import jsp.*;
 import mvUtils.file.ActInBackground;
 import mvUtils.file.WaitMsg;
@@ -36,6 +37,8 @@ import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.PageRanges;
 import javax.swing.*;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
 import javax.swing.plaf.basic.BasicComboBoxRenderer;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
@@ -155,6 +158,9 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     static public boolean bAtSite = false;
 
     public int appCode = 100;
+    HelpSystem helpSystem;
+    public JMenu helpMenu = new JMenu("Help");
+    protected String helpFolder = "";
     public boolean loadTesting = false;
     protected String profileFileExtension = "dfhDat";
     protected String profileFileName = "FurnaceProfile." + profileFileExtension;
@@ -164,7 +170,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = " 20201027"; // was 20200128";  //was 20190917";
+    protected String releaseDate = " 20201220";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -296,6 +302,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     public DFHeating(boolean asApplication) {
         this();
         this.asApplication = asApplication;
+        helpFolder = "helpSystem\\DFHeating";
         debugLocal("as Application");
     }
 
@@ -647,6 +654,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         }
     }
 
+    public void switchToSelectedPage(JPanel page) {
+        slate.setViewportView(page);
+    }
+
     private void switchToSelectedPage(DFHDisplayPageType page) {
         boolean done = true;
         switch (page) {
@@ -754,6 +765,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                     if (cbFceFor.getSelectedItem() != DFHTuningParams.FurnaceFor.STRIP) {
                         cbFceFor.setSelectedItem(DFHTuningParams.FurnaceFor.STRIP);
                     }
+                    else
+                        showPerfMenu(true);
                     break;
             }
             furnace.changeFiringMode(bTopBot, bAddTopSoak);
@@ -1226,6 +1239,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         compareResults.add(mISaveComparisontoXL);
         compareResults.add(mIAppendComparisontoXL);
         compareResults.add(mIClearComparison);
+        compareResults.setVisible(false);
         return compareResults;
     }
 
@@ -1284,6 +1298,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
     protected void enableFileMenu(boolean ena) {
         fileMenu.setEnabled(ena);
+        helpMenu.setEnabled(ena);
     }
 
     protected JMenu defineFileMenu() {
@@ -1336,7 +1351,32 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     protected void addMenuBar() {
-        mainAppPanel.add(assembleMenuBar(), BorderLayout.NORTH);
+        JMenuBar mBar = assembleMenuBar();
+        addHelpMenu(mBar);
+        mainAppPanel.add(mBar, BorderLayout.NORTH);
+    }
+
+    protected boolean addHelpMenu(JMenuBar mBar) {
+        boolean retVal = false;
+        logInfo("Loading HelpSystem with " + JTabbedPane.LEFT);
+        helpSystem = new HelpSystem(jspConnection, appCode, helpFolder, JTabbedPane.LEFT);
+        if (helpSystem.loadHelp()) {
+            helpMenu.setMnemonic(KeyEvent.VK_H);
+            MenuListener helpListenerL = new MenuListener() {
+                public void menuSelected(MenuEvent e) {
+                    switchToSelectedPage(helpSystem.getHelpPanel());
+                }
+                @Override
+                public void menuDeselected(MenuEvent e) {}
+                @Override
+                public void menuCanceled(MenuEvent e) {}
+            };
+            helpMenu.addMenuListener(helpListenerL);
+            mBar.add(Box.createHorizontalGlue());
+            mBar.add(helpMenu);
+            retVal = true;
+        }
+        return retVal;
     }
 
     public boolean isOnProductionLine() {
@@ -1390,8 +1430,14 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         mIClearPerfBase.setEnabled(available);
     }
 
+    protected void showComparisonMenu(boolean show) {
+        if (compareResults != null)
+            compareResults.setVisible(show);
+    }
+
     protected void showPerfMenu(boolean show) {
         perfMenu.setVisible(show);
+        showComparisonMenu(show);
     }
 
     synchronized public void enablePerfMenu(boolean ena)  {
@@ -2009,6 +2055,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             mIClearPerfBase.setEnabled(false);
             mIShowPerfBase.setEnabled(false);
         }
+        showComparisonMenu(false);
      }
 
     protected void setFcefor(boolean showSuggestion) {
@@ -2030,8 +2077,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             setValuesToUI();
             showPerfMenu(true);
             enablePerfMenu(true);
-            if (showSuggestion && cbHeatingMode.getSelectedItem() != HeatingMode.TOPBOTSTRIP)
+            if (showSuggestion && cbHeatingMode.getSelectedItem() != HeatingMode.TOPBOTSTRIP) {
+                hidePerformMenu();
                 showMessage("Suggest selecting 'Heating Mode' to STRIP - TOP and BOTTOM");
+            }
         } else {
             if (cbHeatingMode.getSelectedItem() == HeatingMode.TOPBOTSTRIP)  {
                 cbHeatingMode.setSelectedItem(HeatingMode.TOPBOT);

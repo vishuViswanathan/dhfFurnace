@@ -1,6 +1,8 @@
 package display;
 
+import directFiredHeating.DFHeating;
 import mvUtils.display.ErrorStatAndMsg;
+import mvUtils.display.MultiPairColPanel;
 import mvUtils.jsp.JSPConnection;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
@@ -14,16 +16,23 @@ public class HelpSystem {
     JSPConnection jspConnection = null;
     int appCode;
     String folder;
-    JPanel helpPan = new JPanel();
-
+    MultiPairColPanel helpPan = new MultiPairColPanel("Help Topics");
+//    JPanel helpPan = new JPanel();
+    int tabPosition = JTabbedPane.TOP;
     public HelpSystem(String folder) {
         this.folder = folder;
     }
 
-    public HelpSystem(JSPConnection jspConnection, int appCode, String folder) {
+    public HelpSystem(JSPConnection jspConnection, int appCode, String folder,
+                      int tabPosition) {
         this.jspConnection = jspConnection;
+        this.tabPosition = tabPosition;
         this.appCode = appCode;
         this.folder = folder;
+    }
+
+    public HelpSystem(JSPConnection jspConnection, int appCode, String folder) {
+        this(jspConnection, appCode,folder, JTabbedPane.TOP);
     }
 
     public boolean loadHelp() {
@@ -38,42 +47,55 @@ public class HelpSystem {
         return retVal;
     }
 
+    JComponent getHelpPage(String data) {
+        JPanel p = new JPanel();
+        JLabel jl = new JLabel(data);
+        p.setBackground(java.awt.Color.white);
+        p.add(jl);
+        return p;
+    }
+
     public boolean getHelpPagesFromFile() {
-        boolean retVal = true;
-        JTabbedPane jtp = new JTabbedPane();
+        boolean retVal = false;
+        JTabbedPane jtp = new JTabbedPane(tabPosition);
         String helpFolder = folder + "\\";
         File folder = new File(helpFolder);
-        String[] fileNames = folder.list();
-        for (String oneFile : fileNames) {
-            if (oneFile.endsWith(".html")) {
-                String filePath = helpFolder + oneFile;
-                try {
-                    BufferedInputStream iStream = new BufferedInputStream(new FileInputStream(filePath));
-                    File f = new File(filePath);
-                    long len = f.length();
-                    if (len > 20 && len < 50000) {
-                        int iLen = (int) len;
-                        byte[] data = new byte[iLen + 100];
-                        try {
-                            if (iStream.read(data) == len) {
-                                String htmlString = new String(data);
-                                int nameLocStart = htmlString.indexOf("helpName");
-                                String helpName = htmlString.substring(nameLocStart, nameLocStart + 50);
-                                helpName = helpName.split("'")[1];
-                                jtp.addTab(helpName, new JLabel(htmlString));
+        if (folder.exists()) {
+            String[] fileNames = folder.list();
+            for (String oneFile : fileNames) {
+                if (oneFile.endsWith(".html")) {
+                    String filePath = helpFolder + oneFile;
+                    try {
+                        BufferedInputStream iStream = new BufferedInputStream(new FileInputStream(filePath));
+                        File f = new File(filePath);
+                        long len = f.length();
+                        if (len > 20 && len < 50000) {
+                            int iLen = (int) len;
+                            byte[] data = new byte[iLen + 100];
+                            try {
+                                if (iStream.read(data) == len) {
+                                    String htmlString = new String(data);
+                                    int nameLocStart = htmlString.indexOf("helpName");
+                                    String helpName = htmlString.substring(nameLocStart, nameLocStart + 50);
+                                    helpName = helpName.split("'")[1];
+                                    jtp.addTab(helpName, getHelpPage(htmlString));
+                                }
+                                iStream.close();
+                                retVal = true;
+                            } catch (IOException e) {
+                                break;
                             }
-                            iStream.close();
-                        } catch (IOException e) {
-                            retVal = false;
                         }
+                    } catch (FileNotFoundException e) {
+                        break;
                     }
-                } catch (FileNotFoundException e) {
-                    retVal = false;
-                }
+                }  // if file ends with html
             }
         }
-        if (retVal)
-            helpPan.add(jtp);
+        if (retVal) {
+            helpPan.addItem(jtp);
+            DFHeating.logInfo("Help Pages Loaded from Folder " + helpFolder);
+        }
         return retVal;
     }
 
@@ -82,7 +104,7 @@ public class HelpSystem {
         Hashtable<String,String> query = new Hashtable<String, String>(){
             {put("appCode", ("" + appCode));}
         };
-        JTabbedPane jtp = new JTabbedPane();
+        JTabbedPane jtp = new JTabbedPane(tabPosition);
         ErrorStatAndMsg jspResponse = jspConnection.getData("getHelpPages.jsp", query);
         if (!jspResponse.inError) {
             String xmlStr = jspResponse.msg;
@@ -97,7 +119,7 @@ public class HelpSystem {
 //                int nameLocStart = htmlString.indexOf("helpName");
 //                String helpName = htmlString.substring(nameLocStart, nameLocStart + 50);
 //                helpName = helpName.split("'")[1];
-                jtp.addTab(helpName, new JLabel(htmlString));
+                jtp.addTab(helpName, getHelpPage(htmlString));
                 retVal = true;
                 // check for more pages
                 vpAll = XMLmv.getTag(xmlStr, "HelpPage", vpAll.endPos);
@@ -105,8 +127,10 @@ public class HelpSystem {
                 takeHtml = htmlString.length() > 10;
             }
         }
-        if (retVal)
-            helpPan.add(jtp);
+        if (retVal) {
+            helpPan.addItem(jtp);
+            DFHeating.logInfo("Help Pages Loaded from DB");
+        }
         return retVal;
     }
 

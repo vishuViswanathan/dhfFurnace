@@ -138,7 +138,7 @@ public class RTHeating extends JPanel implements InputControl {
         INPUTPAGE, TRENDSPAGE, RESULTSTABLEPAGE
     }
 
-    String title = "Radiant Tube Heated Furnace 202011218"; // was 20201025"; // was 20201017";
+    String title = "Radiant Tube Heated Furnace 20201220"; // was 20201025"; // was 20201017";
     public int appCode = 101;
     boolean canNotify = true;
     JFrame mainF;
@@ -353,8 +353,7 @@ public class RTHeating extends JPanel implements InputControl {
             switchToInputPage();
         });
         mb.add(pbEdit);
-//        helpSystem = new HelpSystem("helpSystem\\RTHeating");
-        helpSystem = new HelpSystem(jspConnection, 101, "helpSystem\\RTHeating");
+        helpSystem = new HelpSystem(jspConnection, appCode, "helpSystem\\RTHeating");
         if (helpSystem.loadHelp()) {
             helpMenu = new JMenu("Help");
             helpMenu.setMnemonic(KeyEvent.VK_H);

@@ -44,6 +44,7 @@ public class L2Configurator extends StripHeating {
     public L2Configurator() {
         super();
         appCode = 102;
+        helpFolder = "helpSystem\\L2Configurator";
         fceDataLocation = "level2FceData/mustBeUserEntry/";
         bL2Configurator = true;
         enableSpecsSave = true;
@@ -51,7 +52,7 @@ public class L2Configurator extends StripHeating {
         bAllowProfileChange = true;
         bAllowManualCalculation = true;
         asApplication = true;
-        releaseDate = " 20180731";  //" 20170901";
+        releaseDate = " 20201220"; // was 20180721";  //" 20170901";
 //        debugLocal("L2Configurator.49");
         createLocalMenuItems();
     }
