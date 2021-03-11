@@ -151,11 +151,12 @@ public class UnitFurnace {
         this.stPos = copyFrom.endPos;
         this.endTime = copyFrom.endTime;
         this.gRatio = copyFrom.gRatio;
+        this.height = copyFrom.height;
         this.bNoShare = copyFrom.bNoShare;
         this.g = copyFrom.g;
         this.bBot = copyFrom.bBot;
-        radSink = new Vector<RadToNeighbors>();
-        radSrc = new Stack<RadToNeighbors>();
+        radSink = new Vector<>();
+        radSrc = new Stack<>();
     }
 
     public void copyParamesTo(UnitFurnace ufTo) {

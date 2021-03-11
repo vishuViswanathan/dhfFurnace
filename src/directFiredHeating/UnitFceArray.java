@@ -77,7 +77,7 @@ public class UnitFceArray {
                 double[] xVal = new double[len];
                 for (int u = 0; u < len; u++)
                     xVal[u] = vUfs.get(u).endPos;
-                multiColData = new MultiColData("From Ch End", xVal, "###.00", 60);
+                multiColData = new MultiColData("From Ch End", xVal, "##0.00", 60);
                 ColNumAndData gasT = new ColNumAndData(suffix + "GasTemp", "#,###", Color.orange);
                 colGasTemp = gasT.colNum;
                 ColNumAndData fceT = new ColNumAndData(suffix + "FceTemp", "#,###", Color.red);
@@ -113,15 +113,15 @@ public class UnitFceArray {
 //            ColNumAndData heatAbsorbed = null;
 
                 if (onTest) {
-                    totAlpha = new ColNumAndData(suffix + "TotAlpha", "#,###.00");
-                    alphaWall = new ColNumAndData(suffix + "AlphaWall", "#,###.00");
-                    alphaGas = new ColNumAndData(suffix + "AlphaGas", "#,###.00");
-                    alphaAbsorb = new ColNumAndData(suffix + "AlphaAbsorb", "#,###.00");
+                    totAlpha = new ColNumAndData(suffix + "TotAlpha", "#,##0.00");
+                    alphaWall = new ColNumAndData(suffix + "AlphaWall", "#,##0.00");
+                    alphaGas = new ColNumAndData(suffix + "AlphaGas", "#,##0.00");
+                    alphaAbsorb = new ColNumAndData(suffix + "AlphaAbsorb", "#,##0.00");
                     effGasEmm = new ColNumAndData(suffix + "effGasEmm", "#,##0.00");
                     cndChSpHt = new ColNumAndData(suffix + "chSpHt", "#,##0.00");
                     cndPsi = new ColNumAndData(suffix + "psi", "#,##0.00");
-                    cndHeight = new ColNumAndData(suffix + "height", "#,###.00");
-                    cndGratio = new ColNumAndData(suffix + "gRatio", "#,###.00");
+                    cndHeight = new ColNumAndData(suffix + "height", "#,##0.00");
+                    cndGratio = new ColNumAndData(suffix + "gRatio", "#,##0.00");
                     cndGthick = new ColNumAndData(suffix + "gThick", "#,##0.00");
                     cndChTau = new ColNumAndData(suffix + "tau", "#,##0.00");
                     cndEw = new ColNumAndData(suffix + "chEmiss", "#,##0.00");
