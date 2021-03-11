@@ -30,6 +30,8 @@ import performance.stripFce.Performance;
 import performance.stripFce.PerformanceGroup;
 
 import javax.swing.*;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -64,7 +66,7 @@ public class DFHFurnace {
     FramedPanel topDetailsPanel, botDetailsPanel;
     public DFHeating controller;
     String nlSpace = ErrorStatAndMsg.nlSpace;
-//    boolean bZ2TopTempSpecified = false, bZ2BotTempSpecified = false;
+    //    boolean bZ2TopTempSpecified = false, bZ2BotTempSpecified = false;
     public FuelFiring commFuelFiring;
     public ProductionData productionData;
 
@@ -447,7 +449,7 @@ public class DFHFurnace {
             if (resultsReady) {
                 if (decide("Calculation from FURNACE TEMPERATURE",
                         "Do you want to work with wall temperatures of the last calculation?" +
-                        "\nChoose 'Yes' only if Furnace physical params have not been changed")) {
+                                "\nChoose 'Yes' only if Furnace physical params have not been changed")) {
                     copyTempoFromLastResults();
                     skipUserEntry = true;
                 }
@@ -1180,7 +1182,7 @@ public class DFHFurnace {
         Vector<FceSection> vSec;
         int iFirstFiredSection;
         int iSecWithEntryTempFixed;  // In case STRIP with respecting Exit Zone Temp, while adjusting
-                                     // strip temperature,this section's entry temperatures has to be maintained
+        // strip temperature,this section's entry temperatures has to be maintained
         int iLastFiredSection;
         double[] chInTempProfile = null;
         int nFiredSecs;
@@ -1301,8 +1303,8 @@ public class DFHFurnace {
                                 if (!userActionAllowed())
                                     considerChTempProfile = true;
                                 else
-                                    if (!considerChTempProfile)
-                                        considerChTempProfile = decide("Charge Temperature Profile",
+                                if (!considerChTempProfile)
+                                    considerChTempProfile = decide("Charge Temperature Profile",
                                             "Do you want to consider the Charge Temperature Profile from the Reference Performance data?", 3000);
                             }
                         } else {
@@ -1355,7 +1357,7 @@ public class DFHFurnace {
                         response = theSection.oneSectionInRev(chInTempReqd);
                     } else {
                         response = theSection.oneSectionInRev(true);
-                                                // allowed to retry bu nulling losses if required
+                        // allowed to retry bu nulling losses if required
                         if (tuningParams.bAdjustChTempProfile && (iSec == iLastSec) && honorLastZoneMinFceTemp)
                             chTempProfileFactor = chTempFactor(chInTempProfile, iSec, theSection, iSecWithEntryTempFixed, iLastFiredSection);
                     }
@@ -1506,7 +1508,7 @@ public class DFHFurnace {
         if (allOk && smoothenCurve && tuningParams.bSmoothenCurve)
             smoothenProfile(bBot);
         return allOk;
-     }
+    }
 
     double chTempFactor(double[] nowProfile, int iSecNum, FceSection theSection, int iSecWithFixedEntryTemp, int iLastFired) {
         double factor = 1;
@@ -2061,7 +2063,7 @@ public class DFHFurnace {
             }
             else {
                 showMessage("DELETING Existing Recuperator Data, \n" +
-                                "since the Common Air Recuperator has been de-selected");
+                        "since the Common Air Recuperator has been de-selected");
                 existingHeatExch = null;
             }
         }
@@ -2401,7 +2403,7 @@ public class DFHFurnace {
             }
             bRecuFrozen = true;
             showMessage("Air Recuperator characteristics frozen");
-         }
+        }
         return bRecuFrozen;
     }
 
@@ -3216,6 +3218,8 @@ public class DFHFurnace {
     }
 
     int tTopGas = 0, tTopFce = 1, tBotGas = 5, tBotFce = 6;  // trace numbers
+    int tTchSurf = 2, tTchCore = 3, tTchMean = 4;
+    int tBchSurf = 7, tBchCore = 8, tBchMean = 9;
 
     protected TrendsPanel getCombiGraphsPanel() {     // a combined trend
         CombiMultiColData results;
@@ -3400,7 +3404,7 @@ public class DFHFurnace {
 //            if (bTopBot)
 //                thetaMax = Math.PI / 2; // take only the top half
 //            else
-                thetaMax = Math.PI - Math.asin(radius / (pitch / 2));
+            thetaMax = Math.PI - Math.asin(radius / (pitch / 2));
             double delTheta = (thetaMax - thetaMin) / THETASTEPS;
             double effSurfL = 0; // effective surface length
             theta = thetaMin;
@@ -3687,7 +3691,8 @@ public class DFHFurnace {
 
     final static int MAXUFS = 200;
 
-    void createUnitfces(Vector<Double> combLens, boolean bBot) {
+    boolean createUnitfces(Vector<Double> combLens, boolean bBot) {
+        boolean retVal = true;
         int len = combLens.size();
         if (bBot) {
             vBotUnitFces = new Vector<>();
@@ -3719,7 +3724,8 @@ public class DFHFurnace {
         endTime = 0;
         theSlot = new UnitFurnace(controller.furnaceFor);
         if (bTopBot)
-            theSlot.setgRatio(chUAreaTop / (chUAreaTop + chUAreaBot));
+            theSlot.setgRatio(((bBot)? chUAreaBot:chUAreaTop)
+                    / (chUAreaTop + chUAreaBot));
         else
             theSlot.setgRatio(1);
         ufs.add(theSlot);
@@ -3751,12 +3757,18 @@ public class DFHFurnace {
         UnitFurnace uf = ufs.get(0);
         uf.setChargeTemperature(productionData.entryTemp);
         linkSlots(bBot);
-        ufsArr.setColData();
-        if (bBot)
-            botTResults = ufsArr.getMultiColdata();
-        else {
-            topTResults = ufsArr.getMultiColdata();
+        if (ufsArr.setColData()) {
+            if (bBot)
+                botTResults = ufsArr.getMultiColdata();
+            else {
+                topTResults = ufsArr.getMultiColdata();
+            }
         }
+        else {
+            showError("Unable to set data collection, may be too many columns!");
+            retVal = false;
+        }
+        return retVal;
     }
 
     public MultiColData getTopTResults() {
@@ -4741,6 +4753,59 @@ public class DFHFurnace {
         JTable table = (bBot) ? botTResults.getResultTable() : topTResults.getResultTable();
         int row = styles.xlAddXLCellData(sheet, topRow, leftCol, table);
         return true;
+    }
+
+    public String temperatureDataInCSV() {
+        StringBuilder data = new StringBuilder();
+        if (resultsReady) {
+            JTable tTable = topTResults.getJTable();
+            int nTcols = tTable.getColumnCount();
+            JTable bTable = null;
+            int nBcols = 0;
+            if (bTopBot) {
+                bTable = botTResults.getJTable();
+                nBcols = bTable.getColumnCount();
+            }
+
+            // columns names
+            for(int c = 0; c < nTcols; c++) {
+                if (c > 0)
+                    data.append(",");
+                data.append(tTable.getColumnName(c));
+            }
+            if (bTopBot) {
+                // skip the first index column
+                for(int c = 1; c < nBcols; c++) {
+                    data.append(",");
+                    data.append(bTable.getColumnName(c));
+                }
+
+            }
+            data.append("\n");
+            // the data
+            int nRows = tTable.getRowCount();
+            for(int r = 0; r < nRows; r++) {
+                for (int c = 0; c < nTcols; c++) {
+                    if (c > 0)
+                        data.append(",");
+                    String val = "" + tTable.getValueAt(r, c);
+                    val = val.replace(",", "");
+                    data.append(val);
+                }
+                if (bTopBot) {
+                    // skip the first column
+                    for (int c = 1; c < nBcols; c++) {
+                        data.append(",");
+                        String val = "" + bTable.getValueAt(r, c);
+                        val = val.replace(",", "");
+                        data.append(val);
+                    }
+
+                }
+                data.append("\n");
+            }
+        }
+        return data.toString();
     }
 
     boolean xlFuelSummary(Sheet sheet, ExcelStyles styles) {

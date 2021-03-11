@@ -63,10 +63,12 @@ public class DFHTuningParams {
     public double emmFactor = 1;
     boolean bNoEmissivityCorrFactor = false;
     JCheckBox cBNoEmissivityCorrFactor;
-    public double chEmmissCorrectionFactor = 1.0;  // this is dynamically set before furnce calculation
-                                                  // no user entry
+    public double chEmmissCorrectionFactor = 1.0;  // this is dynamically set before furnace calculation
+    // no user entry
     boolean noGasRadiationToCharge = false;
     JCheckBox cBNoGasRadiationToCharge;
+    boolean bGasAbsorptionHeilingen = false;
+    JCheckBox cBgasAbsorptionHeilingen;
     public double errorAllowed = 1;
     public boolean bTakeEndWalls = false;
     public boolean bTakeGasAbsorptionForInterRad = false;
@@ -225,6 +227,8 @@ public class DFHTuningParams {
         cBNoEmissivityCorrFactor.setEnabled(false);
         cBNoGasRadiationToCharge = new JCheckBox("(TESTING ONLY) No Gas Radiation To Charge");
         cBNoGasRadiationToCharge.setEnabled(false);
+        cBgasAbsorptionHeilingen = new JCheckBox("(TESTING ONLY) Gas Absorption as per Heilingenstadt");
+        cBgasAbsorptionHeilingen.setEnabled(false);
         cBOnTest = new JCheckBox("ON TEST.... ON TEST");
         final DFHeating c = controller;
         cBOnTest.addActionListener(new ActionListener() {
@@ -235,6 +239,9 @@ public class DFHTuningParams {
                     noGasRadiationToCharge = false;
                     cBNoGasRadiationToCharge.setSelected(noGasRadiationToCharge);
                     cBNoGasRadiationToCharge.setEnabled(true);
+                    bGasAbsorptionHeilingen = false;
+                    cBgasAbsorptionHeilingen.setSelected(bGasAbsorptionHeilingen);
+                    cBgasAbsorptionHeilingen.setEnabled(true);
                     bNoEmissivityCorrFactor = false;
                     cBNoEmissivityCorrFactor.setSelected(bNoEmissivityCorrFactor);
                     cBNoEmissivityCorrFactor.setEnabled(true);
@@ -243,6 +250,9 @@ public class DFHTuningParams {
                     noGasRadiationToCharge = false;
                     cBNoGasRadiationToCharge.setSelected(noGasRadiationToCharge);
                     cBNoGasRadiationToCharge.setEnabled(false);
+                    bGasAbsorptionHeilingen = false;
+                    cBgasAbsorptionHeilingen.setSelected(bGasAbsorptionHeilingen);
+                    cBgasAbsorptionHeilingen.setEnabled(false);
                     bNoEmissivityCorrFactor = false;
                     cBNoEmissivityCorrFactor.setSelected(bNoEmissivityCorrFactor);
                     cBNoEmissivityCorrFactor.setEnabled(false);
@@ -316,6 +326,7 @@ public class DFHTuningParams {
         bOnProductionLine = cBbOnProductionLine.isSelected();
         bNoEmissivityCorrFactor = cBNoEmissivityCorrFactor.isSelected();
         noGasRadiationToCharge = cBNoGasRadiationToCharge.isSelected();
+        bGasAbsorptionHeilingen = cBgasAbsorptionHeilingen.isSelected();
         bOnTest = cBOnTest.isSelected();
         bBaseOnZonalTemperature = (cBbaseOnZonalTemperature.isSelected());
         setTFMStep();
@@ -356,6 +367,7 @@ public class DFHTuningParams {
         cBbOnProductionLine.setSelected(bOnProductionLine);
         cBNoEmissivityCorrFactor.setSelected(bNoEmissivityCorrFactor);
         cBNoGasRadiationToCharge.setSelected(noGasRadiationToCharge);
+        cBgasAbsorptionHeilingen.setSelected(bGasAbsorptionHeilingen);
         cBOnTest.setSelected(bOnTest);
         cBbaseOnZonalTemperature.setSelected(bBaseOnZonalTemperature);
     }
@@ -593,6 +605,8 @@ public class DFHTuningParams {
         jp.add(cBNoEmissivityCorrFactor, gbc);
         gbc.gridy++;
         jp.add(cBNoGasRadiationToCharge, gbc);
+        gbc.gridy++;
+        jp.add(cBgasAbsorptionHeilingen, gbc);
         return jp;
     }
 
@@ -623,12 +637,12 @@ public class DFHTuningParams {
 //    double minOutputFactor = 0.7;
     public double outputStep = 0.2;
     public double widthOverRange = 1.1;
-//    double minWidthFactor = 0.8;
+    //    double minWidthFactor = 0.8;
     public double widthStep = 0.1;
-//    NumberTextField ntMinOutputFactor;
+    //    NumberTextField ntMinOutputFactor;
     NumberTextField ntOutputStep;
     NumberTextField ntWidthOverRange;
-//    NumberTextField ntMinWidthFactor;
+    //    NumberTextField ntMinWidthFactor;
     NumberTextField ntWidthStep;
 
     JPanel settings1Pan() {
@@ -747,7 +761,7 @@ public class DFHTuningParams {
         controller.mainF.setVisible(true);
     }
 
-//    public void setPerfTurndownSettings(double minOutputFactor, double minWidthFactor) {
+    //    public void setPerfTurndownSettings(double minOutputFactor, double minWidthFactor) {
 //        this. minOutputFactor = minOutputFactor;
 //        this.minWidthFactor = minWidthFactor;
 //    }
