@@ -3756,6 +3756,9 @@ public class DFHFurnace {
         }
         UnitFurnace uf = ufs.get(0);
         uf.setChargeTemperature(productionData.entryTemp);
+        UnitFurnace uf1 = ufs.get(1);
+        uf.delTime = uf1.delTime;
+
         linkSlots(bBot);
         if (ufsArr.setColData()) {
             if (bBot)

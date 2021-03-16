@@ -152,6 +152,7 @@ public class UnitFurnace {
         this.endTime = copyFrom.endTime;
         this.gRatio = copyFrom.gRatio;
         this.height = copyFrom.height;
+        this.delTime = copyFrom.delTime;
         this.bNoShare = copyFrom.bNoShare;
         this.g = copyFrom.g;
         this.bBot = copyFrom.bBot;
@@ -459,14 +460,41 @@ public class UnitFurnace {
         return tGassume;
     }
 
-
-
-    protected double evalTau(double alpha, double tk, double gX) {
+    protected double evalTauOLD(double alpha, double tk, double gX) {
         // The following formula if for a.t/X2 greatrer than 0.2
         // as per fig.83 of Heilingenstaedt for Plates
         double retVal = 1;
         double tauFactor = alpha * gX / tk;
         retVal = Math.exp(tauFactor * (0.031754 * tauFactor - 0.33172 - 0.0016197 * Math.pow(tauFactor, 2)));
+        if (retVal >= 1)
+            retVal = 1;
+        chTau = retVal;
+        return retVal;
+    }
+
+    protected double evalTau(double alpha, double tk, double gX) {
+        // The following formula if for a.t/X2 greatrer than 0.2
+        // as per fig.83 of Heilingenstaedt for Plates
+        double a = tk/chSpHt / ch.density;
+        double atByX2 = a * delTime / (gX * gX);
+        if (atByX2 > 0.4) {
+            debug("atByX2 = " + atByX2 + "");
+            atByX2 = 0.4;
+        }
+        double lnAxByX2 = Math.log(atByX2);
+        double retVal = 1;
+        double alphaXbyTk = alpha * gX / tk;
+        if (alphaXbyTk > 5.0) {
+            debug("alphaXbyTk = " + alphaXbyTk + " in evalTau");
+            alphaXbyTk = 5.0;
+        }
+        double expTerm = alphaXbyTk * (
+                (-0.007 * atByX2 + 0.0006) * (alphaXbyTk * alphaXbyTk) +
+                        (0.0136 * lnAxByX2 + 0.0468) * alphaXbyTk +
+                        (-0.066 * lnAxByX2 -0.4017)
+                ) - 7.5e-5;
+
+        retVal = Math.exp(expTerm);
         if (retVal >= 1)
             retVal = 1;
         chTau = retVal;
@@ -661,6 +689,10 @@ public class UnitFurnace {
         chSpHt = ch.avgSpHt(chTemp, chTemp);
     }
 
+    public void setSpHt(double chTemp) {
+        chSpHt = ch.avgSpHt(chTemp, chTemp);
+    }
+
     double gasTFromFceTandChT(double tempO1, double two) {
         double tempOresult;
         FlueComposition radFlue = fceSec.totFlueCompAndQty.flueCompo;
@@ -827,6 +859,9 @@ public class UnitFurnace {
             }
 
             prevSlot.setEW(tWMassume);  // 20170227 prevSlot.eW = ch.getEmiss(tWMassume) * production.chEmmissCorrectionFactor;
+            prevSlot.setSpHt(tWMassume);
+            chSpHt = ch.avgSpHt(tWMassume, tWMassume);
+
             two = prevSlot.chargeSurfTemp(tempGB, tWMassume);
             if (furnace.canRun()) {
                 if ((tempGB - two)/(tempG - tempWO) < 0) {
@@ -1047,7 +1082,8 @@ public class UnitFurnace {
     }
 
     void debug(String msg) {
-        System.out.println("UnitFurnace " + msg);
+        System.out.println("UnitFurnace " + msg + " for " +
+                ((bBot)? "Bottom " : "Top") + " slot with end pos " + endPos);
     }
 }
 

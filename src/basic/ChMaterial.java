@@ -92,10 +92,69 @@ public class ChMaterial {
         return heatC.getYat(temperature);
     }
 
-    public double avgSpHt(double t1, double t2) {
+    public double avgSpHtOLD(double t1, double t2) {
+        boolean tTooLow = false;
+        double retVal = 0;
+        if (t1 <= heatC.getXmin() || t2 <= heatC.getXmin())  {
+            tTooLow = true;
+        }
         if (t1 == t2)
-            t2 = t1 + 10;
-        return(getHeatContent(t2) - getHeatContent(t1)) / (t2 - t1);
+            retVal =  spHtOLD(t1);
+        else {
+            if (t1 <= heatC.getXmin() && t2 <= heatC.getXmin())
+                return spHt(heatC.getXmin() + 5);
+            else if (t1 >= heatC.getXmax() && t2 >= heatC.getXmax())
+                return spHt(heatC.getXmax() - 5);
+            else
+                retVal = (getHeatContent(t2) - getHeatContent(t1)) / (t2 - t1);
+        }
+        if (tTooLow)
+            debug("tTooLow t1 =" + t1 + " t2 = " + t2 + " spHt = " + retVal);
+        return retVal;
+    }
+
+    public double spHtOLD(double t) {
+        boolean limited = false;
+        double retVal = 0;
+        double originalT = t;
+        if (t >= heatC.getXmax()) {
+            t = heatC.getXmax() - 5;
+            limited = true;
+        }
+        else if (t <= heatC.getXmin()) {
+            t = heatC.getXmin() + 5;
+            limited = true;
+        }
+        retVal = (getHeatContent(t + 5) - getHeatContent(t - 5)) / 10;
+        if (limited)
+            debug("t limited in spHt to " + t + " from " + originalT + " and spHt =" + retVal);
+        return retVal;
+    }
+
+    public double avgSpHt(double t1, double t2) {
+        double retVal;
+        double tMin = heatC.getXmin();
+        double tMax = heatC.getXmax();
+        t1 = (t1 < tMin) ? tMin :((t1 > tMax) ? tMax : t1);
+        t2 = (t2 < tMin) ? tMin :((t2 > tMax) ? tMax : t2);
+        if (t1 == t2)
+            retVal =  spHt(t1);
+        else {
+            retVal = (getHeatContent(t2) - getHeatContent(t1)) / (t2 - t1);
+        }
+         return retVal;
+    }
+
+    public double spHt(double t) {
+        double retVal;
+        if (t >= heatC.getXmax()) {
+            t = heatC.getXmax() - 5;
+        }
+        else if (t <= heatC.getXmin()) {
+            t = heatC.getXmin() + 5;
+        }
+        retVal = (getHeatContent(t + 5) - getHeatContent(t - 5)) / 10;
+        return retVal;
     }
 
     public double getHeatFromTemp(double temperature) {
@@ -166,11 +225,11 @@ public class ChMaterial {
     }
 
     void errMessage(String msg) {
-        System.err.println("ElementType: ERROR: " + msg);
+        System.err.println("ChMaterial: ERROR: " + msg);
     }
 
     void debug(String msg) {
-        System.out.println("ElementType: " + msg);
+        System.out.println("ChMaterial: " + msg);
     }
 
 }
