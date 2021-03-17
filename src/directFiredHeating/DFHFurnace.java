@@ -30,12 +30,9 @@ import performance.stripFce.Performance;
 import performance.stripFce.PerformanceGroup;
 
 import javax.swing.*;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.TextListener;
 import java.lang.reflect.InvocationTargetException;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
@@ -44,7 +41,6 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Vector;
 
-// import sun.nio.cs.ext.MacThai;
 
 /**
  * Created by IntelliJ IDEA.

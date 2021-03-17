@@ -460,7 +460,9 @@ public class UnitFurnace {
         return tGassume;
     }
 
-    protected double evalTauOLD(double alpha, double tk, double gX) {
+    protected double evalTau(double alpha, double tk, double gX) {
+        if (tuning.bFormulaForTau)
+            return evalTauFULLFORMULA(alpha, tk, gX);
         // The following formula if for a.t/X2 greatrer than 0.2
         // as per fig.83 of Heilingenstaedt for Plates
         double retVal = 1;
@@ -472,8 +474,7 @@ public class UnitFurnace {
         return retVal;
     }
 
-    protected double evalTau(double alpha, double tk, double gX) {
-        // The following formula if for a.t/X2 greatrer than 0.2
+    protected double evalTauFULLFORMULA(double alpha, double tk, double gX) {
         // as per fig.83 of Heilingenstaedt for Plates
         double a = tk/chSpHt / ch.density;
         double atByX2 = a * delTime / (gX * gX);

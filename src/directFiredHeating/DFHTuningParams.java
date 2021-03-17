@@ -67,6 +67,8 @@ public class DFHTuningParams {
     // no user entry
     boolean noGasRadiationToCharge = false;
     JCheckBox cBNoGasRadiationToCharge;
+    public boolean bFormulaForTau = true;
+    JCheckBox cBFormulaForTau;
     boolean bGasAbsorptionHeilingen = false;
     JCheckBox cBgasAbsorptionHeilingen;
     public double errorAllowed = 1;
@@ -161,6 +163,7 @@ public class DFHTuningParams {
         });
         cBTakeGasAbsorptionForInterRad = new JCheckBox();
         cBNoGasAbsorptionInWallBalance = new JCheckBox();
+        cBFormulaForTau = new JCheckBox();
         cBbEvalBotFirst = new JCheckBox();
         tfStartFlueTempHead = new NumberTextField(controller, startFlueTempHead, 6, false, 1, 1000, "#,###", "", false);
         cBHotCharge = new JCheckBox();
@@ -311,6 +314,7 @@ public class DFHTuningParams {
         startFlueTempHead = tfStartFlueTempHead.getData();
         bTakeGasAbsorptionForInterRad = (cBTakeGasAbsorptionForInterRad.isSelected());
         bNoGasAbsorptionInWallBalance = (cBNoGasAbsorptionInWallBalance.isSelected());
+        bFormulaForTau = (cBFormulaForTau.isSelected());
         bSlotRadInCalcul = cBSlotRadInCalcul.isSelected();
         bSectionProgress = (cBbSectionProgress.isSelected());
         bSlotProgress = (cBbSlotProgress.isSelected());
@@ -343,6 +347,7 @@ public class DFHTuningParams {
         cBTakeEndWalls.setSelected(bTakeEndWalls);
         cBTakeGasAbsorptionForInterRad.setSelected(bTakeGasAbsorptionForInterRad);
         cBNoGasAbsorptionInWallBalance.setSelected(bNoGasAbsorptionInWallBalance);
+        cBFormulaForTau.setSelected(bFormulaForTau);
         cBbEvalBotFirst.setSelected(bEvalBotFirst);
         cBHotCharge.setSelected(bHotCharge);
         tfStartFlueTempHead.setData(startFlueTempHead);
@@ -691,6 +696,9 @@ public class DFHTuningParams {
         jp.addBlank();
         jp.addItemPair("Take Gas Absorption in Internal Rad", cBTakeGasAbsorptionForInterRad);
         jp.addItemPair("No Gas Absorption in Wall Balance", cBNoGasAbsorptionInWallBalance);
+        jp.addItemPair("Formula for Tau", cBFormulaForTau);
+        jp.addItem("<html><B>(Modify the above with CAUTION)</B></html>");
+
 //        jp.addBlank();
 //        jp.addItemPair("Consider Charge Temp Profile", cBbConsideChTempProfile);
 //        jp.addItemPair(tfOverUP);
