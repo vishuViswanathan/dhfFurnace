@@ -67,7 +67,7 @@ public class DFHTuningParams {
     // no user entry
     boolean noGasRadiationToCharge = false;
     JCheckBox cBNoGasRadiationToCharge;
-    public boolean bFormulaForTau = true;
+    public boolean bFormulaForTau = false;
     JCheckBox cBFormulaForTau;
     boolean bGasAbsorptionHeilingen = false;
     JCheckBox cBgasAbsorptionHeilingen;
@@ -612,6 +612,9 @@ public class DFHTuningParams {
         jp.add(cBNoGasRadiationToCharge, gbc);
         gbc.gridy++;
         jp.add(cBgasAbsorptionHeilingen, gbc);
+        gbc.gridx++;
+        jp.add(new JLabel("(for STRIP furnace this is considered enabled)"), gbc);
+        gbc.gridx--;
         return jp;
     }
 
@@ -696,7 +699,7 @@ public class DFHTuningParams {
         jp.addBlank();
         jp.addItemPair("Take Gas Absorption in Internal Rad", cBTakeGasAbsorptionForInterRad);
         jp.addItemPair("No Gas Absorption in Wall Balance", cBNoGasAbsorptionInWallBalance);
-        jp.addItemPair("Formula for Tau", cBFormulaForTau);
+        jp.addItemPair("Full Formula for Tau", cBFormulaForTau);
         jp.addItem("<html><B>(Modify the above with CAUTION)</B></html>");
 
 //        jp.addBlank();

@@ -567,7 +567,7 @@ public class UnitFurnace {
 //    }
 
     private double alphaOWEffective(double tO, double two, double eWnow) {
-        if (tuning.bGasAbsorptionHeilingen)
+        if ((furnaceFor == DFHTuningParams.FurnaceFor.STRIP) || tuning.bGasAbsorptionHeilingen )
             return alphaOWEffectiveHeilingen(tO, two, eWnow);
         else {
             double epsilonOW, alphaOW;
