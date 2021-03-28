@@ -33,6 +33,8 @@ public class TemperatureStats {
     Vector<double[][][]> tempHistory = new Vector<double[][][]>(); // double[][][]
     Vector <double[]> heatHistory = new Vector<double[]>(); // double[] of the surface heats in the interval
     Vector<Point3i> tempPoints = new Vector<Point3i>(); // Point3i; // THIS MAY HAVE TO BE REMOVED
+    Vector<Vector<double[][]>> borderHistory = new Vector<>();
+            // in the order of directions OneNode.BELOW, LEFT, ABOVE, RIGHT, FRONT, BACK
     // if from saved file
     public String filePath = null;
     public boolean oK = false;
@@ -170,7 +172,8 @@ public class TemperatureStats {
         if (validTimePoints < MAXTIMEPOINTS) {
             timePoints[validTimePoints] = time;
             validTimePoints++;
-            tempHistory.add(charge.getAcopy());
+            tempHistory.add(charge.getNodeTemperatures());
+            borderHistory.add(charge.getAllSurfaceTemperatures());
             latestTempdata = (double[][][]) tempHistory.lastElement();
             heatHistory.add(charge.getSurfaceHeatList());
             latestHeatdata = (double[]) heatHistory.lastElement();
@@ -205,6 +208,42 @@ public class TemperatureStats {
             try {
                 tempArray = (double[][][]) tempHistory.get(getTimeLoc(time));
                 retVal = tempArray[x][y][z];
+//        tempArray = null;
+
+            } catch (Exception e) {
+                debug("Error in getTemperatureAt()" + e + ", time = " + time + ", x = " + x + ", y = " + y + ", z = " + z);
+                maxTableLen = maxTableLen;
+            }
+            return retVal;
+        } else
+            return -1;
+    }
+
+    public double getTemperatureDataAtNEW(double time, int x, int y, int z) {
+        double retVal = 0;
+        int timeLoc;
+        double[][][] tempArray;
+        Vector<double[][]> borderArr;
+        if (time > lastTimePoint()) time = lastTimePoint();
+        if (time >= 0) {
+            try {
+                timeLoc = getTimeLoc(time);
+                borderArr = borderHistory.get(timeLoc);
+                tempArray = (double[][][]) tempHistory.get(timeLoc);
+                if (x == 0)
+                    retVal = borderArr.get(4)[y][z];
+                else if (x == getXsize() - 1)
+                    retVal = borderArr.get(5)[y][z];
+                else if (y == 0)
+                    retVal = borderArr.get(3)[z][x];
+                else if (y == getYsize() - 1)
+                    retVal = borderArr.get(1)[z][x];
+                else if (z == 0)
+                    retVal = borderArr.get(0)[x][y];
+                else if (z == getZsize() - 1)
+                    retVal = borderArr.get(2)[x][y];
+                else
+                    retVal = tempArray[x][y][z];
 //        tempArray = null;
 
             } catch (Exception e) {

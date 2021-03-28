@@ -7,7 +7,6 @@ import javax.swing.*;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.table.*;
-import java.awt.*;
 
 public class TextFrame extends JInternalFrame implements ChangeListener {
   public static final int XLAYER = 0;
@@ -74,8 +73,9 @@ public class TextFrame extends JInternalFrame implements ChangeListener {
   double s152Top, s152Bot, tauTop, tauBot;
   NumberTextField ntTopMean, ntBotMean, ntLSideMean, ntTotMean, ntMinimumT;
   NumberTextField ntS152Top, ntS152Bot, ntTauTop, ntTauBot;
+    MultiPairColPanel statistcsPan;
 
-  private void jbInit(int orientation) throws Exception {
+    private void jbInit(int orientation) throws Exception {
       this.orientation = orientation;
     dataModel = new MyTableModel(orientation);
     switch (orientation) {
@@ -107,17 +107,17 @@ public class TextFrame extends JInternalFrame implements ChangeListener {
           ntS152Bot = new NumberTextField(null, s152Bot, 6, false, 0, 2000, "#,##0.00", "s152Bot");
           ntTauTop = new NumberTextField(null, tauTop, 6, false, 0, 2000, "#,##0.00", "tauTop");
           ntTauBot = new NumberTextField(null, tauBot, 6, false, 0, 2000, "#,##0.00", "tauBot)");
-          MultiPairColPanel mcp = new MultiPairColPanel("Statistics");
-          mcp.addItemPair(ntTopMean);
-          mcp.addItemPair(ntBotMean);
-          mcp.addItemPair(ntLSideMean);
-          mcp.addItemPair(ntTotMean);
-          mcp.addItemPair(ntMinimumT);
-          mcp.addItemPair(ntS152Top);
-          mcp.addItemPair(ntS152Bot);
-          mcp.addItemPair(ntTauTop);
-          mcp.addItemPair(ntTauBot);
-          jp.add(mcp);
+          statistcsPan = new MultiPairColPanel("Statistics");
+          statistcsPan.addItemPair(ntTopMean);
+          statistcsPan.addItemPair(ntBotMean);
+          statistcsPan.addItemPair(ntLSideMean);
+          statistcsPan.addItemPair(ntTotMean);
+          statistcsPan.addItemPair(ntMinimumT);
+          statistcsPan.addItemPair(ntS152Top);
+          statistcsPan.addItemPair(ntS152Bot);
+          statistcsPan.addItemPair(ntTauTop);
+          statistcsPan.addItemPair(ntTauBot);
+          jp.add(statistcsPan);
       }
       JTable table = new JTable(dataModel);
       JScrollPane scrollPane = new JScrollPane(table);
@@ -136,6 +136,7 @@ public class TextFrame extends JInternalFrame implements ChangeListener {
     void updateStatistics() {
         String str = "";
         if (orientation == XLAYER)  {
+            setTitle(name + " at " + dispLayer + " at time " + time + "h");
             double topSum = 0;
             double botSum = 0;
             double val;
