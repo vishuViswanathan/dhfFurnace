@@ -181,8 +181,8 @@ public class TextFrame extends JInternalFrame implements ChangeListener {
             ntS152Top.setData(s152Top);
             ntS152Bot.setData(s152Bot);
 
-            double tgTop = (float) stats.getTemperatureDataAt(time, dispLayer, colMax - 1, rowMax);
-            double tgBot= (float) stats.getTemperatureDataAt(time, dispLayer, colMax - 1, 0);
+            double tgTop = (float) stats.getCellTemperatureDataAt(time, dispLayer, colMax - 1, rowMax);
+            double tgBot= (float) stats.getCellTemperatureDataAt(time, dispLayer, colMax - 1, 0);
             tauTop = (tgTop - topMean) / (tgTop - totMean);
             tauBot = (tgBot - botMean) / (tgBot - totMean);
             ntTauTop.setData(tauTop);

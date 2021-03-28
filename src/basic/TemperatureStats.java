@@ -49,8 +49,9 @@ public class TemperatureStats {
     }
 
     public TemperatureStats(ThreeDCharge ch, double[] timePoints,
-                            Vector <double[][][]>tempHistory, Vector <double[]>heatHistory) {
-        init(ch, timePoints, tempHistory, heatHistory);
+                            Vector <double[][][]>tempHistory, Vector <double[]>heatHistory,
+                            Vector<Vector<double[][]>> borderHistory) {
+        init(ch, timePoints, tempHistory, heatHistory, borderHistory);
 //    charge = ch;
 //    this.timePoints = timePoints;
 //    validTimePoints = timePoints.length;
@@ -61,12 +62,14 @@ public class TemperatureStats {
     }
 
     void init(ThreeDCharge ch, double[] timePoints,
-              Vector <double[][][]> tempHistory, Vector<double[]> heatHistory) {
+              Vector <double[][][]> tempHistory, Vector<double[]> heatHistory,
+              Vector<Vector<double[][]>> borderHistory) {
         charge = ch;
         this.timePoints = timePoints;
 //                  validTimePoints = timePoints.length;
         this.tempHistory = tempHistory;
         this.heatHistory = heatHistory;
+        this.borderHistory = borderHistory;
         latestTempdata = (double[][][]) tempHistory.lastElement();
         latestHeatdata = (double[]) heatHistory.lastElement();
 
@@ -200,7 +203,7 @@ public class TemperatureStats {
             return -1;
     }
 
-    public double getTemperatureDataAt(double time, int x, int y, int z) {
+    public double getTemperatureDataAtOLD(double time, int x, int y, int z) {
         double retVal = 0;
         double[][][] tempArray;
         if (time > lastTimePoint()) time = lastTimePoint();
@@ -219,7 +222,7 @@ public class TemperatureStats {
             return -1;
     }
 
-    public double getTemperatureDataAtNEW(double time, int x, int y, int z) {
+    public double getTemperatureDataAt(double time, int x, int y, int z) {
         double retVal = 0;
         int timeLoc;
         double[][][] tempArray;
@@ -248,7 +251,29 @@ public class TemperatureStats {
 
             } catch (Exception e) {
                 debug("Error in getTemperatureAt()" + e + ", time = " + time + ", x = " + x + ", y = " + y + ", z = " + z);
-                maxTableLen = maxTableLen;
+//                maxTableLen = maxTableLen;
+            }
+            return retVal;
+        } else
+            return -1;
+    }
+
+    public double getCellTemperatureDataAt(double time, int x, int y, int z) {
+        double retVal = 0;
+        int timeLoc;
+        double[][][] tempArray;
+        Vector<double[][]> borderArr;
+        if (time > lastTimePoint()) time = lastTimePoint();
+        if (time >= 0) {
+            try {
+                timeLoc = getTimeLoc(time);
+                tempArray = (double[][][]) tempHistory.get(timeLoc);
+                retVal = tempArray[x][y][z];
+//        tempArray = null;
+
+            } catch (Exception e) {
+                debug("Error in getCellTemperatureAt()" + e + ", time = " + time + ", x = " + x + ", y = " + y + ", z = " + z);
+//                maxTableLen = maxTableLen;
             }
             return retVal;
         } else
@@ -426,7 +451,10 @@ public class TemperatureStats {
             // DEBUG
             debug("Writing HeatHistory");
             oos.writeObject(heatHistory);
+            oos.writeInt(3000);
             // DEBUG
+            debug("Writing BorderHistory");
+            oos.writeObject(borderHistory);
 
             debug("Flushing oos");
             oos.flush();
@@ -444,6 +472,7 @@ public class TemperatureStats {
         double[] newTimePoints = new double[MAXTIMEPOINTS];
         Vector <double[][][]> newTempHistory = null;
         Vector <double[]> newHeatHistory = null;
+        Vector<Vector<double[][]>> newBorderHistory = null;
         int dataPos = 100;
         try {
             InputStream in =
@@ -471,6 +500,13 @@ public class TemperatureStats {
                     dataPos = 2000;
                     if (ois.readInt() == dataPos) {
                         newHeatHistory = (Vector<double[]>) ois.readObject();
+                    } else {
+                        allOK = false;
+                        break;
+                    }
+                    dataPos = 3000;
+                    if (ois.readInt() == dataPos) {
+                        newBorderHistory = (Vector<Vector<double[][]>>) ois.readObject();
                     } else
                         allOK = false;
                     break;
@@ -488,7 +524,7 @@ public class TemperatureStats {
         }
         if (allOK) {
             init(newCharge, newTimePoints, newTempHistory,
-                    newHeatHistory);
+                    newHeatHistory, newBorderHistory);
         }
         return allOK;
     }

@@ -59,7 +59,7 @@ public class Boundary implements Serializable {
             heatTransferRate = 0;
         } else {
             heatTransferRate = (t1 - t2) / (lByK1 + lByK2) * area;
-            temperature = t1 - heatTransferRate * lByK1;
+            temperature = t1 - heatTransferRate / area * lByK1;
         }
         return true;
     }
