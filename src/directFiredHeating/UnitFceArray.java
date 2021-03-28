@@ -103,6 +103,7 @@ public class UnitFceArray {
                 ColNumAndData cndHeight = null;
                 ColNumAndData cndGratio = null;
                 ColNumAndData cndGthick = null;
+                ColNumAndData cndS152 = null;
                 ColNumAndData cndChTau = null;
                 ColNumAndData totAlphaTOW = null;
                 ColNumAndData wallOnlyFactor = null;
@@ -123,6 +124,7 @@ public class UnitFceArray {
                     cndHeight = new ColNumAndData(suffix + "height", "#,##0.00");
                     cndGratio = new ColNumAndData(suffix + "gRatio", "#,##0.00");
                     cndGthick = new ColNumAndData(suffix + "gThick", "#,##0.00");
+                    cndS152 = new ColNumAndData(suffix + "s152", "#,##0.00");
                     cndChTau = new ColNumAndData(suffix + "tau", "#,##0.00");
                     cndEw = new ColNumAndData(suffix + "chEmiss", "#,##0.00");
                     cndChTk = new ColNumAndData(suffix + "chTk", "#,##0.00");
@@ -157,6 +159,7 @@ public class UnitFceArray {
                         cndHeight.addData(u, uf.dpHeight);
                         cndGratio.addData(u, uf.dpGratio);
                         cndGthick.addData(u, uf.dpGthick);
+                        cndS152.addData(u, uf.dpS152);
                         cndChTau.addData(u, uf.dpChTau);
                         cndChTk.addData(u, uf.dpChTk);
                         cndEw.addData(u, uf.dpEw);
@@ -188,6 +191,7 @@ public class UnitFceArray {
                     cndHeight.fillMultiColData();
                     cndGratio.fillMultiColData();
                     cndGthick.fillMultiColData();
+                    cndS152.fillMultiColData();
                     cndChTau.fillMultiColData();
                     cndChTk.fillMultiColData();
                     cndEw.fillMultiColData();

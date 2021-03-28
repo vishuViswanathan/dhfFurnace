@@ -40,6 +40,7 @@ public class UnitFurnace {
     public MultiColDataPoint dpTotAlpha, dpAlphaGas, dpAlphaWall, dpAlphaTOW, dpAlphaAbsorb, dpEffGasEmiss;
     public MultiColDataPoint dpEw, dpChTk, dpChSpHt;
     public MultiColDataPoint dpPsi, dpGthick, dpChTau;
+    public MultiColDataPoint dpS152;
     public MultiColDataPoint dpHeight, dpGratio;
     public MultiColDataPoint dpChargeHeat, dpHeatToCharge, dpHeatFromWall, dpHeatFromGas, dpHeatAbsorbed;
 //    public MultiColDataPoint dpWallOnlyFactor;
@@ -111,6 +112,7 @@ public class UnitFurnace {
         dpHeight = new MultiColDataPoint();
         dpGratio = new MultiColDataPoint();
         dpGthick = new MultiColDataPoint();
+        dpS152 = new MultiColDataPoint();
         dpChTau = new MultiColDataPoint();
         dpChSpHt = new MultiColDataPoint();
         dpChTk = new MultiColDataPoint();
@@ -965,6 +967,7 @@ public class UnitFurnace {
             dpHeight.updateVal(height);
             dpGratio.updateVal(gRatio);
             dpGthick.updateVal(gThick);
+            dpS152.updateVal(s152);
             dpChTau.updateVal(chTau);
             dpChSpHt.updateVal(chSpHt);
 //            dpWallOnlyFactor.updateVal(fceSec.wallOnlyFactor);

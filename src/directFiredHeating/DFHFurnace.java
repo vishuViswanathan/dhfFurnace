@@ -4912,6 +4912,109 @@ public class DFHFurnace {
         return true;
     }
 
+    String dataForFE() {
+        Vector <FceAmbient> fceTopAmbs = new Vector<FceAmbient>();
+        Vector <FceAmbient> fceBotAmbs = null;
+        String head = "# fromTime, Temperature, Alpha\n";
+        for (FceSection sec: topSections)
+            sec.addAmbientData(fceTopAmbs);
+        if (bTopBot) {
+            fceBotAmbs = new Vector<FceAmbient>();
+            for (FceSection sec: botSections)
+                sec.addAmbientData(fceBotAmbs);
+            if (bAddTopSoak) {
+                addedTopSoak.addAmbientData(fceTopAmbs);
+                fceBotAmbs.add(new FceAmbient(addedTopSoak.getStartTime(), 1000, 0));   // insulated
+            }
+        }
+        String ambDataStr = "Ambient Data File\n" +
+                "Version = 1\n" +
+                "# Created by DFHFurnace on " + (new Date()) + ".\n" +
+                "#\n";
+        int nAmbs = (bTopBot) ? 5 : 4;
+        int a = 1;
+        ambDataStr += "Number of Ambients = " + nAmbs + "\n";
+        ambDataStr += "# Ambient" + a + "\nName = " + "%TOP\n";
+        ambDataStr += "Steps =" + fceTopAmbs.size() + "\n";
+        ambDataStr += head;
+        for (FceAmbient amb: fceTopAmbs)
+            ambDataStr += "" + amb.ambString() + "\n";
+        ambDataStr += "#...\n";
+        a++;
+        ambDataStr += "# Ambient" + a + "\nName = " + "%BOTTOM\n";
+        if (bTopBot) {
+            ambDataStr += "Steps =" + fceBotAmbs.size() + "\n";
+            ambDataStr += head;
+            for (FceAmbient amb: fceBotAmbs)
+                ambDataStr += "" + amb.ambString() + "\n";
+        }
+        else {
+            ambDataStr += "Steps =" + 1 + "\n";
+            ambDataStr += head;
+            ambDataStr += "0, 1000, 0\n"; // insulated since no bottom heating
+        }
+        ambDataStr += "#...\n";
+        a++;
+        ambDataStr += "# Ambient" + a + "\nName = " + "%SIDES\n";
+        ambDataStr += "Steps =" + fceTopAmbs.size() + "\n";
+        ambDataStr += head;
+        FceAmbient ambT, ambB;
+        int slot;
+        if (bTopBot) {
+            ambDataStr += "# Side Alpha as " + sideAlphaFactor + " of Average Alpha\n";
+            for (slot = 0; slot < fceBotAmbs.size(); slot++) {
+                ambB = fceBotAmbs.get(slot);
+                ambT = fceTopAmbs.get(slot);
+                ambDataStr += ambB.avgAmbString(ambT, sideAlphaFactor) + "\n";
+            }
+            for (; slot < fceTopAmbs.size(); slot++) {   // this will happen if there is added top Soak
+                ambT = fceTopAmbs.get(slot);
+                ambDataStr += ambT.ambString(sideAlphaFactorAS) + "\n";
+            }
+        }
+        else {
+            ambDataStr += "# Side Alpha as " + sideAlphaFactor + " of Top Alpha\n";
+            for (FceAmbient amb: fceTopAmbs)
+                ambDataStr += "" + amb.ambString(sideAlphaFactor) + "\n";
+        }
+        ambDataStr += "#...\n";
+        a++;
+        ambDataStr += "# Ambient" + a + "\nName = " + "%ENDS\n";
+        ambDataStr += "Steps =" + fceTopAmbs.size() + "\n";
+        ambDataStr += head;
+        if (bTopBot) {
+            ambDataStr += "# End Alpha as " + endAlphaFactor + " of Average Alpha\n";
+            for (slot = 0; slot < fceBotAmbs.size(); slot++) {
+                ambB = fceBotAmbs.get(slot);
+                ambT = fceTopAmbs.get(slot);
+                ambDataStr += ambB.avgAmbString(ambT, endAlphaFactor) + "\n";
+            }
+            for (; slot < fceTopAmbs.size(); slot++) {   // this will happen if there is added top Soak
+                ambT = fceTopAmbs.get(slot);
+                ambDataStr += ambT.ambString(endAlphaFactorAS) + "\n";
+            }
+            ambDataStr += "#...\n";
+            a++;
+            // add Skids
+            ambDataStr +=
+                    "# Ambient" + a + "\n" +
+                            "Name = %SKID" + "\n" +
+                            "#" + "\n" +
+                            "Steps =  2" +  "\n" +
+                            head +
+                            "0.0000,  50,   60" + "\n" +
+                            "10, 50,   60" + "\n";
+        }
+        else {
+            ambDataStr += "# End Alpha as " + endAlphaFactor + " of Top Alpha\n";
+            for (FceAmbient amb: fceTopAmbs)
+                ambDataStr += "" + amb.ambString(endAlphaFactor) + "\n";
+        }
+        ambDataStr += "#...\n";
+
+        return ambDataStr;
+    }
+
     String tProfileForTFMREMOVE(boolean bBot) {
         String dataStr = "";
         UnitFceArray ufsA = (bBot) ? botUfsArray : topUfsArray;

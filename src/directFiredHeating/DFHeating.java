@@ -228,6 +228,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     JMenuItem mISaveToXL;
 
     JMenuItem mISaveForTFM;
+    JMenuItem mISaveForFE;
     JMenuItem mIsaveTempResultsToCSV;
 
     protected JMenuItem mISaveFuelSpecs;
@@ -499,6 +500,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         if (ena) {
             mISaveForTFM.setEnabled(false && !onProductionLine);
             mISaveToXL.setEnabled(false);
+            mISaveForFE.setEnabled(false);
         }
         tuningParams.enableDataEntry(ena && bAllowProfileChange);
         enableUserTunePanel(ena);
@@ -867,6 +869,9 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         mISaveForTFM.addActionListener(mAction);
         mISaveForTFM.setEnabled(false);
 
+        mISaveForFE = new JMenuItem("FEM - Save Temperature Profile for FEM");
+        mISaveForFE.addActionListener(mAction);
+        mISaveForFE.setEnabled(false);
         mIsaveTempResultsToCSV = new JMenuItem("Save Temperature Results to csv file");
         mIsaveTempResultsToCSV.addActionListener(mAction);
         mIsaveTempResultsToCSV.setEnabled(false);
@@ -1329,6 +1334,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         fileMenu.add(mIsaveTempResultsToCSV);
         fileMenu.addSeparator();
         fileMenu.add(mISaveForTFM);
+        fileMenu.add(mISaveForFE);
         if (enableSpecsSave || onTest) {
             fileMenu.addSeparator();
             fileMenu.add(mISaveFuelSpecs);
@@ -2469,6 +2475,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             printMenu.setEnabled(enable);
         mISaveToXL.setEnabled(enable && !bDataEntryON);
         mISaveForTFM.setEnabled(enable && !bDataEntryON);
+        mISaveForFE.setEnabled(enable && !bDataEntryON);
+        mISaveForFE.setVisible(tuningParams.bOnTest);
         mIsaveTempResultsToCSV.setEnabled(enable & !bDataEntryON);
         if (!enable) {
             ResultPanel rp;
@@ -3529,6 +3537,35 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         c.addActionListener(inputChangeListener);
     }
 
+    void saveAmbientsForFE() {
+        String ambStr = furnace.dataForFE();
+        if (ambStr.length() > 100) {
+            FileDialog fileDlg =
+                    new FileDialog(mainF, "Furnace Ambients for FE Analysis",
+                            FileDialog.SAVE);
+            fileDlg.setFile("Furnace Ambeint.amb");
+            fileDlg.setVisible(true);
+            String bareFile = fileDlg.getFile();
+            if (bareFile != null) {
+                int len = bareFile.length();
+                if ((len < 4) || !(bareFile.substring(len - 4).equalsIgnoreCase(".amb"))) {
+                    showMessage("Adding '.amb' to file name");
+                    bareFile = bareFile + ".amb";
+                }
+                String fileName = fileDlg.getDirectory() + bareFile;
+                try {
+                    BufferedOutputStream oStream = new BufferedOutputStream(new FileOutputStream(fileName));
+                    oStream.write(ambStr.getBytes());
+                    oStream.close();
+                } catch (Exception e) {
+                    showError("Some problem in file.\n" + e.getMessage());
+                    return;
+                }
+            }
+            parent().toFront();
+        }
+    }
+
     void tProfileForTFM() {
         String profStr = furnace.tProfileForTFMWithLen(); //(false);
         if (profStr.length() > 100) {
@@ -4178,6 +4215,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
                 if (src == mISaveForTFM) {
                     tProfileForTFM();
+                    break menuBlk;
+                }
+                if (src == mISaveForFE) {
+                    saveAmbientsForFE();
                     break menuBlk;
                 }
                 if (src == mISaveFceProfile) {

@@ -1,5 +1,7 @@
 package display;
 import basic.*;
+import mvUtils.display.MultiPairColPanel;
+import mvUtils.display.NumberTextField;
 
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
@@ -13,6 +15,7 @@ public class TextFrame extends JInternalFrame implements ChangeListener {
   public static final int ZLAYER = 2;
   TemperatureStats stats;
   ThreeDArray theObject;
+  int orientation = -1;
   JTable theTable;
   MyTableModel dataModel;
   boolean hideBorderData;
@@ -67,8 +70,13 @@ public class TextFrame extends JInternalFrame implements ChangeListener {
 //    }
 //  }
 
+  double topMean, botMean, lSideMean, totMean, minimumT;
+  double s152Top, s152Bot, tauTop, tauBot;
+  NumberTextField ntTopMean, ntBotMean, ntLSideMean, ntTotMean, ntMinimumT;
+  NumberTextField ntS152Top, ntS152Bot, ntTauTop, ntTauBot;
 
   private void jbInit(int orientation) throws Exception {
+      this.orientation = orientation;
     dataModel = new MyTableModel(orientation);
     switch (orientation) {
       case XLAYER:
@@ -88,22 +96,104 @@ public class TextFrame extends JInternalFrame implements ChangeListener {
         rowMax = rowMax - 2;
         colMax = colMax - 2;
     }
-    JTable table = new JTable(dataModel);
-    JScrollPane scrollPane = new JScrollPane(table);
-    this.getContentPane().add(scrollPane);
+      JPanel jp = new JPanel();
+      if (orientation == XLAYER) {
+          ntTopMean = new NumberTextField(null, topMean, 6, false, 0, 2000, "#,##0.00", "Top Mean Temp (C)");
+          ntLSideMean = new NumberTextField(null, lSideMean, 6, false, 0, 2000, "#,##0.00", "Side Mean Temp (C)");
+          ntBotMean = new NumberTextField(null, botMean, 6, false, 0, 2000, "#,##0.00", "Bottom Mean Temp (C)");
+          ntMinimumT = new NumberTextField(null, minimumT, 6, false, 0, 2000, "#,##0.00", "Minimum Temp (C)");
+          ntTotMean = new NumberTextField(null, totMean, 6, false, 0, 2000, "#,##0.00", "Total Mean Temp (C)");
+          ntS152Top = new NumberTextField(null, s152Top, 6, false, 0, 2000, "#,##0.00", "s152Top");
+          ntS152Bot = new NumberTextField(null, s152Bot, 6, false, 0, 2000, "#,##0.00", "s152Bot");
+          ntTauTop = new NumberTextField(null, tauTop, 6, false, 0, 2000, "#,##0.00", "tauTop");
+          ntTauBot = new NumberTextField(null, tauBot, 6, false, 0, 2000, "#,##0.00", "tauBot)");
+          MultiPairColPanel mcp = new MultiPairColPanel("Statistics");
+          mcp.addItemPair(ntTopMean);
+          mcp.addItemPair(ntBotMean);
+          mcp.addItemPair(ntLSideMean);
+          mcp.addItemPair(ntTotMean);
+          mcp.addItemPair(ntMinimumT);
+          mcp.addItemPair(ntS152Top);
+          mcp.addItemPair(ntS152Bot);
+          mcp.addItemPair(ntTauTop);
+          mcp.addItemPair(ntTauBot);
+          jp.add(mcp);
+      }
+      JTable table = new JTable(dataModel);
+      JScrollPane scrollPane = new JScrollPane(table);
+      jp.add(scrollPane);
+      this.getContentPane().add(jp);
   }
 
   public void setLayer(int layer) {
     dispLayer = layer;
     dataModel.setLayer(layer);
     setTitle(name + " at " + layer);
+    updateStatistics();
     repaint();
   }
 
-    public void stateChanged(ChangeEvent e) {
-      time = tServer.getTime() * stats.lastTimePoint();
-       repaint();
+    void updateStatistics() {
+        String str = "";
+        if (orientation == XLAYER)  {
+            double topSum = 0;
+            double botSum = 0;
+            double val;
+            for (int col = 1; col < colMax; col++) {
+                val = (float)stats.getTemperatureDataAt(time, dispLayer, colMax - col, rowMax - 1);
+                topSum += val;
+                str += (", " + val);
+                val = (float)stats.getTemperatureDataAt(time, dispLayer, colMax - col, 1);
+                botSum += val;
+            }
+            topMean = topSum / (colMax - 1);
+            ntTopMean.setData(topMean);
+            botMean = botSum / (colMax - 1);
+            ntBotMean.setData(botMean);
 
+            str = "";
+            double sideSum = 0;
+            for (int row = 1; row < rowMax; row++) {
+                val = (float)stats.getTemperatureDataAt(time, dispLayer, 1, rowMax - row);
+                sideSum += val;
+                str += (", " + val);
+            }
+            lSideMean = sideSum / (rowMax -1);
+            ntLSideMean.setData(lSideMean);
+
+            double allSum = 0;
+            minimumT = 10000;
+            for (int row = 1; row < rowMax; row++) {
+                for (int col = 1; col < colMax; col++) {
+                    val = (float) stats.getTemperatureDataAt(time, dispLayer, colMax - col, rowMax - row);
+                    if (val < minimumT)
+                        minimumT = val;
+                    allSum += val;
+                }
+            }
+            totMean = allSum / ((rowMax -1) * (colMax - 1));
+            ntTotMean.setData(totMean);
+            ntMinimumT.setData(minimumT);
+
+            s152Top = (topMean - minimumT) / (topMean - totMean);
+            s152Bot = (botMean - minimumT) / (botMean - totMean);
+            ntS152Top.setData(s152Top);
+            ntS152Bot.setData(s152Bot);
+
+            double tgTop = (float) stats.getTemperatureDataAt(time, dispLayer, colMax - 1, rowMax);
+            double tgBot= (float) stats.getTemperatureDataAt(time, dispLayer, colMax - 1, 0);
+            tauTop = (tgTop - topMean) / (tgTop - totMean);
+            tauBot = (tgBot - botMean) / (tgBot - totMean);
+            ntTauTop.setData(tauTop);
+            ntTauBot.setData(tauBot);
+        }
+    }
+
+
+    public void stateChanged(ChangeEvent e) {
+        time = tServer.getTime() * stats.lastTimePoint();
+        updateStatistics();
+        repaint();
     }
 
 

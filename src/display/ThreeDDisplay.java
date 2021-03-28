@@ -215,8 +215,10 @@ public class ThreeDDisplay extends JFrame {//  implements Runnable {
     x += 20;
     y += 20;
     // text Frame
+//    yzTextFrame = new TextFrame("Text YZ section", statsData,
+//            TextFrame.XLAYER, true, selFrame);
     yzTextFrame = new TextFrame("Text YZ section", statsData,
-            TextFrame.XLAYER, true, selFrame);
+            TextFrame.XLAYER, false, selFrame);
     yzTextFrame.setLocation(x, y);
     deskTop.add(yzTextFrame);
     yzTextFrame.setVisible(true);
