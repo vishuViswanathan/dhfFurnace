@@ -229,7 +229,7 @@ public class ThreeDDisplay extends JFrame {//  implements Runnable {
     y += 50;
     // text Frame
     xzTextFrame = new TextFrame("Text XZ section", statsData,
-            TextFrame.YLAYER, true, selFrame);
+            TextFrame.YLAYER, false, selFrame);
     xzTextFrame.setLocation(x, y);
     deskTop.add(xzTextFrame);
     xzTextFrame.setVisible(true);
@@ -240,7 +240,7 @@ public class ThreeDDisplay extends JFrame {//  implements Runnable {
     y += 50;
     // text Frame
     xyTextFrame = new TextFrame("Text XY section", statsData,
-            TextFrame.ZLAYER, true, selFrame);
+            TextFrame.ZLAYER, false, selFrame);
     xyTextFrame.setLocation(x, y);
     deskTop.add(xyTextFrame);
     xyTextFrame.setVisible(true);

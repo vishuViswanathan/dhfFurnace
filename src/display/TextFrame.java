@@ -36,6 +36,8 @@ public class TextFrame extends JInternalFrame implements ChangeListener {
     super(name, true, true, true, true);
     this.name = name;
     this.hideBorderData = hideBorderData;
+    if (hideBorderData)
+        debug("hideBorderData is true, Not sure of handling i1");
     stats = theStats;
     this.theObject = theStats.charge;
       this.tServer = tServer;
@@ -123,6 +125,7 @@ public class TextFrame extends JInternalFrame implements ChangeListener {
       JScrollPane scrollPane = new JScrollPane(table);
       jp.add(scrollPane);
       this.getContentPane().add(jp);
+//        this.getContentPane().add(scrollPane);
   }
 
   public void setLayer(int layer) {

@@ -233,7 +233,7 @@ public class TemperatureStats {
                 timeLoc = getTimeLoc(time);
                 borderArr = borderHistory.get(timeLoc);
                 tempArray = (double[][][]) tempHistory.get(timeLoc);
-                if (x == 0)
+/*                if (x == 0)
                     retVal = borderArr.get(4)[y][z];
                 else if (x == getXsize() - 1)
                     retVal = borderArr.get(5)[y][z];
@@ -247,6 +247,23 @@ public class TemperatureStats {
                     retVal = borderArr.get(2)[x][y];
                 else
                     retVal = tempArray[x][y][z];
+*/
+                if (x == 0)
+                    retVal = borderArr.get(1)[y][z];
+                else if (x == getXsize() - 1)
+                    retVal = borderArr.get(3)[y][z];
+                else if (y == 0)
+                    retVal = borderArr.get(4)[z][x];
+                else if (y == getYsize() - 1)
+                    retVal = borderArr.get(5)[z][x];
+
+                else if (z == 0)
+                    retVal = borderArr.get(0)[x][y];
+                else if (z == getZsize() - 1)
+                    retVal = borderArr.get(2)[x][y];
+                else
+                    retVal = tempArray[x][y][z];
+
 //        tempArray = null;
 
             } catch (Exception e) {
