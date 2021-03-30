@@ -71,10 +71,12 @@ public class TextFrame extends JInternalFrame implements ChangeListener {
 //    }
 //  }
 
-  double topMean, botMean, lSideMean, totMean, minimumT;
-  double s152Top, s152Bot, tauTop, tauBot;
-  NumberTextField ntTopMean, ntBotMean, ntLSideMean, ntTotMean, ntMinimumT;
-  NumberTextField ntS152Top, ntS152Bot, ntTauTop, ntTauBot;
+    double topMean, botMean, lSideMean, totMean, minimumT;
+    double s152Top, s152Bot, tauTop, tauBot;
+    double topAmbTemp,  botAmbTemp, topAlpha, botAlpha;
+    NumberTextField ntTopMean, ntBotMean, ntLSideMean, ntTotMean, ntMinimumT;
+    NumberTextField ntS152Top, ntS152Bot, ntTauTop, ntTauBot;
+    NumberTextField ntTopAmbTemp,  ntBotAmbTemp, ntTopAlpha, ntBotAlpha;
     MultiPairColPanel statistcsPan;
 
     private void jbInit(int orientation) throws Exception {
@@ -99,7 +101,7 @@ public class TextFrame extends JInternalFrame implements ChangeListener {
         colMax = colMax - 2;
     }
       JPanel jp = new JPanel();
-      if (orientation == XLAYER) {
+      if ( orientation == XLAYER) {
           ntTopMean = new NumberTextField(null, topMean, 6, false, 0, 2000, "#,##0.00", "Top Mean Temp (C)");
           ntLSideMean = new NumberTextField(null, lSideMean, 6, false, 0, 2000, "#,##0.00", "Side Mean Temp (C)");
           ntBotMean = new NumberTextField(null, botMean, 6, false, 0, 2000, "#,##0.00", "Bottom Mean Temp (C)");
@@ -109,7 +111,19 @@ public class TextFrame extends JInternalFrame implements ChangeListener {
           ntS152Bot = new NumberTextField(null, s152Bot, 6, false, 0, 2000, "#,##0.00", "s152Bot");
           ntTauTop = new NumberTextField(null, tauTop, 6, false, 0, 2000, "#,##0.00", "tauTop");
           ntTauBot = new NumberTextField(null, tauBot, 6, false, 0, 2000, "#,##0.00", "tauBot)");
+
+          ntTopAmbTemp = new NumberTextField(null, topAmbTemp, 6, false, 0, 2000, "#,##0.00", "topAmbTemp");
+          ntBotAmbTemp = new NumberTextField(null, botAmbTemp, 6, false, 0, 2000, "#,##0.00", "botAmbTemp)");
+          ntTopAlpha = new NumberTextField(null, topAlpha, 6, false, 0, 2000, "#,##0.00", "topAlpha");
+          ntBotAlpha = new NumberTextField(null, botAlpha, 6, false, 0, 2000, "#,##0.00", "botAlpha)");
+
           statistcsPan = new MultiPairColPanel("Statistics");
+
+          statistcsPan.addItemPair(ntTopAmbTemp);
+          statistcsPan.addItemPair(ntBotAmbTemp);
+          statistcsPan.addItemPair(ntTopAlpha);
+          statistcsPan.addItemPair(ntBotAlpha);
+
           statistcsPan.addItemPair(ntTopMean);
           statistcsPan.addItemPair(ntBotMean);
           statistcsPan.addItemPair(ntLSideMean);
@@ -138,7 +152,7 @@ public class TextFrame extends JInternalFrame implements ChangeListener {
 
     void updateStatistics() {
         String str = "";
-        if (orientation == XLAYER)  {
+        if ( orientation == XLAYER)  {
             setTitle(name + " at " + dispLayer + " at time " + time + "h");
             double topSum = 0;
             double botSum = 0;
@@ -184,10 +198,12 @@ public class TextFrame extends JInternalFrame implements ChangeListener {
             ntS152Top.setData(s152Top);
             ntS152Bot.setData(s152Bot);
 
-            double tgTop = (float) stats.getCellTemperatureDataAt(time, dispLayer, colMax - 1, rowMax);
-            double tgBot= (float) stats.getCellTemperatureDataAt(time, dispLayer, colMax - 1, 0);
-            tauTop = (tgTop - topMean) / (tgTop - totMean);
-            tauBot = (tgBot - botMean) / (tgBot - totMean);
+            topAmbTemp = (float) stats.getCellTemperatureDataAt(time, dispLayer, colMax - 1, rowMax);
+            botAmbTemp = (float) stats.getCellTemperatureDataAt(time, dispLayer, colMax - 1, 0);
+            ntTopAmbTemp.setData(topAmbTemp);
+            ntBotAmbTemp.setData(botAmbTemp);
+            tauTop = (topAmbTemp - topMean) / (topAmbTemp - totMean);
+            tauBot = (botAmbTemp - botMean) / (botAmbTemp - totMean);
             ntTauTop.setData(tauTop);
             ntTauBot.setData(tauBot);
         }
