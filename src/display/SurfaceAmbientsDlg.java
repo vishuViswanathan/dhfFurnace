@@ -304,7 +304,7 @@ public class SurfaceAmbientsDlg extends JDialog {
       if (fileName != null)
         return (fileDlg.getDirectory() + fileName);
       else
-        return "";
+        return null;
     }
 
 
