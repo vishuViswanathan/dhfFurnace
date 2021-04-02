@@ -739,15 +739,15 @@ public class UnitFurnace {
         return tempGAssume;
     }
 
-    double getAlpha() {
+    public double getAlpha() {
         return alphaGasPart + alphaWallPart;
     }
 
-    double startTime() {
+    public double startTime() {
         return endTime - delTime;
     }
 
-    double avgGasTemp() {
+    public double avgGasTemp() {
         if (pEntryNei != null)
             return (tempG + pEntryNei.tempG) / 2;
         else

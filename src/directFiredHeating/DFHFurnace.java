@@ -6,6 +6,8 @@ import appReporting.Reporter;
 import basic.*;
 import directFiredHeating.process.FurnaceSettings;
 import directFiredHeating.process.OneStripDFHProcess;
+import directFiredHeating.transientData.Transient2D;
+import directFiredHeating.transientData.TwoDCharge;
 import mvUtils.display.TimedMessage;
 import mvUtils.display.TrendsPanel;
 import mvUtils.display.VScrollSync;
@@ -537,8 +539,9 @@ public class DFHFurnace {
                         }
                         if (resp) {
                             combiData.noteCorrection();
-                        } else
+                        } else {
                             reDo = false;
+                        }
                     } else
                         reDo = false;
                 }
@@ -564,12 +567,27 @@ public class DFHFurnace {
                     for (UnitFurnace uf: vBotUnitFces)
                         vBotSlotTempOLast.add(uf.tempO);
                 }
+
+                boolean resp = decide("Check with Charge2D analysis",
+                        "DO you want to check with Charge2D calculation ? ");
+                if (resp) {
+                    runCharge2DCalculation();
+                }
+
                 return true;
             }
             else {
                 return false;
             }
         }
+    }
+
+    boolean runCharge2DCalculation() {
+        // check it is for Rectangular charge and not Strip Furnace
+        boolean retVal = false;
+        Transient2D tr = new Transient2D(this, controller.theCharge);
+        tr.run();
+        return retVal;
     }
 
 
@@ -3284,8 +3302,8 @@ public class DFHFurnace {
 
     // AS - for Added Top Only Soak
     double chUAreaTop, chUAreaBot, chUAreaAS;
-    double sideAlphaFactor, endAlphaFactor;
-    double sideAlphaFactorAS, endAlphaFactorAS;
+    public double sideAlphaFactor, endAlphaFactor;
+    public double sideAlphaFactorAS, endAlphaFactorAS;
     double s152Start, s152StartAS;
     public double effectiveChThick, effectiveChThickAS;
     public double gTop, gBot, gTopAS;
@@ -4910,6 +4928,20 @@ public class DFHFurnace {
         topRow = report.xlReportLines(sheet, styles, topRow, leftCol, slNo);
         rowNumCell.setCellValue(topRow);
         return true;
+    }
+
+    public Vector<UnitFurnace> getSlotList(boolean bBot) {
+        Vector<UnitFurnace> list = new Vector<>();
+        if (bBot) {
+            for (int s = 0; s < nBotActiveSecs; s++)
+                list.addAll(botSections.get(s).getSLotList());
+        }
+        else {
+            for (int s = 0; s < nTopActiveSecs; s++)
+                list.addAll(topSections.get(s).getSLotList());
+
+        }
+        return list;
     }
 
     String dataForFE() {
