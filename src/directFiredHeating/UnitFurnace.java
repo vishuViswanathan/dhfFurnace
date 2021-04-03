@@ -228,6 +228,10 @@ public class UnitFurnace {
         eW = 0.8; // to start with
     }
 
+    public void sets152(double value) {
+        s152 = value;
+    }
+
     /**
      *
      * @param startTime

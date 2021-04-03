@@ -10,7 +10,7 @@ public class Transient2D implements Runnable{
     TwoDCharge twoDCharge;
 
     @Override
-    public void run() {
+    public void run() { // NOT USED
         evaluate();
     }
 
@@ -19,8 +19,13 @@ public class Transient2D implements Runnable{
         twoDCharge = new TwoDCharge(furnace, charge, 7);
     }
 
-    boolean evaluate() {
+    public boolean evaluate() {
         return twoDCharge.evaluate(furnace.chTempIN);
+    }
+
+    public boolean copyS152ToUfs(double upperLimit) {
+        twoDCharge.copyS152ToUfs(upperLimit);
+        return true;
     }
 
     void errMessage(String msg) {

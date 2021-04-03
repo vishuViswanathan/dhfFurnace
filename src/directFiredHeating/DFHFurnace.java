@@ -544,7 +544,17 @@ public class DFHFurnace {
                         }
                     } else
                         reDo = false;
-                }
+                    if (!reDo) {
+                        boolean resp = decide("Check with Charge2D analysis",
+                                "DO you want to check with Charge2D calculation ? ");
+                        if (resp) {
+                            if (runCharge2DCalculation()) {
+                                reDo = true;
+                            }
+                        }
+
+                    }
+                } // allOk && reDo
                 if (allOk && canRun() && prepareHeatBalance()) {
                     topTrendsP = getTrendsPanel(false);
                     if (bTopBot) {
@@ -568,11 +578,11 @@ public class DFHFurnace {
                         vBotSlotTempOLast.add(uf.tempO);
                 }
 
-                boolean resp = decide("Check with Charge2D analysis",
-                        "DO you want to check with Charge2D calculation ? ");
-                if (resp) {
-                    runCharge2DCalculation();
-                }
+//                boolean resp = decide("Check with Charge2D analysis",
+//                        "DO you want to check with Charge2D calculation ? ");
+//                if (resp) {
+//                    runCharge2DCalculation();
+//                }
 
                 return true;
             }
@@ -584,10 +594,13 @@ public class DFHFurnace {
 
     boolean runCharge2DCalculation() {
         // check it is for Rectangular charge and not Strip Furnace
-        boolean retVal = false;
+        boolean reDo = false;
         Transient2D tr = new Transient2D(this, controller.theCharge);
-        tr.run();
-        return retVal;
+        if (tr.evaluate()) {
+            tr.copyS152ToUfs(tuningParams.s152Limit);
+            reDo = true;
+        }
+        return reDo;
     }
 
 

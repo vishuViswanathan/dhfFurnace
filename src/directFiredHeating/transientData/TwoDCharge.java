@@ -1,6 +1,5 @@
 package directFiredHeating.transientData;
 
-import basic.Boundary;
 import basic.ChMaterial;
 import basic.Charge;
 import directFiredHeating.DFHFurnace;
@@ -122,6 +121,11 @@ public class TwoDCharge {
         nodes = new One2DNode[ySize][zSize];
         debug("Nodes = " + ySize + ", " + zSize);
 
+    }
+
+    public void copyS152ToUfs(double upperLimit) {
+        for (int i = 0; i < history.getSize(); i++)
+            (history.getDataSet(i)).data.setS152inUnitFurnaces(upperLimit);
     }
 
     public void insulateFace(FaceType theFace) {
@@ -351,7 +355,7 @@ public class TwoDCharge {
                 (c * charge.chMaterial.density * unitSide *unitSide / lambda));
 //    unitTime = 0.5*(1.0/4.0*(c*density * dx * dx /lambda));
 // DEBUG
-        debug("Unit time " + unitTime + ", c = " + c + ", tk = " + lambda);
+//        debug("Unit time " + unitTime + ", c = " + c + ", tk = " + lambda);
     }
 
     public boolean evaluate(double startTemp) {
@@ -376,11 +380,11 @@ public class TwoDCharge {
     }
 
     void errMessage(String msg) {
-        JOptionPane.showMessageDialog(null, msg, "TwoDArray",
+        JOptionPane.showMessageDialog(null, msg, "TwoDCharge",
                 JOptionPane.ERROR_MESSAGE);
     }
 
     void debug(String msg) {
-        System.out.println("TwoDArray: " + msg);
+        System.out.println("TwoDCharge: " + msg);
     }
 }

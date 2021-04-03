@@ -69,6 +69,10 @@ public class DFHTuningParams {
     JCheckBox cBNoGasRadiationToCharge;
     public boolean bFormulaForTau = false;
     JCheckBox cBFormulaForTau;
+    double s152Limit = 2.5;
+    NumberTextField ntS152Limit;
+    public boolean bDo2Dcheck = true;
+    JCheckBox cBdo2DCheck;
     boolean bGasAbsorptionHeilingen = false;
     JCheckBox cBgasAbsorptionHeilingen;
     public double errorAllowed = 1;
@@ -164,6 +168,8 @@ public class DFHTuningParams {
         cBTakeGasAbsorptionForInterRad = new JCheckBox();
         cBNoGasAbsorptionInWallBalance = new JCheckBox();
         cBFormulaForTau = new JCheckBox();
+        cBdo2DCheck = new JCheckBox();
+        ntS152Limit = new NumberTextField(controller, s152Limit, 6, false, 1.0, 5.0, "0.00", "Limit of DeltaT/(SurfT - CoreT)", false);
         cBbEvalBotFirst = new JCheckBox();
         tfStartFlueTempHead = new NumberTextField(controller, startFlueTempHead, 6, false, 1, 1000, "#,###", "", false);
         cBHotCharge = new JCheckBox();
@@ -315,6 +321,7 @@ public class DFHTuningParams {
         bTakeGasAbsorptionForInterRad = (cBTakeGasAbsorptionForInterRad.isSelected());
         bNoGasAbsorptionInWallBalance = (cBNoGasAbsorptionInWallBalance.isSelected());
         bFormulaForTau = (cBFormulaForTau.isSelected());
+        bDo2Dcheck = cBdo2DCheck.isSelected();
         bSlotRadInCalcul = cBSlotRadInCalcul.isSelected();
         bSectionProgress = (cBbSectionProgress.isSelected());
         bSlotProgress = (cBbSlotProgress.isSelected());
@@ -348,6 +355,8 @@ public class DFHTuningParams {
         cBTakeGasAbsorptionForInterRad.setSelected(bTakeGasAbsorptionForInterRad);
         cBNoGasAbsorptionInWallBalance.setSelected(bNoGasAbsorptionInWallBalance);
         cBFormulaForTau.setSelected(bFormulaForTau);
+        ntS152Limit.setData(s152Limit);
+        cBdo2DCheck.setSelected(bDo2Dcheck);
         cBbEvalBotFirst.setSelected(bEvalBotFirst);
         cBHotCharge.setSelected(bHotCharge);
         tfStartFlueTempHead.setData(startFlueTempHead);
@@ -700,7 +709,9 @@ public class DFHTuningParams {
         jp.addItemPair("Take Gas Absorption in Internal Rad", cBTakeGasAbsorptionForInterRad);
         jp.addItemPair("No Gas Absorption in Wall Balance", cBNoGasAbsorptionInWallBalance);
         jp.addItemPair("Full Formula for Tau", cBFormulaForTau);
-        jp.addItem("<html><B>(Modify the above with CAUTION)</B></html>");
+        jp.addItemPair("Do Check with charge 2D Calculation", cBdo2DCheck);
+        jp.addItemPair(ntS152Limit);
+        jp.addItem("<html><B>(Modify all above with CAUTION)</B></html>");
 
 //        jp.addBlank();
 //        jp.addItemPair("Consider Charge Temp Profile", cBbConsideChTempProfile);

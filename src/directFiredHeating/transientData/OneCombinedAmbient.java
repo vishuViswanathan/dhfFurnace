@@ -59,6 +59,19 @@ public class OneCombinedAmbient {
         }
     }
 
+    void setS152inUnitFurnaces(double upperLimit) {
+        double value = s152Top;
+        if (value <= 0)
+            value = upperLimit;
+        topUf.sets152(Math.min(value, upperLimit));
+        if (furnace.bTopBot) {
+            value = s152Bot;
+            if (value <= 0)
+                value = upperLimit;
+            botUf.sets152(Math.min(value, upperLimit));
+        }
+    }
+
     void getStatistics() {
         double tot = 0;
         minimumTemp = 10000;
