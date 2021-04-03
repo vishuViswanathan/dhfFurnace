@@ -72,6 +72,23 @@ public class OneCombinedAmbient {
         }
     }
 
+    void noteResultsInUnitFurnaces() {
+        topUf.tempWmean2d = meanTemp;
+        topUf.tempWmin2d = minimumTemp;
+        topUf.tempWO2d = topSurfMeanTemp;
+        topUf.chTau2d = tauTop;
+        topUf.s5122d = s152Top;
+        if (furnace.bTopBot) {
+            botUf.tempWmean2d = meanTemp;
+            botUf.tempWmin2d = minimumTemp;
+            botUf.tempWO2d = botSurfMeanTemp;
+            botUf.chTau2d = tauBot;
+            botUf.s5122d = s152Bot;
+
+        }
+    }
+
+
     void getStatistics() {
         double tot = 0;
         minimumTemp = 10000;
@@ -152,5 +169,6 @@ public class OneCombinedAmbient {
         this.allCellsTemps = allCellsTemps;
         this.borderTemps = borderTemps;
         getStatistics();
+        noteResultsInUnitFurnaces();
     }
 }

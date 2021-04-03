@@ -105,6 +105,11 @@ public class UnitFceArray {
                 ColNumAndData cndGthick = null;
                 ColNumAndData cndS152 = null;
                 ColNumAndData cndChTau = null;
+                ColNumAndData cndTempWO2d = null;
+                ColNumAndData cndTempWmin2d = null;
+                ColNumAndData cndTempWmean2d = null;
+                ColNumAndData cndS5122d = null;
+                ColNumAndData cndChTau2d = null;
                 ColNumAndData totAlphaTOW = null;
                 ColNumAndData wallOnlyFactor = null;
 //            ColNumAndData chargeHeat = null;
@@ -126,6 +131,14 @@ public class UnitFceArray {
                     cndGthick = new ColNumAndData(suffix + "gThick", "#,##0.00");
                     cndS152 = new ColNumAndData(suffix + "s152", "#,##0.00");
                     cndChTau = new ColNumAndData(suffix + "tau", "#,##0.00");
+
+                    cndTempWmin2d = new ColNumAndData(suffix + "tempWmin2d", "#,##0.00");
+                    cndTempWmean2d = new ColNumAndData(suffix + "tempWmean2d", "#,##0.00");
+                    cndTempWO2d = new ColNumAndData(suffix + "tempWO2d", "#,##0.00");
+                    cndChTau2d = new ColNumAndData(suffix + "tau2d", "#,##0.00");
+                    cndS5122d = new ColNumAndData(suffix + "s1522d", "#,##0.00");
+
+
                     cndEw = new ColNumAndData(suffix + "chEmiss", "#,##0.00");
                     cndChTk = new ColNumAndData(suffix + "chTk", "#,##0.00");
                     totAlphaTOW = new ColNumAndData(suffix + "TotAlphaTOW", " #,###.00");
@@ -161,6 +174,13 @@ public class UnitFceArray {
                         cndGthick.addData(u, uf.dpGthick);
                         cndS152.addData(u, uf.dpS152);
                         cndChTau.addData(u, uf.dpChTau);
+
+                        cndTempWmean2d.addData(u, uf.dpTempWmean2d);
+                        cndTempWmin2d.addData(u, uf.dpTempWmin2d);
+                        cndTempWO2d.addData(u, uf.dpTempWO2d);
+                        cndS5122d.addData(u, uf.dpS5122d);
+                        cndChTau2d.addData(u, uf.dpChTau2d);
+
                         cndChTk.addData(u, uf.dpChTk);
                         cndEw.addData(u, uf.dpEw);
 
@@ -193,6 +213,13 @@ public class UnitFceArray {
                     cndGthick.fillMultiColData();
                     cndS152.fillMultiColData();
                     cndChTau.fillMultiColData();
+
+                    cndTempWmean2d.fillMultiColData();
+                    cndTempWmin2d.fillMultiColData();
+                    cndTempWO2d.fillMultiColData();
+                    cndChTau2d.fillMultiColData();
+                    cndS5122d.fillMultiColData();
+
                     cndChTk.fillMultiColData();
                     cndEw.fillMultiColData();
                     totAlphaTOW.fillMultiColData();

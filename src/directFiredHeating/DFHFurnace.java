@@ -497,6 +497,7 @@ public class DFHFurnace {
             resultsReady = false;
             skipReferenceDataCheck = false;
             boolean bFirstTime = true;
+            int twoDcheckCount = 0;
             while (true) {
                 while (allOk && reDo) {
                     allOk = false;
@@ -544,15 +545,18 @@ public class DFHFurnace {
                         }
                     } else
                         reDo = false;
-                    if (!reDo) {
+                    if (!reDo && tuningParams.bDo2Dcheck && (twoDcheckCount < tuningParams.n2dCheck)) {
                         boolean resp = decide("Check with Charge2D analysis",
                                 "DO you want to check with Charge2D calculation ? ");
                         if (resp) {
-                            if (runCharge2DCalculation()) {
+                            if (runCharge2DCalculation(true)) {
+                                twoDcheckCount++;
                                 reDo = true;
                             }
                         }
-
+                        else {
+                            twoDcheckCount = tuningParams.n2dCheck;
+                        }
                     }
                 } // allOk && reDo
                 if (allOk && canRun() && prepareHeatBalance()) {
@@ -577,13 +581,8 @@ public class DFHFurnace {
                     for (UnitFurnace uf: vBotUnitFces)
                         vBotSlotTempOLast.add(uf.tempO);
                 }
-
-//                boolean resp = decide("Check with Charge2D analysis",
-//                        "DO you want to check with Charge2D calculation ? ");
-//                if (resp) {
-//                    runCharge2DCalculation();
-//                }
-
+                if (tuningParams.bDo2Dcheck)
+                    runCharge2DCalculation(false);
                 return true;
             }
             else {
@@ -592,13 +591,15 @@ public class DFHFurnace {
         }
     }
 
-    boolean runCharge2DCalculation() {
+    boolean runCharge2DCalculation(boolean doSettings) {
         // check it is for Rectangular charge and not Strip Furnace
         boolean reDo = false;
         Transient2D tr = new Transient2D(this, controller.theCharge);
         if (tr.evaluate()) {
-            tr.copyS152ToUfs(tuningParams.s152Limit);
-            reDo = true;
+            if (doSettings) {
+                tr.copyS152ToUfs(tuningParams.s152Limit);
+                reDo = true;
+            }
         }
         return reDo;
     }

@@ -71,6 +71,9 @@ public class DFHTuningParams {
     JCheckBox cBFormulaForTau;
     double s152Limit = 2.5;
     NumberTextField ntS152Limit;
+
+    public int n2dCheck = 1;
+    NumberTextField ntN2dCheck;
     public boolean bDo2Dcheck = true;
     JCheckBox cBdo2DCheck;
     boolean bGasAbsorptionHeilingen = false;
@@ -170,6 +173,7 @@ public class DFHTuningParams {
         cBFormulaForTau = new JCheckBox();
         cBdo2DCheck = new JCheckBox();
         ntS152Limit = new NumberTextField(controller, s152Limit, 6, false, 1.0, 5.0, "0.00", "Limit of DeltaT/(SurfT - CoreT)", false);
+        ntN2dCheck = new NumberTextField(controller, n2dCheck, 6, true, 0, 5, "#0", "Number of times to do 2DCheck)", true);
         cBbEvalBotFirst = new JCheckBox();
         tfStartFlueTempHead = new NumberTextField(controller, startFlueTempHead, 6, false, 1, 1000, "#,###", "", false);
         cBHotCharge = new JCheckBox();
@@ -356,6 +360,7 @@ public class DFHTuningParams {
         cBNoGasAbsorptionInWallBalance.setSelected(bNoGasAbsorptionInWallBalance);
         cBFormulaForTau.setSelected(bFormulaForTau);
         ntS152Limit.setData(s152Limit);
+        ntN2dCheck.setData(n2dCheck);
         cBdo2DCheck.setSelected(bDo2Dcheck);
         cBbEvalBotFirst.setSelected(bEvalBotFirst);
         cBHotCharge.setSelected(bHotCharge);
@@ -710,6 +715,7 @@ public class DFHTuningParams {
         jp.addItemPair("No Gas Absorption in Wall Balance", cBNoGasAbsorptionInWallBalance);
         jp.addItemPair("Full Formula for Tau", cBFormulaForTau);
         jp.addItemPair("Do Check with charge 2D Calculation", cBdo2DCheck);
+        jp.addItemPair(ntN2dCheck);
         jp.addItemPair(ntS152Limit);
         jp.addItem("<html><B>(Modify all above with CAUTION)</B></html>");
 

@@ -43,6 +43,12 @@ public class UnitFurnace {
     public MultiColDataPoint dpS152;
     public MultiColDataPoint dpHeight, dpGratio;
     public MultiColDataPoint dpChargeHeat, dpHeatToCharge, dpHeatFromWall, dpHeatFromGas, dpHeatAbsorbed;
+    // parameters from TwoDCheck
+    public double tempWO2d, tempWmin2d, tempWmean2d;
+    public double s5122d, chTau2d;
+    public MultiColDataPoint dpTempWO2d, dpTempWmin2d, dpTempWmean2d;
+    public MultiColDataPoint dpS5122d, dpChTau2d;
+
 //    public MultiColDataPoint dpWallOnlyFactor;
 
     protected double gRatio;
@@ -116,6 +122,11 @@ public class UnitFurnace {
         dpChTau = new MultiColDataPoint();
         dpChSpHt = new MultiColDataPoint();
         dpChTk = new MultiColDataPoint();
+        dpTempWmin2d = new MultiColDataPoint();
+        dpTempWmean2d = new MultiColDataPoint();
+        dpTempWO2d = new MultiColDataPoint();
+        dpS5122d = new MultiColDataPoint();
+        dpChTau2d = new MultiColDataPoint();
         unitFceForWallOnlyFactor = new RadUnitFurnace(this);
     }
 
@@ -974,6 +985,11 @@ public class UnitFurnace {
             dpS152.updateVal(s152);
             dpChTau.updateVal(chTau);
             dpChSpHt.updateVal(chSpHt);
+            dpTempWmean2d.updateVal(tempWmean2d);
+            dpTempWO2d.updateVal(tempWO2d);
+            dpTempWmin2d.updateVal(tempWmin2d);
+            dpS5122d.updateVal(s5122d);
+            dpChTau2d.updateVal(chTau2d);
 //            dpWallOnlyFactor.updateVal(fceSec.wallOnlyFactor);
         }
     }
