@@ -498,7 +498,11 @@ public class DFHFurnace {
             skipReferenceDataCheck = false;
             boolean bFirstTime = true;
             int twoDcheckCount = 0;
-            while (true) {
+            boolean canDo2DCheck = tuningParams.bDo2Dcheck &&
+                    (controller.heatingMode != DFHeating.HeatingMode.TOPBOTSTRIP) &&
+                    (productionData.charge.type == Charge.ChType.SOLID_RECTANGLE);
+
+                while (true) {
                 while (allOk && reDo) {
                     allOk = false;
                     if (tuningParams.bEvalBotFirst && !bAddTopSoak) {
@@ -545,7 +549,8 @@ public class DFHFurnace {
                         }
                     } else
                         reDo = false;
-                    if (!reDo && tuningParams.bDo2Dcheck && (twoDcheckCount < tuningParams.n2dCheck)) {
+                    if (!reDo && canDo2DCheck &&
+                            (twoDcheckCount < tuningParams.n2dCheck)) {
                         boolean resp = decide("Check with Charge2D analysis",
                                 "DO you want to check with Charge2D calculation ? ");
                         if (resp) {
@@ -577,11 +582,11 @@ public class DFHFurnace {
                 if (bTopBot)  {
                     for (int iSec = 0; iSec < nBotActiveSecs; iSec++)
                         botSections.get(iSec).markZonalTemperature(botUfsArray.getMultiColdata(), botUfsArray.colFceTemp);
-                    vBotSlotTempOLast = new Vector<Double>();
+                    vBotSlotTempOLast = new Vector<>();
                     for (UnitFurnace uf: vBotUnitFces)
                         vBotSlotTempOLast.add(uf.tempO);
                 }
-                if (tuningParams.bDo2Dcheck)
+                if (canDo2DCheck)
                     runCharge2DCalculation(false);
                 return true;
             }
@@ -592,7 +597,7 @@ public class DFHFurnace {
     }
 
     boolean runCharge2DCalculation(boolean doSettings) {
-        // check it is for Rectangular charge and not Strip Furnace
+        // check for Rectangular charge and not Strip Furnace to be done by the caller
         boolean reDo = false;
         Transient2D tr = new Transient2D(this, controller.theCharge);
         if (tr.evaluate()) {

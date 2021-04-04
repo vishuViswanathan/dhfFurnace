@@ -51,13 +51,13 @@ public class Boundary2D implements Serializable {
         lByK1 = node1.getHalfLbyK(tk,this);
         t2 = node2.getTemperature();
         lByK2 = node2.getHalfLbyK(tk, this);
-        // TO CHECK the following is made more sensible
-        if (Double.isNaN(lByK1) || Double.isNaN(lByK2)) {
-            heatTransferRate = 0;
-        } else {
+//        // TO CHECK the following is made more sensible
+//        if (Double.isNaN(lByK1) || Double.isNaN(lByK2)) {
+//            heatTransferRate = 0;
+//        } else {
             heatTransferRate = (t1 - t2) / (lByK1 + lByK2) * area;
             temperature = t1 - heatTransferRate / area * lByK1;
-        }
+//        }
         return true;
     }
 

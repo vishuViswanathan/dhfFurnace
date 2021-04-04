@@ -49,7 +49,7 @@ public class OneCombinedAmbient {
             botAmbTemp = botUf.avgGasTemp();
             botAlpha = botUf.getAlpha();
             sideAmbTemp = (topAmbTemp + botAmbTemp) / 2;
-            sideAlpha = (topAlpha + botAlpha) * furnace.sideAlphaFactor;
+            sideAlpha = (topAlpha + botAlpha) / 2 * furnace.sideAlphaFactor;
         }
         else {
             botAmbTemp = 0;

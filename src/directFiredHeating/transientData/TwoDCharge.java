@@ -174,8 +174,10 @@ public class TwoDCharge {
                         neighbour = nodes[atY - 1][atZ];
                         if (neighbour != null) {
                             if (neighbour.getBoundary(One2DNode.BACK) == null) {
+//                                boundary =
+//                                        new Boundary2D(node, neighbour, Boundary2D.ZX);
                                 boundary =
-                                        new Boundary2D(node, neighbour, Boundary2D.ZX);
+                                        new Boundary2D(neighbour, node, Boundary2D.ZX);
                                 neighbour.noteBoundary(boundary, One2DNode.BACK);
                                 node.noteBoundary(boundary, One2DNode.FRONT);
                                 boundaries.addElement(boundary);
@@ -186,8 +188,10 @@ public class TwoDCharge {
                         neighbour = nodes[atY + 1][atZ];
                         if (neighbour != null) {
                             if (neighbour.getBoundary(One2DNode.FRONT) == null) {
+//                                boundary =
+//                                        new Boundary2D(neighbour, node, Boundary2D.ZX);
                                 boundary =
-                                        new Boundary2D(neighbour, node, Boundary2D.ZX);
+                                        new Boundary2D(node, neighbour, Boundary2D.ZX);
                                 neighbour.noteBoundary(boundary, One2DNode.FRONT);
                                 node.noteBoundary(boundary, One2DNode.BACK);
                                 boundaries.addElement(boundary);

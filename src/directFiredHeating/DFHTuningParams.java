@@ -344,6 +344,8 @@ public class DFHTuningParams {
         bGasAbsorptionHeilingen = cBgasAbsorptionHeilingen.isSelected();
         bOnTest = cBOnTest.isSelected();
         bBaseOnZonalTemperature = (cBbaseOnZonalTemperature.isSelected());
+        n2dCheck = (int)ntN2dCheck.getData();
+        s152Limit = ntS152Limit.getData();
         setTFMStep();
 
     }

@@ -131,11 +131,16 @@ public class One2DNode implements Serializable {
             return;
         if (material == null)
             return;
+//        double heatInYAxis =
+//                ((backBoundary != null ?
+//                        backBoundary.getHeatTransferRate() : 0.0) -
+//                        (frontBoundary != null ?
+//                                frontBoundary.getHeatTransferRate() : 0.0)); //* areaForY;
         double heatInYAxis =
-                ((backBoundary != null ?
-                        backBoundary.getHeatTransferRate() : 0.0) -
-                        (frontBoundary != null ?
-                                frontBoundary.getHeatTransferRate() : 0.0)); //* areaForY;
+                ((frontBoundary != null ?
+                        frontBoundary.getHeatTransferRate() : 0.0) -
+                        (backBoundary != null ?
+                                backBoundary.getHeatTransferRate() : 0.0)); //* areaForY;
         double heatInZAxis =
                 ((belowBoundary != null ?
                         belowBoundary.getHeatTransferRate() : 0.0) -
