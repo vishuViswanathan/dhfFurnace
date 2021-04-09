@@ -1,8 +1,6 @@
 package directFiredHeating.transientData;
 
-import basic.Boundary;
 import basic.ChMaterial;
-import basic.Charge;
 
 import java.io.*;
 

@@ -3,7 +3,6 @@ package directFiredHeating.transientData;
 import directFiredHeating.DFHFurnace;
 import directFiredHeating.UnitFurnace;
 
-import java.util.Dictionary;
 import java.util.Vector;
 
 public class OneCombinedAmbient {
@@ -47,7 +46,7 @@ public class OneCombinedAmbient {
         topAlpha = topUf.getAlpha();
         if (furnace.bTopBot) {
             botAmbTemp = botUf.avgGasTemp();
-            botAlpha = botUf.getAlpha();
+            botAlpha = botUf.getAlpha() * (1 - furnace.productionData.bottShadow);
             sideAmbTemp = (topAmbTemp + botAmbTemp) / 2;
             sideAlpha = (topAlpha + botAlpha) / 2 * furnace.sideAlphaFactor;
         }
@@ -59,16 +58,10 @@ public class OneCombinedAmbient {
         }
     }
 
-    void setS152inUnitFurnaces(double upperLimit) {
-        double value = s152Top;
-        if (value <= 0)
-            value = upperLimit;
-        topUf.sets152(Math.min(value, upperLimit));
+    void setS152inUnitFurnaces(double lowerLimit, double upperLimit) {
+        topUf.sets152(Math.max(Math.min(s152Top, upperLimit), lowerLimit));
         if (furnace.bTopBot) {
-            value = s152Bot;
-            if (value <= 0)
-                value = upperLimit;
-            botUf.sets152(Math.min(value, upperLimit));
+            botUf.sets152(Math.max(Math.min(s152Bot, upperLimit), lowerLimit));
         }
     }
 

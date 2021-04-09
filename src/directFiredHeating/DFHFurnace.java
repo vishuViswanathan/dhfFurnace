@@ -7,7 +7,6 @@ import basic.*;
 import directFiredHeating.process.FurnaceSettings;
 import directFiredHeating.process.OneStripDFHProcess;
 import directFiredHeating.transientData.Transient2D;
-import directFiredHeating.transientData.TwoDCharge;
 import mvUtils.display.TimedMessage;
 import mvUtils.display.TrendsPanel;
 import mvUtils.display.VScrollSync;
@@ -602,7 +601,7 @@ public class DFHFurnace {
         Transient2D tr = new Transient2D(this, controller.theCharge);
         if (tr.evaluate()) {
             if (doSettings) {
-                tr.copyS152ToUfs(tuningParams.s152Limit);
+                tr.copyS152ToUfs(tuningParams.s152LimitMin, tuningParams.s152LimitMax);
                 reDo = true;
             }
         }
@@ -3320,7 +3319,7 @@ public class DFHFurnace {
     }
 
     // AS - for Added Top Only Soak
-    double chUAreaTop, chUAreaBot, chUAreaAS;
+    public double chUAreaTop, chUAreaBot, chUAreaAS;
     public double sideAlphaFactor, endAlphaFactor;
     public double sideAlphaFactorAS, endAlphaFactorAS;
     double s152Start, s152StartAS;
@@ -3331,7 +3330,7 @@ public class DFHFurnace {
         int YSTEPS = 1000;
         int XSTEPS = 1000;
         double FCEHEIGHT = 10; // TODO this does not affect the result
-        double gap, effSideH = 0;
+        double gap, effSideH = 0, effSideHfor1D = 0;
         Charge ch = productionData.charge;
         if (ch.type == Charge.ChType.SOLID_CIRCLE)
             evalChUnitAreaForCylinder();
@@ -3359,6 +3358,7 @@ public class DFHFurnace {
                         for (int xs = 0; xs < XSTEPS; xs++, x += xStep) {
                             localFact += (x / Math.pow((x * x + Math.pow((FCEHEIGHT - y), 2)), 1.5)) * xStep;
                         }
+                        effSideHfor1D += (FCEHEIGHT - y) * heightStep * localFact;
                         effSideH += (FCEHEIGHT - y) * heightStep * localFact / 2;
                         //  20180115 Divide by 2 in the step above is based on Techint Manual,
                         // it matches the View factor calculation from 'Radiation View Factors.pdf in D:\thermalCalculations'
@@ -3370,7 +3370,8 @@ public class DFHFurnace {
                                         (Math.sqrt(1 + Math.pow(gapByH, 2)) - 1)));
                         effSideH += fact2 * ch.height;
                     }
-                    chUAreaTop = (ch.length * productionData.nChargeRows) * (ch.width + 2 * effSideH);
+//                    chUAreaTop = (ch.length * productionData.nChargeRows) * (ch.width + 2 * effSideH);
+                    chUAreaTop = (ch.length * productionData.nChargeRows) * (ch.width + 2 * effSideHfor1D);
                     if (bTopBot) {
                         chUAreaBot = chUAreaTop * (1 - productionData.bottShadow);
                         sideAlphaFactor = (2 * effSideH) / ch.height;

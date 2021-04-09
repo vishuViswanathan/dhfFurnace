@@ -23,8 +23,8 @@ public class Transient2D implements Runnable{
         return twoDCharge.evaluate(furnace.chTempIN);
     }
 
-    public boolean copyS152ToUfs(double upperLimit) {
-        twoDCharge.copyS152ToUfs(upperLimit);
+    public boolean copyS152ToUfs(double lowerLimit, double upperLimit) {
+        twoDCharge.copyS152ToUfs(lowerLimit, upperLimit);
         return true;
     }
 

@@ -123,9 +123,9 @@ public class TwoDCharge {
 
     }
 
-    public void copyS152ToUfs(double upperLimit) {
+    public void copyS152ToUfs(double lowerLimit, double upperLimit) {
         for (int i = 0; i < history.getSize(); i++)
-            (history.getDataSet(i)).data.setS152inUnitFurnaces(upperLimit);
+            (history.getDataSet(i)).data.setS152inUnitFurnaces(lowerLimit, upperLimit);
     }
 
     public void insulateFace(FaceType theFace) {
@@ -355,9 +355,10 @@ public class TwoDCharge {
     }
 
     private void setUnitTime(double c, double lambda) {
-        unitTime = 0.5 * (1.0 / 6.0 *
-                (c * charge.chMaterial.density * unitSide *unitSide / lambda));
-//    unitTime = 0.5*(1.0/4.0*(c*density * dx * dx /lambda));
+        unitTime = 0.5*(1.0/4.0*(c*charge.chMaterial.density * unitSide *unitSide /lambda));
+        // taken 0.5 times the required maximum unitTime for stability
+        // The limit is Fourier Number f0 should be less than 0.25
+        // f0 = a.t/l^2, a is diffusivity  tk / (c * density)    t is unitTime and l is dx here
 // DEBUG
 //        debug("Unit time " + unitTime + ", c = " + c + ", tk = " + lambda);
     }
