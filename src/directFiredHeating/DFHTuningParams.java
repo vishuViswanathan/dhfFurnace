@@ -174,8 +174,8 @@ public class DFHTuningParams {
         cBNoGasAbsorptionInWallBalance = new JCheckBox();
         cBFormulaForTau = new JCheckBox();
         cBdo2DCheck = new JCheckBox();
-        ntS152LimitMin = new NumberTextField(controller, s152LimitMin, 6, false, 1.0, 5.0, "0.00", "Min Limit of DeltaT/(SurfT - CoreT)", false);
-        ntS152LimitMax = new NumberTextField(controller, s152LimitMax, 6, false, 1.0, 5.0, "0.00", "Max Limit of DeltaT/(SurfT - CoreT)", false);
+        ntS152LimitMin = new NumberTextField(controller, s152LimitMin, 6, false, 0.5,  1.5, "0.00", "Min Limit of DeltaT/(SurfT - CoreT)", false);
+        ntS152LimitMax = new NumberTextField(controller, s152LimitMax, 6, false, 1.5, 5.0, "0.00", "Max Limit of DeltaT/(SurfT - CoreT)", false);
         ntN2dCheck = new NumberTextField(controller, n2dCheck, 6, true, 0, 5, "#0", "Number of times to do 2DCheck)", true);
         cBbEvalBotFirst = new JCheckBox();
         tfStartFlueTempHead = new NumberTextField(controller, startFlueTempHead, 6, false, 1, 1000, "#,###", "", false);

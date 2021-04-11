@@ -3330,7 +3330,7 @@ public class DFHFurnace {
         int YSTEPS = 1000;
         int XSTEPS = 1000;
         double FCEHEIGHT = 10; // TODO this does not affect the result
-        double gap, effSideH = 0, effSideHfor1D = 0;
+        double gap, effSideH = 0; // , effSideHfor1D = 0;
         Charge ch = productionData.charge;
         if (ch.type == Charge.ChType.SOLID_CIRCLE)
             evalChUnitAreaForCylinder();
@@ -3358,7 +3358,7 @@ public class DFHFurnace {
                         for (int xs = 0; xs < XSTEPS; xs++, x += xStep) {
                             localFact += (x / Math.pow((x * x + Math.pow((FCEHEIGHT - y), 2)), 1.5)) * xStep;
                         }
-                        effSideHfor1D += (FCEHEIGHT - y) * heightStep * localFact;
+//                        effSideHfor1D += (FCEHEIGHT - y) * heightStep * localFact;
                         effSideH += (FCEHEIGHT - y) * heightStep * localFact / 2;
                         //  20180115 Divide by 2 in the step above is based on Techint Manual,
                         // it matches the View factor calculation from 'Radiation View Factors.pdf in D:\thermalCalculations'
@@ -3370,8 +3370,8 @@ public class DFHFurnace {
                                         (Math.sqrt(1 + Math.pow(gapByH, 2)) - 1)));
                         effSideH += fact2 * ch.height;
                     }
-//                    chUAreaTop = (ch.length * productionData.nChargeRows) * (ch.width + 2 * effSideH);
-                    chUAreaTop = (ch.length * productionData.nChargeRows) * (ch.width + 2 * effSideHfor1D);
+                    chUAreaTop = (ch.length * productionData.nChargeRows) * (ch.width + 2 * effSideH);
+//                    chUAreaTop = (ch.length * productionData.nChargeRows) * (ch.width + 2 * effSideHfor1D);
                     if (bTopBot) {
                         chUAreaBot = chUAreaTop * (1 - productionData.bottShadow);
                         sideAlphaFactor = (2 * effSideH) / ch.height;
