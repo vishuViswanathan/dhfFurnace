@@ -29,6 +29,7 @@ public class UnitFurnace {
     double chargeArea;
     public double psi, gThick;
     public double chTau;
+    double presetTau = -1;
     public double delTime, endTime;
     public double eO, eW;
     double losses;
@@ -241,6 +242,10 @@ public class UnitFurnace {
 
     public void sets152(double value) {
         s152 = value;
+    }
+
+    public void setTau(double value) {
+        presetTau = value;
     }
 
     /**
@@ -478,17 +483,20 @@ public class UnitFurnace {
     }
 
     protected double evalTau(double alpha, double tk, double gX) {
-        if (tuning.bFormulaForTau)
-            return evalTauFULLFORMULA(alpha, tk, gX);
-        // The following formula if for a.t/X2 greatrer than 0.2
-        // as per fig.83 of Heilingenstaedt for Plates
-        double retVal = 1;
-        double tauFactor = alpha * gX / tk;
-        retVal = Math.exp(tauFactor * (0.031754 * tauFactor - 0.33172 - 0.0016197 * Math.pow(tauFactor, 2)));
-        if (retVal >= 1)
-            retVal = 1;
-        chTau = retVal;
-        return retVal;
+        if (presetTau > 0) {
+            chTau = presetTau;
+        }
+        else {
+            if (tuning.bFormulaForTau)
+                return evalTauFULLFORMULA(alpha, tk, gX);
+            // The following formula if for a.t/X2 greatrer than 0.2
+            // as per fig.83 of Heilingenstaedt for Plates
+            double tauFactor = alpha * gX / tk;
+            double tau = Math.exp(tauFactor * (0.031754 * tauFactor - 0.33172 - 0.0016197 * Math.pow(tauFactor, 2)));
+            if (tau >= 1)
+                chTau = tau;
+        }
+        return chTau;
     }
 
     protected double evalTauFULLFORMULA(double alpha, double tk, double gX) {

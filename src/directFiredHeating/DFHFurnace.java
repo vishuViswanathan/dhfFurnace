@@ -601,7 +601,8 @@ public class DFHFurnace {
         Transient2D tr = new Transient2D(this, controller.theCharge);
         if (tr.evaluate()) {
             if (doSettings) {
-                tr.copyS152ToUfs(tuningParams.s152LimitMin, tuningParams.s152LimitMax);
+//                tr.copyS152ToUfs(tuningParams.s152LimitMin, tuningParams.s152LimitMax);
+                tr.copyTauToUfs(tuningParams.tauLimitMin, tuningParams.tauLimitMax);
                 reDo = true;
             }
         }

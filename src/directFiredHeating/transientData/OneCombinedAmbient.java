@@ -65,6 +65,13 @@ public class OneCombinedAmbient {
         }
     }
 
+    void setTauInUnitFurnaces(double lowerLimit, double upperLimit) {
+        topUf.setTau(Math.max(Math.min(tauTop, upperLimit), lowerLimit));
+        if (furnace.bTopBot) {
+            botUf.setTau(Math.max(Math.min(tauBot, upperLimit), lowerLimit));
+        }
+    }
+
     void noteResultsInUnitFurnaces() {
         topUf.tempWmean2d = meanTemp;
         topUf.tempWmin2d = minimumTemp;

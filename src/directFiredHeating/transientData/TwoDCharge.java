@@ -128,6 +128,11 @@ public class TwoDCharge {
             (history.getDataSet(i)).data.setS152inUnitFurnaces(lowerLimit, upperLimit);
     }
 
+    public void copyTauToUfs(double lowerLimit, double upperLimit) {
+        for (int i = 0; i < history.getSize(); i++)
+            (history.getDataSet(i)).data.setTauInUnitFurnaces(lowerLimit, upperLimit);
+    }
+
     public void insulateFace(FaceType theFace) {
         setSurfaceElement(theFace, null);
     }

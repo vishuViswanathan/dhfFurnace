@@ -28,6 +28,11 @@ public class Transient2D implements Runnable{
         return true;
     }
 
+    public boolean copyTauToUfs(double lowerLimit, double upperLimit) {
+        twoDCharge.copyTauToUfs(lowerLimit, upperLimit);
+        return true;
+    }
+
     void errMessage(String msg) {
         JOptionPane.showMessageDialog(null, msg, "Transient2D",
                 JOptionPane.ERROR_MESSAGE);

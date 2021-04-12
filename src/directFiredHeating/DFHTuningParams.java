@@ -67,14 +67,19 @@ public class DFHTuningParams {
     // no user entry
     boolean noGasRadiationToCharge = false;
     JCheckBox cBNoGasRadiationToCharge;
-    public boolean bFormulaForTau = false;
+    public boolean bFormulaForTau = true;
     JCheckBox cBFormulaForTau;
     double s152LimitMin = 1.5;
-    NumberTextField ntS152LimitMin;
+//    NumberTextField ntS152LimitMin;
     double s152LimitMax = 2.5;
-    NumberTextField ntS152LimitMax;
+//    NumberTextField ntS152LimitMax;
 
+    double tauLimitMin = 0.2;
+    NumberTextField ntTauLimitMin;
+    double tauLimitMax = 0.99;
+    NumberTextField ntTauLimitMax;
     public int n2dCheck = 1;
+
     NumberTextField ntN2dCheck;
     public boolean bDo2Dcheck = true;
     JCheckBox cBdo2DCheck;
@@ -174,9 +179,11 @@ public class DFHTuningParams {
         cBNoGasAbsorptionInWallBalance = new JCheckBox();
         cBFormulaForTau = new JCheckBox();
         cBdo2DCheck = new JCheckBox();
-        ntS152LimitMin = new NumberTextField(controller, s152LimitMin, 6, false, 0.5,  1.5, "0.00", "Min Limit of DeltaT/(SurfT - CoreT)", false);
-        ntS152LimitMax = new NumberTextField(controller, s152LimitMax, 6, false, 1.5, 5.0, "0.00", "Max Limit of DeltaT/(SurfT - CoreT)", false);
+//        ntS152LimitMin = new NumberTextField(controller, s152LimitMin, 6, false, 0.5,  1.5, "0.00", "Min Limit of DeltaT/(SurfT - CoreT)", false);
+//        ntS152LimitMax = new NumberTextField(controller, s152LimitMax, 6, false, 1.5, 5.0, "0.00", "Max Limit of DeltaT/(SurfT - CoreT)", false);
         ntN2dCheck = new NumberTextField(controller, n2dCheck, 6, true, 0, 5, "#0", "Number of times to do 2DCheck)", true);
+        ntTauLimitMin = new NumberTextField(controller, tauLimitMin, 6, false, 0.1,  0.5, "0.00", "Min Limit (tg-two)/(tg-twm)", false);
+        ntTauLimitMax = new NumberTextField(controller, tauLimitMax, 6, false, 0.5,  0.99, "0.00", "Max Limit (tg-two)/(tg-twm)", false);
         cBbEvalBotFirst = new JCheckBox();
         tfStartFlueTempHead = new NumberTextField(controller, startFlueTempHead, 6, false, 1, 1000, "#,###", "", false);
         cBHotCharge = new JCheckBox();
@@ -348,8 +355,10 @@ public class DFHTuningParams {
         bOnTest = cBOnTest.isSelected();
         bBaseOnZonalTemperature = (cBbaseOnZonalTemperature.isSelected());
         n2dCheck = (int)ntN2dCheck.getData();
-        s152LimitMin = ntS152LimitMin.getData();
-        s152LimitMax = ntS152LimitMax.getData();
+//        s152LimitMin = ntS152LimitMin.getData();
+//        s152LimitMax = ntS152LimitMax.getData();
+        tauLimitMin = ntTauLimitMin.getData();
+        tauLimitMax = ntTauLimitMax.getData();
         setTFMStep();
 
     }
@@ -365,8 +374,10 @@ public class DFHTuningParams {
         cBTakeGasAbsorptionForInterRad.setSelected(bTakeGasAbsorptionForInterRad);
         cBNoGasAbsorptionInWallBalance.setSelected(bNoGasAbsorptionInWallBalance);
         cBFormulaForTau.setSelected(bFormulaForTau);
-        ntS152LimitMin.setData(s152LimitMin);
-        ntS152LimitMax.setData(s152LimitMax);
+//        ntS152LimitMin.setData(s152LimitMin);
+//        ntS152LimitMax.setData(s152LimitMax);
+        ntTauLimitMin.setData(tauLimitMin);
+        ntTauLimitMax.setData(tauLimitMax);
         ntN2dCheck.setData(n2dCheck);
         cBdo2DCheck.setSelected(bDo2Dcheck);
         cBbEvalBotFirst.setSelected(bEvalBotFirst);
@@ -723,8 +734,10 @@ public class DFHTuningParams {
         jp.addItemPair("Full Formula for Tau", cBFormulaForTau);
         jp.addItemPair("Do Check with charge 2D Calculation", cBdo2DCheck);
         jp.addItemPair(ntN2dCheck);
-        jp.addItemPair(ntS152LimitMin);
-        jp.addItemPair(ntS152LimitMax);
+//        jp.addItemPair(ntS152LimitMin);
+//        jp.addItemPair(ntS152LimitMax);
+        jp.addItemPair(ntTauLimitMin);
+        jp.addItemPair(ntTauLimitMax);
         jp.addItem("<html><B>(Modify all above with CAUTION)</B></html>");
 
 //        jp.addBlank();
