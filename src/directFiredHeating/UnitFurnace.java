@@ -504,7 +504,7 @@ public class UnitFurnace {
         double a = tk/chSpHt / ch.density;
         double atByX2 = a * delTime / (gX * gX);
         if (atByX2 > 0.4) {
-            debug("atByX2 = " + atByX2 + "");
+//            debug("atByX2 = " + atByX2 + "");
             atByX2 = 0.4;
         }
         double lnAxByX2 = Math.log(atByX2);
@@ -999,6 +999,16 @@ public class UnitFurnace {
             dpS5122d.updateVal(s5122d);
             dpChTau2d.updateVal(chTau2d);
 //            dpWallOnlyFactor.updateVal(fceSec.wallOnlyFactor);
+        }
+    }
+
+    public void upload2dData() {
+        if (tuning.bOnTest) {
+            dpTempWmean2d.updateVal(tempWmean2d);
+            dpTempWO2d.updateVal(tempWO2d);
+            dpTempWmin2d.updateVal(tempWmin2d);
+            dpS5122d.updateVal(s5122d);
+            dpChTau2d.updateVal(chTau2d);
         }
     }
 

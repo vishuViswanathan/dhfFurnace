@@ -78,13 +78,14 @@ public class OneCombinedAmbient {
         topUf.tempWO2d = topSurfMeanTemp;
         topUf.chTau2d = tauTop;
         topUf.s5122d = s152Top;
+        topUf.upload2dData();
         if (furnace.bTopBot) {
             botUf.tempWmean2d = meanTemp;
             botUf.tempWmin2d = minimumTemp;
             botUf.tempWO2d = botSurfMeanTemp;
             botUf.chTau2d = tauBot;
             botUf.s5122d = s152Bot;
-
+            botUf.upload2dData();
         }
     }
 

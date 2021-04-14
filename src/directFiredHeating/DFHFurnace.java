@@ -497,7 +497,7 @@ public class DFHFurnace {
             skipReferenceDataCheck = false;
             boolean bFirstTime = true;
             int twoDcheckCount = 0;
-            boolean canDo2DCheck = tuningParams.bDo2Dcheck &&
+            boolean canDo2DCheck = tuningParams.bDo2dCalculation &&  tuningParams.bDo2Dcheck &&
                     (controller.heatingMode != DFHeating.HeatingMode.TOPBOTSTRIP) &&
                     (productionData.charge.type == Charge.ChType.SOLID_RECTANGLE);
 
@@ -585,7 +585,7 @@ public class DFHFurnace {
                     for (UnitFurnace uf: vBotUnitFces)
                         vBotSlotTempOLast.add(uf.tempO);
                 }
-                if (canDo2DCheck)
+                if (canDo2DCheck || tuningParams.bDo2dCalculation)
                     runCharge2DCalculation(false);
                 return true;
             }

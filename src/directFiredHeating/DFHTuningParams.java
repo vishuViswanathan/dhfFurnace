@@ -81,8 +81,10 @@ public class DFHTuningParams {
     public int n2dCheck = 1;
 
     NumberTextField ntN2dCheck;
-    public boolean bDo2Dcheck = true;
+    public boolean bDo2Dcheck = false;
     JCheckBox cBdo2DCheck;
+    public boolean bDo2dCalculation = false;
+    JCheckBox cBdo2DCalculation;
     boolean bGasAbsorptionHeilingen = false;
     JCheckBox cBgasAbsorptionHeilingen;
     public double errorAllowed = 1;
@@ -179,11 +181,15 @@ public class DFHTuningParams {
         cBNoGasAbsorptionInWallBalance = new JCheckBox();
         cBFormulaForTau = new JCheckBox();
         cBdo2DCheck = new JCheckBox();
+        cBdo2DCheck.setEnabled(false);
 //        ntS152LimitMin = new NumberTextField(controller, s152LimitMin, 6, false, 0.5,  1.5, "0.00", "Min Limit of DeltaT/(SurfT - CoreT)", false);
 //        ntS152LimitMax = new NumberTextField(controller, s152LimitMax, 6, false, 1.5, 5.0, "0.00", "Max Limit of DeltaT/(SurfT - CoreT)", false);
         ntN2dCheck = new NumberTextField(controller, n2dCheck, 6, true, 0, 5, "#0", "Number of times to do 2DCheck)", true);
+        ntN2dCheck.setEnabled(false);
         ntTauLimitMin = new NumberTextField(controller, tauLimitMin, 6, false, 0.1,  0.5, "0.00", "Min Limit (tg-two)/(tg-twm)", false);
+        ntTauLimitMin.setEnabled(false);
         ntTauLimitMax = new NumberTextField(controller, tauLimitMax, 6, false, 0.5,  0.99, "0.00", "Max Limit (tg-two)/(tg-twm)", false);
+        ntTauLimitMax.setEnabled(false);
         cBbEvalBotFirst = new JCheckBox();
         tfStartFlueTempHead = new NumberTextField(controller, startFlueTempHead, 6, false, 1, 1000, "#,###", "", false);
         cBHotCharge = new JCheckBox();
@@ -252,6 +258,8 @@ public class DFHTuningParams {
         cBNoGasRadiationToCharge.setEnabled(false);
         cBgasAbsorptionHeilingen = new JCheckBox("(TESTING ONLY) Gas Absorption as per Heilingenstadt");
         cBgasAbsorptionHeilingen.setEnabled(false);
+        cBdo2DCalculation = new JCheckBox("Do 2D calculation in TESTING mode");
+        cBdo2DCalculation.setEnabled(false);
         cBOnTest = new JCheckBox("ON TEST.... ON TEST");
         final DFHeating c = controller;
         cBOnTest.addActionListener(new ActionListener() {
@@ -268,6 +276,8 @@ public class DFHTuningParams {
                     bNoEmissivityCorrFactor = false;
                     cBNoEmissivityCorrFactor.setSelected(bNoEmissivityCorrFactor);
                     cBNoEmissivityCorrFactor.setEnabled(true);
+                    cBdo2DCalculation.setSelected(bDo2dCalculation);
+                    cBdo2DCalculation.setEnabled(true);
                 }
                 else {
                     noGasRadiationToCharge = false;
@@ -279,6 +289,9 @@ public class DFHTuningParams {
                     bNoEmissivityCorrFactor = false;
                     cBNoEmissivityCorrFactor.setSelected(bNoEmissivityCorrFactor);
                     cBNoEmissivityCorrFactor.setEnabled(false);
+                    bDo2dCalculation = false;
+                    cBdo2DCalculation.setSelected(bDo2dCalculation);
+                    cBdo2DCalculation.setEnabled(false);
                 }
             }
         });
@@ -352,6 +365,7 @@ public class DFHTuningParams {
         bNoEmissivityCorrFactor = cBNoEmissivityCorrFactor.isSelected();
         noGasRadiationToCharge = cBNoGasRadiationToCharge.isSelected();
         bGasAbsorptionHeilingen = cBgasAbsorptionHeilingen.isSelected();
+        bDo2dCalculation = cBdo2DCalculation.isSelected();
         bOnTest = cBOnTest.isSelected();
         bBaseOnZonalTemperature = (cBbaseOnZonalTemperature.isSelected());
         n2dCheck = (int)ntN2dCheck.getData();
@@ -405,6 +419,7 @@ public class DFHTuningParams {
         cBNoEmissivityCorrFactor.setSelected(bNoEmissivityCorrFactor);
         cBNoGasRadiationToCharge.setSelected(noGasRadiationToCharge);
         cBgasAbsorptionHeilingen.setSelected(bGasAbsorptionHeilingen);
+        cBdo2DCalculation.setSelected(bDo2dCalculation);
         cBOnTest.setSelected(bOnTest);
         cBbaseOnZonalTemperature.setSelected(bBaseOnZonalTemperature);
     }
@@ -647,6 +662,8 @@ public class DFHTuningParams {
         gbc.gridx++;
         jp.add(new JLabel("(for STRIP furnace this is considered enabled)"), gbc);
         gbc.gridx--;
+        gbc.gridy++;
+        jp.add(cBdo2DCalculation, gbc);
         return jp;
     }
 
@@ -732,7 +749,7 @@ public class DFHTuningParams {
         jp.addItemPair("Take Gas Absorption in Internal Rad", cBTakeGasAbsorptionForInterRad);
         jp.addItemPair("No Gas Absorption in Wall Balance", cBNoGasAbsorptionInWallBalance);
         jp.addItemPair("Full Formula for Tau", cBFormulaForTau);
-        jp.addItemPair("Do Check with charge 2D Calculation", cBdo2DCheck);
+        jp.addItemPair("Do Correction with charge 2D Calculation", cBdo2DCheck);
         jp.addItemPair(ntN2dCheck);
 //        jp.addItemPair(ntS152LimitMin);
 //        jp.addItemPair(ntS152LimitMax);
