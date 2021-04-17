@@ -45,6 +45,7 @@ public class TwoDCharge {
     double unitSide, halfUnitSide;
     public double width, height;
     double adjustedWidth, adjustedHeight;
+    double unitZ, unitY;  // Cell height and width
     int ySize, zSize;
 
     double unitTime = Double.NaN;
@@ -52,6 +53,8 @@ public class TwoDCharge {
 
     One2DNode nodes[][];
     Vector<Boundary2D> boundaries = new Vector<>();
+    double[] sideAlphaFactorForTopRad;
+    double[] sideAlphaFactorForBotRad;
 
     OrderedDictionary<OneCombinedAmbient> history;
     double totInternalCells = 0;
@@ -75,10 +78,13 @@ public class TwoDCharge {
         adjustedHeight = unitSide * zSize;
         // size increased to include border conditions
         totInternalCells = ySize * zSize;
+        unitZ = height / zSize;
+        unitY = width / ySize;
         ySize += 2;
         zSize += 2;
         setSize(ySize, zSize);
-
+        sideAlphaFactorForTopRad = new double[zSize];
+        sideAlphaFactorForBotRad = new double[zSize];
         // set body nodes
         One2DNode aNode;
         // the body
@@ -107,6 +113,47 @@ public class TwoDCharge {
             double endTime = topUf.endTime;
             history.addData(endTime, new OneCombinedAmbient(furnace, this,
                     topUf, (furnace.bTopBot)?botSlots.get(s): null));
+        }
+        evalSideViewFactors();
+    }
+
+    void evalSideViewFactors() {
+        double gap = furnace.productionData.chPitch - width;
+        if (gap == 0) {
+            // side FRONT and BACK
+            for (int zn = 1; zn < (zSize - 1); zn++) {
+                // Near side (FRONT)
+                sideAlphaFactorForTopRad[zn] = 0;
+             }
+        }
+        else {
+            int ZSTEPS = 100;
+            int YSTEPS = 100;
+            double FCEHEIGHT = 10; // TODO this does not affect the result
+            double startZ = 0;
+            for (int zn = 1; zn < (zSize - 1); zn++) {
+                double heightStep =  unitZ / ZSTEPS;
+                double effSideH = 0;
+                double z = startZ;
+                for (int zs = 0; zs < ZSTEPS; zs++, z += heightStep) {
+                    double localFact = 0;
+                    double yMin = 0;
+                    double yMax = gap * (FCEHEIGHT - z) / (height - z);
+                    double yStep = (yMax - yMin) / YSTEPS;
+                    double y = 0;
+                    for (int ys = 0; ys < YSTEPS; ys++, y += yStep) {
+                        localFact += (y / Math.pow((y * y + Math.pow((FCEHEIGHT - z), 2)), 1.5)) * yStep;
+                    }
+//                    double addVal = (FCEHEIGHT - z) * heightStep * localFact / 2;
+//                    effSideH += addVal;
+                    effSideH += (FCEHEIGHT - z) * heightStep * localFact / 2;
+                }
+                // for Radiation from top
+                sideAlphaFactorForTopRad[zn] = effSideH / unitZ;
+                // for Radiation from Bottom
+                sideAlphaFactorForBotRad[zSize - 1 - zn] = effSideH / unitZ;
+                startZ += unitZ;
+            }
         }
     }
 
@@ -316,10 +363,11 @@ public class TwoDCharge {
         for (int z = 1; z < (zSize - 1); z++) {
             // Near side (FRONT)
             nodes[0][z].setTemperature(amb.sideAmbTemp);
-            nodes[0][z].setHeatTfCoeff(amb.sideAlpha);
-            // Far side (BACK)
+            nodes[0][z].setHeatTfCoeff(amb.topAlpha * sideAlphaFactorForTopRad[z] +
+                        amb.botAlpha * sideAlphaFactorForBotRad[z]);
             nodes[ySize - 1][z].setTemperature(amb.sideAmbTemp);
-            nodes[ySize - 1][z].setHeatTfCoeff(amb.sideAlpha);
+            nodes[ySize - 1][z].setHeatTfCoeff(amb.topAlpha * sideAlphaFactorForTopRad[z] +
+                        amb.botAlpha * sideAlphaFactorForBotRad[z]);
         }
     }
 
@@ -387,6 +435,13 @@ public class TwoDCharge {
             }
         }
         return retVal;
+    }
+
+    public String get2dTempProfileInCSV() {
+        StringBuilder data = new StringBuilder(";unitY;unitZ;" + OneCombinedAmbient.dataHeaderInCSV());
+        for (int i = 0; i < history.getSize(); i++)
+            data.append("" + i + ";" + unitSide + ";" + unitSide + ";" + (history.getDataSet(i)).data.resultsInCSV());
+        return data.toString();
     }
 
     void errMessage(String msg) {

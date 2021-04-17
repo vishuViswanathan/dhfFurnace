@@ -3,6 +3,7 @@ package directFiredHeating.transientData;
 import directFiredHeating.DFHFurnace;
 import directFiredHeating.UnitFurnace;
 
+import java.text.DecimalFormat;
 import java.util.Vector;
 
 public class OneCombinedAmbient {
@@ -171,5 +172,51 @@ public class OneCombinedAmbient {
         this.borderTemps = borderTemps;
         getStatistics();
         noteResultsInUnitFurnaces();
+    }
+
+    String cellTempStr(DecimalFormat fmt){
+        StringBuilder data = new StringBuilder("[");
+        for (int y = 0; y < ySize; y++) {
+            data.append((y == 0) ? "[": ",[");
+            for (int z = 0; z < zSize; z++) {
+                data.append((z == 0) ? "" : ",").append(fmt.format(allCellsTemps[y][z]));
+            }
+            data.append("]");
+        }
+        data.append("]");
+        return data.toString();
+    }
+
+    String borderTempsStr(DecimalFormat fmt) {
+        StringBuilder data = new StringBuilder("[");
+        for (int i = 0;i < borderTemps.size();i++) {
+            data.append((i == 0) ? "[": ",[");
+            double[] oneSet = borderTemps.get(i);
+            for (int j = 0; j < oneSet.length; j++) {
+                data.append((j == 0) ? "" : ",").append(fmt.format(oneSet[j]));
+            }
+            data.append("]");
+        }
+        data.append("]");
+        return data.toString();
+    }
+
+    static String dataHeaderInCSV() {
+        return("pos(m);startTime;endTime;minimumTemp;meanTemp" +
+                ";topSurfMeanTemp;tauTop;s152Top" +
+                ";botSurfMeanTemp;tauBot;s152Bot" +
+                ";allCellsTemps;BotFrontTopBackTemps\n");
+    }
+
+    public String resultsInCSV() {
+        DecimalFormat fmtTime = new DecimalFormat("0.000000");
+        DecimalFormat fmt = new DecimalFormat("0.00");
+        StringBuilder str = new StringBuilder();
+        str.append(fmt.format(topUf.getStPos()) + ";" + fmtTime.format(startTime) + ";" + fmtTime.format(endTime))
+                .append(";" + fmt.format(minimumTemp) + ";" + fmt.format(meanTemp))
+                .append(";" + fmt.format(topSurfMeanTemp) + ";" + fmt.format(tauTop) + ";" + fmt.format(s152Top))
+                .append(";" + fmt.format(botSurfMeanTemp) + ";" + fmt.format(tauBot) + ";" + fmt.format(s152Bot))
+                .append(";" + cellTempStr(fmt) + ";" + borderTempsStr(fmt) + "\n");
+        return str.toString();
     }
 }

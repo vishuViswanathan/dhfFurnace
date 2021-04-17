@@ -83,6 +83,8 @@ public class DFHFurnace {
     public boolean bDisplayResults = true;
     boolean bDisplayCalculationProgress = true;
     public FurnaceSettings furnaceSettings;
+    Transient2D transient2D;
+    public boolean twoDDataReady = false;
 
     public DFHFurnace(DFHeating controller, boolean bTopBot, boolean bAddTopSoak, ActionListener listener) {
         this.controller = controller;
@@ -483,6 +485,7 @@ public class DFHFurnace {
     }
 
     public boolean doTheCalculation() {
+        twoDDataReady = false;
         // Zone gas temperature presets,  if required to be cleared, is taken care by the caller
         if (bBaseOnOnlyWallRadiation)
             return doTheCalculationWithOnlyWallRadiation();
@@ -595,14 +598,16 @@ public class DFHFurnace {
         }
     }
 
+
     boolean runCharge2DCalculation(boolean doSettings) {
         // check for Rectangular charge and not Strip Furnace to be done by the caller
         boolean reDo = false;
-        Transient2D tr = new Transient2D(this, controller.theCharge);
-        if (tr.evaluate()) {
+        transient2D = new Transient2D(this, controller.theCharge);
+        if (transient2D.evaluate()) {
+            twoDDataReady = true;
             if (doSettings) {
-//                tr.copyS152ToUfs(tuningParams.s152LimitMin, tuningParams.s152LimitMax);
-                tr.copyTauToUfs(tuningParams.tauLimitMin, tuningParams.tauLimitMax);
+//                transient2D.copyS152ToUfs(tuningParams.s152LimitMin, tuningParams.s152LimitMax);
+                transient2D.copyTauToUfs(tuningParams.tauLimitMin, tuningParams.tauLimitMax);
                 reDo = true;
             }
         }
@@ -4052,6 +4057,7 @@ public class DFHFurnace {
         setupDetailsPanel(false);
         botDetailsPanel = new FramedPanel(new GridBagLayout());
         setupDetailsPanel(true);
+        twoDDataReady = false;
     }
 
     void takeValuesFromUI() {
@@ -4844,6 +4850,13 @@ public class DFHFurnace {
             }
         }
         return data.toString();
+    }
+
+    public String get2dTempProfileInCSV() {
+        if (twoDDataReady)
+            return transient2D.get2dTempProfileInCSV();
+        else
+            return "No 2D data evaluated!";
     }
 
     boolean xlFuelSummary(Sheet sheet, ExcelStyles styles) {

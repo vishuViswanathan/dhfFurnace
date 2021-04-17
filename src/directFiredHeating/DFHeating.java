@@ -170,7 +170,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = " 20210411 PM";
+    protected String releaseDate = " 20210415 PM";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -230,6 +230,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     JMenuItem mISaveForTFM;
     JMenuItem mISaveForFE;
     JMenuItem mIsaveTempResultsToCSV;
+    JMenuItem mIsave2DprofileToCSV;
 
     protected JMenuItem mISaveFuelSpecs;
     protected JMenuItem mISaveSteelSpecs;
@@ -876,6 +877,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         mIsaveTempResultsToCSV.addActionListener(mAction);
         mIsaveTempResultsToCSV.setEnabled(false);
 
+        mIsave2DprofileToCSV = new JMenuItem("Save 2D Temperature Results to csv file");
+        mIsave2DprofileToCSV.addActionListener(mAction);
+        mIsave2DprofileToCSV.setEnabled(false);
+
         mISaveFuelSpecs = new JMenuItem("Save Fuel Specifications to File");
         mISaveFuelSpecs.addActionListener(mAction);
         mISaveFuelSpecs.setEnabled(true);
@@ -1332,6 +1337,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         fileMenu.add(mISaveToXL);
         fileMenu.addSeparator();
         fileMenu.add(mIsaveTempResultsToCSV);
+        fileMenu.add(mIsave2DprofileToCSV);
         fileMenu.addSeparator();
         fileMenu.add(mISaveForTFM);
         fileMenu.add(mISaveForFE);
@@ -2478,6 +2484,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         mISaveForFE.setEnabled(enable && !bDataEntryON);
         mISaveForFE.setVisible(tuningParams.bOnTest);
         mIsaveTempResultsToCSV.setEnabled(enable & !bDataEntryON);
+        mIsave2DprofileToCSV.setEnabled(enable & !bDataEntryON);
         if (!enable) {
             ResultPanel rp;
             DFHResult.Type[] allRts = DFHResult.Type.values();
@@ -3599,21 +3606,33 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         // get table and save data from table
         String data = furnace.temperatureDataInCSV();
         if (data.length() > 0)
-            getFilePathAndSaveData(data);
+            getFilePathAndSaveData("Temperature Table to csv file", "Temperature Results.csv",
+                    ".csv", data);
     }
 
-    boolean getFilePathAndSaveData(String data) {
+    void save2dTempProfileToCSV() {
+        if (tuningParams.bDo2dCalculation && furnace.twoDDataReady) {
+            String data = furnace.get2dTempProfileInCSV();
+            if (data.length() > 0)
+                getFilePathAndSaveData("TwoD Temperature Profile to csv file",
+                        "2D Temperature Profile.csv", ".csv", data);
+        }
+        else
+            showError("2D Results were not evaluated");
+    }
+
+    boolean getFilePathAndSaveData(String title , String defName, String ext, String data) {
         FileDialog fileDlg =
-                new FileDialog(mainF, "Temperature Table to csv file",
+                new FileDialog(mainF, title,
                         FileDialog.SAVE);
-        fileDlg.setFile("Temperature Results.csv");
+        fileDlg.setFile(defName);
         fileDlg.setVisible(true);
         String bareFile = fileDlg.getFile();
         if (bareFile != null) {
             int len = bareFile.length();
-            if ((len < 4) || !(bareFile.substring(len - 4).equalsIgnoreCase(".csv"))) {
-                showMessage("Adding '.csv' to file name");
-                bareFile = bareFile + ".csv";
+            if ((len < 4) || !(bareFile.substring(len - ext.length()).equalsIgnoreCase(ext))) {
+                showMessage("Adding '" + ext + "' to file name");
+                bareFile = bareFile + ext;
             }
             String fileName = fileDlg.getDirectory() + bareFile;
             try {
@@ -4210,6 +4229,11 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
                 if (src == mIsaveTempResultsToCSV) {
                     saveTempResultsToCSV();
+                    break menuBlk;
+                }
+
+                if (src == mIsave2DprofileToCSV) {
+                    save2dTempProfileToCSV();
                     break menuBlk;
                 }
 
