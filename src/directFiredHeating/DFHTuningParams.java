@@ -67,8 +67,22 @@ public class DFHTuningParams {
     // no user entry
     boolean noGasRadiationToCharge = false;
     JCheckBox cBNoGasRadiationToCharge;
-    public boolean bFormulaForTau = true;
+    JButton jBresetTFMmatch;
+    boolean bDoTFMmatch = false;
+    JCheckBox cBdoTFMmatch;
+    public boolean bFormulaForTau = false;
     JCheckBox cBFormulaForTau;
+    public boolean bApplyChEmissMultiplier = false;
+//    JCheckBox cBapplyChEmissMultiplier;
+    public double tfmChEmissMultiplier = 1.0;
+    NumberTextField ntTfmChEmissMultiplier;
+    public boolean bApplyChReflectivityMultiplier = false;
+//    JCheckBox cBApplyChREflectivityMultiplier;
+
+    ButtonGroup bgTfChEmMultiplier;
+    JRadioButton rbApplyChEmissMultiplier;
+    JRadioButton rbApplyChReflectivityMultiplier;
+
     double s152LimitMin = 1.5;
 //    NumberTextField ntS152LimitMin;
     double s152LimitMax = 2.5;
@@ -151,7 +165,7 @@ public class DFHTuningParams {
         tfwallLoss = new NumberTextField(controller, wallLoss, 6, false, 0, 1000, "#,###.00", "", true);
         tfsuggested1stCorrection = new NumberTextField(controller, suggested1stCorrection, 6, false, 0, 20, "#,###.00", "", true);
         tfCorrectionforTooLowGas = new NumberTextField(controller, correctionForTooLowGas, 6, false, 0, 20, "#,###.00", "", true);
-        chbDynamicGasTempCorrection = new JCheckBox("Enable Dynamic Gas Temp Correction");
+        chbDynamicGasTempCorrection = new JCheckBox();
         tfMaxGasTempCorrection = new NumberTextField(controller, maxGasTempCorrection, 6, false, 1, 100, "#,###.00", "Max Gas Temp Correction (C)", true);
         tfMinGasTempCorrection = new NumberTextField(controller, minGasTempCorrection, 6, false, 1, 100, "#,###.00", "Min Gas Temp Correction (C)", true);
 //        chbDynamicGasTempCorrection.addActionListener(e-> {
@@ -179,8 +193,27 @@ public class DFHTuningParams {
         });
         cBTakeGasAbsorptionForInterRad = new JCheckBox();
         cBNoGasAbsorptionInWallBalance = new JCheckBox();
+        jBresetTFMmatch = new JButton("Reset to Default");
+        jBresetTFMmatch.addActionListener(e-> {
+            resetDefaultTFMmatch();
+        });
         cBFormulaForTau = new JCheckBox();
+//        cBapplyChEmissMultiplier = new JCheckBox();
+        ntTfmChEmissMultiplier = new NumberTextField(controller, tfmChEmissMultiplier, 6, false,
+                0.8,  1.2, "0.00", "Ch Emissivity/ Reflectivity factor", false);
+//        cBApplyChREflectivityMultiplier = new JCheckBox();
+
+        bgTfChEmMultiplier = new ButtonGroup();
+        rbApplyChEmissMultiplier = new JRadioButton("Apply on Emissivity");
+        rbApplyChReflectivityMultiplier = new JRadioButton("Apply on Reflectivity");
+        rbApplyChReflectivityMultiplier.setSelected(true);
+        bgTfChEmMultiplier.add(rbApplyChEmissMultiplier);
+        bgTfChEmMultiplier.add(rbApplyChReflectivityMultiplier);
+
         cBdo2DCheck = new JCheckBox();
+        cBdo2DCheck.addActionListener(e->{
+            cBdo2DCalculation.setSelected(cBdo2DCheck.isSelected());
+        });
 //        cBdo2DCheck.setEnabled(false);
 //        ntS152LimitMin = new NumberTextField(controller, s152LimitMin, 6, false, 0.5,  1.5, "0.00", "Min Limit of DeltaT/(SurfT - CoreT)", false);
 //        ntS152LimitMax = new NumberTextField(controller, s152LimitMax, 6, false, 1.5, 5.0, "0.00", "Max Limit of DeltaT/(SurfT - CoreT)", false);
@@ -295,7 +328,24 @@ public class DFHTuningParams {
                 }
             }
         });
+        enableTFMmatchSettings();
+        cBdoTFMmatch = new JCheckBox("Enable TFM Matching");
+        cBdoTFMmatch.addActionListener(e-> {
+            bDoTFMmatch = cBdoTFMmatch.isSelected();
+            enableTFMmatchSettings();
+        });
+        resetDefaultTFMmatch();
         updateUI();
+    }
+
+    void enableTFMmatchSettings() {
+        boolean ena = bDoTFMmatch;
+        ntTfmChEmissMultiplier.setEnabled(ena);
+        jBresetTFMmatch.setEnabled(ena);
+//        cBApplyChREflectivityMultiplier.setEnabled(ena);
+//        cBapplyChEmissMultiplier.setEnabled(ena);
+        rbApplyChReflectivityMultiplier.setEnabled(ena);
+        rbApplyChEmissMultiplier.setEnabled(ena);
     }
 
     public void enableDataEntry(boolean ena) {
@@ -347,7 +397,15 @@ public class DFHTuningParams {
         startFlueTempHead = tfStartFlueTempHead.getData();
         bTakeGasAbsorptionForInterRad = (cBTakeGasAbsorptionForInterRad.isSelected());
         bNoGasAbsorptionInWallBalance = (cBNoGasAbsorptionInWallBalance.isSelected());
+        bDoTFMmatch = cBdoTFMmatch.isSelected();
         bFormulaForTau = (cBFormulaForTau.isSelected());
+//        bApplyChEmissMultiplier = cBapplyChEmissMultiplier.isSelected();
+        tfmChEmissMultiplier =  ntTfmChEmissMultiplier.getData();
+//        bApplyChReflectivityMultiplier = cBApplyChREflectivityMultiplier.isSelected();
+
+        bApplyChEmissMultiplier = rbApplyChEmissMultiplier.isSelected();
+        bApplyChReflectivityMultiplier = rbApplyChReflectivityMultiplier.isSelected();
+
         bDo2Dcheck = cBdo2DCheck.isSelected();
         bSlotRadInCalcul = cBSlotRadInCalcul.isSelected();
         bSectionProgress = (cBbSectionProgress.isSelected());
@@ -387,9 +445,15 @@ public class DFHTuningParams {
         cBTakeEndWalls.setSelected(bTakeEndWalls);
         cBTakeGasAbsorptionForInterRad.setSelected(bTakeGasAbsorptionForInterRad);
         cBNoGasAbsorptionInWallBalance.setSelected(bNoGasAbsorptionInWallBalance);
+        cBdoTFMmatch.setSelected(bDoTFMmatch);
         cBFormulaForTau.setSelected(bFormulaForTau);
+//        cBapplyChEmissMultiplier.setSelected(bApplyChEmissMultiplier);
+        ntTfmChEmissMultiplier.setData(tfmChEmissMultiplier);
+//        cBApplyChREflectivityMultiplier.setSelected(bApplyChReflectivityMultiplier);
 //        ntS152LimitMin.setData(s152LimitMin);
 //        ntS152LimitMax.setData(s152LimitMax);
+        rbApplyChEmissMultiplier.setSelected(bApplyChEmissMultiplier);
+        rbApplyChReflectivityMultiplier.setSelected(bApplyChReflectivityMultiplier);
         ntTauLimitMin.setData(tauLimitMin);
         ntTauLimitMax.setData(tauLimitMax);
         ntN2dCheck.setData(n2dCheck);
@@ -581,15 +645,33 @@ public class DFHTuningParams {
             vp = XMLmv.getTag(xmlStr, "widthStep", vp.endPos);
             if (vp.val.length() > 0)
                 widthStep = Double.valueOf(vp.val);
-            bDynamicGasTempCorrection = false; // no saving of this data
-            minGasTempCorrection = defaultMinGasTempCorrection;
-            maxGasTempCorrection = defaultMaxGasTempCorrection;
+            defaultUnsavedParams();
+//            bDynamicGasTempCorrection = false; // no saving of this data
+//            minGasTempCorrection = defaultMinGasTempCorrection;
+//            maxGasTempCorrection = defaultMaxGasTempCorrection;
+//            bDoTFMmatch = false;
+//            bDo2dCalculation = false;
+//            bDo2Dcheck = false;
+//            bFormulaForTau = false;
+
         } catch (NumberFormatException e) {
             bRetVal = false;
         }
         bBaseOnZonalTemperature = false;
         updateUI();
         return bRetVal;
+    }
+
+    void defaultUnsavedParams() {
+        bDynamicGasTempCorrection = false; // no saving of this data
+        minGasTempCorrection = defaultMinGasTempCorrection;
+        maxGasTempCorrection = defaultMaxGasTempCorrection;
+        bDoTFMmatch = false;
+        bDo2dCalculation = false;
+        bDo2Dcheck = false;
+        bFormulaForTau = false;
+        enableTFMmatchSettings();
+        updateUI();
     }
 
     GridBagConstraints mainGbc = new GridBagConstraints();
@@ -605,11 +687,16 @@ public class DFHTuningParams {
         mainTuningPanel.add(getProcSetPanel(), mainGbc);
         mainGbc.gridy++;
         mainGbc.gridwidth = 1;
+        mainTuningPanel.add(tfmMatchP(), mainGbc);
+        mainGbc.gridy++;
         mainTuningPanel.add(settings1Pan(), mainGbc);
         mainGbc.gridx++;
+        mainGbc.gridy--;
+        mainGbc.gridheight = 2;
         mainTuningPanel.add(setting2Pan(), mainGbc);
         mainGbc.gridx = 0;
         mainGbc.gridy++;
+        mainGbc.gridheight = 1;
         mainTuningPanel.add(performancePan(), mainGbc);
 
         return mainTuningPanel;
@@ -703,16 +790,56 @@ public class DFHTuningParams {
     NumberTextField ntWidthStep;
 
     JPanel settings1Pan() {
-        MultiPairColPanel jp = new MultiPairColPanel(200, 60);
+        MultiPairColPanel jp = new MultiPairColPanel(250, 60);
         jp.addItemPair("Error Allowed (degC)", tferrorAllowed);
         jp.addItemPair("Wall loss (for internal use)", tfwallLoss);
-        jp.addItem(chbDynamicGasTempCorrection);
+        jp.addItemPair("Enable Dynamic Gas Temp Correction", chbDynamicGasTempCorrection);
         jp.addItemPair(tfMinGasTempCorrection);
         jp.addItemPair(tfMaxGasTempCorrection);
         jp.addItem("(Ensure Min < Max)");
+        jp.addItemPair("Full Formula for Tau", cBFormulaForTau);
+        jp.addItemPair("Do Correction with charge 2D Calculation", cBdo2DCheck);
+        jp.addItemPair(ntN2dCheck);
+        jp.addItemPair(ntTauLimitMin);
+        jp.addItemPair(ntTauLimitMax);
+
 //        jp.addItemPair("Suggested First Correction (degC)", tfsuggested1stCorrection);
 //        jp.addItemPair("Correction For TooLowGas (degC)", tfCorrectionforTooLowGas);
+//        jp.addBlank();
+//        jp.addItemPair("Temperature Profile for TFM", cBProfileForTFM);
+//        jp.addItemPair("Length step for TFM Temperature Profile (mm)", tfTFMStep);
+        return jp;
+    }
+
+    void resetDefaultTFMmatch() {
+        tfmChEmissMultiplier = 0.93;
+        bApplyChReflectivityMultiplier = true;
+        bApplyChEmissMultiplier = false;
+        tfmBasis = UnitFceArray.ProfileBasis.FCETEMP;
+        bFormulaForTau = false;
+        updateUI();
+    }
+
+    JPanel tfmMatchP() {
+        MultiPairColPanel jp = new MultiPairColPanel("TFM Matching",200, 60);
+        JPanel localP = new JPanel(new BorderLayout());
+        localP.add(jBresetTFMmatch, BorderLayout.WEST);
+        localP.add(cBdoTFMmatch, BorderLayout.EAST);
+        jp.addItem(localP);
+        jp.addItemPair(ntTfmChEmissMultiplier);
+//        jp.addItemPair("Apply as  Emissivity Multiplier", cBapplyChEmissMultiplier);
+//        jp.addItemPair("Apply as Reflectivity Multiplier", cBApplyChREflectivityMultiplier);
+        jp.addItemPair(rbApplyChReflectivityMultiplier, rbApplyChEmissMultiplier);
+//        jp.addItem(rbApplyChReflectivityMultiplier);
+//        jp.addItem(rbApplyChEmissMultiplier);
         jp.addBlank();
+//        jp.addItemPair("Full Formula for Tau", cBFormulaForTau);
+//        jp.addItemPair("Do Correction with charge 2D Calculation", cBdo2DCheck);
+//        jp.addItemPair(ntN2dCheck);
+////        jp.addItemPair(ntS152LimitMin);
+////        jp.addItemPair(ntS152LimitMax);
+//        jp.addItemPair(ntTauLimitMin);
+//        jp.addItemPair(ntTauLimitMax);
         jp.addItemPair("Temperature Profile for TFM", cBProfileForTFM);
         jp.addItemPair("Length step for TFM Temperature Profile (mm)", tfTFMStep);
         return jp;
@@ -733,7 +860,20 @@ public class DFHTuningParams {
 
 
     JPanel setting2Pan() {
-        MultiPairColPanel jp = new MultiPairColPanel(200, 60);
+        MultiPairColPanel jp = new MultiPairColPanel(250, 60);
+//        jp.addItemPair(ntTfmChEmissMultiplier);
+//        jp.addItemPair("Apply as Emissivity Multiplier", cBapplyChEmissMultiplier);
+//        jp.addItemPair("Apply as Reflectivity Multiplier", cBApplyChREflectivityMultiplier);
+//        jp.addBlank();
+//        jp.addItemPair("Full Formula for Tau", cBFormulaForTau);
+//        jp.addItemPair("Do Correction with charge 2D Calculation", cBdo2DCheck);
+//        jp.addItemPair(ntN2dCheck);
+////        jp.addItemPair(ntS152LimitMin);
+////        jp.addItemPair(ntS152LimitMax);
+//        jp.addItemPair(ntTauLimitMin);
+//        jp.addItemPair(ntTauLimitMax);
+//        jp.addItem("<html><B>(Modify all above with CAUTION)</B></html>");
+//        jp.addBlank();
         jp.addItemPair("Smoothen Temperature trends", cBbSmoothenCurve);
         jp.addItemPair("Evaluate Bottom Section First", cBbEvalBotFirst);
         jp.addItemPair("Calculate for Hot Charge", cBHotCharge);
@@ -748,14 +888,6 @@ public class DFHTuningParams {
         jp.addBlank();
         jp.addItemPair("Take Gas Absorption in Internal Rad", cBTakeGasAbsorptionForInterRad);
         jp.addItemPair("No Gas Absorption in Wall Balance", cBNoGasAbsorptionInWallBalance);
-        jp.addItemPair("Full Formula for Tau", cBFormulaForTau);
-        jp.addItemPair("Do Correction with charge 2D Calculation", cBdo2DCheck);
-        jp.addItemPair(ntN2dCheck);
-//        jp.addItemPair(ntS152LimitMin);
-//        jp.addItemPair(ntS152LimitMax);
-        jp.addItemPair(ntTauLimitMin);
-        jp.addItemPair(ntTauLimitMax);
-        jp.addItem("<html><B>(Modify all above with CAUTION)</B></html>");
 
 //        jp.addBlank();
 //        jp.addItemPair("Consider Charge Temp Profile", cBbConsideChTempProfile);

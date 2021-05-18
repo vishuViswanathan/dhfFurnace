@@ -494,6 +494,8 @@ public class UnitFurnace {
             double tauFactor = alpha * gX / tk;
             double tau = Math.exp(tauFactor * (0.031754 * tauFactor - 0.33172 - 0.0016197 * Math.pow(tauFactor, 2)));
             if (tau >= 1)
+                chTau = 1.0;
+            else
                 chTau = tau;
         }
         return chTau;
@@ -712,6 +714,13 @@ public class UnitFurnace {
 
     public void setEW(double chTemp) {
         eW = ch.getEmiss(chTemp) * production.chEmmissCorrectionFactor;
+        if (tuning.bApplyChEmissMultiplier) {
+            eW *= tuning.tfmChEmissMultiplier;
+            eW = Math.min(eW, 0.999);
+        }
+        else if (tuning.bApplyChReflectivityMultiplier) {
+            eW = 1 - (1 - eW) * tuning.tfmChEmissMultiplier;
+        }
         chSpHt = ch.avgSpHt(chTemp, chTemp);
     }
 
