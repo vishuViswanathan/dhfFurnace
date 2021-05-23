@@ -5081,23 +5081,23 @@ public class DFHFurnace {
         return ambDataStr;
     }
 
-    String tProfileForTFMREMOVE(boolean bBot) {
-        String dataStr = "";
-        UnitFceArray ufsA = (bBot) ? botUfsArray : topUfsArray;
-        double[] data = ufsA.tProfileForTFM(tuningParams.tfmBasis, (int) (getFceLength() / tuningParams.getTFMStep()));
-        int len = data.length;
-        if (len > 1 && !Double.isNaN(data[0])) {
-            for (int i = 0; i < (len - 1); i++)
-                dataStr += "" + data[i] + "\n";
-            dataStr += "" + data[len - 1];
-        }
-        return dataStr;
-    }
+//    String tProfileForTFMREMOVE(boolean bBot) {
+//        String dataStr = "";
+//        UnitFceArray ufsA = (bBot) ? botUfsArray : topUfsArray;
+//        double[] data = ufsA.tProfileForTFM(tuningParams.tfmBasis, (int) (getFceLength() / tuningParams.getTFMStep()));
+//        int len = data.length;
+//        if (len > 1 && !Double.isNaN(data[0])) {
+//            for (int i = 0; i < (len - 1); i++)
+//                dataStr += "" + data[i] + "\n";
+//            dataStr += "" + data[len - 1];
+//        }
+//        return dataStr;
+//    }
 
     String tProfileForTFMWithLen() {
         String dataStr = "";
         if (bAddTopSoak) {
-            showMessage("TFM file cannot ber created for Furnace with Top-Only Soak section!");
+            showMessage("TFM file cannot be created for Furnace with Top-Only Soak section!");
             return dataStr;
         }
         double[][] dataArr;

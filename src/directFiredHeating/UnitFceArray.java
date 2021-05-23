@@ -40,7 +40,7 @@ public class UnitFceArray {
             return basisName;
         }
 
-        public ProfileBasis getEnum(String text) {
+        public static ProfileBasis getEnum(String text) {
             if (text != null) {
                 for (ProfileBasis b : ProfileBasis.values()) {
                     if (text.equalsIgnoreCase(b.basisName)) {

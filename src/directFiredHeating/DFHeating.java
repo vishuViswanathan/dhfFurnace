@@ -170,7 +170,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = " 20210430 PM";
+    protected String releaseDate = " 20210520";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -356,7 +356,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                     mainF.setTitle("DFH Furnace Application " + releaseDate + testTitle);
                 }
 
-                tuningParams = new DFHTuningParams(this, onProductionLine, 1, 5, 30, 1.12, 1, false, false);
+                tuningParams = new DFHTuningParams(this, onProductionLine, 1, 5,
+                        30, 1.12, 1, false, false);
                 debugLocal("Creating new DFHFurnace");
                 furnace = new DFHFurnace(this, bTopBot, bAddTopSoak, lNameListener);
                 debugLocal("Created furnace");
@@ -784,6 +785,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     MultiPairColPanel userTunePanel;
+    MultiPairColPanel tfmMatchPanel;
 
     protected JPanel OperationPage() {
         JPanel jp = new JPanel(new GridBagLayout());
@@ -818,6 +820,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         userTunePanel.setEnabled(!onProductionLine);
         jp.add(userTunePanel, gbcOP);
         gbcOP.gridx++;
+        tfmMatchPanel = tuningParams.getTFMmatchPanel();
+        jp.add(tfmMatchPanel, gbcOP);
         gbcOP.gridx++;
         mpCalcul = calCulDataPanel();
         jp.add(mpCalcul, gbcOP);
@@ -1772,12 +1776,14 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     protected MultiPairColPanel calCulDataPanel() {
-        MultiPairColPanel jp = new MultiPairColPanel("Calculate");
-        jp.addItemPair(tfAmbTemp);
-        jp.addItemPair(tfAirTemp);
-        jp.addItemPair(tfFuelTemp);
-        jp.addItemPair(tfCalculStep);
+        MultiPairColPanel jp = new MultiPairColPanel("Calculate", 200, 60);
+        jp.addItemPair(tfAmbTemp.getLabel(), tfAmbTemp);
+        jp.addItemPair(tfAirTemp.getLabel(), tfAirTemp);
+        jp.addItemPair(tfFuelTemp.getLabel(), tfFuelTemp);
+        jp.addItemPair(tfCalculStep.getLabel(), tfCalculStep);
         jp.addItem(pbCalculate);
+        jp.addItem(new JLabel("<html><b><font color='red'>If this calculation is with a modifications of Furnace" +
+                "<p>loaded from file, Reset Tuning Parameters if required</b></html>"));
         return jp;
     }
 
@@ -1845,7 +1851,13 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         rRow1 = styles.xlMultiPairColPanel(mpRecuData, sheet, topRow, col) + 1;
         topRow = Math.max(Math.max(rRow, row), rRow1);
         col = 1;
+        row = styles.xlMultiPairColPanel(userTunePanel, sheet, topRow, col) + 1;
+        col = 4;
+        row = styles.xlMultiPairColPanel(tfmMatchPanel, sheet, topRow, col) + 1;
+        col = 7;
         row = styles.xlMultiPairColPanel(mpCalcul, sheet, topRow, col) + 1;
+//        col = 1;
+//        row = styles.xlMultiPairColPanel(mpCalcul, sheet, topRow, col) + 1;
 
         return true;
     }
@@ -2670,7 +2682,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                 XMLmv.putTag("recuData", recuDataInXML()) + "\n" +
                 XMLmv.putTag("productionData", productionDataInXML()) + "\n" +
                 XMLmv.putTag("calculData", calculDataInXML()) + "\n" +
-                XMLmv.putTag("tuning", tuningParams.dataInXML() + "\n") +
+                XMLmv.putTag("tuning", tuningParams.dataInXML(furnaceFor) + "\n") +
                 XMLmv.putTag("furnace", furnace.dataInXML(withPerformance));
         return xmlStr;
     }
@@ -2808,7 +2820,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                         vp = XMLmv.getTag(acTData, "tuning", 0);
                         if (!tuningParams.takeDataFromXML(vp.val)) {
                             allOK = false;
-                            errMsg += "   in Tuning data Data\n";
+                            errMsg += "   in Tuning Data\n";
                         }
                     }
                     vp = XMLmv.getTag(acTData, "furnace", 0);
@@ -3834,10 +3846,16 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             wb.createSheet("Bot Temp Profile");
             furnace.xlTempProfile(wb.getSheetAt(nSheet), styles, true);
         }
+
+        nSheet++;
+        wb.createSheet("Tuning Parameters");
+        Sheet sh = wb.getSheetAt(nSheet);
+        tuningParams.xlTuningDetails(sh, styles);
+
         nSheet++;
         wb.createSheet("Furnace Profile");
         wb.setSheetHidden(nSheet, true);
-        Sheet sh = wb.getSheetAt(nSheet);
+        sh = wb.getSheetAt(nSheet);
         xlFceProfile(sh, styles);  // performance is saved here
 
         nSheet++;

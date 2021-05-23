@@ -1,11 +1,11 @@
 package directFiredHeating;
 
-import mvUtils.display.MultiPairColPanel;
-import mvUtils.display.NumberLabel;
-import mvUtils.display.NumberTextField;
+import mvUtils.display.*;
 import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
-import mvUtils.display.FramedPanel;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
 
 import javax.swing.*;
 import java.awt.*;
@@ -54,6 +54,40 @@ public class DFHTuningParams {
             return retVal;
         }
     }
+
+    public enum ChEmmFactorForTFMmatch {
+        REFLECTIVITY("Reflectivity"),
+        EMISSIVITY("Emissivity");
+
+        private final String actionType;
+
+        ChEmmFactorForTFMmatch(String actionType) {
+            this.actionType = actionType;
+        }
+
+        public String getValue() {
+            return name();
+        }
+
+        @Override
+        public String toString() {
+            return actionType;
+        }
+
+        public static ChEmmFactorForTFMmatch getEnum(String text) {
+            ChEmmFactorForTFMmatch retVal = null;
+            if (text != null) {
+                for (ChEmmFactorForTFMmatch b : ChEmmFactorForTFMmatch.values()) {
+                    if (text.equalsIgnoreCase(b.actionType)) {
+                        retVal = b;
+                        break;
+                    }
+                }
+            }
+            return retVal;
+        }
+    }
+    JButton jbRestParams;
     public boolean bOnTest = false;
     JCheckBox cBOnTest;
     public double epsilonO = 0.8;
@@ -73,26 +107,25 @@ public class DFHTuningParams {
     public boolean bFormulaForTau = false;
     JCheckBox cBFormulaForTau;
     public boolean bApplyChEmissMultiplier = false;
-//    JCheckBox cBapplyChEmissMultiplier;
     public double tfmChEmissMultiplier = 1.0;
     NumberTextField ntTfmChEmissMultiplier;
     public boolean bApplyChReflectivityMultiplier = false;
-//    JCheckBox cBApplyChREflectivityMultiplier;
+    ChEmmFactorForTFMmatch appTFMchEmissCorrectionType = ChEmmFactorForTFMmatch.REFLECTIVITY;
 
-    ButtonGroup bgTfChEmMultiplier;
-    JRadioButton rbApplyChEmissMultiplier;
-    JRadioButton rbApplyChReflectivityMultiplier;
+    XLComboBox cbTFMemissAction;
 
     double s152LimitMin = 1.5;
 //    NumberTextField ntS152LimitMin;
     double s152LimitMax = 2.5;
 //    NumberTextField ntS152LimitMax;
-
-    double tauLimitMin = 0.2;
+    double defaultTauLimitMin = 0.2;
+    double tauLimitMin = defaultTauLimitMin;
     NumberTextField ntTauLimitMin;
-    double tauLimitMax = 0.99;
+    double defaultTauLimitMax = 0.99;
+    double tauLimitMax = defaultTauLimitMax;
     NumberTextField ntTauLimitMax;
-    public int n2dCheck = 1;
+    int defaultN2dCheck = 1;
+    public int n2dCheck = defaultN2dCheck;
 
     NumberTextField ntN2dCheck;
     public boolean bDo2Dcheck = false;
@@ -101,7 +134,8 @@ public class DFHTuningParams {
     JCheckBox cBdo2DCalculation;
     boolean bGasAbsorptionHeilingen = false;
     JCheckBox cBgasAbsorptionHeilingen;
-    public double errorAllowed = 1;
+    double defaultErrorAllowed = 1.0;
+    public double errorAllowed = defaultErrorAllowed;
     public boolean bTakeEndWalls = false;
     public boolean bTakeGasAbsorptionForInterRad = false;
     public double wallLoss = 0;
@@ -137,7 +171,7 @@ public class DFHTuningParams {
     FurnaceFor selectedProc;
     PreSetTunes selectedPreset;
     UnitFceArray.ProfileBasis tfmBasis = UnitFceArray.ProfileBasis.FCETEMP;
-    private double tfmStep = 1.0;
+//    private double tfmStep = 1.0;
 
     public DFHTuningParams(DFHeating controller, boolean onProductionLine, double epsilonO, double gasWallHTMultipler,
                            double alphaConvFired, double emmFactor, double errorAllowed, boolean bTakeEndWalls,
@@ -157,6 +191,10 @@ public class DFHTuningParams {
 
     public DFHTuningParams(DFHeating controller) {
         this.controller = controller;
+        jbRestParams = new JButton("Reset All Params");
+        jbRestParams.addActionListener(e-> {
+            setParamsToDefaultValues(false); // except the TFMmatch Params
+        });
         preSets = new LinkedHashMap<FurnaceFor, PreSetTunes>();
         preSets.put(FurnaceFor.BILLETS, new PreSetTunes(1, 5, 30, 30, 1.12, 1.0, false));
         preSets.put(FurnaceFor.STRIP, new PreSetTunes(0.8, 1, 15, 15, 1, 1.0, false));
@@ -186,7 +224,9 @@ public class DFHTuningParams {
                 }
                 else {
                     cBSlotRadInCalcul.setEnabled(true);
+                    bSlotRadInCalcul = true;
                     cBTakeEndWalls.setEnabled(true);
+                    bTakeEndWalls = true;
                 }
                 updateUI();
             }
@@ -198,21 +238,14 @@ public class DFHTuningParams {
             resetDefaultTFMmatch();
         });
         cBFormulaForTau = new JCheckBox();
-//        cBapplyChEmissMultiplier = new JCheckBox();
         ntTfmChEmissMultiplier = new NumberTextField(controller, tfmChEmissMultiplier, 6, false,
                 0.8,  1.2, "0.00", "Ch Emissivity/ Reflectivity factor", false);
-//        cBApplyChREflectivityMultiplier = new JCheckBox();
-
-        bgTfChEmMultiplier = new ButtonGroup();
-        rbApplyChEmissMultiplier = new JRadioButton("Apply on Emissivity");
-        rbApplyChReflectivityMultiplier = new JRadioButton("Apply on Reflectivity");
-        rbApplyChReflectivityMultiplier.setSelected(true);
-        bgTfChEmMultiplier.add(rbApplyChEmissMultiplier);
-        bgTfChEmMultiplier.add(rbApplyChReflectivityMultiplier);
+        cbTFMemissAction = new XLComboBox(ChEmmFactorForTFMmatch.values());
 
         cBdo2DCheck = new JCheckBox();
         cBdo2DCheck.addActionListener(e->{
-            cBdo2DCalculation.setSelected(cBdo2DCheck.isSelected());
+            bDo2Dcheck = cBdo2DCheck.isSelected();
+            cBdo2DCalculation.setSelected(bDo2Dcheck);
         });
 //        cBdo2DCheck.setEnabled(false);
 //        ntS152LimitMin = new NumberTextField(controller, s152LimitMin, 6, false, 0.5,  1.5, "0.00", "Min Limit of DeltaT/(SurfT - CoreT)", false);
@@ -251,13 +284,14 @@ public class DFHTuningParams {
             }
         });
 
-        cBProfileForTFM = new JComboBox<UnitFceArray.ProfileBasis>(UnitFceArray.ProfileBasis.values());
+//        cBProfileForTFM = new JComboBox<UnitFceArray.ProfileBasis>(UnitFceArray.ProfileBasis.values());
+        cBProfileForTFM = new XLComboBox(UnitFceArray.ProfileBasis.values());
         cBProfileForTFM.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 tfmBasis = (UnitFceArray.ProfileBasis)cBProfileForTFM.getSelectedItem();
             }
         });
-        tfTFMStep = new NumberTextField(controller, tfmStep * 1000, 6,false, 200, 5000, "#,###", "Length Step for TFM Temperaure Profile");
+//        tfTFMStep = new NumberTextField(controller, tfmStep * 1000, 6,false, 200, 5000, "#,###", "Length Step for TFM Temperaure Profile");
         cBbAutoTempForLosses = new JCheckBox();
         cBbAutoTempForLosses.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -292,60 +326,65 @@ public class DFHTuningParams {
         cBgasAbsorptionHeilingen = new JCheckBox("(TESTING ONLY) Gas Absorption as per Heilingenstadt");
         cBgasAbsorptionHeilingen.setEnabled(false);
         cBdo2DCalculation = new JCheckBox("Do 2D calculation in TESTING mode");
+        cBdo2DCalculation.addActionListener(e-> {
+            bDo2dCalculation = cBdo2DCalculation.isSelected();
+        });
         cBdo2DCalculation.setEnabled(false);
-        cBOnTest = new JCheckBox("ON TEST.... ON TEST");
+        cBOnTest = new JCheckBox("Enable Test Mode with the following");
         final DFHeating c = controller;
         cBOnTest.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 bOnTest = cBOnTest.isSelected();
                 c.itIsOnTest(bOnTest);
-                if (bOnTest) {
-                    noGasRadiationToCharge = false;
-                    cBNoGasRadiationToCharge.setSelected(noGasRadiationToCharge);
-                    cBNoGasRadiationToCharge.setEnabled(true);
-                    bGasAbsorptionHeilingen = false;
-                    cBgasAbsorptionHeilingen.setSelected(bGasAbsorptionHeilingen);
-                    cBgasAbsorptionHeilingen.setEnabled(true);
-                    bNoEmissivityCorrFactor = false;
-                    cBNoEmissivityCorrFactor.setSelected(bNoEmissivityCorrFactor);
-                    cBNoEmissivityCorrFactor.setEnabled(true);
-                    cBdo2DCalculation.setSelected(bDo2dCalculation);
-                    cBdo2DCalculation.setEnabled(true);
-                }
-                else {
-                    noGasRadiationToCharge = false;
-                    cBNoGasRadiationToCharge.setSelected(noGasRadiationToCharge);
-                    cBNoGasRadiationToCharge.setEnabled(false);
-                    bGasAbsorptionHeilingen = false;
-                    cBgasAbsorptionHeilingen.setSelected(bGasAbsorptionHeilingen);
-                    cBgasAbsorptionHeilingen.setEnabled(false);
-                    bNoEmissivityCorrFactor = false;
-                    cBNoEmissivityCorrFactor.setSelected(bNoEmissivityCorrFactor);
-                    cBNoEmissivityCorrFactor.setEnabled(false);
-                    bDo2dCalculation = false;
-                    cBdo2DCalculation.setSelected(bDo2dCalculation);
-                    cBdo2DCalculation.setEnabled(false);
-                }
+                enableOnTestParams();
             }
         });
         enableTFMmatchSettings();
-        cBdoTFMmatch = new JCheckBox("Enable TFM Matching");
+        cBdoTFMmatch = new JCheckBox();
         cBdoTFMmatch.addActionListener(e-> {
             bDoTFMmatch = cBdoTFMmatch.isSelected();
             enableTFMmatchSettings();
         });
-        resetDefaultTFMmatch();
-        updateUI();
+        setParamsToDefaultValues(true);
+        createTuningPanel();
+//        updateUI();
+    }
+
+    void enableOnTestParams() {
+        if (bOnTest) {
+            noGasRadiationToCharge = false;
+            cBNoGasRadiationToCharge.setSelected(noGasRadiationToCharge);
+            cBNoGasRadiationToCharge.setEnabled(true);
+            bGasAbsorptionHeilingen = false;
+            cBgasAbsorptionHeilingen.setSelected(bGasAbsorptionHeilingen);
+            cBgasAbsorptionHeilingen.setEnabled(true);
+            bNoEmissivityCorrFactor = false;
+            cBNoEmissivityCorrFactor.setSelected(bNoEmissivityCorrFactor);
+            cBNoEmissivityCorrFactor.setEnabled(true);
+            cBdo2DCalculation.setSelected(bDo2dCalculation);
+            cBdo2DCalculation.setEnabled(true);
+        }
+        else {
+            noGasRadiationToCharge = false;
+            cBNoGasRadiationToCharge.setSelected(noGasRadiationToCharge);
+            cBNoGasRadiationToCharge.setEnabled(false);
+            bGasAbsorptionHeilingen = false;
+            cBgasAbsorptionHeilingen.setSelected(bGasAbsorptionHeilingen);
+            cBgasAbsorptionHeilingen.setEnabled(false);
+            bNoEmissivityCorrFactor = false;
+            cBNoEmissivityCorrFactor.setSelected(bNoEmissivityCorrFactor);
+            cBNoEmissivityCorrFactor.setEnabled(false);
+            bDo2dCalculation = bDo2Dcheck;
+            cBdo2DCalculation.setSelected(bDo2dCalculation);
+            cBdo2DCalculation.setEnabled(false);
+        }
     }
 
     void enableTFMmatchSettings() {
         boolean ena = bDoTFMmatch;
         ntTfmChEmissMultiplier.setEnabled(ena);
         jBresetTFMmatch.setEnabled(ena);
-//        cBApplyChREflectivityMultiplier.setEnabled(ena);
-//        cBapplyChEmissMultiplier.setEnabled(ena);
-        rbApplyChReflectivityMultiplier.setEnabled(ena);
-        rbApplyChEmissMultiplier.setEnabled(ena);
+        cbTFMemissAction.setEnabled(ena);
     }
 
     public void enableDataEntry(boolean ena) {
@@ -361,14 +400,14 @@ public class DFHTuningParams {
         controller.allowManualTempForLosses(bAllow);
     }
 
-    double getTFMStep(){
-        setTFMStep();
-        return tfmStep;
-    }
+//    double getTFMStep(){
+//        setTFMStep();
+//        return tfmStep;
+//    }
 
-    private void setTFMStep() {
-        tfmStep = tfTFMStep.getData() / 1000;
-    }
+//    private void setTFMStep() {
+//        tfmStep = tfTFMStep.getData() / 1000;
+//    }
 
     public void takeValuesFromUI() {
         preSets.get(FurnaceFor.MANUAL).takeFromUI();
@@ -399,12 +438,11 @@ public class DFHTuningParams {
         bNoGasAbsorptionInWallBalance = (cBNoGasAbsorptionInWallBalance.isSelected());
         bDoTFMmatch = cBdoTFMmatch.isSelected();
         bFormulaForTau = (cBFormulaForTau.isSelected());
-//        bApplyChEmissMultiplier = cBapplyChEmissMultiplier.isSelected();
         tfmChEmissMultiplier =  ntTfmChEmissMultiplier.getData();
-//        bApplyChReflectivityMultiplier = cBApplyChREflectivityMultiplier.isSelected();
 
-        bApplyChEmissMultiplier = rbApplyChEmissMultiplier.isSelected();
-        bApplyChReflectivityMultiplier = rbApplyChReflectivityMultiplier.isSelected();
+        appTFMchEmissCorrectionType  = (ChEmmFactorForTFMmatch)(cbTFMemissAction.getSelectedItem());
+        bApplyChReflectivityMultiplier = (appTFMchEmissCorrectionType == ChEmmFactorForTFMmatch.REFLECTIVITY);
+        bApplyChEmissMultiplier = (appTFMchEmissCorrectionType == ChEmmFactorForTFMmatch.EMISSIVITY);
 
         bDo2Dcheck = cBdo2DCheck.isSelected();
         bSlotRadInCalcul = cBSlotRadInCalcul.isSelected();
@@ -431,8 +469,7 @@ public class DFHTuningParams {
 //        s152LimitMax = ntS152LimitMax.getData();
         tauLimitMin = ntTauLimitMin.getData();
         tauLimitMax = ntTauLimitMax.getData();
-        setTFMStep();
-
+//        setTFMStep();
     }
 
     void updateUI() {
@@ -447,13 +484,10 @@ public class DFHTuningParams {
         cBNoGasAbsorptionInWallBalance.setSelected(bNoGasAbsorptionInWallBalance);
         cBdoTFMmatch.setSelected(bDoTFMmatch);
         cBFormulaForTau.setSelected(bFormulaForTau);
-//        cBapplyChEmissMultiplier.setSelected(bApplyChEmissMultiplier);
         ntTfmChEmissMultiplier.setData(tfmChEmissMultiplier);
-//        cBApplyChREflectivityMultiplier.setSelected(bApplyChReflectivityMultiplier);
 //        ntS152LimitMin.setData(s152LimitMin);
 //        ntS152LimitMax.setData(s152LimitMax);
-        rbApplyChEmissMultiplier.setSelected(bApplyChEmissMultiplier);
-        rbApplyChReflectivityMultiplier.setSelected(bApplyChReflectivityMultiplier);
+        cbTFMemissAction.setSelectedItem(appTFMchEmissCorrectionType);
         ntTauLimitMin.setData(tauLimitMin);
         ntTauLimitMax.setData(tauLimitMax);
         ntN2dCheck.setData(n2dCheck);
@@ -472,7 +506,7 @@ public class DFHTuningParams {
         cBShowFlueCompo.setSelected(bShowFlueCompo);
         preSets.get(FurnaceFor.MANUAL).putInUI();
         cBProfileForTFM.setSelectedItem(tfmBasis);
-        tfTFMStep.setData(tfmStep * 1000);
+//        tfTFMStep.setData(tfmStep * 1000);
         cBbAutoTempForLosses.setSelected(bAutoTempForLosses);
         cBbSmoothenCurve.setSelected(bSmoothenCurve);
 //        cBbConsiderChTempProfile.setSelected(bConsiderChTempProfile);
@@ -505,38 +539,31 @@ public class DFHTuningParams {
 //        bSlotProgress = bShow;
     }
 
-    public String dataInXML() {
+    public String dataInXML(DFHTuningParams.FurnaceFor fceFor) {
         updateUI();
         String xmlStr = "";
-        PreSetTunes pre = preSets.get(FurnaceFor.MANUAL);
-        xmlStr += XMLmv.putTag("epsilonO", pre.eO);
-        xmlStr += XMLmv.putTag("gasWallHTMultipler", pre.gMulti);
-        xmlStr += XMLmv.putTag("alphaConv", pre.aConvFired);
-        xmlStr += XMLmv.putTag("alphaConvRecu", pre.aConvRecu);
-        xmlStr += XMLmv.putTag("emmFactor", pre.eFact);
-        xmlStr += XMLmv.putTag("radiationMultiplier", pre.radiationMultiplier);
-
-        xmlStr += XMLmv.putTag("errorAllowed", errorAllowed);
-        xmlStr += XMLmv.putTag("suggested1stCorrection", suggested1stCorrection);
-        xmlStr += XMLmv.putTag("correctionForTooLowGas", correctionForTooLowGas);
+        if (fceFor == FurnaceFor.MANUAL) {
+            PreSetTunes pre = preSets.get(FurnaceFor.MANUAL);
+            xmlStr += XMLmv.putTag("epsilonO", pre.eO);
+            xmlStr += XMLmv.putTag("gasWallHTMultipler", pre.gMulti);
+            xmlStr += XMLmv.putTag("alphaConv", pre.aConvFired);
+            xmlStr += XMLmv.putTag("alphaConvRecu", pre.aConvRecu);
+            xmlStr += XMLmv.putTag("emmFactor", pre.eFact);
+            xmlStr += XMLmv.putTag("radiationMultiplier", pre.radiationMultiplier);
+        }
         xmlStr += XMLmv.putTag("bTakeEndWalls", (bTakeEndWalls) ? 1 : 0);
         xmlStr += XMLmv.putTag("bTakeGasAbsorption", (bTakeGasAbsorptionForInterRad) ? 1 : 0);
         xmlStr += XMLmv.putTag("bEvalBotFirst", (bEvalBotFirst) ? 1: 0);
         xmlStr += XMLmv.putTag("bHotCharge", (bHotCharge) ? 1: 0);
         xmlStr += XMLmv.putTag("startFlueTempHead", startFlueTempHead);
-        xmlStr += XMLmv.putTag("bSectionalFlueExh", (bSectionalFlueExh) ? 1: 0);
+//        xmlStr += XMLmv.putTag("bSectionalFlueExh", (bSectionalFlueExh) ? 1: 0);
         xmlStr += XMLmv.putTag("bSlotRadInCalcul", (bSlotRadInCalcul) ? 1: 0);
-        xmlStr += XMLmv.putTag("bSectionProgress", (bSectionProgress) ? 1: 0);
-        xmlStr += XMLmv.putTag("bSlotProgress", (bSlotProgress) ? 1: 0);
         xmlStr += XMLmv.putTag("bMindChHeight", (bMindChHeight) ? 1: 0);
         xmlStr += XMLmv.putTag("bAllowSecFuel", (bAllowSecFuel) ? 1: 0);
         xmlStr += XMLmv.putTag("bAllowRegenAirTemp", (bAllowRegenAirTemp) ? 1: 0);
         // Performance base
 //        xmlStr += XMLmv.putTag("bConsiderChTempProfile", (bConsiderChTempProfile) ? 1: 0);
-//        xmlStr += XMLmv.putTag("overUP", overUP);
-//        xmlStr += XMLmv.putTag("underUP", underUP);
         xmlStr += XMLmv.putTag("bOnProductionLine", (bOnProductionLine) ? 1: 0);
-//        xmlStr += XMLmv.putTag("takeEmissivityCorrFactor", (takeEmissivityCorrFactor) ? 1: 0);
         // performance table and field performance
         xmlStr += XMLmv.putTag("unitOutputOverRange", unitOutputOverRange);
         xmlStr += XMLmv.putTag("unitOutputUnderRange", unitOutputUnderRange);
@@ -547,6 +574,13 @@ public class DFHTuningParams {
         xmlStr += XMLmv.putTag("widthOverRange", widthOverRange);
         xmlStr += XMLmv.putTag("widthStep", widthStep);
 
+        xmlStr += XMLmv.putTag("tfmBasis", "" + tfmBasis);
+        xmlStr += XMLmv.putTag("bDoTFMmatch", bDoTFMmatch);
+        if (bDoTFMmatch) {
+            xmlStr += XMLmv.putTag("tfmChEmissMultiplier", tfmChEmissMultiplier);
+            xmlStr += XMLmv.putTag("appTFMchEmissCorrectionType", "" + appTFMchEmissCorrectionType);
+        }
+
         return xmlStr;
     }
 
@@ -554,44 +588,27 @@ public class DFHTuningParams {
         ValAndPos vp;
         boolean bRetVal = true;
         try {
+            setParamsToDefaultValues(true);
             PreSetTunes pre = preSets.get(FurnaceFor.MANUAL);
             vp = XMLmv.getTag(xmlStr, "epsilonO", 0);
-            pre.eO = Double.valueOf(vp.val);
+            if (vp.val.length() > 0)
+                pre.eO = Double.valueOf(vp.val);
             vp = XMLmv.getTag(xmlStr, "gasWallHTMultipler", 0);
-            pre.gMulti = Double.valueOf(vp.val);
+            if (vp.val.length() > 0)
+                pre.gMulti = Double.valueOf(vp.val);
             vp = XMLmv.getTag(xmlStr, "alphaConv", 0);
-            pre.aConvFired = Double.valueOf(vp.val);
+            if (vp.val.length() > 0)
+                pre.aConvFired = Double.valueOf(vp.val);
             vp = XMLmv.getTag(xmlStr, "alphaConvRecu", 0);
             if (vp.val.length() > 0)
                 pre.aConvRecu = Double.valueOf(vp.val);
-            else
-                pre.aConvRecu = pre.aConvFired;
             vp = XMLmv.getTag(xmlStr, "emmFactor", 0);
-            pre.eFact = Double.valueOf(vp.val);
+            if (vp.val.length() > 0)
+                pre.eFact = Double.valueOf(vp.val);
             vp = XMLmv.getTag(xmlStr, "radiationMultiplier", 0);
             if (vp.val.length() > 0)
                 pre.radiationMultiplier = Double.valueOf(vp.val);
-            else
-                pre.radiationMultiplier = 1.0;
             pre.putInUI();
-
-
-            vp = XMLmv.getTag(xmlStr, "errorAllowed", 0);
-            errorAllowed = Double.valueOf(vp.val);
-            vp = XMLmv.getTag(xmlStr, "suggested1stCorrection", 0);
-            double val = Double.valueOf(vp.val);
-            // the following since earlier the value could be 0 and the user sets value if 0
-            if (val > 0)
-                suggested1stCorrection = Double.valueOf(vp.val);
-            else
-                suggested1stCorrection = defaultSuggested1stCorrection;
-
-            vp = XMLmv.getTag(xmlStr, "correctionForTooLowGas", 0);
-            // the following since, earlier,  this was not being saved
-            if (vp.val.length() > 0)
-                correctionForTooLowGas = Double.valueOf(vp.val);
-            else
-                correctionForTooLowGas = defaultCorrectionForTooLowGas;
 
             vp = XMLmv.getTag(xmlStr, "bTakeEndWalls", 0);
             bTakeEndWalls = (vp.val.equals("1"));
@@ -609,18 +626,16 @@ public class DFHTuningParams {
                 startFlueTempHead =  Double.valueOf(vp.val);
             else
                 startFlueTempHead = defaultStartFlueTempHead;
-            vp = XMLmv.getTag(xmlStr, "bSectionalFlueExh", 0);
-            bSectionalFlueExh = (vp.val.equals("1"));
+//            vp = XMLmv.getTag(xmlStr, "bSectionalFlueExh", 0);
+//            bSectionalFlueExh = (vp.val.equals("1"));
             vp = XMLmv.getTag(xmlStr, "bSlotRadInCalcul", 0);
             bSlotRadInCalcul = (vp.val.equals("1"));
-            vp = XMLmv.getTag(xmlStr, "bSectionProgress", 0);
-            bSectionProgress = (vp.val.equals("1"));
-            vp = XMLmv.getTag(xmlStr, "bSlotProgress", 0);
-            bSlotProgress = (vp.val.equals("1"));
             vp = XMLmv.getTag(xmlStr, "bMindChHeight", 0);
             bMindChHeight = (vp.val.equals("1"));
             vp = XMLmv.getTag(xmlStr, "bAllowSecFuel", 0);
             bAllowSecFuel = (vp.val.equals("1"));
+            vp = XMLmv.getTag(xmlStr, "bAllowRegenAirTemp", 0);
+            bAllowRegenAirTemp = (vp.val.equals("1"));
 
             vp = XMLmv.getTag(xmlStr, "unitOutputOverRange", vp.endPos);
             if (vp.val.length() > 0)
@@ -645,15 +660,28 @@ public class DFHTuningParams {
             vp = XMLmv.getTag(xmlStr, "widthStep", vp.endPos);
             if (vp.val.length() > 0)
                 widthStep = Double.valueOf(vp.val);
-            defaultUnsavedParams();
-//            bDynamicGasTempCorrection = false; // no saving of this data
-//            minGasTempCorrection = defaultMinGasTempCorrection;
-//            maxGasTempCorrection = defaultMaxGasTempCorrection;
-//            bDoTFMmatch = false;
-//            bDo2dCalculation = false;
-//            bDo2Dcheck = false;
-//            bFormulaForTau = false;
+/*
+        xmlStr += XMLmv.putTag("bDoTFMmatch", bDoTFMmatch);
+        if (bDoTFMmatch) {
+            xmlStr += XMLmv.putTag("chEmmissCorrectionFactor", chEmmissCorrectionFactor);
+            xmlStr += XMLmv.putTag("appTFMchEmissCorrectionType", "" + appTFMchEmissCorrectionType);
+        }
 
+ */
+            vp = XMLmv.getTag(xmlStr, "tfmBasis", 0);
+            if (vp.val.length() > 0)
+                tfmBasis = UnitFceArray.ProfileBasis.getEnum(vp.val);
+            vp = XMLmv.getTag(xmlStr, "bDoTFMmatch", 0);
+            bDoTFMmatch = vp.val.equals("1");
+            if (bDoTFMmatch) {
+                vp = XMLmv.getTag(xmlStr, "tfmChEmissMultiplier", vp.endPos);
+                if (vp.val.length() > 0)
+                    tfmChEmissMultiplier = Double.valueOf(vp.val);
+                vp = XMLmv.getTag(xmlStr, "appTFMchEmissCorrectionType", vp.endPos);
+                if (vp.val.length() > 0)
+                    appTFMchEmissCorrectionType = ChEmmFactorForTFMmatch.getEnum(vp.val);
+                enableTFMmatchSettings();
+            }
         } catch (NumberFormatException e) {
             bRetVal = false;
         }
@@ -662,43 +690,95 @@ public class DFHTuningParams {
         return bRetVal;
     }
 
-    void defaultUnsavedParams() {
+    public void setParamsToDefaultValues(boolean resetTMmatch) {
+        errorAllowed = defaultErrorAllowed;
+        suggested1stCorrection = defaultSuggested1stCorrection;
+        correctionForTooLowGas = defaultCorrectionForTooLowGas;
+        bHotCharge = false;
+        bTakeEndWalls = true;   // false;
+        bTakeGasAbsorptionForInterRad = false;
+        bEvalBotFirst = false;
+        startFlueTempHead = defaultStartFlueTempHead;
+        bSectionalFlueExh = false;
+        bSlotRadInCalcul = true; // false;
+        bSectionProgress = true;
+        bSlotProgress = true;
+        bMindChHeight = true;
+        bAllowSecFuel = true; // false;
+        bAllowRegenAirTemp = true;
+        bShowFlueCompo = true;
+        bAutoTempForLosses = true;
+        bTakeGasAbsorptionForInterRad = false;
+        bNoGasAbsorptionInWallBalance = false;
+        bConsiderChTempProfile = true;
+        bOnProductionLine = false;
+
+        unitOutputOverRange = 1.05;
+        unitOutputUnderRange = 0.9;
+        unitOutputOverRangeForTable = 1.05;
+        exitTempTolerance = 5;   // it is (T - 5) > t >= (T + 5)
+        outputStep = 0.2;
+        widthOverRange = 1.1;
+        //    double minWidthFactor = 0.8;
+        widthStep = 0.1;
+
         bDynamicGasTempCorrection = false; // no saving of this data
         minGasTempCorrection = defaultMinGasTempCorrection;
         maxGasTempCorrection = defaultMaxGasTempCorrection;
         bDoTFMmatch = false;
         bDo2dCalculation = false;
         bDo2Dcheck = false;
+        n2dCheck = defaultN2dCheck;
+        tauLimitMin = defaultTauLimitMin;
+        tauLimitMax = defaultTauLimitMax;
         bFormulaForTau = false;
+        bOnTest = false;
+        enableOnTestParams();
+        cBOnTest.setSelected(false);
+        if (resetTMmatch)
+            resetDefaultTFMmatch();
         enableTFMmatchSettings();
         updateUI();
     }
 
     GridBagConstraints mainGbc = new GridBagConstraints();
     JPanel mainTuningPanel = new FramedPanel(new GridBagLayout());
+    MultiPairColPanel tfmMatchPan, settings1Pan, settings2Pan, peformancePan, testPan;
+    JPanel procSetPan;
+//    FramedPanel mainTuningPanel;
 
-    JPanel getTuningPanel() {
-        JPanel mainTuningPanel = new FramedPanel(new GridBagLayout());
+    void createTuningPanel() {
+        mainTuningPanel = new FramedPanel(new GridBagLayout());
         mainTuningPanel.setBackground(new JPanel().getBackground());
         GridBagConstraints mainGbc = new GridBagConstraints();
         mainGbc.gridx = 0;
         mainGbc.gridy = 0;
         mainGbc.gridwidth = 2;
-        mainTuningPanel.add(getProcSetPanel(), mainGbc);
+        mainTuningPanel.add(procSetPan = getProcSetPanel(), mainGbc);
         mainGbc.gridy++;
         mainGbc.gridwidth = 1;
-        mainTuningPanel.add(tfmMatchP(), mainGbc);
+        mainGbc.gridx = 0;
+        tfmMatchPan = tfmMatchP(); // displayed in operations view
+//        mainTuningPanel.add(tfmMatchPan = tfmMatchP(), mainGbc);
+//        mainGbc.gridy++;
+        mainTuningPanel.add(settings1Pan = settings1Pan(), mainGbc);
+        mainGbc.gridx++;
+        mainTuningPanel.add(settings2Pan = setting2Pan(), mainGbc);
+        mainGbc.gridx--;
         mainGbc.gridy++;
-        mainTuningPanel.add(settings1Pan(), mainGbc);
+        mainTuningPanel.add(peformancePan = performancePan(), mainGbc);
+        mainGbc.gridy++;
+        mainTuningPanel.add(jbRestParams, mainGbc);
+//        mainGbc.gridwidth = 2;
+//        mainTuningPanel.add(procSetPan = getProcSetPanel(), mainGbc);
+//        mainGbc.gridy++;
         mainGbc.gridx++;
         mainGbc.gridy--;
         mainGbc.gridheight = 2;
-        mainTuningPanel.add(setting2Pan(), mainGbc);
-        mainGbc.gridx = 0;
-        mainGbc.gridy++;
-        mainGbc.gridheight = 1;
-        mainTuningPanel.add(performancePan(), mainGbc);
+        mainTuningPanel.add(testPan = testPanel(), mainGbc);
+    }
 
+    public JPanel getTuningPanel() {
         return mainTuningPanel;
     }
 
@@ -720,7 +800,7 @@ public class DFHTuningParams {
         JLabel h;
         gbc.gridx = 0;
         gbc.gridy = 0;
-        jp.add(cBOnTest, gbc);
+        jp.add(new JLabel("<html><b>Basic Calculation Parameters</b></html>"));
         gbc.gridx = 1;
         gbc.gridy++;
         for (FurnaceFor proc : FurnaceFor.values()) {
@@ -739,28 +819,30 @@ public class DFHTuningParams {
             gbc.gridx++;
             jp.add(preSets.get(keys.next()).presetsPan(), gbc);
         }
-        gbc.gridx = 0;
-        gbc.gridy++;
-        jp.add(cBNoEmissivityCorrFactor, gbc);
-        gbc.gridy++;
-        jp.add(cBNoGasRadiationToCharge, gbc);
-        gbc.gridy++;
-        jp.add(cBgasAbsorptionHeilingen, gbc);
-        gbc.gridx++;
-        jp.add(new JLabel("(for STRIP furnace this is considered enabled)"), gbc);
-        gbc.gridx--;
-        gbc.gridy++;
-        jp.add(cBdo2DCalculation, gbc);
         return jp;
     }
 
-    NumberTextField tferrorAllowed, tfwallLoss, tfsuggested1stCorrection, tfCorrectionforTooLowGas;
+    MultiPairColPanel testPanel() {
+        MultiPairColPanel jp = new MultiPairColPanel("Test Settings");
+        jp.addItemPair(cBOnTest);
+        jp.addItemPair(cBdo2DCalculation);
+        jp.addItemPair(cBNoEmissivityCorrFactor);
+        jp.addItemPair(cBNoGasRadiationToCharge);
+        jp.addItemPair(cBgasAbsorptionHeilingen);
+        jp.addItem(new JLabel("(for STRIP furnace this is considered enabled)"));
+        return jp;
+    }
+
+    NumberTextField tferrorAllowed, tfwallLoss;
+    NumberTextField tfsuggested1stCorrection, tfCorrectionforTooLowGas;
+            // Todo the above two are not used
     NumberTextField tfMinGasTempCorrection, tfMaxGasTempCorrection;
     JCheckBox chbDynamicGasTempCorrection;
-    NumberTextField tfTFMStep;
+//    NumberTextField tfTFMStep;
     // for evaluation from reference performance
     public boolean bConsiderChTempProfile = true;
-    public boolean bRespectFirstFiredZoneExitStripTemp = false;  // while adjusting strip temperatures for respecting Exit Zone Minimum temperature
+    public boolean bRespectFirstFiredZoneExitStripTemp = false;
+        // while adjusting strip temperatures for respecting Exit Zone Minimum temperature
     JCheckBox cbRespectFirstFiredZoneExitStripTemp;
     JCheckBox cBbConsiderChTempProfile;
     public boolean bAdjustChTempProfile = true;    // while respecting last zone minimum fce temp
@@ -789,10 +871,11 @@ public class DFHTuningParams {
     //    NumberTextField ntMinWidthFactor;
     NumberTextField ntWidthStep;
 
-    JPanel settings1Pan() {
-        MultiPairColPanel jp = new MultiPairColPanel(250, 60);
+    MultiPairColPanel settings1Pan() {
+        MultiPairColPanel jp = new MultiPairColPanel("Settings 1", 250, 60);
         jp.addItemPair("Error Allowed (degC)", tferrorAllowed);
         jp.addItemPair("Wall loss (for internal use)", tfwallLoss);
+        jp.addItemPair("Smoothen Temperature trends", cBbSmoothenCurve);
         jp.addItemPair("Enable Dynamic Gas Temp Correction", chbDynamicGasTempCorrection);
         jp.addItemPair(tfMinGasTempCorrection);
         jp.addItemPair(tfMaxGasTempCorrection);
@@ -802,47 +885,47 @@ public class DFHTuningParams {
         jp.addItemPair(ntN2dCheck);
         jp.addItemPair(ntTauLimitMin);
         jp.addItemPair(ntTauLimitMax);
+        return jp;
+    }
 
-//        jp.addItemPair("Suggested First Correction (degC)", tfsuggested1stCorrection);
-//        jp.addItemPair("Correction For TooLowGas (degC)", tfCorrectionforTooLowGas);
-//        jp.addBlank();
-//        jp.addItemPair("Temperature Profile for TFM", cBProfileForTFM);
-//        jp.addItemPair("Length step for TFM Temperature Profile (mm)", tfTFMStep);
+    MultiPairColPanel setting2Pan() {
+        MultiPairColPanel jp = new MultiPairColPanel("Settings 2", 250, 60);
+        jp.addItemPair("Evaluate Bottom Section First", cBbEvalBotFirst);
+        jp.addItemPair("Calculate for Hot Charge", cBHotCharge);
+        jp.addItemPair("* Start Flue Temp Head Hot Charge", tfStartFlueTempHead);
+        jp.addItemPair("Show Section Progress", cBbSectionProgress);
+        jp.addItemPair("Show Stepwise Progress", cBbSlotProgress);
+        jp.addItemPair("Mind Charge Height for Radiation", cBbMindChHeight);
+        jp.addItemPair("Allow Section-wise Fuel", cBAllowSecFuel);
+        jp.addItemPair("Allow REGEN Air Temperature", cBAllowRegenAirTemp);
+        jp.addItemPair("Show Flue Composition", cBShowFlueCompo);
+        jp.addItemPair("Auto Section Temp for Losses", cBbAutoTempForLosses);
+        jp.addItemPair("Take Gas Absorption in Internal Rad", cBTakeGasAbsorptionForInterRad);
+        jp.addItemPair("No Gas Absorption in Wall Balance", cBNoGasAbsorptionInWallBalance);
         return jp;
     }
 
     void resetDefaultTFMmatch() {
         tfmChEmissMultiplier = 0.93;
-        bApplyChReflectivityMultiplier = true;
-        bApplyChEmissMultiplier = false;
+        appTFMchEmissCorrectionType = ChEmmFactorForTFMmatch.REFLECTIVITY;
         tfmBasis = UnitFceArray.ProfileBasis.FCETEMP;
         bFormulaForTau = false;
         updateUI();
     }
 
-    JPanel tfmMatchP() {
-        MultiPairColPanel jp = new MultiPairColPanel("TFM Matching",200, 60);
-        JPanel localP = new JPanel(new BorderLayout());
-        localP.add(jBresetTFMmatch, BorderLayout.WEST);
-        localP.add(cBdoTFMmatch, BorderLayout.EAST);
-        jp.addItem(localP);
-        jp.addItemPair(ntTfmChEmissMultiplier);
-//        jp.addItemPair("Apply as  Emissivity Multiplier", cBapplyChEmissMultiplier);
-//        jp.addItemPair("Apply as Reflectivity Multiplier", cBApplyChREflectivityMultiplier);
-        jp.addItemPair(rbApplyChReflectivityMultiplier, rbApplyChEmissMultiplier);
-//        jp.addItem(rbApplyChReflectivityMultiplier);
-//        jp.addItem(rbApplyChEmissMultiplier);
-        jp.addBlank();
-//        jp.addItemPair("Full Formula for Tau", cBFormulaForTau);
-//        jp.addItemPair("Do Correction with charge 2D Calculation", cBdo2DCheck);
-//        jp.addItemPair(ntN2dCheck);
-////        jp.addItemPair(ntS152LimitMin);
-////        jp.addItemPair(ntS152LimitMax);
-//        jp.addItemPair(ntTauLimitMin);
-//        jp.addItemPair(ntTauLimitMax);
+    MultiPairColPanel tfmMatchP() {
+        MultiPairColPanel jp = new MultiPairColPanel("Transfer to TFM"); //,180, 60);
         jp.addItemPair("Temperature Profile for TFM", cBProfileForTFM);
-        jp.addItemPair("Length step for TFM Temperature Profile (mm)", tfTFMStep);
+        jp.addBlank();
+        jp.addItemPair("Enable TFM matching", cBdoTFMmatch);
+        jp.addItem(jBresetTFMmatch);
+        jp.addItemPair(ntTfmChEmissMultiplier);
+        jp.addItemPair("Apply above factor on charge", cbTFMemissAction);
         return jp;
+    }
+
+    MultiPairColPanel getTFMmatchPanel() {
+        return tfmMatchPan;
     }
 
     JCheckBox cBbEvalBotFirst, cBbSectionProgress, cBbSlotProgress;
@@ -859,49 +942,10 @@ public class DFHTuningParams {
     NumberTextField tfStartFlueTempHead;
 
 
-    JPanel setting2Pan() {
-        MultiPairColPanel jp = new MultiPairColPanel(250, 60);
-//        jp.addItemPair(ntTfmChEmissMultiplier);
-//        jp.addItemPair("Apply as Emissivity Multiplier", cBapplyChEmissMultiplier);
-//        jp.addItemPair("Apply as Reflectivity Multiplier", cBApplyChREflectivityMultiplier);
-//        jp.addBlank();
-//        jp.addItemPair("Full Formula for Tau", cBFormulaForTau);
-//        jp.addItemPair("Do Correction with charge 2D Calculation", cBdo2DCheck);
-//        jp.addItemPair(ntN2dCheck);
-////        jp.addItemPair(ntS152LimitMin);
-////        jp.addItemPair(ntS152LimitMax);
-//        jp.addItemPair(ntTauLimitMin);
-//        jp.addItemPair(ntTauLimitMax);
-//        jp.addItem("<html><B>(Modify all above with CAUTION)</B></html>");
-//        jp.addBlank();
-        jp.addItemPair("Smoothen Temperature trends", cBbSmoothenCurve);
-        jp.addItemPair("Evaluate Bottom Section First", cBbEvalBotFirst);
-        jp.addItemPair("Calculate for Hot Charge", cBHotCharge);
-        jp.addItemPair("Start Flue Temp Head Hot Charge", tfStartFlueTempHead);
-        jp.addItemPair("Show Section Progress", cBbSectionProgress);
-        jp.addItemPair("Show Stepwise Progress", cBbSlotProgress);
-        jp.addItemPair("Mind Charge Height for Radiation", cBbMindChHeight);
-        jp.addItemPair("Allow Section-wise Fuel", cBAllowSecFuel);
-        jp.addItemPair("Allow REGEN Air Temperature", cBAllowRegenAirTemp);
-        jp.addItemPair("Show Flue Composition", cBShowFlueCompo);
-        jp.addItemPair("Auto Section Temp for Losses", cBbAutoTempForLosses);
-        jp.addBlank();
-        jp.addItemPair("Take Gas Absorption in Internal Rad", cBTakeGasAbsorptionForInterRad);
-        jp.addItemPair("No Gas Absorption in Wall Balance", cBNoGasAbsorptionInWallBalance);
-
-//        jp.addBlank();
-//        jp.addItemPair("Consider Charge Temp Profile", cBbConsideChTempProfile);
-//        jp.addItemPair(tfOverUP);
-//        jp.addItemPair(tfUnderUP);
-        return jp;
-    }
-
-    JPanel performancePan() {
-        MultiPairColPanel jp = new MultiPairColPanel("Using Reference Performance",200, 60);
+    MultiPairColPanel performancePan() {
+        MultiPairColPanel jp = new MultiPairColPanel("Reference Performance (STRIP Fce)",200, 60);
 //        jp.addItemPair("Consider Charge Temp Profile", cBbConsiderChTempProfile);
         jp.addItemPair("Adjust Charge Temp Profile", cBbAdjustChTempProfile);
-//        jp.addItemPair(tfOverUP);
-//        jp.addItemPair(tfUnderUP);
         jp.addItemPair("On Production Line", cBbOnProductionLine);
         return jp;
     }
@@ -910,11 +954,11 @@ public class DFHTuningParams {
 
 
     public MultiPairColPanel userTunePan() {
-        MultiPairColPanel jp = new MultiPairColPanel("Calculation Basis", 300,6);
+        MultiPairColPanel jp = new MultiPairColPanel("Handling Internal Radiation", 300,6);
         jp.addItemPair("Evaluate Internal Radiation", cBSlotRadInCalcul);
         jp.addItemPair("Evaluate EndWall Radiation", cBTakeEndWalls);
         jp.addBlank();
-        jp.addItem(new JLabel("CAUTION: Choice below is on TRIAL and only for STRIP heating"));
+        jp.addItem(new JLabel("<html><font color='red'>Choice below is on TRIAL and only for STRIP heating</html>"));
         jp.addItemPair("Use Zonal Temperature (NO Heat Balance)", cBbaseOnZonalTemperature);
         return jp;
     }
@@ -963,7 +1007,29 @@ public class DFHTuningParams {
 //        this. minOutputFactor = minOutputFactor;
 //        this.minWidthFactor = minWidthFactor;
 //    }
-//
+
+    public int xlTuningDetails(Sheet sheet, ExcelStyles styles) {
+        Cell cell;
+        Row r;
+        r = sheet.createRow(0);
+        cell = r.createCell(0);
+        cell.setCellStyle(styles.csHeader1);
+        cell.setCellValue("Tuning Parameters");
+        sheet.setColumnWidth(1, 8000);
+        sheet.setColumnWidth(3, 4000);
+        sheet.setColumnWidth(4, 8000);
+        sheet.setColumnWidth(6, 4000);
+        sheet.setColumnWidth(7, 8000);
+        r = sheet.createRow(4);
+        int topRow = 4, row, rRow, rRow1;
+        int col = 1;
+        row = styles.xlMultiPairColPanel(tfmMatchPan, sheet, topRow, col) + 1;
+        row = styles.xlMultiPairColPanel(settings1Pan, sheet, row + 2, col) + 1;
+        col = 4;
+        rRow = styles.xlMultiPairColPanel(settings2Pan, sheet, topRow, col) + 1;
+        return  Math.max(rRow, row);
+    }
+
     class PerfTableSetting extends JDialog {
         JButton ok = new JButton("OK");
         JButton cancel = new JButton("Cancel");
