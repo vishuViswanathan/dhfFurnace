@@ -19,8 +19,9 @@ public class HelpSystem {
     MultiPairColPanel helpPan = new MultiPairColPanel("Help Topics");
 //    JPanel helpPan = new JPanel();
     int tabPosition = JTabbedPane.TOP;
-    public HelpSystem(String folder) {
+    public HelpSystem(String folder, int tabPosition) {
         this.folder = folder;
+        this.tabPosition = tabPosition;
     }
 
     public HelpSystem(JSPConnection jspConnection, int appCode, String folder,

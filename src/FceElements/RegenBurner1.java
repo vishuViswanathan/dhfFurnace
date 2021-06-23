@@ -9,6 +9,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.util.Vector;
 
 /**
@@ -19,7 +21,7 @@ import java.util.Vector;
  * To change this template use File | Settings | File Templates.
  */
 public class RegenBurner1 {
-    static public enum Restriction {
+    public enum Restriction {
         NOTREADY("Not Evaluated"),
         BYHEAT("Restricted By Heat Available"),
         BYTEMP("Restricted By Flue Temperature"),
@@ -66,7 +68,7 @@ public class RegenBurner1 {
     boolean bAirHeated = true, bFuelHeated = false;
 
     double fluidInTemp = 30;
-    double airMaxTemp, fuelMaxTemp;
+    double airMaxTemp = fluidInTemp, fuelMaxTemp = fluidInTemp;
     Restriction airTRestrict = Restriction.NOTREADY, fuelTRestrict = Restriction.NOTREADY;
 
     InputControl control;
@@ -113,7 +115,7 @@ public class RegenBurner1 {
         ChkBoxAction chkBoxAction = new ChkBoxAction();
 
         ActionListener buttonListener = new ButtonAction();
-        ActionListener paramsChanged = new ParamsChanged();
+        ParamsChanged paramsChanged = new ParamsChanged();
 
         jbFindAirTemp = new JButton("Find Air Temperature");
         jbFindAirTemp.addActionListener(buttonListener);
@@ -129,24 +131,32 @@ public class RegenBurner1 {
         coBFuel.addActionListener(fuelAction);
         ntExcessAir = new NumberTextField(control, excessAir * 100, 6, false, 0, 200, "###.00", "Excess Air (%)");
         ntExcessAir.addActionListener(paramsChanged);
+        ntExcessAir.addFocusListener(paramsChanged);
         ntExcessAir.addActionListener(fuelAction);
         ntRegenFract = new NumberTextField(control, regenFract * 100, 6, false, 0, 100, "###.00", "Regen Flue flow (%)");
         ntRegenFract.addActionListener(paramsChanged);
+        ntRegenFract.addFocusListener(paramsChanged);
         ntRegenEff = new NumberTextField(control, regenEff * 100, 6, false, 50, 100, "###.00", "Regen heat Efficiency (%)");
         ntRegenEff.addActionListener(paramsChanged);
+        ntRegenEff.addFocusListener(paramsChanged);
 //        ntDeltaTFlueAir = new NumberTextField(control, deltaTFlueAir, 6, false, 0, 1000, "#,###", "DeltaT Flue-Air (C)");
 //        ntDeltaTFlueAir.addActionListener(paramsChanged);
         ntFlueInTemp = new NumberTextField(control, flueInTemp, 6, false, 100, 2000, "#,###", "Flue Temperature to Regen (C)");
         ntFlueInTemp.addActionListener(paramsChanged);
+        ntFlueInTemp.addFocusListener(paramsChanged);
         ntFlueOutTemp = new NumberTextField(control, flueOutTemp, 6, false, 0, 2000, "#,###", "Flue Temperature after Regen (C)");
         ntFlueOutTemp.addActionListener(paramsChanged);
+        ntFlueOutTemp.addFocusListener(paramsChanged);
         ntFluidInTemp = new NumberTextField(control, fluidInTemp, 6, false, 0, 1000, "#,###", "Air/Fuel In Temperature to Regen (C)");
         ntFluidInTemp.addActionListener(paramsChanged);
+        ntFluidInTemp.addFocusListener(paramsChanged);
 
         ntAirMaxTemp = new NumberTextField(control, airMaxTemp, 6, false, 0, 2000, "#,###", "Air Temperature to Burner (C)");
         ntAirMaxTemp.addActionListener(paramsChanged);
+        ntAirMaxTemp.addFocusListener(paramsChanged);
         ntFuelMaxTemp = new NumberTextField(control, fuelMaxTemp, 6, false, 0, 2000, "#,###", "fuel Temperature to Burner (C)");
         ntFuelMaxTemp.addActionListener(paramsChanged);
+        ntFuelMaxTemp.addFocusListener(paramsChanged);
 
         chkBAirHeated = new JCheckBox("Air Heated in Regen");
         chkBAirHeated.addActionListener(chkBoxAction);
@@ -254,8 +264,8 @@ public class RegenBurner1 {
         flueInTemp = ntFlueInTemp.getData();
         flueOutTemp = ntFlueOutTemp.getData();
         fluidInTemp = ntFluidInTemp.getData();
-        excessAir = ntExcessAir.getData();
-        excessAir = ntExcessAir.getData();
+//        excessAir = ntExcessAir.getData();
+//        excessAir = ntExcessAir.getData();
         airMaxTemp = ntAirMaxTemp.getData();
         fuelMaxTemp = ntFuelMaxTemp.getData();
     }
@@ -507,7 +517,7 @@ public class RegenBurner1 {
         }
     }
 
-    class ParamsChanged implements ActionListener {
+    class ParamsChanged implements ActionListener, FocusListener {
         @Override
         public void actionPerformed(ActionEvent e) {
             Object src = e.getSource();
@@ -524,6 +534,19 @@ public class RegenBurner1 {
 //                fuelTRestrict = Restriction.MANUAL;
 //                coBFuelRestrict.setSelectedItem(fuelTRestrict);
 //            }
+            markReady(false);
+        }
+
+        @Override
+        public void focusGained(FocusEvent e) {
+
+        }
+
+        @Override
+        public void focusLost(FocusEvent e) {
+            Object src = e.getSource();
+            if (src == ntExcessAir)
+                getFlue();
             markReady(false);
         }
     }

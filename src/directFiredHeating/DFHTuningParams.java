@@ -319,18 +319,18 @@ public class DFHTuningParams {
                 bOnProductionLine = cBbOnProductionLine.isSelected();
             }
         });
-        cBNoEmissivityCorrFactor = new JCheckBox("(TESTING ONLY) Neglect Gas Emissivity Correction Factor");
+        cBNoEmissivityCorrFactor = new JCheckBox();
         cBNoEmissivityCorrFactor.setEnabled(false);
-        cBNoGasRadiationToCharge = new JCheckBox("(TESTING ONLY) No Gas Radiation To Charge");
+        cBNoGasRadiationToCharge = new JCheckBox();
         cBNoGasRadiationToCharge.setEnabled(false);
-        cBgasAbsorptionHeilingen = new JCheckBox("(TESTING ONLY) Gas Absorption as per Heilingenstadt");
+        cBgasAbsorptionHeilingen = new JCheckBox();
         cBgasAbsorptionHeilingen.setEnabled(false);
-        cBdo2DCalculation = new JCheckBox("Do 2D calculation in TESTING mode");
+        cBdo2DCalculation = new JCheckBox();
         cBdo2DCalculation.addActionListener(e-> {
             bDo2dCalculation = cBdo2DCalculation.isSelected();
         });
         cBdo2DCalculation.setEnabled(false);
-        cBOnTest = new JCheckBox("Enable Test Mode with the following");
+        cBOnTest = new JCheckBox();
         final DFHeating c = controller;
         cBOnTest.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -694,6 +694,7 @@ public class DFHTuningParams {
         errorAllowed = defaultErrorAllowed;
         suggested1stCorrection = defaultSuggested1stCorrection;
         correctionForTooLowGas = defaultCorrectionForTooLowGas;
+        bSmoothenCurve = true;
         bHotCharge = false;
         bTakeEndWalls = true;   // false;
         bTakeGasAbsorptionForInterRad = false;
@@ -705,6 +706,7 @@ public class DFHTuningParams {
         bSlotProgress = true;
         bMindChHeight = true;
         bAllowSecFuel = true; // false;
+        setAllowSecFuel(bAllowSecFuel);
         bAllowRegenAirTemp = true;
         bShowFlueCompo = true;
         bAutoTempForLosses = true;
@@ -743,7 +745,7 @@ public class DFHTuningParams {
 
     GridBagConstraints mainGbc = new GridBagConstraints();
     JPanel mainTuningPanel = new FramedPanel(new GridBagLayout());
-    MultiPairColPanel tfmMatchPan, settings1Pan, settings2Pan, peformancePan, testPan;
+    MultiPairColPanel tfmMatchPan, settings1Pan, settings2Pan, performancePan, testPan;
     JPanel procSetPan;
 //    FramedPanel mainTuningPanel;
 
@@ -766,7 +768,7 @@ public class DFHTuningParams {
         mainTuningPanel.add(settings2Pan = setting2Pan(), mainGbc);
         mainGbc.gridx--;
         mainGbc.gridy++;
-        mainTuningPanel.add(peformancePan = performancePan(), mainGbc);
+        mainTuningPanel.add(performancePan = performancePan(), mainGbc);
         mainGbc.gridy++;
         mainTuningPanel.add(jbRestParams, mainGbc);
 //        mainGbc.gridwidth = 2;
@@ -824,11 +826,11 @@ public class DFHTuningParams {
 
     MultiPairColPanel testPanel() {
         MultiPairColPanel jp = new MultiPairColPanel("Test Settings");
-        jp.addItemPair(cBOnTest);
-        jp.addItemPair(cBdo2DCalculation);
-        jp.addItemPair(cBNoEmissivityCorrFactor);
-        jp.addItemPair(cBNoGasRadiationToCharge);
-        jp.addItemPair(cBgasAbsorptionHeilingen);
+        jp.addItemPair("Enable Test Mode with the following", cBOnTest);
+        jp.addItemPair("Do 2D calculation in TESTING mode", cBdo2DCalculation);
+        jp.addItemPair("Neglect Gas Emissivity Correction Factor", cBNoEmissivityCorrFactor);
+        jp.addItemPair("No Gas Radiation To Charge", cBNoGasRadiationToCharge);
+        jp.addItemPair("Gas Absorption as per Heilingenstadt", cBgasAbsorptionHeilingen);
         jp.addItem(new JLabel("(for STRIP furnace this is considered enabled)"));
         return jp;
     }
@@ -892,7 +894,7 @@ public class DFHTuningParams {
         MultiPairColPanel jp = new MultiPairColPanel("Settings 2", 250, 60);
         jp.addItemPair("Evaluate Bottom Section First", cBbEvalBotFirst);
         jp.addItemPair("Calculate for Hot Charge", cBHotCharge);
-        jp.addItemPair("* Start Flue Temp Head Hot Charge", tfStartFlueTempHead);
+        jp.addItemPair("Start Flue Temp Head Hot Charge", tfStartFlueTempHead);
         jp.addItemPair("Show Section Progress", cBbSectionProgress);
         jp.addItemPair("Show Stepwise Progress", cBbSlotProgress);
         jp.addItemPair("Mind Charge Height for Radiation", cBbMindChHeight);
@@ -970,27 +972,33 @@ public class DFHTuningParams {
         Dimension headSize = new Dimension(350, 20);
         gbc.gridx = 0;
         gbc.gridy = 0;
-        JLabel h1 = new JLabel("Emissivity of Walls");
+        int hNum = 0;
+        JLabel h1 = new JLabel(presetRowHeader[hNum]);
         h1.setPreferredSize(headSize);
         jp.add(h1, gbc);
+        hNum++;
         gbc.gridy++;
-        JLabel h2 = new JLabel("Gas to Wall Heat transfer Multiplying Factors");
+        JLabel h2 = new JLabel(presetRowHeader[hNum]);
         h2.setPreferredSize(headSize);
         jp.add(h2, gbc);
+        hNum++;
         gbc.gridy++;
-        JLabel h3 = new JLabel("hConvection - Fired sections (kcal/m2.h.C)");
+        JLabel h3 = new JLabel(presetRowHeader[hNum]);
         h3.setPreferredSize(headSize);
         jp.add(h3, gbc);
+        hNum++;
         gbc.gridy++;
-        JLabel h4 = new JLabel("hConvection - Recuperative sections (kcal/m2.h.C)");
+        JLabel h4 = new JLabel(presetRowHeader[hNum]);
         h4.setPreferredSize(headSize);
         jp.add(h4, gbc);
+        hNum++;
         gbc.gridy++;
-        JLabel h5 = new JLabel("Gas Emissivity Correction factor");
+        JLabel h5 = new JLabel(presetRowHeader[hNum]);
         h5.setPreferredSize(headSize);
         jp.add(h5, gbc);
+        hNum++;
         gbc.gridy++;
-        JLabel h6 = new JLabel("Radiation Multiplier (for Wall-Radiation-only Calculation)");
+        JLabel h6 = new JLabel(presetRowHeader[hNum]);
         h6.setPreferredSize(headSize);
         jp.add(h6, gbc);
         return jp;
@@ -1015,18 +1023,76 @@ public class DFHTuningParams {
         cell = r.createCell(0);
         cell.setCellStyle(styles.csHeader1);
         cell.setCellValue("Tuning Parameters");
-        sheet.setColumnWidth(1, 8000);
+        sheet.setColumnWidth(1, 12000);
         sheet.setColumnWidth(3, 4000);
-        sheet.setColumnWidth(4, 8000);
-        sheet.setColumnWidth(6, 4000);
-        sheet.setColumnWidth(7, 8000);
-        r = sheet.createRow(4);
-        int topRow = 4, row, rRow, rRow1;
-        int col = 1;
-        row = styles.xlMultiPairColPanel(tfmMatchPan, sheet, topRow, col) + 1;
-        row = styles.xlMultiPairColPanel(settings1Pan, sheet, row + 2, col) + 1;
+        sheet.setColumnWidth(4, 12000);
+         int topRow = 4, col, row, rRow;
+        int leftCol = 1;
+        PreSetTunes manPre = preSets.get(FurnaceFor.MANUAL);
+        row = topRow;
+
+        r = sheet.createRow(row);
+        col = leftCol;
+        cell = r.createCell(col);
+        cell.setCellValue("Calculation Parameters for MANUAL");
+        cell.setCellStyle(styles.csHeader2);
+//        CellRangeAddress range = new CellRangeAddress(row, row, col, col + 1);
+//        sheet.addMergedRegion(range);
+        row++;
+
+        r = sheet.createRow(row++);
+        col = leftCol;
+        cell = r.createCell(col++);
+        cell.setCellValue(manPre.tfeO.getName());
+        cell = r.createCell(col);
+        cell.setCellValue(manPre.tfeO.toString());
+
+        r = sheet.createRow(row++);
+        col = leftCol;
+        cell = r.createCell(col++);
+        cell.setCellValue(manPre.tfgMulti.getName());
+        cell = r.createCell(col);
+        cell.setCellValue(manPre.tfgMulti.toString());
+
+        r = sheet.createRow(row++);
+        col = leftCol;
+        cell = r.createCell(col++);
+        cell.setCellValue(manPre.tfaConvFired.getName());
+        cell = r.createCell(col);
+        cell.setCellValue(manPre.tfaConvFired.toString());
+
+        r = sheet.createRow(row++);
+        col = leftCol;
+        cell = r.createCell(col++);
+        cell.setCellValue(manPre.tfaConvRecu.getName());
+        cell = r.createCell(col);
+        cell.setCellValue(manPre.tfaConvRecu.toString());
+
+
+        r = sheet.createRow(row++);
+        col = leftCol;
+        cell = r.createCell(col++);
+        cell.setCellValue(manPre.tfgMulti.getName());
+        cell = r.createCell(col);
+        cell.setCellValue(manPre.tfgMulti.toString());
+
+        r = sheet.createRow(row++);
+        col = leftCol;
+        cell = r.createCell(col++);
+        cell.setCellValue(manPre.tfRadiationMultiplier.getName());
+        cell = r.createCell(col);
+        cell.setCellValue(manPre.tfRadiationMultiplier.toString());
+
+        col = 4;
+        rRow = styles.xlMultiPairColPanel(testPan, sheet, topRow, col) + 1;
+        topRow = Math.max(row, rRow);
+        col = 1;
+        row = styles.xlMultiPairColPanel(settings1Pan, sheet, topRow, col) + 1;
         col = 4;
         rRow = styles.xlMultiPairColPanel(settings2Pan, sheet, topRow, col) + 1;
+        row = Math.max(row, rRow);
+        col = 1;
+        row = styles.xlMultiPairColPanel(performancePan, sheet, row, col) + 1;
         return  Math.max(rRow, row);
     }
 
@@ -1167,6 +1233,13 @@ public class DFHTuningParams {
         }
     }
 
+    String[] presetRowHeader = {"Emissivity of Walls", "Gas to Wall Heat transfer Multiplying Factors",
+            "hConvection - Fired sections (kcal/m2.h.C)",
+            "hConvection - Recuperative sections (kcal/m2.h.C)",
+            "Gas Emissivity Correction factor",
+            "Radiation Multiplier (for Wall-Radiation-only Calculation)"
+    };
+
 
     class PreSetTunes {
         public double eO = 0.8;
@@ -1187,12 +1260,19 @@ public class DFHTuningParams {
             this.radiationMultiplier = radiationMultiplier;
             this.editable = editable;
             if (editable) {
-                tfeO = new NumberTextField(controller, eO, 6, false, 0.01, 1, "#,##0.00", "");
-                tfgMulti = new NumberTextField(controller, gMulti, 6, false, 1, 50, "#,###.00", "");
-                tfaConvFired = new NumberTextField(controller, aConvFired, 6, false, 0, 50, "#,###.00", "", true);
-                tfaConvRecu = new NumberTextField(controller, aConvRecu, 6, false, 0, 50, "#,###.00", "", true);
-                tfeFact = new NumberTextField(controller, eFact, 6, false, 1, 2, "#,###.00", "");
-                tfRadiationMultiplier = new NumberTextField(controller, radiationMultiplier, 6, false, 0.8, 1.5, "#,###.00", "");
+                int hNum = 0;
+                tfeO = new NumberTextField(controller, eO, 6, false, 0.01, 1,
+                        "#,##0.00", presetRowHeader[hNum++]);
+                tfgMulti = new NumberTextField(controller, gMulti, 6, false, 1, 50,
+                        "#,###.00", presetRowHeader[hNum++]);
+                tfaConvFired = new NumberTextField(controller, aConvFired, 6, false, 0, 50,
+                        "#,###.00", presetRowHeader[hNum++], true);
+                tfaConvRecu = new NumberTextField(controller, aConvRecu, 6, false, 0, 50,
+                        "#,###.00", presetRowHeader[hNum++], true);
+                tfeFact = new NumberTextField(controller, eFact, 6, false, 1, 2,
+                        "#,###.00", presetRowHeader[hNum++]);
+                tfRadiationMultiplier = new NumberTextField(controller, radiationMultiplier, 6, false,
+                        0.8, 1.5, "#,###.00", presetRowHeader[hNum++]);
             }
         }
 

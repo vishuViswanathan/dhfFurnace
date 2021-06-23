@@ -4757,6 +4757,10 @@ public class DFHFurnace {
         cell.setCellStyle(styles.csHeader1);
         cell.setCellValue("TOTAL FURNACE HEAT BALANCE");
 
+        cell = r.createCell(4);
+        cell.setCellStyle(styles.csHeader1);
+        cell.setCellValue("with DFHFURNACE Release " + controller.releaseDate());
+
         sheet.setColumnWidth(1, 9000);
         sheet.setColumnWidth(2, 3000);
         sheet.setColumnWidth(3, 500);

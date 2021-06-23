@@ -170,7 +170,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = " 20210520";
+    protected String releaseDate = " 20210623 PM";
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -905,10 +905,12 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         mIOpData.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, KeyEvent.CTRL_DOWN_MASK));
         mIOpData.addActionListener(mAction);
 
-        mIDefineRecuperator = new JMenuItem("Define Common Air Recuperator");
+        mIDefineRecuperator = new JMenuItem("Define Recuperator");
+        mIDefineRecuperator.setToolTipText("Define a Common Air Recuperator");
         mIDefineRecuperator.addActionListener(mAction);
 
-        mIRecuPerformace = new JMenuItem("Evauate Air Recuperator Performance");
+        mIRecuPerformace = new JMenuItem("Recuperator Check");
+        mIRecuPerformace.setToolTipText("Evaluate Air Recuperator Performance");
         mIRecuPerformace.addActionListener(mAction);
 
         mICreateFuelMix = new JMenuItem("Create Fuel Mix");
@@ -1386,7 +1388,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected boolean addHelpMenu(JMenuBar mBar) {
         boolean retVal = false;
         logInfo("Loading HelpSystem with " + JTabbedPane.LEFT);
-        helpSystem = new HelpSystem(jspConnection, appCode, helpFolder, JTabbedPane.LEFT);
+//        helpSystem = new HelpSystem(jspConnection, appCode, helpFolder, JTabbedPane.LEFT);
+        helpSystem = new HelpSystem(helpFolder, JTabbedPane.LEFT);
         if (helpSystem.loadHelp()) {
             helpMenu.setMnemonic(KeyEvent.VK_H);
             MenuListener helpListenerL = new MenuListener() {
@@ -1825,6 +1828,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         cell.setCellStyle(styles.csHeader1);
         cell.setCellValue("FURNACE BASIC DATA");
 
+        cell = r.createCell(4);
+        cell.setCellStyle(styles.csHeader1);
+        cell.setCellValue("with DFHFURNACE Release " + releaseDate);
+
         sheet.setColumnWidth(1, 8000);
         sheet.setColumnWidth(3, 4000);
         sheet.setColumnWidth(4, 8000);
@@ -1845,7 +1852,11 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         topRow = Math.max(rRow, row);
         col = 1;
         row = styles.xlMultiPairColPanel(mpChargeData, sheet, topRow, col) + 1;
-        col = 4;
+        col = 4;        cell = r.createCell(4);
+        cell.setCellStyle(styles.csHeader1);
+        cell.setCellValue("with DFHFURNACE Release " + releaseDate);
+
+
         rRow = styles.xlMultiPairColPanel(mpChInFce, sheet, topRow, col) + 1;
         col = 7;
         rRow1 = styles.xlMultiPairColPanel(mpRecuData, sheet, topRow, col) + 1;
