@@ -520,6 +520,7 @@ public class DFHTuningParams {
         cBdo2DCalculation.setSelected(bDo2dCalculation);
         cBOnTest.setSelected(bOnTest);
         cBbaseOnZonalTemperature.setSelected(bBaseOnZonalTemperature);
+        chbDynamicGasTempCorrection.setSelected(bDynamicGasTempCorrection);
     }
 
     public void setSelectedProc(FurnaceFor selectedProc) {
@@ -691,6 +692,13 @@ public class DFHTuningParams {
     }
 
     public void setParamsToDefaultValues(boolean resetTMmatch) {
+        bDynamicGasTempCorrection = chbDynamicGasTempCorrection.isSelected();
+        if (bDynamicGasTempCorrection) {
+            minGasTempCorrection = tfMinGasTempCorrection.getData();
+            maxGasTempCorrection = tfMaxGasTempCorrection.getData();
+        }
+
+
         errorAllowed = defaultErrorAllowed;
         suggested1stCorrection = defaultSuggested1stCorrection;
         correctionForTooLowGas = defaultCorrectionForTooLowGas;
@@ -734,6 +742,8 @@ public class DFHTuningParams {
         tauLimitMin = defaultTauLimitMin;
         tauLimitMax = defaultTauLimitMax;
         bFormulaForTau = false;
+        bBaseOnZonalTemperature = false;
+        bAdjustChTempProfile = true;
         bOnTest = false;
         enableOnTestParams();
         cBOnTest.setSelected(false);
@@ -878,16 +888,20 @@ public class DFHTuningParams {
         jp.addItemPair("Error Allowed (degC)", tferrorAllowed);
         jp.addItemPair("Wall loss (for internal use)", tfwallLoss);
         jp.addItemPair("Smoothen Temperature trends", cBbSmoothenCurve);
-        jp.addItemPair("Enable Dynamic Gas Temp Correction", chbDynamicGasTempCorrection);
-        jp.addItemPair(tfMinGasTempCorrection);
-        jp.addItemPair(tfMaxGasTempCorrection);
+//        jp.addItemPair("Enable Dynamic Gas Temp Correction", chbDynamicGasTempCorrection);
+//        jp.addItemPair(tfMinGasTempCorrection);
+//        jp.addItemPair(tfMaxGasTempCorrection);
         jp.addItem("(Ensure Min < Max)");
         jp.addItemPair("Full Formula for Tau", cBFormulaForTau);
         jp.addItemPair("Do Correction with charge 2D Calculation", cBdo2DCheck);
         jp.addItemPair(ntN2dCheck);
         jp.addItemPair(ntTauLimitMin);
         jp.addItemPair(ntTauLimitMax);
-        return jp;
+        jp.addItemPair("Evaluate Internal Radiation", cBSlotRadInCalcul);
+        jp.addItemPair("Evaluate EndWall Radiation", cBTakeEndWalls);
+        jp.addItem(new JLabel("<html><font color='red'>Choice below is on TRIAL and only for STRIP heating</html>"));
+        jp.addItemPair("Use Zonal Temperature (NO Heat Balance)", cBbaseOnZonalTemperature);
+       return jp;
     }
 
     MultiPairColPanel setting2Pan() {
@@ -955,13 +969,23 @@ public class DFHTuningParams {
     JCheckBox cBbaseOnZonalTemperature;
 
 
+//    public MultiPairColPanel userTunePan() {
+//        MultiPairColPanel jp = new MultiPairColPanel("Handling Internal Radiation", 300,6);
+//        jp.addItemPair("Evaluate Internal Radiation", cBSlotRadInCalcul);
+//        jp.addItemPair("Evaluate EndWall Radiation", cBTakeEndWalls);
+//        jp.addBlank();
+//        jp.addItem(new JLabel("<html><font color='red'>Choice below is on TRIAL and only for STRIP heating</html>"));
+//        jp.addItemPair("Use Zonal Temperature (NO Heat Balance)", cBbaseOnZonalTemperature);
+//        return jp;
+//    }
+
     public MultiPairColPanel userTunePan() {
-        MultiPairColPanel jp = new MultiPairColPanel("Handling Internal Radiation", 300,6);
-        jp.addItemPair("Evaluate Internal Radiation", cBSlotRadInCalcul);
-        jp.addItemPair("Evaluate EndWall Radiation", cBTakeEndWalls);
-        jp.addBlank();
-        jp.addItem(new JLabel("<html><font color='red'>Choice below is on TRIAL and only for STRIP heating</html>"));
-        jp.addItemPair("Use Zonal Temperature (NO Heat Balance)", cBbaseOnZonalTemperature);
+        MultiPairColPanel jp = new MultiPairColPanel("Gas Temperature Correction", 250,6);
+        jp.addItem(new JLabel("<html>To be used if unable to reach Temperature Balance <br>" +
+                "<font color='red'>Setting this ON increases the calculation time</font></html>"));
+        jp.addItemPair("Enable Dynamic Gas Temp Correction", chbDynamicGasTempCorrection);
+        jp.addItemPair(tfMinGasTempCorrection);
+        jp.addItemPair(tfMaxGasTempCorrection);
         return jp;
     }
 

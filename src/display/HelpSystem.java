@@ -1,6 +1,7 @@
 package display;
 
 import directFiredHeating.DFHeating;
+import mvUtils.display.EditResponse;
 import mvUtils.display.ErrorStatAndMsg;
 import mvUtils.display.MultiPairColPanel;
 import mvUtils.jsp.JSPConnection;
@@ -8,6 +9,9 @@ import mvUtils.mvXML.ValAndPos;
 import mvUtils.mvXML.XMLmv;
 
 import javax.swing.*;
+import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.*;
 import java.util.Hashtable;
 
@@ -16,24 +20,26 @@ public class HelpSystem {
     JSPConnection jspConnection = null;
     int appCode;
     String folder;
-    MultiPairColPanel helpPan = new MultiPairColPanel("Help Topics");
+    MultiPairColPanel helpPan;
 //    JPanel helpPan = new JPanel();
     int tabPosition = JTabbedPane.TOP;
-    public HelpSystem(String folder, int tabPosition) {
+    public HelpSystem(String folder, int tabPosition, String title) {
         this.folder = folder;
         this.tabPosition = tabPosition;
+        helpPan = new MultiPairColPanel(title);
     }
 
     public HelpSystem(JSPConnection jspConnection, int appCode, String folder,
-                      int tabPosition) {
+                      int tabPosition, String title) {
         this.jspConnection = jspConnection;
         this.tabPosition = tabPosition;
         this.appCode = appCode;
         this.folder = folder;
+        helpPan = new MultiPairColPanel(title);
     }
 
-    public HelpSystem(JSPConnection jspConnection, int appCode, String folder) {
-        this(jspConnection, appCode,folder, JTabbedPane.TOP);
+    public HelpSystem(JSPConnection jspConnection, int appCode, String folder, String title) {
+        this(jspConnection, appCode,folder, JTabbedPane.TOP, title);
     }
 
     public boolean loadHelp() {
@@ -56,9 +62,11 @@ public class HelpSystem {
         return p;
     }
 
+    JTabbedPane jtp;
+
     public boolean getHelpPagesFromFile() {
         boolean retVal = false;
-        JTabbedPane jtp = new JTabbedPane(tabPosition);
+        jtp = new JTabbedPane(tabPosition);
         String helpFolder = folder + "\\";
         File folder = new File(helpFolder);
         if (folder.exists()) {
@@ -70,7 +78,7 @@ public class HelpSystem {
                         BufferedInputStream iStream = new BufferedInputStream(new FileInputStream(filePath));
                         File f = new File(filePath);
                         long len = f.length();
-                        if (len > 20 && len < 50000) {
+                        if (len > 5 && len < 50000) {
                             int iLen = (int) len;
                             byte[] data = new byte[iLen + 100];
                             try {
@@ -79,7 +87,10 @@ public class HelpSystem {
                                     int nameLocStart = htmlString.indexOf("helpName");
                                     String helpName = htmlString.substring(nameLocStart, nameLocStart + 50);
                                     helpName = helpName.split("'")[1];
-                                    jtp.addTab(helpName, getHelpPage(htmlString));
+                                    if (helpName.equalsIgnoreCase("spacer"))
+                                        jtp.addTab("", null);
+                                    else
+                                        jtp.addTab(helpName, getHelpPage(htmlString));
                                 }
                                 iStream.close();
                                 retVal = true;
@@ -105,7 +116,7 @@ public class HelpSystem {
         Hashtable<String,String> query = new Hashtable<String, String>(){
             {put("appCode", ("" + appCode));}
         };
-        JTabbedPane jtp = new JTabbedPane(tabPosition);
+        jtp = new JTabbedPane(tabPosition);
         ErrorStatAndMsg jspResponse = jspConnection.getData("getHelpPages.jsp", query);
         if (!jspResponse.inError) {
             String xmlStr = jspResponse.msg;
@@ -117,10 +128,10 @@ public class HelpSystem {
                 String helpName = vp.val;
                 vp = XMLmv.getTag(htmlString, "htmlText", vp.endPos);
                 htmlString = vp.val;
-//                int nameLocStart = htmlString.indexOf("helpName");
-//                String helpName = htmlString.substring(nameLocStart, nameLocStart + 50);
-//                helpName = helpName.split("'")[1];
-                jtp.addTab(helpName, getHelpPage(htmlString));
+                if (helpName.equalsIgnoreCase("spacer"))
+                    jtp.addTab("", null);
+                else
+                    jtp.addTab(helpName, getHelpPage(htmlString));
                 retVal = true;
                 // check for more pages
                 vpAll = XMLmv.getTag(xmlStr, "HelpPage", vpAll.endPos);
@@ -137,6 +148,31 @@ public class HelpSystem {
 
     public JPanel getHelpPanel() {
         return helpPan;
+    }
+
+    boolean helpFrameOpened = false;
+    HelpDlg helpFrame;
+
+    public void getHelpFrame(Component owner, String title) {
+        if (!helpFrameOpened) {
+            helpFrame = new HelpDlg(title);
+            helpFrameOpened = true;
+        }
+        helpFrame.showHelp(owner);
+    }
+
+    class HelpDlg extends JDialog {
+        HelpDlg(String title) {
+            add(helpPan);
+            pack();
+            setTitle(title);
+            setResizable(false);
+        }
+
+        void showHelp(Component owner) {
+            setLocationRelativeTo(owner);
+            setVisible(true);
+        }
     }
 }
 

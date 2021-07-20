@@ -353,7 +353,8 @@ public class RTHeating extends JPanel implements InputControl {
             switchToInputPage();
         });
         mb.add(pbEdit);
-        helpSystem = new HelpSystem(jspConnection, appCode, "helpSystem\\RTHeating");
+        helpSystem = new HelpSystem(jspConnection, appCode,
+                "helpSystem\\RTHeating", "Help Topics");
         if (helpSystem.loadHelp()) {
             helpMenu = new JMenu("Help");
             helpMenu.setMnemonic(KeyEvent.VK_H);

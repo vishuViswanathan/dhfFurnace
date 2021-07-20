@@ -1925,7 +1925,8 @@ public class DFHFurnace {
                     tempGZ1Assume = tgNow + (tgNow - tgLast) / (tmNow - tmLast) * (reqdChTempM - tmNow);
                     if (Double.isNaN(tempGZ1Assume)) {
                         showError("DFHFurnace.1845: Some problem in getting to charge entry temperature\n" +
-                                "     Try Dynamic Gas Temp Correction in 'Tuning Prameters' ...");
+                                "       Try Dynamic Gas Temp Correction in 'Gas Temperature Correction' panel\n" +
+                                "       in Operation Data  ...");
                         bRetVal = false;
                         break;
                     }

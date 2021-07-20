@@ -159,7 +159,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
     public int appCode = 100;
     HelpSystem helpSystem;
-    public JMenu helpMenu = new JMenu("Help");
+//    public JMenu helpMenu = new JMenu("Help");
+    public JMenuItem helpMenu = new JMenuItem("Help");
     protected String helpFolder = "";
     public boolean loadTesting = false;
     protected String profileFileExtension = "dfhDat";
@@ -1388,20 +1389,12 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected boolean addHelpMenu(JMenuBar mBar) {
         boolean retVal = false;
         logInfo("Loading HelpSystem with " + JTabbedPane.LEFT);
-//        helpSystem = new HelpSystem(jspConnection, appCode, helpFolder, JTabbedPane.LEFT);
-        helpSystem = new HelpSystem(helpFolder, JTabbedPane.LEFT);
+//        helpSystem = new HelpSystem(jspConnection, appCode, helpFolder, JTabbedPane.LEFT,
+//            "Help Topics (for Versions 20210623 and later)");
+        helpSystem = new HelpSystem(helpFolder, JTabbedPane.LEFT,
+                "Help Topics (for Versions 20210623 and later)");
         if (helpSystem.loadHelp()) {
-            helpMenu.setMnemonic(KeyEvent.VK_H);
-            MenuListener helpListenerL = new MenuListener() {
-                public void menuSelected(MenuEvent e) {
-                    switchToSelectedPage(helpSystem.getHelpPanel());
-                }
-                @Override
-                public void menuDeselected(MenuEvent e) {}
-                @Override
-                public void menuCanceled(MenuEvent e) {}
-            };
-            helpMenu.addMenuListener(helpListenerL);
+            helpMenu.addActionListener(e-> helpSystem.getHelpFrame(null, "Help for DFH Furnace Application"));
             mBar.add(Box.createHorizontalGlue());
             mBar.add(helpMenu);
             retVal = true;
