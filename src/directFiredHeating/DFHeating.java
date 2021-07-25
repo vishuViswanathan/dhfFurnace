@@ -992,6 +992,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         resultPanels.put(DFHResult.Type.FUELS, new ResultPanel(DFHResult.Type.FUELS, resultsMenuActions));
         resultPanels.put(DFHResult.Type.TOPFUELS, new ResultPanel(DFHResult.Type.TOPFUELS, resultsMenuActions));
         resultPanels.put(DFHResult.Type.BOTFUELS, new ResultPanel(DFHResult.Type.BOTFUELS, resultsMenuActions));
+        resultPanels.put(DFHResult.Type.FUELMIX, new ResultPanel(DFHResult.Type.FUELMIX, resultsMenuActions));
         resultPanels.put(DFHResult.Type.TEMPRESULTS, new ResultPanel(DFHResult.Type.TEMPRESULTS, resultsMenuActions));
         resultPanels.put(DFHResult.Type.TOPtempRESULTS, new ResultPanel(DFHResult.Type.TOPtempRESULTS, resultsMenuActions));
         resultPanels.put(DFHResult.Type.BOTtempRESULTS, new ResultPanel(DFHResult.Type.BOTtempRESULTS, resultsMenuActions));
@@ -1240,6 +1241,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         resultsMenu.add(resultPanels.get(DFHResult.Type.FUELS).getMenuItem());
         resultsMenu.add(resultPanels.get(DFHResult.Type.TOPFUELS).getMenuItem());
         resultsMenu.add(resultPanels.get(DFHResult.Type.BOTFUELS).getMenuItem());
+        resultsMenu.add(resultPanels.get(DFHResult.Type.FUELMIX).getMenuItem());
         resultsMenu.addSeparator();
         resultsMenu.add(resultPanels.get(DFHResult.Type.TEMPRESULTS).getMenuItem());
         resultsMenu.add(resultPanels.get(DFHResult.Type.TOPtempRESULTS).getMenuItem());
@@ -3100,8 +3102,13 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         enableDataEntry(false);
         enableFileMenu(true);
         enableDefineMenu(true);
-        if (fuelMixP != null && furnace.anyMixedFuel())
-            addResult(DFHResult.Type.FUELMIX, fuelMixP);
+//        if (fuelMixP != null && furnace.anyMixedFuel()) {
+//            addResult(DFHResult.Type.FUELMIX, fuelMixP);
+//        }
+        if (furnace.anyMixedFuel()) {
+            addResult(DFHResult.Type.FUELMIX,
+                    Fuel.mixedFuelResultsPanel(furnace.getMixedFuelsUsed()));
+        }
         evaluator = null;
         pbEdit.setEnabled(true);
         pbEdit.getModel().setPressed(false);
@@ -3842,6 +3849,11 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         nSheet++;
         wb.createSheet("Fuels Details");
         furnace.xlUsedFuels(wb.getSheetAt(nSheet), styles);
+        if (furnace.anyMixedFuel()) {
+            nSheet++;
+            wb.createSheet("Fuel Mixes");
+            Fuel.xlFuelMixSummary(wb.getSheetAt(nSheet), styles);
+        }
         nSheet++;
         wb.createSheet(furnace.topBotName(false) + "Temp Profile");
         furnace.xlTempProfile(wb.getSheetAt(nSheet), styles, false);

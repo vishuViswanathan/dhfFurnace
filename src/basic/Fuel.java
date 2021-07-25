@@ -7,6 +7,9 @@ import mvUtils.display.TimedMessage;
 import mvUtils.math.SPECIAL;
 import mvUtils.mvXML.XMLmv;
 import mvUtils.math.XYArray;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
 
 import javax.swing.*;
 import java.awt.*;
@@ -40,6 +43,7 @@ public class Fuel extends Fluid{
     static boolean inited = false;
     static TwoDTable emissCO2, emissH2O;
     boolean bFlowSharing; // for mixed fuels
+    double baseFuelShare; // for mixed fuels, Flow/Heat based on bFlowSharing
     public double baseHshare;  // heat fraction
     double fractAddedFuel;  // added fuel flow
     Fuel baseFuel, addedFuel;
@@ -92,7 +96,7 @@ public class Fuel extends Fluid{
     }
 
     public Fuel(String name, Fuel baseFuel, double baseFuelTemp, Fuel addedFuel, double addFuelTemp,
-                double baseShare, boolean bFlowSharing) throws Exception {
+                double baseShareSetting, boolean bFlowSharing) throws Exception {
         this.name = name;
         boolean inError = false;
         if (bFlowSharing && !(baseFuel.units.equals(addedFuel.units)))   {
@@ -105,21 +109,22 @@ public class Fuel extends Fluid{
         }
         if (!inError) {
             this.bFlowSharing = bFlowSharing;
+            this.baseFuelShare = baseShareSetting;
             this.baseFuel = baseFuel;
             this.addedFuel = addedFuel;
             this.baseFuelTemp = baseFuelTemp;
             this.addFuelTemp = addFuelTemp;
             if (bFlowSharing) {
-                this.fractAddedFuel = (1 - baseShare) / baseShare;
-                baseFuel.myFlowShare = baseShare;
-                addedFuel.myFlowShare = 1- baseShare;
+                this.fractAddedFuel = (1 - baseShareSetting) / baseShareSetting;
+                baseFuel.myFlowShare = baseShareSetting;
+                addedFuel.myFlowShare = 1- baseShareSetting;
                 double totHeat = baseFuel.calVal +  fractAddedFuel * addedFuel.calVal;
                 baseFuel.myHeatShare = baseFuel.calVal / totHeat;
                 addedFuel.myHeatShare = 1 - baseFuel.myHeatShare;
                 this.baseHshare =  baseFuel.myHeatShare;
             }
             else {
-                this.baseHshare = baseShare;
+                this.baseHshare = baseShareSetting;
                 // for 1000 kcal
                 double hBaseFuel = baseHshare * 1000;
                 double hAddedFuel = 1000 - hBaseFuel;
@@ -127,8 +132,8 @@ public class Fuel extends Fluid{
                 double qAddedFuel = hAddedFuel / addedFuel.calVal;
                 double baseFshare = qBaseFuel / (qBaseFuel + qAddedFuel);
                 fractAddedFuel = (1 - baseFshare) / baseFshare;
-                baseFuel.myHeatShare = baseShare;
-                addedFuel.myHeatShare = 1- baseShare;
+                baseFuel.myHeatShare = baseShareSetting;
+                addedFuel.myHeatShare = 1- baseShareSetting;
                 baseFuel.myFlowShare = baseFshare;
                 addedFuel.myFlowShare = 1 - baseFshare;
             }
@@ -280,6 +285,54 @@ public class Fuel extends Fluid{
         }
         return bFound;
      }
+
+    static public  MultiPairColPanel fuelMixResultsP;
+
+
+    static public JPanel mixedFuelResultsPanel(Vector<Fuel> mixedFuelList) {
+        JPanel outerP = new JPanel();
+        FramedPanel jp = new FramedPanel(new GridBagLayout());
+        jp.setBackground(new JPanel().getBackground());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridy = 0;
+        MultiPairColPanel p = new MultiPairColPanel("FUEL MIXES USED");
+        for (Fuel f: mixedFuelList) {
+            p.addBlank();
+            p.addItemPair("Fuel Mix Name : ", f.name, true);
+            p.addItemPair("Fuel Share basis : ", (f.bFlowSharing) ? "FLOW" : "HEAT", false);
+            p.addItemPair("Base Fuel Share (%) : ", f.baseFuelShare * 100, "#0.00");
+            p.addItemPair("Mixed Fuel Calorific Value (kcal/" + f.baseFuel.units + ") : ",
+                    f.calVal, "#,###" );
+            p.addBlank();
+            p.addItemPair("Base Fuel : ", f.baseFuel.name, false);
+            p.addItemPair("Base Fuel Temp (C) : ", f.baseFuelTemp, "#,###");
+            p.addBlank();
+            p.addItemPair("Added Fuel : ", f.addedFuel.name, false);
+            p.addItemPair("Added Fuel Temp (C) : ", f.addFuelTemp, "#,###");
+            p.addBlank();
+        }
+        fuelMixResultsP = p;
+        jp.add(p, gbc);
+        gbc.gridy++;
+        outerP.add(jp);
+        return outerP;
+    }
+
+    static public boolean xlFuelMixSummary(Sheet sheet, ExcelStyles styles) {
+        sheet.setColumnWidth(1, 9000);
+        sheet.setColumnWidth(2, 5000);
+        Cell cell;
+        Row r;
+        r = sheet.createRow(0);
+        cell = r.createCell(0);
+        cell.setCellStyle(styles.csHeader1);
+        cell.setCellValue("FUEL MIXES");
+        int topRow = 4;
+        int leftCol = 1;
+        topRow = styles.xlMultiPairColPanel(fuelMixResultsP, sheet, topRow, leftCol);
+        return true;
+    }
+
 
     static JPanel fuelsPanelP;
 

@@ -2187,6 +2187,26 @@ public class DFHFurnace {
         return retVal;
     }
 
+    public Vector<Fuel> getMixedFuelsUsed() {
+        Vector<Fuel> retVal = new Vector<>();
+        Fuel nowFuel;
+        for (FceSection sec : topSections)
+            if (sec.isMixedFuel()) {
+                nowFuel = sec.fuelFiring.fuel;
+                if (!retVal.contains(nowFuel))
+                    retVal.add(sec.fuelFiring.fuel);
+            }
+        if (bTopBot) {
+            for (FceSection sec : botSections)
+                if (sec.isMixedFuel()) {
+                    nowFuel = sec.fuelFiring.fuel;
+                    if (!retVal.contains(nowFuel))
+                        retVal.add(sec.fuelFiring.fuel);
+                }
+        }
+        return retVal;
+    }
+
     Recuperator createAirRecu(FlueCompoAndQty flue, boolean bEntryDone) {
         double airTempIn = controller.ambTemp;
         double airTempBurner = controller.airTemp;
