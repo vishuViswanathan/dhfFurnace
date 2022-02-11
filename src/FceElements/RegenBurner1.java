@@ -6,6 +6,8 @@ import mvUtils.jsp.JSPComboBox;
 import mvUtils.jsp.JSPConnection;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -129,34 +131,49 @@ public class RegenBurner1 {
         coBFuel = new JSPComboBox<Fuel>(jspConnection, fuelList);
         coBFuel.addActionListener(paramsChanged);
         coBFuel.addActionListener(fuelAction);
+        TextFieldEditListener el  = new TextFieldEditListener();
         ntExcessAir = new NumberTextField(control, excessAir * 100, 6, false, 0, 200, "###.00", "Excess Air (%)");
         ntExcessAir.addActionListener(paramsChanged);
         ntExcessAir.addFocusListener(paramsChanged);
         ntExcessAir.addActionListener(fuelAction);
+        addEditListener(ntExcessAir, el);
+
         ntRegenFract = new NumberTextField(control, regenFract * 100, 6, false, 0, 100, "###.00", "Regen Flue flow (%)");
-        ntRegenFract.addActionListener(paramsChanged);
-        ntRegenFract.addFocusListener(paramsChanged);
+//        ntRegenFract.addActionListener(paramsChanged);
+//        ntRegenFract.addFocusListener(paramsChanged);
+        addEditListener(ntRegenFract, el);
+
         ntRegenEff = new NumberTextField(control, regenEff * 100, 6, false, 50, 100, "###.00", "Regen heat Efficiency (%)");
-        ntRegenEff.addActionListener(paramsChanged);
-        ntRegenEff.addFocusListener(paramsChanged);
+//        ntRegenEff.addActionListener(paramsChanged);
+//        ntRegenEff.addFocusListener(paramsChanged);
+        addEditListener(ntRegenEff, el);
+
 //        ntDeltaTFlueAir = new NumberTextField(control, deltaTFlueAir, 6, false, 0, 1000, "#,###", "DeltaT Flue-Air (C)");
 //        ntDeltaTFlueAir.addActionListener(paramsChanged);
         ntFlueInTemp = new NumberTextField(control, flueInTemp, 6, false, 100, 2000, "#,###", "Flue Temperature to Regen (C)");
-        ntFlueInTemp.addActionListener(paramsChanged);
-        ntFlueInTemp.addFocusListener(paramsChanged);
+//        ntFlueInTemp.addActionListener(paramsChanged);
+//        ntFlueInTemp.addFocusListener(paramsChanged);
+        addEditListener(ntFlueInTemp, el);
+
         ntFlueOutTemp = new NumberTextField(control, flueOutTemp, 6, false, 0, 2000, "#,###", "Flue Temperature after Regen (C)");
-        ntFlueOutTemp.addActionListener(paramsChanged);
-        ntFlueOutTemp.addFocusListener(paramsChanged);
+//        ntFlueOutTemp.addActionListener(paramsChanged);
+//        ntFlueOutTemp.addFocusListener(paramsChanged);
+        addEditListener(ntFlueOutTemp, el);
+
         ntFluidInTemp = new NumberTextField(control, fluidInTemp, 6, false, 0, 1000, "#,###", "Air/Fuel In Temperature to Regen (C)");
-        ntFluidInTemp.addActionListener(paramsChanged);
-        ntFluidInTemp.addFocusListener(paramsChanged);
+//        ntFluidInTemp.addActionListener(paramsChanged);
+//        ntFluidInTemp.addFocusListener(paramsChanged);
+        addEditListener(ntFlueInTemp, el);
 
         ntAirMaxTemp = new NumberTextField(control, airMaxTemp, 6, false, 0, 2000, "#,###", "Air Temperature to Burner (C)");
-        ntAirMaxTemp.addActionListener(paramsChanged);
-        ntAirMaxTemp.addFocusListener(paramsChanged);
+//        ntAirMaxTemp.addActionListener(paramsChanged);
+//        ntAirMaxTemp.addFocusListener(paramsChanged);
+        addEditListener(ntAirMaxTemp, el);
+
         ntFuelMaxTemp = new NumberTextField(control, fuelMaxTemp, 6, false, 0, 2000, "#,###", "fuel Temperature to Burner (C)");
-        ntFuelMaxTemp.addActionListener(paramsChanged);
-        ntFuelMaxTemp.addFocusListener(paramsChanged);
+//        ntFuelMaxTemp.addActionListener(paramsChanged);
+//        ntFuelMaxTemp.addFocusListener(paramsChanged);
+        addEditListener(ntFuelMaxTemp, el);
 
         chkBAirHeated = new JCheckBox("Air Heated in Regen");
         chkBAirHeated.addActionListener(chkBoxAction);
@@ -514,6 +531,27 @@ public class RegenBurner1 {
             jbFindAirTemp.setEnabled(bAirHeated);
             jbFindFuelTemp.setEnabled(bFuelHeated);
             markReady(false);
+        }
+    }
+
+    void addEditListener(JTextField f, DocumentListener dl) {
+        f.getDocument().addDocumentListener(dl);
+    }
+
+    class TextFieldEditListener implements DocumentListener {
+        @Override
+        public void insertUpdate(DocumentEvent e) {
+            markReady(false);
+        }
+
+        @Override
+        public void removeUpdate(DocumentEvent e) {
+//            markReady(false);
+        }
+
+        @Override
+        public void changedUpdate(DocumentEvent e) {
+//            markReady(false);
         }
     }
 

@@ -714,12 +714,13 @@ public class UnitFurnace {
 
     public void setEW(double chTemp) {
         eW = ch.getEmiss(chTemp) * production.chEmmissCorrectionFactor;
-        if (tuning.bApplyChEmissMultiplier) {
-            eW *= tuning.tfmChEmissMultiplier;
-            eW = Math.min(eW, 0.999);
-        }
-        else if (tuning.bApplyChReflectivityMultiplier) {
-            eW = 1 - (1 - eW) * tuning.tfmChEmissMultiplier;
+        if (tuning.bDoTFMmatch) {
+            if (tuning.bApplyChEmissMultiplier) {
+                eW *= tuning.tfmChEmissMultiplier;
+                eW = Math.min(eW, 0.999);
+            } else if (tuning.bApplyChReflectivityMultiplier) {
+                eW = 1 - (1 - eW) * tuning.tfmChEmissMultiplier;
+            }
         }
         chSpHt = ch.avgSpHt(chTemp, chTemp);
     }
