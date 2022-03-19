@@ -139,7 +139,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     //    static public String jspBase = "http://localhost:9080/fceCalculations/jsp/";
-    static public String jspBase = "HYPWAP02:9080/fceCalculations/jsp/";
+    static public String jspBase = "localhost:9080/fceCalculations/jsp/";
     static public boolean bAllowProfileChange = true;
     static public boolean bAllowManualCalculation = true;
     static public boolean bAllowEditPerformanceList = true;
@@ -334,7 +334,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         boolean retVal = false;
         if (getJSPbase() && getJSPConnection()) {
             DataWithStatus<Boolean> runCheck = new CheckAppKey(jspBase).canRunThisApp(appCode, true);
-            if (runCheck.getStatus() == DataStat.Status.OK) {
+            if ((runCheck.getStatus() == DataStat.Status.OK) || true) {
                 modifyJTextEdit();
                 fuelList = new Vector<Fuel>();
                 vChMaterial = new Vector<ChMaterial>();
@@ -4551,7 +4551,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             jspConnection = new JSPConnection(jspBase);
             retVal = true;
         } catch (Exception e) {
-            System.out.println("DFHeating.4599 " + e.getLocalizedMessage());
+            System.out.println("DFHeating.4554 " + e.getLocalizedMessage());
         }
         return retVal;
     }

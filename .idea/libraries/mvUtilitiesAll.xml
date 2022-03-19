@@ -1,7 +1,7 @@
 <component name="libraryTable">
   <library name="mvUtilitiesAll">
     <CLASSES>
-      <root url="jar://J:/mvUtilities/mvUtilitiesAll.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../mvUtilities/mvUtilitiesAll.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

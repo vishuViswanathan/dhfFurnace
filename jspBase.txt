@@ -1,1 +1,1 @@
-tinm-d001
+localhost

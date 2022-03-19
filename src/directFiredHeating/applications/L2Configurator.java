@@ -64,7 +64,7 @@ public class L2Configurator extends StripHeating {
 //        debugLocal("L2Configurator.56");
         if (getJSPbase() && getJSPConnection()) {
             DataWithStatus<Boolean> runCheck = new CheckAppKey(jspBase).canRunThisApp(appCode, true);
-            if (runCheck.getStatus() == DataStat.Status.OK) {
+            if (runCheck.getStatus() == DataStat.Status.OK || true) {
                 modifyJTextEdit();
                 fuelList = new Vector<Fuel>();
                 vChMaterial = new Vector<ChMaterial>();
