@@ -74,7 +74,9 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         ALLOWSPECSREAD("-allowSpecsRead"),
         JNLP("-asJNLP"),
         JustJSP("-justJSP"),
+        ALL_LOCAL("-allLocal"),
         DEBUGMSG("-showDebugMessages");
+
         private final String argName;
 
         CommandLineArgs(String argName) {
@@ -139,15 +141,17 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     //    static public String jspBase = "http://localhost:9080/fceCalculations/jsp/";
+    static boolean handleTFM = false;
     static public String jspBase = "localhost:9080/fceCalculations/jsp/";
     static public boolean bAllowProfileChange = true;
     static public boolean bAllowManualCalculation = true;
     static public boolean bAllowEditPerformanceList = true;
 
-    static public JFrame mainF; // = new JFrame("DFH Furnace");
+    static public JFrame mainF; // = new JFrame("Reheating Furnace");
     static public Vector<Fuel> fuelList = new Vector<Fuel>();
     static public Vector<ChMaterial> vChMaterial; // = new Vector<ChMaterial>();
     static protected boolean enableSpecsSave = false;
+    static boolean all_local = false;
     public static Logger log;
     static boolean onTest = false;
     static public boolean showDebugMessages = false;
@@ -166,12 +170,12 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     protected String profileFileExtension = "dfhDat";
     protected String profileFileName = "FurnaceProfile." + profileFileExtension;
     protected long maxSizeOfProfileFile = (long)1e6;
-    protected String fceDataLocation = "";
+    protected String fceDataLocation = "defData/";
     protected FramedPanel mainAppPanel;
     protected String testTitle = "";
     boolean fceFor1stSwitch = true;
     public DFHFurnace furnace;
-    protected String releaseDate = " 20211209" ;
+    protected String releaseDate = " 20220722" ;
     protected String DFHversion = "DFHeating Version 001";
     public DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     boolean canNotify = true;
@@ -306,8 +310,13 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     public DFHeating(boolean asApplication) {
         this();
         this.asApplication = asApplication;
-        helpFolder = "helpSystem\\DFHeating";
+        helpFolder = "helpSystem\\Reheating";
         debugLocal("as Application");
+    }
+
+    public DFHeating(boolean asApplication, boolean asLocal) {
+        this(asApplication);
+        all_local = asLocal;
     }
 
     public void setLoadTesting(boolean ena) {
@@ -332,9 +341,11 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
     public boolean setItUp() {
         boolean retVal = false;
-        if (getJSPbase() && getJSPConnection()) {
-            DataWithStatus<Boolean> runCheck = new CheckAppKey(jspBase).canRunThisApp(appCode, true);
-            if ((runCheck.getStatus() == DataStat.Status.OK) || true) {
+        if (all_local || (getJSPbase() && getJSPConnection())) {
+            DataWithStatus<Boolean> runCheck = null;
+            if (!all_local)
+                runCheck = new CheckAppKey(jspBase).canRunThisApp(appCode, true);
+            if (all_local || (((runCheck != null ) && (runCheck.getStatus() == DataStat.Status.OK) )|| true)) {
                 modifyJTextEdit();
                 fuelList = new Vector<Fuel>();
                 vChMaterial = new Vector<ChMaterial>();
@@ -354,18 +365,18 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                     if (log == null) {
                         startLog4j();
                     }
-                    mainF.setTitle("DFH Furnace Application " + releaseDate + testTitle);
+                    mainF.setTitle("Reheat Furnace " + releaseDate + testTitle);
                 }
 
                 tuningParams = new DFHTuningParams(this, onProductionLine, 1, 5,
                         30, 1.12, 1, false, false);
-                debugLocal("Creating new DFHFurnace");
+                debugLocal("Creating new Reheating Furnace");
                 furnace = new DFHFurnace(this, bTopBot, bAddTopSoak, lNameListener);
                 debugLocal("Created furnace");
                 furnace.setTuningParams(tuningParams);
                 debugLocal("tuning params set");
                 createUIs();
-                if (loadFuelAndChMaterialData()) {
+                if ((all_local && getFuelAndCharge_local()) || (!all_local && loadFuelAndChMaterialData())) {
                     setTestData();
                     switchPage(DFHDisplayPageType.INPUTPAGE);
                     displayIt();
@@ -377,10 +388,12 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                 }
             }
             else {
-                if (runCheck.getStatus() == DataStat.Status.WithErrorMsg)
-                    showError("Access Check: ",  runCheck.getErrorMessage());
-                else
-                    showError("Access Check", "Some problem in getting Application permissions");
+                if (!all_local) {
+                    if (runCheck.getStatus() == DataStat.Status.WithErrorMsg)
+                        showError("Access Check: ", runCheck.getErrorMessage());
+                    else
+                        showError("Access Check", "Some problem in getting Application permissions");
+                }
             }
         }
         else
@@ -524,7 +537,24 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         furnace.clearAssociatedData();
     }
 
+    boolean getFuelAndCharge_local() {
+        boolean retVal = false;
+        System.out.println("Reading Data from file");
+        if (fuelSpecsFromFile(fceDataLocation + "FuelSpecifications.dfhSpecs") ) {
+//            int nFuel = fuelList.size();
+//            if (nFuel > 1) { // restrict to just one Fuel
+//                for (int f = nFuel - 1; f > 0; f--)
+//                    fuelList.remove(f);
+//            }
+            retVal = chMaterialSpecsFromFile(fceDataLocation + "ChMaterialSpecifications.dfhSpecs");
+        }
+        return retVal;
+//        return (fuelSpecsFromFile(fceDataLocation + "FuelSpecifications.dfhSpecs") &&
+//                chMaterialSpecsFromFile(fceDataLocation + "ChMaterialSpecifications.dfhSpecs"));
+    }
+
     protected boolean loadFuelAndChMaterialData() {
+        System.out.println("Reading Data from SERVER");
         if (asApplication) {
             if (justJSP) {
                 if (jspConnection.allOK) {
@@ -822,7 +852,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         jp.add(userTunePanel, gbcOP);
         gbcOP.gridx++;
         tfmMatchPanel = tuningParams.getTFMmatchPanel();
-        jp.add(tfmMatchPanel, gbcOP);
+        if (handleTFM)
+            jp.add(tfmMatchPanel, gbcOP);
         gbcOP.gridx++;
         mpCalcul = calCulDataPanel();
         jp.add(mpCalcul, gbcOP);
@@ -1348,7 +1379,8 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         fileMenu.add(mIsaveTempResultsToCSV);
         fileMenu.add(mIsave2DprofileToCSV);
         fileMenu.addSeparator();
-        fileMenu.add(mISaveForTFM);
+        if (handleTFM)
+            fileMenu.add(mISaveForTFM);
         fileMenu.add(mISaveForFE);
         if (enableSpecsSave || onTest) {
             fileMenu.addSeparator();
@@ -1858,8 +1890,10 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         topRow = Math.max(Math.max(rRow, row), rRow1);
         col = 1;
         row = styles.xlMultiPairColPanel(userTunePanel, sheet, topRow, col) + 1;
-        col = 4;
-        row = styles.xlMultiPairColPanel(tfmMatchPanel, sheet, topRow, col) + 1;
+        if (handleTFM) {
+            col = 4;
+            row = styles.xlMultiPairColPanel(tfmMatchPanel, sheet, topRow, col) + 1;
+        }
         col = 7;
         row = styles.xlMultiPairColPanel(mpCalcul, sheet, topRow, col) + 1;
 //        col = 1;
@@ -3267,6 +3301,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
 
     protected StatusWithMessage getFceFromFile() {
         StatusWithMessage retVal = new StatusWithMessage();
+        retVal.setErrorMessage("Furnace Profile was NOT loaded");
         disableCompare();
         boolean bRetVal = false;
         furnace.resetSections();
@@ -3314,6 +3349,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                         profileFileName = fileName;
                 }
             }
+            retVal.setInfoMessage("Profile is loaded");
         }
         switchPage(DFHDisplayPageType.INPUTPAGE);
         return retVal;
@@ -4012,7 +4048,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             BufferedInputStream iStream = new BufferedInputStream(new FileInputStream(filePath));
             File f = new File(filePath);
             long len = f.length();
-            if (len > 20 && len < 50000) {
+            if (len > 20 && len < 100000) {
                 int iLen = (int)len;
                 byte[] data = new byte[iLen + 100];
                 try {
@@ -4116,7 +4152,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
             BufferedInputStream iStream = new BufferedInputStream(new FileInputStream(filePath));
             File f = new File(filePath);
             long len = f.length();
-            if (len > 20 && len < 50000) {
+            if (len > 20 && len < 100000) {
                 int iLen = (int)len;
                 byte[] data = new byte[iLen + 100];
                 try {
@@ -4303,7 +4339,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
                             if (dataStat == DataStat.Status.WithInfoMsg)
                                 showMessage(profileStatMsg.getInfoMessage());
                             switchPage(DFHDisplayPageType.INPUTPAGE);
-                            showMessage("Furnace Profile is loaded \nFuel, O2 Enrichment, Excess Air and \n" +
+                            showMessage("Fuel, O2 Enrichment, Excess Air and \n" +
                                     "Charge material are all TO BE SET before Running the calculation");
                             enableDataEntry(true);
                         }
@@ -4533,12 +4569,15 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
         for (int a = 0; a < args.length; a++) {
             cmdArg = CommandLineArgs.getEnum(args[a]);
             if (cmdArg != null)
-                switch(cmdArg) {
+                switch (cmdArg) {
                     case ALLOWSPECSSAVE:
                         enableSpecsSave = true;
                         break;
                     case DEBUGMSG:
                         showDebugMessages = true;
+                        break;
+                    case ALL_LOCAL:
+                        all_local = true;
                         break;
                 }
         }
@@ -4557,7 +4596,7 @@ public class DFHeating extends JApplet implements InputControl, EditListener {
     }
 
     public static void main(String[] args) {
-        new WaitMsg(null, "Starting DFHFurnace. Please wait ...", new ActInBackground() {
+        new WaitMsg(null, "Starting Reheat Furnace. Please wait ...", new ActInBackground() {
             public void doInBackground() {
                 if (DFHeating.parseCmdLineArgs(args)) {
                     DFHeating trHeat = new DFHeating(true);

@@ -1594,7 +1594,7 @@ public class DFHFurnace {
             suggTemp = 10 * SPECIAL.roundToNDecimals(suggTemp / 10, -1) - 5;
             if (userActionAllowed()) {
                 String title = topBotName(bBot) + "Zone #" + (iSec + 1);
-                OneParameterDialog tempDlg = new OneParameterDialog(controller, title, 3000);
+                OneParameterDialog tempDlg = new OneParameterDialog(controller, title, 5000);
                 tempDlg.setValue("Zone Gas Temperature (C)", suggTemp, "#,##0", 100, 1700);
                 tempDlg.setLocationRelativeTo(controller.parent());
                 tempDlg.setVisible(true);

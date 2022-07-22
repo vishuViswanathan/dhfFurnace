@@ -23,10 +23,10 @@ import java.awt.event.WindowListener;
  * Created by viswanathanm on 11-08-2017.
  */
 public class ApplicationLauncher {
-    String title = "Thermal Applications 20201220"; // was20201027
+    String title = "Thermal Applications 20220722";
     int textFieldWidth = 400;
 
-    JButton launchDFHFunace = new JButton("DFH Furnace Module");
+    JButton launchDFHFunace = new JButton("Reheat Furnace Module");
     String dfhDetails = "<html>Direct Fired Heating Furnace" +
             "<p>- Top-only or Top-And-Bottom Heating" +
             "<p>or with inital Top-And-Bottom Heating followed by Top-Only Heating for Billets, Slabs" +
@@ -59,7 +59,18 @@ public class ApplicationLauncher {
     boolean someAppLaunched = false;
 
     public ApplicationLauncher() {
+//        launchReheatFurnaceLocal();
         init();
+    }
+
+    void disableSome() {
+        launchRTH.setEnabled(false);
+        launchL2Configurator.setEnabled(false);
+        jbViewThermalProperties.setEnabled(false);
+        jbEditThermalProperties.setEnabled(false);
+        jbViewFuelProperties.setEnabled(false);
+        jbEditFuelProperties.setEnabled(false);
+
     }
 
     boolean init() {
@@ -113,6 +124,7 @@ public class ApplicationLauncher {
         mainF.setVisible(true);
         mainF.setFocusable(true);
         mainF.toFront();
+        disableSome();
         return true;
     }
 
@@ -132,7 +144,7 @@ public class ApplicationLauncher {
             someAppLaunched = false;
             Object src = e.getSource();
             if (src == launchDFHFunace) {
-                launchDFHFurnace();
+                launchReheatFurnaceLocal();
             } else if (src == launchRTH) {
                 launchRTH();
             } else if (src == launchL2Configurator) {
@@ -155,6 +167,19 @@ public class ApplicationLauncher {
         new WaitMsg(null, "Starting DFHFurnace. Please wait ...", new ActInBackground() {
             public void doInBackground() {
                 DFHeating trHeat = new DFHeating(true);
+                if (trHeat.setItUp()) {
+                    someAppLaunched = true;
+                    quit();
+                } else
+                    trHeat.showError("  Unable to launch the Application.\nAborting ...");
+            }
+        });
+    }
+
+    void launchReheatFurnaceLocal() {
+        new WaitMsg(null, "Starting Reheat Furnace. Please wait ...", new ActInBackground() {
+            public void doInBackground() {
+                DFHeating trHeat = new DFHeating(true, true);
                 if (trHeat.setItUp()) {
                     someAppLaunched = true;
                     quit();
