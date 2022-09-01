@@ -1,21 +1,21 @@
-package basic;
+package directFiredHeating.transientData;
+
 
 import java.io.Serializable;
 
-public class Boundary implements Serializable {
+public class Boundary2D implements Serializable {
     static final int XY = 1;
-    static final int YZ = 2;
     static final int ZX = 3;
 
-    OneNode node1;
-    OneNode node2;
+    One2DNode node1;
+    One2DNode node2;
     int orient = 0;
     double area;
     double heatTransferRate;
     double temperature;
     double heatTransferQ;
 
-    public Boundary(OneNode node1, OneNode node2, int orientation) {
+    public Boundary2D(One2DNode node1, One2DNode node2, int orientation) {
         this.node1 = node1;
         this.node2 = node2;
         orient = orientation;
@@ -23,16 +23,13 @@ public class Boundary implements Serializable {
             case XY:
                 area = node1.areaForZ;
                 break;
-            case YZ:
-                area = node1.areaForX;
-                break;
             case ZX:
                 area = node1.areaForY;
                 break;
         }
     }
 
-    OneNode getOtherNode(OneNode oneNode) {
+    One2DNode getOtherNode(One2DNode oneNode) {
         if (oneNode == node1)
             return node2;
         else if (oneNode == node2)
@@ -41,26 +38,26 @@ public class Boundary implements Serializable {
             return null;
     }
 
-    public boolean update(double delTime) {
-        update();
+    public boolean update(double delTime, double tk) {
+        update(tk);
         heatTransferQ = heatTransferRate * delTime;
         return true;
     }
 
-    public boolean update() {
+    public boolean update(double tk) {
         double lByK1 = 0, lByK2 = 0;
         double t1 = 0, t2 = 0;
         t1 = node1.getTemperature();
-        lByK1 = node1.getHalfLbyK(this);
+        lByK1 = node1.getHalfLbyK(tk,this);
         t2 = node2.getTemperature();
-        lByK2 = node2.getHalfLbyK(this);
-        // TO CHECK the following is made more sensible
-        if (Double.isNaN(lByK1) || Double.isNaN(lByK2)) {
-            heatTransferRate = 0;
-        } else {
+        lByK2 = node2.getHalfLbyK(tk, this);
+//        // TO CHECK the following is made more sensible
+//        if (Double.isNaN(lByK1) || Double.isNaN(lByK2)) {
+//            heatTransferRate = 0;
+//        } else {
             heatTransferRate = (t1 - t2) / (lByK1 + lByK2) * area;
             temperature = t1 - heatTransferRate / area * lByK1;
-        }
+//        }
         return true;
     }
 

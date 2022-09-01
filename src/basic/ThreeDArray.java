@@ -12,7 +12,6 @@ public class ThreeDArray extends Object implements Serializable {
     Vector<Boundary> boundaries = new Vector<Boundary>();
     Boundary[] boundariesArray = null;
     boolean boundariesDirty = true;
-
     public ThreeDArray(int xSize, int ySize, int zSize) {
         setSize(xSize, ySize, zSize);
     }
@@ -691,7 +690,7 @@ debug("node " + tempCntNode + " at " + atX + "," + atY + "," + atZ + ", Bound1 =
         }
     }
 
-    double[][][] getAcopy() {
+    double[][][] getNodeTemperatures() {
         double[][][] theCopy = new double[xSize][ySize][zSize];
         for (int x = 0; x < xSize; x++) {
             for (int y = 0; y < ySize; y++) {
@@ -701,6 +700,130 @@ debug("node " + tempCntNode + " at " + atX + "," + atY + "," + atZ + ", Bound1 =
             }
         }
         return theCopy;
+    }
+
+    Vector<double[][]> getAllSurfaceTemperatures() {
+        Vector<double[][]> allTemps = new Vector<>();
+        allTemps.add(getSurfaceTemperatures(OneNode.BELOW));
+        allTemps.add(getSurfaceTemperatures(OneNode.LEFT));
+        allTemps.add(getSurfaceTemperatures(OneNode.ABOVE));
+        allTemps.add(getSurfaceTemperatures(OneNode.RIGHT));
+        allTemps.add(getSurfaceTemperatures(OneNode.FRONT));
+        allTemps.add(getSurfaceTemperatures(OneNode.BACK));
+        return allTemps;
+    }
+
+    // surface is one of OneNode.ABOVE, BELOW etc.
+    double[][] getSurfaceTemperaturesOLD(int direction) {
+        double[][] arr = null;
+        switch (direction) {
+            case OneNode.BELOW: // bottom surface
+                arr = new double[xSize][ySize];
+                for (int x = 1; x < xSize - 1; x++) {
+                    for (int y = 1; y < ySize - 1; y++) {
+                        arr[x][y] = nodes[x][y][1].getBoundary(direction).getTemperature();
+                    }
+                }
+                break;
+            case OneNode.LEFT: // vertical left
+                arr = new double[zSize][xSize];
+                for (int z = 1; z < zSize - 1; z++) {
+                    for (int x = 1; x < xSize - 1; x++) {
+                        arr[z][x] = nodes[x][ySize - 2][z].getBoundary(direction).getTemperature();
+                    }
+                }
+                break;
+            case OneNode.ABOVE: // Top  surface
+                arr = new double[xSize][ySize];
+                for (int x = 1; x < xSize - 1; x++) {
+                    for (int y = 1; y < ySize - 1; y++) {
+                        arr[x][y] = nodes[x][y][zSize - 2].getBoundary(direction).getTemperature();
+                    }
+                }
+                break;
+            case OneNode.RIGHT: // vertical right
+                arr = new double[zSize][xSize];
+                for (int z = 1; z < zSize - 1; z++) {
+                    for (int x = 1; x < xSize - 1; x++) {
+                        arr[z][x] = nodes[x][1][z].getBoundary(direction).getTemperature();
+                    }
+                }
+                break;
+            case OneNode.FRONT: // near end
+                arr = new double[ySize][zSize];
+                for (int y = 1; y < ySize - 1; y++) {
+                    for (int z = 1; z < zSize - 1; z++) {
+                        arr[y][z] = nodes[1][y][z].getBoundary(direction).getTemperature();
+                    }
+                }
+                break;
+            case OneNode.BACK: // near end
+                arr = new double[ySize][zSize];
+                for (int y = 1; y < ySize - 1; y++) {
+                    for (int z = 1; z < zSize - 1; z++) {
+                        arr[y][z] = nodes[xSize - 2][y][z].getBoundary(direction).getTemperature();
+                    }
+                }
+                break;
+        }
+        return arr;
+    }
+
+    double[][] getSurfaceTemperatures(int direction) {
+        // all directions looking into furnace from charging end
+        double[][] arr = null;
+        switch (direction) {
+            case OneNode.BELOW: // bottom surface
+                arr = new double[xSize][ySize];
+                for (int x = 1; x < xSize - 1; x++) {
+                    for (int y = 1; y < ySize - 1; y++) {
+                        arr[x][y] = nodes[x][y][1].getBoundary(direction).getTemperature();
+                    }
+                }
+                break;
+            case OneNode.BACK: // Vertical Back surface
+                arr = new double[zSize][xSize];
+                for (int z = 1; z < zSize - 1; z++) {
+                    for (int x = 1; x < xSize - 1; x++) {
+                        arr[z][x] = nodes[x][ySize - 2][z].getBoundary(direction).getTemperature();
+                    }
+                }
+                break;
+
+            case OneNode.ABOVE: // Top  surface
+                arr = new double[xSize][ySize];
+                for (int x = 1; x < xSize - 1; x++) {
+                    for (int y = 1; y < ySize - 1; y++) {
+                        arr[x][y] = nodes[x][y][zSize - 2].getBoundary(direction).getTemperature();
+                    }
+                }
+                break;
+            case OneNode.FRONT: // vertical Front surface
+                arr = new double[zSize][xSize];
+                for (int z = 1; z < zSize - 1; z++) {
+                    for (int x = 1; x < xSize - 1; x++) {
+                        arr[z][x] = nodes[x][1][z].getBoundary(direction).getTemperature();
+                    }
+                }
+                break;
+            case OneNode.LEFT: // Left end surface
+                arr = new double[ySize][zSize];
+                for (int y = 1; y < ySize - 1; y++) {
+                    for (int z = 1; z < zSize - 1; z++) {
+                        arr[y][z] = nodes[1][y][z].getBoundary(direction).getTemperature();
+                    }
+                }
+                break;
+            case OneNode.RIGHT: // right end surface
+                arr = new double[ySize][zSize];
+                for (int y = 1; y < ySize - 1; y++) {
+                    for (int z = 1; z < zSize - 1; z++) {
+                        arr[y][z] = nodes[xSize - 2][y][z].getBoundary(direction).getTemperature();
+                    }
+                }
+                break;
+        }
+        return arr;
     }
 
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {

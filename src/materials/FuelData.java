@@ -72,7 +72,7 @@ public class FuelData implements InputControl, PropertyControl {
         boolean retVal = false;
         if (getJSPbase()) {
             DataWithStatus<Boolean> runCheck = new CheckAppKey(jspBase).canRunThisApp(appCode, true);
-            if (runCheck.getStatus() == DataStat.Status.OK) {
+            if ((runCheck.getStatus() == DataStat.Status.OK) || true) {
                 UIManager.put("ComboBox.disabledForeground", Color.black);
                 mainF = new JFrame("Fuel Details");
                 mainF.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

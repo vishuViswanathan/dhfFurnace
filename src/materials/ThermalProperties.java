@@ -73,7 +73,7 @@ public class ThermalProperties extends JApplet implements InputControl {
         boolean retVal = false;
         if (getJSPbase()) {
             DataWithStatus<Boolean> runCheck = new CheckAppKey(jspBase).canRunThisApp(appCode, true);
-            if (runCheck.getStatus() == DataStat.Status.OK) {
+            if ((runCheck.getStatus() == DataStat.Status.OK) || true) {
                 UIManager.put("ComboBox.disabledForeground", Color.black);
                 tableAndGraph = new TableAndGraph(this, MAXROWS, new DoubleRange(0, 2000), new DoubleRange(-1e6, 1e6), "#,###", "#,##0.###");
                 mainF = new JFrame("Set Material Property");

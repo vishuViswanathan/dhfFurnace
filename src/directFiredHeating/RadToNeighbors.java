@@ -22,8 +22,8 @@ public class RadToNeighbors {
 
     double vShapeF, vShadowFact, vTotalfactor;
     double vLx1, vLx2, vL1, vL2, vLen;
-    double vHeatOut, hHeatOut;
-    double vGasAbsorption, hGasAbsorption;
+    //    double vHeatOut, hHeatOut;
+//    double vGasAbsorption, hGasAbsorption;
     double heatOut;
     double pDestHeatIntensity;
     boolean bBot;
@@ -53,10 +53,10 @@ public class RadToNeighbors {
         this(slotFrom, slotTo, DFHeating.HeatingMode.TOPONLY, bSlotToOnExit);
     }
     double evalObstrFactor(boolean bVwall) {
-    if (bSlotToOnExit)
-        return evalObstrExitside(bVwall);
-    else
-        return evalObstrEntryside(bVwall);
+        if (bSlotToOnExit)
+            return evalObstrExitside(bVwall);
+        else
+            return evalObstrEntryside(bVwall);
     }
 
 
@@ -86,7 +86,7 @@ public class RadToNeighbors {
                 if (obstrMin <= 0)
                     reDo = false;
             }
-             slC = slC.getEntryNei();
+            slC = slC.getEntryNei();
         }
         return obstrMin;
     }
@@ -118,7 +118,7 @@ public class RadToNeighbors {
                     reDo = false;
             }
             slC = slC.getExitNei();
-         }
+        }
         return obstrMin;
     }
 
@@ -154,10 +154,10 @@ public class RadToNeighbors {
                     fromMidP = new DoublePoint((slotFrom.endPos + slotFstPos) / 2, (slotFrom.heightEntry + slotFrom.heightExit) / 2);
                 }
                 lnM = new LineMv(fromMidP.x, fromMidP.y,
-                                (slotTstPos + slotTo.endPos) / 2, adjustHt); // the slotT is always at hearth level
+                        (slotTstPos + slotTo.endPos) / 2, adjustHt); // the slotT is always at hearth level
                 // check near edge
-                 lnW = lnM.makePerpendLine(bySlotStPos, bySlot.heightEntry);
-                 pA = lnW.getIntersection(lnA);
+                lnW = lnM.makePerpendLine(bySlotStPos, bySlot.heightEntry);
+                pA = lnW.getIntersection(lnA);
                 if (pA.x > bySlotStPos){
                     pB = lnW.getIntersection(lnB);
                     if (pB.x > bySlotStPos) // total interference
@@ -167,10 +167,10 @@ public class RadToNeighbors {
                 }
 
                 //check far edge
-                 lnW = lnM.makePerpendLine(bySlot.endPos, bySlot.heightExit);
-                 pA = lnW.getIntersection(lnA);
+                lnW = lnM.makePerpendLine(bySlot.endPos, bySlot.heightExit);
+                pA = lnW.getIntersection(lnA);
                 if (pA.x > bySlot.endPos) {
-                     pB = lnW.getIntersection(lnB);
+                    pB = lnW.getIntersection(lnB);
                     if (pB.x > bySlot.endPos) // total interference
                         obstrF = 0;
                     else
@@ -178,29 +178,29 @@ public class RadToNeighbors {
                 }
             }
             else {
-                 if (bVwall) {
+                if (bVwall) {
                     if (slotFrom.bWallFacingEntry) {
                         lnA = new LineMv(slotTstPos, adjustHt, slotFrom.endPos, slotFrom.vWallTop);
                         lnB = new LineMv(slotTo.endPos, adjustHt, slotFrom.endPos, slotFrom.vWallBot);
                         fromMidP = new DoublePoint(slotFrom.endPos, (slotFrom.vWallTop + slotFrom.vWallBot) / 2);
                     }
-                     else {
+                    else {
                         obstrN = 0;
                         break;
-                     }
-                 }
+                    }
+                }
                 else {
                     lnA = new LineMv(slotTstPos, adjustHt, slotFstPos, slotFrom.heightEntry);
                     lnB = new LineMv(slotTo.endPos, adjustHt, slotFrom.endPos, slotFrom.heightExit);
                     fromMidP = new DoublePoint((slotFrom.endPos + slotFstPos) / 2, (slotFrom.heightEntry + slotFrom.heightExit) / 2);
-                 }
+                }
                 lnM = new LineMv(fromMidP.x, fromMidP.y,
-                                (slotTstPos + slotTo.endPos) / 2, adjustHt); // the slotT is always at hearth level
+                        (slotTstPos + slotTo.endPos) / 2, adjustHt); // the slotT is always at hearth level
                 // check near edge
-                 lnW = lnM.makePerpendLine(bySlot.endPos, bySlot.heightExit);
-                 pA = lnW.getIntersection(lnA);
+                lnW = lnM.makePerpendLine(bySlot.endPos, bySlot.heightExit);
+                pA = lnW.getIntersection(lnA);
                 if (bySlot.endPos > pA.x) {
-                     pB = lnW.getIntersection(lnB);
+                    pB = lnW.getIntersection(lnB);
                     if (bySlot.endPos > pB.x) // total interference
                         obstrF = 0;
                     else
@@ -208,10 +208,10 @@ public class RadToNeighbors {
                 }
 
                 // check far edge
-                 lnW = lnM.makePerpendLine(bySlotStPos, bySlot.heightEntry);
-                 pA = lnW.getIntersection(lnA);
+                lnW = lnM.makePerpendLine(bySlotStPos, bySlot.heightEntry);
+                pA = lnW.getIntersection(lnA);
                 if (bySlotStPos > pA.x) {
-                     pB = lnW.getIntersection(lnB);
+                    pB = lnW.getIntersection(lnB);
                     if (bySlotStPos > pB.x) // total interference
                         obstrN = 0;
                     else
@@ -314,62 +314,65 @@ public class RadToNeighbors {
         }
     }
 
-    public double calculateOLD() {
-        interChF = evalInterChF();
-        hHeatOut = interChF * totalFactor * SPECIAL.stefenBoltz * srcArea *
-                (Math.pow((slotFrom.tempO + 273), 4) - Math.pow((slotTo.tempWO + 273), 4));
-        // gas absorption
-        double alphaGas =  flue.alphaGas(slotFrom.tempO, slotTo.tempWO, distRoofCharge) * tuning.emmFactor;
-        if (tuning.bTakeGasAbsorptionForInterRad)
-            hGasAbsorption = alphaGas * totalFactor * srcArea * (slotFrom.tempO - slotTo.tempWO);
-        else
-            hGasAbsorption = 0;
-        if (Math.abs(hGasAbsorption) > Math.abs(hHeatOut))
-            debug("hGasAbsorption = " + hGasAbsorption + ", hHeatOut = " + hHeatOut);
-        vHeatOut = interChF * vTotalfactor * SPECIAL.stefenBoltz * vSrcArea *
-                (Math.pow((slotFrom.tempO + 273), 4) - Math.pow((slotTo.tempWO + 273), 4));
-        if (distWallCharge > 0)  {
-            alphaGas =  flue.alphaGas(slotFrom.tempO, slotTo.tempWO, distWallCharge) * tuning.emmFactor;
-            if (tuning.bTakeGasAbsorptionForInterRad)
-                vGasAbsorption = alphaGas * vTotalfactor * vSrcArea * (slotFrom.tempO - slotTo.tempWO);
-            else
-                vGasAbsorption = 0;
-            if (Math.abs(vGasAbsorption) > Math.abs(vHeatOut))
-                debug("vGasAbsorption = " + vGasAbsorption + ", vHeatOut = " + vHeatOut);
-        }
-        heatOut = (hHeatOut - hGasAbsorption) + (vHeatOut - vGasAbsorption);
-//        heatOut = (hHeatOut - hGasAbsorption);
-        pDestHeatIntensity = heatOut / destArea;
-        return heatOut;
-    }
+//    public double calculateBEFORE20210217() {
+//        double vGasAbsorption = 0;
+//        double hGasAbsorption;
+//        interChF = evalInterChF();
+//        double tFrom = slotFrom.tempOMean;
+//        double tTo =  slotTo.tempWOMean;
+//        hHeatOut = interChF * totalFactor * SPECIAL.stefenBoltz * srcArea *
+//                (Math.pow((tFrom + 273), 4) - Math.pow((tTo + 273), 4));
+//        // gas absorption
+//        double alphaGas =  flue.alphaGas(tFrom, tTo, distRoofCharge) * tuning.emmFactor;
+//        if (tuning.bTakeGasAbsorptionForInterRad)
+//            hGasAbsorption = alphaGas * totalFactor * srcArea * (tFrom - tTo);
+//        else
+//            hGasAbsorption = 0;
+//        if (Math.abs(hGasAbsorption) > Math.abs(hHeatOut))
+//            debug("hGasAbsorption = " + hGasAbsorption + ", hHeatOut = " + hHeatOut);
+//        vHeatOut = interChF * vTotalfactor * SPECIAL.stefenBoltz * vSrcArea *
+//                (Math.pow((tFrom + 273), 4) - Math.pow((tTo + 273), 4));
+//        if (distWallCharge > 0)  {
+//            alphaGas =  flue.alphaGas(tFrom, tTo, distWallCharge) * tuning.emmFactor;
+//            if (tuning.bTakeGasAbsorptionForInterRad)
+//                vGasAbsorption = alphaGas * vTotalfactor * vSrcArea * (tFrom - tTo);
+//            else
+//                vGasAbsorption = 0;
+//            if (Math.abs(vGasAbsorption) > Math.abs(vHeatOut))
+//                debug("vGasAbsorption = " + vGasAbsorption + ", vHeatOut = " + vHeatOut);
+//        }
+//        heatOut = (hHeatOut - hGasAbsorption) + (vHeatOut - vGasAbsorption);
+////        heatOut = (hHeatOut - hGasAbsorption);
+//        pDestHeatIntensity = heatOut / destArea;
+//        return heatOut;
+//    }
 
     public double calculate() {
+        double effectiveGasEmissH = 0;
+        double effectiveGasEmissV = 0;
+        double hHeatOut, vHeatOut;
+
+//        double vGasAbsorption = 0;
+//        double hGasAbsorption;
         interChF = evalInterChF();
         double tFrom = slotFrom.tempOMean;
         double tTo =  slotTo.tempWOMean;
         hHeatOut = interChF * totalFactor * SPECIAL.stefenBoltz * srcArea *
                 (Math.pow((tFrom + 273), 4) - Math.pow((tTo + 273), 4));
         // gas absorption
-        double alphaGas =  flue.alphaGas(tFrom, tTo, distRoofCharge) * tuning.emmFactor;
         if (tuning.bTakeGasAbsorptionForInterRad)
-            hGasAbsorption = alphaGas * totalFactor * srcArea * (tFrom - tTo);
+            effectiveGasEmissH = flue.effectiveEmissivity(tFrom, tTo, distRoofCharge);
         else
-            hGasAbsorption = 0;
-        if (Math.abs(hGasAbsorption) > Math.abs(hHeatOut))
-            debug("hGasAbsorption = " + hGasAbsorption + ", hHeatOut = " + hHeatOut);
+            effectiveGasEmissH = 0;
+
         vHeatOut = interChF * vTotalfactor * SPECIAL.stefenBoltz * vSrcArea *
                 (Math.pow((tFrom + 273), 4) - Math.pow((tTo + 273), 4));
-        if (distWallCharge > 0)  {
-            alphaGas =  flue.alphaGas(tFrom, tTo, distWallCharge) * tuning.emmFactor;
-            if (tuning.bTakeGasAbsorptionForInterRad)
-                vGasAbsorption = alphaGas * vTotalfactor * vSrcArea * (tFrom - tTo);
-            else
-                vGasAbsorption = 0;
-            if (Math.abs(vGasAbsorption) > Math.abs(vHeatOut))
-                debug("vGasAbsorption = " + vGasAbsorption + ", vHeatOut = " + vHeatOut);
-        }
-        heatOut = (hHeatOut - hGasAbsorption) + (vHeatOut - vGasAbsorption);
-//        heatOut = (hHeatOut - hGasAbsorption);
+        if (distWallCharge > 0)
+            effectiveGasEmissV = flue.effectiveEmissivity(tFrom, tTo, distWallCharge);
+        else
+            effectiveGasEmissV = 0;
+
+        heatOut = hHeatOut * (1 - effectiveGasEmissH) + vHeatOut * (1 - effectiveGasEmissV);
         pDestHeatIntensity = heatOut / destArea;
         return heatOut;
     }

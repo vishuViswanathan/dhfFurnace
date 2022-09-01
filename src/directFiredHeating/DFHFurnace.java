@@ -6,6 +6,7 @@ import appReporting.Reporter;
 import basic.*;
 import directFiredHeating.process.FurnaceSettings;
 import directFiredHeating.process.OneStripDFHProcess;
+import directFiredHeating.transientData.Transient2D;
 import mvUtils.display.TimedMessage;
 import mvUtils.display.TrendsPanel;
 import mvUtils.display.VScrollSync;
@@ -33,7 +34,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.TextListener;
 import java.lang.reflect.InvocationTargetException;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
@@ -42,7 +42,6 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Vector;
 
-// import sun.nio.cs.ext.MacThai;
 
 /**
  * Created by IntelliJ IDEA.
@@ -64,7 +63,7 @@ public class DFHFurnace {
     FramedPanel topDetailsPanel, botDetailsPanel;
     public DFHeating controller;
     String nlSpace = ErrorStatAndMsg.nlSpace;
-//    boolean bZ2TopTempSpecified = false, bZ2BotTempSpecified = false;
+    //    boolean bZ2TopTempSpecified = false, bZ2BotTempSpecified = false;
     public FuelFiring commFuelFiring;
     public ProductionData productionData;
 
@@ -84,6 +83,8 @@ public class DFHFurnace {
     public boolean bDisplayResults = true;
     boolean bDisplayCalculationProgress = true;
     public FurnaceSettings furnaceSettings;
+    Transient2D transient2D;
+    public boolean twoDDataReady = false;
 
     public DFHFurnace(DFHeating controller, boolean bTopBot, boolean bAddTopSoak, ActionListener listener) {
         this.controller = controller;
@@ -447,7 +448,7 @@ public class DFHFurnace {
             if (resultsReady) {
                 if (decide("Calculation from FURNACE TEMPERATURE",
                         "Do you want to work with wall temperatures of the last calculation?" +
-                        "\nChoose 'Yes' only if Furnace physical params have not been changed")) {
+                                "\nChoose 'Yes' only if Furnace physical params have not been changed")) {
                     copyTempoFromLastResults();
                     skipUserEntry = true;
                 }
@@ -484,6 +485,7 @@ public class DFHFurnace {
     }
 
     public boolean doTheCalculation() {
+        twoDDataReady = false;
         // Zone gas temperature presets,  if required to be cleared, is taken care by the caller
         if (bBaseOnOnlyWallRadiation)
             return doTheCalculationWithOnlyWallRadiation();
@@ -497,7 +499,12 @@ public class DFHFurnace {
             resultsReady = false;
             skipReferenceDataCheck = false;
             boolean bFirstTime = true;
-            while (true) {
+            int twoDcheckCount = 0;
+            boolean canDo2DCheck = tuningParams.bDo2dCalculation &&  tuningParams.bDo2Dcheck &&
+                    (controller.heatingMode != DFHeating.HeatingMode.TOPBOTSTRIP) &&
+                    (productionData.charge.type == Charge.ChType.SOLID_RECTANGLE);
+
+                while (true) {
                 while (allOk && reDo) {
                     allOk = false;
                     if (tuningParams.bEvalBotFirst && !bAddTopSoak) {
@@ -539,11 +546,26 @@ public class DFHFurnace {
                         }
                         if (resp) {
                             combiData.noteCorrection();
-                        } else
+                        } else {
                             reDo = false;
+                        }
                     } else
                         reDo = false;
-                }
+                    if (!reDo && canDo2DCheck &&
+                            (twoDcheckCount < tuningParams.n2dCheck)) {
+                        boolean resp = decide("Check with Charge2D analysis",
+                                "DO you want to check with Charge2D calculation ? ");
+                        if (resp) {
+                            if (runCharge2DCalculation(true)) {
+                                twoDcheckCount++;
+                                reDo = true;
+                            }
+                        }
+                        else {
+                            twoDcheckCount = tuningParams.n2dCheck;
+                        }
+                    }
+                } // allOk && reDo
                 if (allOk && canRun() && prepareHeatBalance()) {
                     topTrendsP = getTrendsPanel(false);
                     if (bTopBot) {
@@ -562,16 +584,34 @@ public class DFHFurnace {
                 if (bTopBot)  {
                     for (int iSec = 0; iSec < nBotActiveSecs; iSec++)
                         botSections.get(iSec).markZonalTemperature(botUfsArray.getMultiColdata(), botUfsArray.colFceTemp);
-                    vBotSlotTempOLast = new Vector<Double>();
+                    vBotSlotTempOLast = new Vector<>();
                     for (UnitFurnace uf: vBotUnitFces)
                         vBotSlotTempOLast.add(uf.tempO);
                 }
+                if (canDo2DCheck || tuningParams.bDo2dCalculation)
+                    runCharge2DCalculation(false);
                 return true;
             }
             else {
                 return false;
             }
         }
+    }
+
+
+    boolean runCharge2DCalculation(boolean doSettings) {
+        // check for Rectangular charge and not Strip Furnace to be done by the caller
+        boolean reDo = false;
+        transient2D = new Transient2D(this, controller.theCharge);
+        if (transient2D.evaluate()) {
+            twoDDataReady = true;
+            if (doSettings) {
+//                transient2D.copyS152ToUfs(tuningParams.s152LimitMin, tuningParams.s152LimitMax);
+                transient2D.copyTauToUfs(tuningParams.tauLimitMin, tuningParams.tauLimitMax);
+                reDo = true;
+            }
+        }
+        return reDo;
     }
 
 
@@ -1180,7 +1220,7 @@ public class DFHFurnace {
         Vector<FceSection> vSec;
         int iFirstFiredSection;
         int iSecWithEntryTempFixed;  // In case STRIP with respecting Exit Zone Temp, while adjusting
-                                     // strip temperature,this section's entry temperatures has to be maintained
+        // strip temperature,this section's entry temperatures has to be maintained
         int iLastFiredSection;
         double[] chInTempProfile = null;
         int nFiredSecs;
@@ -1301,8 +1341,8 @@ public class DFHFurnace {
                                 if (!userActionAllowed())
                                     considerChTempProfile = true;
                                 else
-                                    if (!considerChTempProfile)
-                                        considerChTempProfile = decide("Charge Temperature Profile",
+                                if (!considerChTempProfile)
+                                    considerChTempProfile = decide("Charge Temperature Profile",
                                             "Do you want to consider the Charge Temperature Profile from the Reference Performance data?", 3000);
                             }
                         } else {
@@ -1355,7 +1395,7 @@ public class DFHFurnace {
                         response = theSection.oneSectionInRev(chInTempReqd);
                     } else {
                         response = theSection.oneSectionInRev(true);
-                                                // allowed to retry bu nulling losses if required
+                        // allowed to retry bu nulling losses if required
                         if (tuningParams.bAdjustChTempProfile && (iSec == iLastSec) && honorLastZoneMinFceTemp)
                             chTempProfileFactor = chTempFactor(chInTempProfile, iSec, theSection, iSecWithEntryTempFixed, iLastFiredSection);
                     }
@@ -1506,7 +1546,7 @@ public class DFHFurnace {
         if (allOk && smoothenCurve && tuningParams.bSmoothenCurve)
             smoothenProfile(bBot);
         return allOk;
-     }
+    }
 
     double chTempFactor(double[] nowProfile, int iSecNum, FceSection theSection, int iSecWithFixedEntryTemp, int iLastFired) {
         double factor = 1;
@@ -1554,7 +1594,7 @@ public class DFHFurnace {
             suggTemp = 10 * SPECIAL.roundToNDecimals(suggTemp / 10, -1) - 5;
             if (userActionAllowed()) {
                 String title = topBotName(bBot) + "Zone #" + (iSec + 1);
-                OneParameterDialog tempDlg = new OneParameterDialog(controller, title, 3000);
+                OneParameterDialog tempDlg = new OneParameterDialog(controller, title, 5000);
                 tempDlg.setValue("Zone Gas Temperature (C)", suggTemp, "#,##0", 100, 1700);
                 tempDlg.setLocationRelativeTo(controller.parent());
                 tempDlg.setVisible(true);
@@ -1885,7 +1925,8 @@ public class DFHFurnace {
                     tempGZ1Assume = tgNow + (tgNow - tgLast) / (tmNow - tmLast) * (reqdChTempM - tmNow);
                     if (Double.isNaN(tempGZ1Assume)) {
                         showError("DFHFurnace.1845: Some problem in getting to charge entry temperature\n" +
-                                "     Try Dynamic Gas Temp Correction in 'Tuning Prameters' ...");
+                                "       Try Dynamic Gas Temp Correction in 'Gas Temperature Correction' panel\n" +
+                                "       in Operation Data  ...");
                         bRetVal = false;
                         break;
                     }
@@ -2061,7 +2102,7 @@ public class DFHFurnace {
             }
             else {
                 showMessage("DELETING Existing Recuperator Data, \n" +
-                                "since the Common Air Recuperator has been de-selected");
+                        "since the Common Air Recuperator has been de-selected");
                 existingHeatExch = null;
             }
         }
@@ -2141,6 +2182,26 @@ public class DFHFurnace {
                 if (sec.isMixedFuel()) {
                     retVal = true;
                     break;
+                }
+        }
+        return retVal;
+    }
+
+    public Vector<Fuel> getMixedFuelsUsed() {
+        Vector<Fuel> retVal = new Vector<>();
+        Fuel nowFuel;
+        for (FceSection sec : topSections)
+            if (sec.isMixedFuel()) {
+                nowFuel = sec.fuelFiring.fuel;
+                if (!retVal.contains(nowFuel))
+                    retVal.add(sec.fuelFiring.fuel);
+            }
+        if (bTopBot) {
+            for (FceSection sec : botSections)
+                if (sec.isMixedFuel()) {
+                    nowFuel = sec.fuelFiring.fuel;
+                    if (!retVal.contains(nowFuel))
+                        retVal.add(sec.fuelFiring.fuel);
                 }
         }
         return retVal;
@@ -2401,7 +2462,7 @@ public class DFHFurnace {
             }
             bRecuFrozen = true;
             showMessage("Air Recuperator characteristics frozen");
-         }
+        }
         return bRecuFrozen;
     }
 
@@ -3216,6 +3277,8 @@ public class DFHFurnace {
     }
 
     int tTopGas = 0, tTopFce = 1, tBotGas = 5, tBotFce = 6;  // trace numbers
+    int tTchSurf = 2, tTchCore = 3, tTchMean = 4;
+    int tBchSurf = 7, tBchCore = 8, tBchMean = 9;
 
     protected TrendsPanel getCombiGraphsPanel() {     // a combined trend
         CombiMultiColData results;
@@ -3283,9 +3346,9 @@ public class DFHFurnace {
     }
 
     // AS - for Added Top Only Soak
-    double chUAreaTop, chUAreaBot, chUAreaAS;
-    double sideAlphaFactor, endAlphaFactor;
-    double sideAlphaFactorAS, endAlphaFactorAS;
+    public double chUAreaTop, chUAreaBot, chUAreaAS;
+    public double sideAlphaFactor, endAlphaFactor;
+    public double sideAlphaFactorAS, endAlphaFactorAS;
     double s152Start, s152StartAS;
     public double effectiveChThick, effectiveChThickAS;
     public double gTop, gBot, gTopAS;
@@ -3294,7 +3357,7 @@ public class DFHFurnace {
         int YSTEPS = 1000;
         int XSTEPS = 1000;
         double FCEHEIGHT = 10; // TODO this does not affect the result
-        double gap, effSideH = 0;
+        double gap, effSideH = 0; // , effSideHfor1D = 0;
         Charge ch = productionData.charge;
         if (ch.type == Charge.ChType.SOLID_CIRCLE)
             evalChUnitAreaForCylinder();
@@ -3322,6 +3385,7 @@ public class DFHFurnace {
                         for (int xs = 0; xs < XSTEPS; xs++, x += xStep) {
                             localFact += (x / Math.pow((x * x + Math.pow((FCEHEIGHT - y), 2)), 1.5)) * xStep;
                         }
+//                        effSideHfor1D += (FCEHEIGHT - y) * heightStep * localFact;
                         effSideH += (FCEHEIGHT - y) * heightStep * localFact / 2;
                         //  20180115 Divide by 2 in the step above is based on Techint Manual,
                         // it matches the View factor calculation from 'Radiation View Factors.pdf in D:\thermalCalculations'
@@ -3334,6 +3398,7 @@ public class DFHFurnace {
                         effSideH += fact2 * ch.height;
                     }
                     chUAreaTop = (ch.length * productionData.nChargeRows) * (ch.width + 2 * effSideH);
+//                    chUAreaTop = (ch.length * productionData.nChargeRows) * (ch.width + 2 * effSideHfor1D);
                     if (bTopBot) {
                         chUAreaBot = chUAreaTop * (1 - productionData.bottShadow);
                         sideAlphaFactor = (2 * effSideH) / ch.height;
@@ -3400,7 +3465,7 @@ public class DFHFurnace {
 //            if (bTopBot)
 //                thetaMax = Math.PI / 2; // take only the top half
 //            else
-                thetaMax = Math.PI - Math.asin(radius / (pitch / 2));
+            thetaMax = Math.PI - Math.asin(radius / (pitch / 2));
             double delTheta = (thetaMax - thetaMin) / THETASTEPS;
             double effSurfL = 0; // effective surface length
             theta = thetaMin;
@@ -3687,7 +3752,8 @@ public class DFHFurnace {
 
     final static int MAXUFS = 200;
 
-    void createUnitfces(Vector<Double> combLens, boolean bBot) {
+    boolean createUnitfces(Vector<Double> combLens, boolean bBot) {
+        boolean retVal = true;
         int len = combLens.size();
         if (bBot) {
             vBotUnitFces = new Vector<>();
@@ -3719,7 +3785,8 @@ public class DFHFurnace {
         endTime = 0;
         theSlot = new UnitFurnace(controller.furnaceFor);
         if (bTopBot)
-            theSlot.setgRatio(chUAreaTop / (chUAreaTop + chUAreaBot));
+            theSlot.setgRatio(((bBot)? chUAreaBot:chUAreaTop)
+                    / (chUAreaTop + chUAreaBot));
         else
             theSlot.setgRatio(1);
         ufs.add(theSlot);
@@ -3750,13 +3817,22 @@ public class DFHFurnace {
         }
         UnitFurnace uf = ufs.get(0);
         uf.setChargeTemperature(productionData.entryTemp);
+        UnitFurnace uf1 = ufs.get(1);
+        uf.delTime = uf1.delTime;
+
         linkSlots(bBot);
-        ufsArr.setColData();
-        if (bBot)
-            botTResults = ufsArr.getMultiColdata();
-        else {
-            topTResults = ufsArr.getMultiColdata();
+        if (ufsArr.setColData()) {
+            if (bBot)
+                botTResults = ufsArr.getMultiColdata();
+            else {
+                topTResults = ufsArr.getMultiColdata();
+            }
         }
+        else {
+            showError("Unable to set data collection, may be too many columns!");
+            retVal = false;
+        }
+        return retVal;
     }
 
     public MultiColData getTopTResults() {
@@ -4002,6 +4078,7 @@ public class DFHFurnace {
         setupDetailsPanel(false);
         botDetailsPanel = new FramedPanel(new GridBagLayout());
         setupDetailsPanel(true);
+        twoDDataReady = false;
     }
 
     void takeValuesFromUI() {
@@ -4701,6 +4778,10 @@ public class DFHFurnace {
         cell.setCellStyle(styles.csHeader1);
         cell.setCellValue("TOTAL FURNACE HEAT BALANCE");
 
+        cell = r.createCell(4);
+        cell.setCellStyle(styles.csHeader1);
+        cell.setCellValue("with DFHFURNACE Release " + controller.releaseDate());
+
         sheet.setColumnWidth(1, 9000);
         sheet.setColumnWidth(2, 3000);
         sheet.setColumnWidth(3, 500);
@@ -4741,6 +4822,66 @@ public class DFHFurnace {
         JTable table = (bBot) ? botTResults.getResultTable() : topTResults.getResultTable();
         int row = styles.xlAddXLCellData(sheet, topRow, leftCol, table);
         return true;
+    }
+
+    public String temperatureDataInCSV() {
+        StringBuilder data = new StringBuilder();
+        if (resultsReady) {
+            JTable tTable = topTResults.getJTable();
+            int nTcols = tTable.getColumnCount();
+            JTable bTable = null;
+            int nBcols = 0;
+            if (bTopBot) {
+                bTable = botTResults.getJTable();
+                nBcols = bTable.getColumnCount();
+            }
+
+            // columns names
+            for(int c = 0; c < nTcols; c++) {
+                if (c > 0)
+                    data.append(",");
+                data.append(tTable.getColumnName(c));
+            }
+            if (bTopBot) {
+                // skip the first index column
+                for(int c = 1; c < nBcols; c++) {
+                    data.append(",");
+                    data.append(bTable.getColumnName(c));
+                }
+
+            }
+            data.append("\n");
+            // the data
+            int nRows = tTable.getRowCount();
+            for(int r = 0; r < nRows; r++) {
+                for (int c = 0; c < nTcols; c++) {
+                    if (c > 0)
+                        data.append(",");
+                    String val = "" + tTable.getValueAt(r, c);
+                    val = val.replace(",", "");
+                    data.append(val);
+                }
+                if (bTopBot) {
+                    // skip the first column
+                    for (int c = 1; c < nBcols; c++) {
+                        data.append(",");
+                        String val = "" + bTable.getValueAt(r, c);
+                        val = val.replace(",", "");
+                        data.append(val);
+                    }
+
+                }
+                data.append("\n");
+            }
+        }
+        return data.toString();
+    }
+
+    public String get2dTempProfileInCSV() {
+        if (twoDDataReady)
+            return transient2D.get2dTempProfileInCSV();
+        else
+            return "No 2D data evaluated!";
     }
 
     boolean xlFuelSummary(Sheet sheet, ExcelStyles styles) {
@@ -4848,23 +4989,140 @@ public class DFHFurnace {
         return true;
     }
 
-    String tProfileForTFMREMOVE(boolean bBot) {
-        String dataStr = "";
-        UnitFceArray ufsA = (bBot) ? botUfsArray : topUfsArray;
-        double[] data = ufsA.tProfileForTFM(tuningParams.tfmBasis, (int) (getFceLength() / tuningParams.getTFMStep()));
-        int len = data.length;
-        if (len > 1 && !Double.isNaN(data[0])) {
-            for (int i = 0; i < (len - 1); i++)
-                dataStr += "" + data[i] + "\n";
-            dataStr += "" + data[len - 1];
+    public Vector<UnitFurnace> getSlotList(boolean bBot) {
+        Vector<UnitFurnace> list = new Vector<>();
+        if (bBot) {
+            for (int s = 0; s < nBotActiveSecs; s++)
+                list.addAll(botSections.get(s).getSLotList());
         }
-        return dataStr;
+        else {
+            for (int s = 0; s < nTopActiveSecs; s++)
+                list.addAll(topSections.get(s).getSLotList());
+
+        }
+        return list;
     }
+
+    String dataForFE() {
+        Vector <FceAmbient> fceTopAmbs = new Vector<FceAmbient>();
+        Vector <FceAmbient> fceBotAmbs = null;
+        String head = "# fromTime, Temperature, Alpha\n";
+        for (FceSection sec: topSections)
+            sec.addAmbientData(fceTopAmbs);
+        if (bTopBot) {
+            fceBotAmbs = new Vector<FceAmbient>();
+            for (FceSection sec: botSections)
+                sec.addAmbientData(fceBotAmbs);
+            if (bAddTopSoak) {
+                addedTopSoak.addAmbientData(fceTopAmbs);
+                fceBotAmbs.add(new FceAmbient(addedTopSoak.getStartTime(), 1000, 0));   // insulated
+            }
+        }
+        String ambDataStr = "Ambient Data File\n" +
+                "Version = 1\n" +
+                "# Created by DFHFurnace on " + (new Date()) + ".\n" +
+                "#\n";
+        int nAmbs = (bTopBot) ? 5 : 4;
+        int a = 1;
+        ambDataStr += "Number of Ambients = " + nAmbs + "\n";
+        ambDataStr += "# Ambient" + a + "\nName = " + "%TOP\n";
+        ambDataStr += "Steps =" + fceTopAmbs.size() + "\n";
+        ambDataStr += head;
+        for (FceAmbient amb: fceTopAmbs)
+            ambDataStr += "" + amb.ambString() + "\n";
+        ambDataStr += "#...\n";
+        a++;
+        ambDataStr += "# Ambient" + a + "\nName = " + "%BOTTOM\n";
+        if (bTopBot) {
+            ambDataStr += "Steps =" + fceBotAmbs.size() + "\n";
+            ambDataStr += head;
+            for (FceAmbient amb: fceBotAmbs)
+                ambDataStr += "" + amb.ambString() + "\n";
+        }
+        else {
+            ambDataStr += "Steps =" + 1 + "\n";
+            ambDataStr += head;
+            ambDataStr += "0, 1000, 0\n"; // insulated since no bottom heating
+        }
+        ambDataStr += "#...\n";
+        a++;
+        ambDataStr += "# Ambient" + a + "\nName = " + "%SIDES\n";
+        ambDataStr += "Steps =" + fceTopAmbs.size() + "\n";
+        ambDataStr += head;
+        FceAmbient ambT, ambB;
+        int slot;
+        if (bTopBot) {
+            ambDataStr += "# Side Alpha as " + sideAlphaFactor + " of Average Alpha\n";
+            for (slot = 0; slot < fceBotAmbs.size(); slot++) {
+                ambB = fceBotAmbs.get(slot);
+                ambT = fceTopAmbs.get(slot);
+                ambDataStr += ambB.avgAmbString(ambT, sideAlphaFactor) + "\n";
+            }
+            for (; slot < fceTopAmbs.size(); slot++) {   // this will happen if there is added top Soak
+                ambT = fceTopAmbs.get(slot);
+                ambDataStr += ambT.ambString(sideAlphaFactorAS) + "\n";
+            }
+        }
+        else {
+            ambDataStr += "# Side Alpha as " + sideAlphaFactor + " of Top Alpha\n";
+            for (FceAmbient amb: fceTopAmbs)
+                ambDataStr += "" + amb.ambString(sideAlphaFactor) + "\n";
+        }
+        ambDataStr += "#...\n";
+        a++;
+        ambDataStr += "# Ambient" + a + "\nName = " + "%ENDS\n";
+        ambDataStr += "Steps =" + fceTopAmbs.size() + "\n";
+        ambDataStr += head;
+        if (bTopBot) {
+            ambDataStr += "# End Alpha as " + endAlphaFactor + " of Average Alpha\n";
+            for (slot = 0; slot < fceBotAmbs.size(); slot++) {
+                ambB = fceBotAmbs.get(slot);
+                ambT = fceTopAmbs.get(slot);
+                ambDataStr += ambB.avgAmbString(ambT, endAlphaFactor) + "\n";
+            }
+            for (; slot < fceTopAmbs.size(); slot++) {   // this will happen if there is added top Soak
+                ambT = fceTopAmbs.get(slot);
+                ambDataStr += ambT.ambString(endAlphaFactorAS) + "\n";
+            }
+            ambDataStr += "#...\n";
+            a++;
+            // add Skids
+            ambDataStr +=
+                    "# Ambient" + a + "\n" +
+                            "Name = %SKID" + "\n" +
+                            "#" + "\n" +
+                            "Steps =  2" +  "\n" +
+                            head +
+                            "0.0000,  50,   60" + "\n" +
+                            "10, 50,   60" + "\n";
+        }
+        else {
+            ambDataStr += "# End Alpha as " + endAlphaFactor + " of Top Alpha\n";
+            for (FceAmbient amb: fceTopAmbs)
+                ambDataStr += "" + amb.ambString(endAlphaFactor) + "\n";
+        }
+        ambDataStr += "#...\n";
+
+        return ambDataStr;
+    }
+
+//    String tProfileForTFMREMOVE(boolean bBot) {
+//        String dataStr = "";
+//        UnitFceArray ufsA = (bBot) ? botUfsArray : topUfsArray;
+//        double[] data = ufsA.tProfileForTFM(tuningParams.tfmBasis, (int) (getFceLength() / tuningParams.getTFMStep()));
+//        int len = data.length;
+//        if (len > 1 && !Double.isNaN(data[0])) {
+//            for (int i = 0; i < (len - 1); i++)
+//                dataStr += "" + data[i] + "\n";
+//            dataStr += "" + data[len - 1];
+//        }
+//        return dataStr;
+//    }
 
     String tProfileForTFMWithLen() {
         String dataStr = "";
         if (bAddTopSoak) {
-            showMessage("TFM file cannot ber created for Furnace with Top-Only Soak section!");
+            showMessage("TFM file cannot be created for Furnace with Top-Only Soak section!");
             return dataStr;
         }
         double[][] dataArr;

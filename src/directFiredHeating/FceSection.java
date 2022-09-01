@@ -1021,6 +1021,13 @@ public class FceSection {
         return new CreateUFceReturn(iLloc, iSlot, balLCombined, totLen, endTime);
     }
 
+    Vector<UnitFurnace> getSLotList() {
+        Vector<UnitFurnace> list = new Vector<>();
+        for (int i = firstSlot; i <= lastSlot; i++)
+            list.add(vUnitFurnaces.get(i));
+        return list;
+    }
+
     UnitFurnace getUnitFceAtStPos(double stPos) {
         UnitFurnace ufReqd = null;
         UnitFurnace uf;

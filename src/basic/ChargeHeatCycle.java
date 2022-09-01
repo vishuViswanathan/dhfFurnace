@@ -66,8 +66,11 @@ public class ChargeHeatCycle implements Runnable {
     }
 
     private void setUnitTime(double c, double lambda) {
-        unitTime = 0.5 * (1.0 / 6.0 * (c * density * dx * dx / lambda));
-//    unitTime = 0.5*(1.0/4.0*(c*density * dx * dx /lambda));
+//        unitTime = 0.5 * (1.0 / 6.0 * (c * density * dx * dx / lambda)); // this is for 3D
+    unitTime = 0.5*(1.0/4.0*(c*density * dx * dx /lambda));
+            // taken 0.5 times the required maximum unitTime for stability
+        // The limit is Fourier Number f0 should be less than 0.25
+        // f0 = a.t/l^2, a is diffusivity  tk / (c * density)    t is unitTime and l is dx here
 // DEBUG
 //    debug("Unit time " + unitTime + ", c = " + c + ", tk = " + lambda);
     }

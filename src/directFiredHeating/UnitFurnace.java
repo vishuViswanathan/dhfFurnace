@@ -28,6 +28,8 @@ public class UnitFurnace {
     double width, length, stPos, endPos;
     double chargeArea;
     public double psi, gThick;
+    public double chTau;
+    double presetTau = -1;
     public double delTime, endTime;
     public double eO, eW;
     double losses;
@@ -36,14 +38,26 @@ public class UnitFurnace {
     protected double chargeHeat = 0;
     double heatToCharge, heatFromWall, heatFromGas;
     public MultiColDataPoint dpTempWO = null, dpTempWcore = null, dpTempWmean, dpTempG, dpTempO, dpEndTime;
-    public MultiColDataPoint dpTotAlpha, dpAlphaGas, dpAlphaWall, dpAlphaTOW, dpAlphaAbsorb;
+    public MultiColDataPoint dpTotAlpha, dpAlphaGas, dpAlphaWall, dpAlphaTOW, dpAlphaAbsorb, dpEffGasEmiss;
+    public MultiColDataPoint dpEw, dpChTk, dpChSpHt;
+    public MultiColDataPoint dpPsi, dpGthick, dpChTau;
+    public MultiColDataPoint dpS152;
+    public MultiColDataPoint dpHeight, dpGratio;
     public MultiColDataPoint dpChargeHeat, dpHeatToCharge, dpHeatFromWall, dpHeatFromGas, dpHeatAbsorbed;
-    public MultiColDataPoint dpWallOnlyFactor;
+    // parameters from TwoDCheck
+    public double tempWO2d, tempWmin2d, tempWmean2d;
+    public double s5122d, chTau2d;
+    public MultiColDataPoint dpTempWO2d, dpTempWmin2d, dpTempWmean2d;
+    public MultiColDataPoint dpS5122d, dpChTau2d;
+
+//    public MultiColDataPoint dpWallOnlyFactor;
 
     protected double gRatio;
     boolean bNoShare = true;  // no coresponding bottom zone
     double s152;
     double alphaGasPart, alphaWallPart, alphaTOW, alphaAbsorbWRTtempG, alphaAbsorbWRTtempO;
+    double effectiveGasEmiss;
+    double chTk, chSpHt;
     double slotRadOut, slotRadIn, slotRadNetOut;
     public double temporaryLossCorrection = 0;
     UnitFurnace pEntryNei, pExitNei;
@@ -54,7 +68,7 @@ public class UnitFurnace {
     FceSubSection fceSubSec;
     public FceSection fceSec;
     public DFHTuningParams.FurnaceFor furnaceFor;
-//    FlueComposition flue;
+    //    FlueComposition flue;
     protected DFHFurnace furnace;
     protected ChMaterial ch;
     public DFHTuningParams tuning;
@@ -97,8 +111,23 @@ public class UnitFurnace {
         dpAlphaWall = new MultiColDataPoint();
         dpAlphaTOW = new MultiColDataPoint();
         dpAlphaAbsorb = new MultiColDataPoint();
+        dpEffGasEmiss =new MultiColDataPoint();
         dpChargeHeat = new MultiColDataPoint();
-        dpWallOnlyFactor = new MultiColDataPoint();
+//        dpWallOnlyFactor = new MultiColDataPoint();
+        dpEw = new MultiColDataPoint();
+        dpPsi = new MultiColDataPoint();
+        dpHeight = new MultiColDataPoint();
+        dpGratio = new MultiColDataPoint();
+        dpGthick = new MultiColDataPoint();
+        dpS152 = new MultiColDataPoint();
+        dpChTau = new MultiColDataPoint();
+        dpChSpHt = new MultiColDataPoint();
+        dpChTk = new MultiColDataPoint();
+        dpTempWmin2d = new MultiColDataPoint();
+        dpTempWmean2d = new MultiColDataPoint();
+        dpTempWO2d = new MultiColDataPoint();
+        dpS5122d = new MultiColDataPoint();
+        dpChTau2d = new MultiColDataPoint();
         unitFceForWallOnlyFactor = new RadUnitFurnace(this);
     }
 
@@ -136,11 +165,13 @@ public class UnitFurnace {
         this.stPos = copyFrom.endPos;
         this.endTime = copyFrom.endTime;
         this.gRatio = copyFrom.gRatio;
+        this.height = copyFrom.height;
+        this.delTime = copyFrom.delTime;
         this.bNoShare = copyFrom.bNoShare;
         this.g = copyFrom.g;
         this.bBot = copyFrom.bBot;
-        radSink = new Vector<RadToNeighbors>();
-        radSrc = new Stack<RadToNeighbors>();
+        radSink = new Vector<>();
+        radSrc = new Stack<>();
     }
 
     public void copyParamesTo(UnitFurnace ufTo) {
@@ -169,11 +200,11 @@ public class UnitFurnace {
     }
 
     public double setInitialChHeat(double tIn, double rate) {
-       double tOut;
-       tOut = tIn  + rate * length;
-       chargeHeat = ch.getDeltaHeat(tIn, tOut) * gRatio * production.production ;
-       return tOut;
-   }
+        double tOut;
+        tOut = tIn  + rate * length;
+        chargeHeat = ch.getDeltaHeat(tIn, tOut) * gRatio * production.production ;
+        return tOut;
+    }
 
     void setOtherParams() {
         g = (bBot) ? furnace.gBot : ((bAddedTopSoak) ? furnace.gTopAS : furnace.gTop);
@@ -186,7 +217,7 @@ public class UnitFurnace {
                 fceUnitArea = 2 * (furnace.fceWidth + height) * production.chPitch;  // take whole area of chamber since actually it is topBot fired
             else
                 fceUnitArea = (2 * (furnace.fceWidth + height) - production.charge.length) *
-                    production.chPitch;
+                        production.chPitch;
         }
         psi = ((bBot)? furnace.chUAreaBot : ((bAddedTopSoak) ? furnace.chUAreaAS : furnace.chUAreaTop))/ fceUnitArea;
 //        debug("for psi chUAreaTop is taken");
@@ -209,9 +240,17 @@ public class UnitFurnace {
         eW = 0.8; // to start with
     }
 
+    public void sets152(double value) {
+        s152 = value;
+    }
+
+    public void setTau(double value) {
+        presetTau = value;
+    }
+
     /**
      *
-      * @param startTime
+     * @param startTime
      * @return endTime of the slot
      */
     public double setProductionBasedParams(double startTime) {
@@ -423,15 +462,15 @@ public class UnitFurnace {
     }
 
     double gasTforChargeT(double tWo, double surfCore) {
-        double tMean, tGassume, tGrevised, tk, tau, alpha, diff;
+        double tMean, tGassume, tGrevised, tau, alpha, diff;
         tMean = tWo - surfCore / s152;
-        tk = ch.getTk(tMean);
+        chTk = ch.getTk(tMean);
         tGassume = tWo + 50;
         boolean done = false;
         while (!done  && furnace.canRun()) {
             alpha = fceTempAndAlpha(tGassume, tWo);
             if (furnace.canRun())  {
-                tau = evalTau(alpha, tk, ((bAddedTopSoak) ? furnace.effectiveChThickAS : furnace.effectiveChThick) * gRatio);
+                tau = evalTau(alpha, chTk, ((bAddedTopSoak) ? furnace.effectiveChThickAS : furnace.effectiveChThick) * gRatio);
                 tGrevised = tMean + surfCore / s152 / (1 - tau);
                 diff = tGrevised - tGassume;
                 if (Math.abs(diff) <= (0.5 * tuning.errorAllowed))
@@ -443,16 +482,50 @@ public class UnitFurnace {
         return tGassume;
     }
 
+    protected double evalTau(double alpha, double tk, double gX) {
+        if (presetTau > 0) {
+            chTau = presetTau;
+        }
+        else {
+            if (tuning.bFormulaForTau)
+                return evalTauFULLFORMULA(alpha, tk, gX);
+            // The following formula if for a.t/X2 greatrer than 0.2
+            // as per fig.83 of Heilingenstaedt for Plates
+            double tauFactor = alpha * gX / tk;
+            double tau = Math.exp(tauFactor * (0.031754 * tauFactor - 0.33172 - 0.0016197 * Math.pow(tauFactor, 2)));
+            if (tau >= 1)
+                chTau = 1.0;
+            else
+                chTau = tau;
+        }
+        return chTau;
+    }
 
-
-     protected double evalTau(double alpha, double tk, double gX) {
-         // The following formula if for a.t/X2 greatrer than 0.2
-         // as per fig.83 of Heilingenstaedt for Plates
+    protected double evalTauFULLFORMULA(double alpha, double tk, double gX) {
+        // as per fig.83 of Heilingenstaedt for Plates
+        double a = tk/chSpHt / ch.density;
+        double atByX2 = a * delTime / (gX * gX);
+        if (atByX2 > 0.4) {
+//            debug("atByX2 = " + atByX2 + "");
+            atByX2 = 0.4;
+        }
+        double lnAxByX2 = Math.log(atByX2);
         double retVal = 1;
-        double tauFactor = alpha * gX / tk;
-        retVal = Math.exp(tauFactor * (0.031754 * tauFactor - 0.33172 - 0.0016197 * Math.pow(tauFactor, 2)));
+        double alphaXbyTk = alpha * gX / tk;
+        if (alphaXbyTk > 5.0) {
+            debug("alphaXbyTk = " + alphaXbyTk + " in evalTau");
+            alphaXbyTk = 5.0;
+        }
+        double expTerm = alphaXbyTk * (
+                (-0.007 * atByX2 + 0.0006) * (alphaXbyTk * alphaXbyTk) +
+                        (0.0136 * lnAxByX2 + 0.0468) * alphaXbyTk +
+                        (-0.066 * lnAxByX2 -0.4017)
+                ) - 7.5e-5;
+
+        retVal = Math.exp(expTerm);
         if (retVal >= 1)
             retVal = 1;
+        chTau = retVal;
         return retVal;
     }
 
@@ -465,27 +538,27 @@ public class UnitFurnace {
     double fceTempAndAlpha(double tg, double two) {
         double alpha = 0;
 //        if (gThick > 0.001) {
-            if ((psi <= 0) || (gThick < 0) || (eO <= 0) || (eW <= 0)) {
-                errMsg("DATA psi=" + psi + ", gThick=" + gThick + ", eo=" + eO +
-                        ", ew=" + eW + "  - Finding Alpha (FceTempAndAlpha)");
-                alpha = -1;
-                two = -100;
-            } else {
-                if ((tg <= 0) || (tg > 2200)) {
-                    debug("GAS temp Out of range <" + tg + ">, still continuing ..." + errCount++);
-                    if (errCount > 1000) {
-                        errMsg("GAS temp Out of range <" + tg + ">. Aborting after many trials <" + errCount + ">");
-                        furnace.abortIt("Unable to evaluate alpha and wall Temperature in UnitFurnace");
-                    }
+        if ((psi <= 0) || (gThick < 0) || (eO <= 0) || (eW <= 0)) {
+            errMsg("DATA psi=" + psi + ", gThick=" + gThick + ", eo=" + eO +
+                    ", ew=" + eW + "  - Finding Alpha (FceTempAndAlpha)");
+            alpha = -1;
+            two = -100;
+        } else {
+            if ((tg <= 0) || (tg > 2200)) {
+                debug("GAS temp Out of range <" + tg + ">, still continuing ..." + errCount++);
+                if (errCount > 1000) {
+                    errMsg("GAS temp Out of range <" + tg + ">. Aborting after many trials <" + errCount + ">");
+                    furnace.abortIt("Unable to evaluate alpha and wall Temperature in UnitFurnace");
                 }
             }
-            if (furnace.canRun())
-                alpha = fcTalpha(tg, two);
+        }
+        if (furnace.canRun())
+            alpha = fcTalpha(tg, two);
 //        }
         return alpha;
     }
 
-    private double alphaOWEffective(double tO, double two, double eWnow) {
+    private double alphaOWEffectiveHeilingen(double tO, double two, double eWnow) {
         double epsilonOW, alphaOW;
         FlueComposition radFlue = fceSec.totFlueCompAndQty.flueCompo;
         epsilonOW = 1 / (1 / eWnow + psi * (1 / eO - 1));
@@ -497,9 +570,49 @@ public class UnitFurnace {
         double alphaEOW = alphaOW * epsilonOW;
         double alphaGOW = radFlue.alphaGas(tO, two, gThick) * tuning.emmFactor;
         double alphaEGOW = alphaGOW * eO;
+//        double alphaEGOW = 0;
         alphaAbsorbWRTtempO = alphaEGOW;
         double effValue = alphaEOW  - alphaEGOW;
         return (effValue > 0) ? effValue : 0;
+    }
+
+//    private double alphaOWEffective1(double tO, double two, double eWnow) {
+//        double epsilonOW, alphaOW;
+//        FlueComposition radFlue = fceSec.totFlueCompAndQty.flueCompo;
+//        epsilonOW = 1 / (1 / eWnow + psi * (1 / eO - 1));
+//        if (tO == two)
+//            alphaOW = SPECIAL.stefenBoltz * (Math.pow(tO + 273, 4) - Math.pow(tO - 1 + 273, 4)) / 1;
+//        else
+//            alphaOW = SPECIAL.stefenBoltz * (Math.pow(tO + 273, 4) - Math.pow(two + 273, 4)) / (tO - two);
+//
+//        double alphaEOW = alphaOW * epsilonOW;
+//        effectiveGasEmiss = radFlue.effectiveEmissivity(tO, two, gThick);
+//        double effectiveGasTransparency = 1.0 - effectiveGasEmiss;
+//        double effValue = alphaEOW  * effectiveGasTransparency;
+//        alphaAbsorbWRTtempO = alphaEOW - effValue;
+//        return effValue;
+//    }
+
+    private double alphaOWEffective(double tO, double two, double eWnow) {
+        if ((furnaceFor == DFHTuningParams.FurnaceFor.STRIP) || tuning.bGasAbsorptionHeilingen )
+            return alphaOWEffectiveHeilingen(tO, two, eWnow);
+        else {
+            double epsilonOW, alphaOW;
+            FlueComposition radFlue = fceSec.totFlueCompAndQty.flueCompo;
+            epsilonOW = 1 / (1 / eWnow + psi * (1 / eO - 1));
+            if (tO == two)
+                alphaOW = SPECIAL.stefenBoltz * (Math.pow(tO + 273, 4) - Math.pow(tO - 1 + 273, 4)) / 1;
+            else
+                alphaOW = SPECIAL.stefenBoltz * (Math.pow(tO + 273, 4) - Math.pow(two + 273, 4)) / (tO - two);
+
+            double alphaEOW = alphaOW * epsilonOW;
+            double alphaGOW = radFlue.alphaGas(tO, two, gThick);
+            effectiveGasEmiss = alphaGOW / alphaOW;
+            double effectiveGasTransparency = 1.0 - effectiveGasEmiss;
+            double effValue = alphaEOW * effectiveGasTransparency;
+            alphaAbsorbWRTtempO = alphaEOW - effValue;
+            return effValue;
+        }
     }
 
     double fcTalpha(double tg, double two) {
@@ -593,14 +706,27 @@ public class UnitFurnace {
     }
 
     double getDeltaTcharge(double gasT, double two) {
-        double tk = ch.getTk(two);
+        chTk = ch.getTk(two);
         double alpha = fceTempAndAlpha(gasT, two);
-        double tau = evalTau(alpha, tk, ((bAddedTopSoak) ? furnace.effectiveChThickAS : furnace.effectiveChThick) * gRatio);
+        double tau = evalTau(alpha, chTk, ((bAddedTopSoak) ? furnace.effectiveChThickAS : furnace.effectiveChThick) * gRatio);
         return (gasT - two) * s152 * (1 - tau) / tau;
     }
 
     public void setEW(double chTemp) {
         eW = ch.getEmiss(chTemp) * production.chEmmissCorrectionFactor;
+        if (tuning.bDoTFMmatch) {
+            if (tuning.bApplyChEmissMultiplier) {
+                eW *= tuning.tfmChEmissMultiplier;
+                eW = Math.min(eW, 0.999);
+            } else if (tuning.bApplyChReflectivityMultiplier) {
+                eW = 1 - (1 - eW) * tuning.tfmChEmissMultiplier;
+            }
+        }
+        chSpHt = ch.avgSpHt(chTemp, chTemp);
+    }
+
+    public void setSpHt(double chTemp) {
+        chSpHt = ch.avgSpHt(chTemp, chTemp);
     }
 
     double gasTFromFceTandChT(double tempO1, double two) {
@@ -646,15 +772,15 @@ public class UnitFurnace {
         return tempGAssume;
     }
 
-    double getAlpha() {
+    public double getAlpha() {
         return alphaGasPart + alphaWallPart;
     }
 
-    double startTime() {
+    public double startTime() {
         return endTime - delTime;
     }
 
-    double avgGasTemp() {
+    public double avgGasTemp() {
         if (pEntryNei != null)
             return (tempG + pEntryNei.tempG) / 2;
         else
@@ -668,7 +794,8 @@ public class UnitFurnace {
         boolean done = false;
         while (!done  && furnace.canRun()) {
             alpha = fceTempAndAlpha(tg, twoAssume);
-            twoRevised = tg - evalTau(alpha, ch.getTk(twm), ((bAddedTopSoak) ? furnace.effectiveChThickAS : furnace.effectiveChThick) * gRatio) * (tg - twm);
+            chTk = ch.getTk(twm);
+            twoRevised = tg - evalTau(alpha, chTk, ((bAddedTopSoak) ? furnace.effectiveChThickAS : furnace.effectiveChThick) * gRatio) * (tg - twm);
             diff = twoRevised - twoAssume;
             if (Math.abs(diff) <= 0.5 * tuning.errorAllowed)
                 done = true;
@@ -687,16 +814,17 @@ public class UnitFurnace {
         double twoAssume, twoRevised, diff, alpha;
         twoAssume = twm + 20;
         boolean done = false;
-          while (!done  && furnace.canRun()) {
-              alpha = getSimpleAlpha(twoAssume);
-              twoRevised = tempO - evalTau(alpha, ch.getTk(twm), furnace.effectiveChThick * gRatio) * (tempO - twm);
-              diff = twoRevised - twoAssume;
-              if (Math.abs(diff) <= 0.5 * tuning.errorAllowed)
-                  done = true;
-              else
-                  twoAssume = twoRevised;
-          }
-          return twoAssume;
+        while (!done  && furnace.canRun()) {
+            alpha = getSimpleAlpha(twoAssume);
+            chTk = ch.getTk(twm);
+            twoRevised = tempO - evalTau(alpha, chTk, furnace.effectiveChThick * gRatio) * (tempO - twm);
+            diff = twoRevised - twoAssume;
+            if (Math.abs(diff) <= 0.5 * tuning.errorAllowed)
+                done = true;
+            else
+                twoAssume = twoRevised;
+        }
+        return twoAssume;
     }
 
     double chargeSurfTemp() {
@@ -767,6 +895,9 @@ public class UnitFurnace {
             }
 
             prevSlot.setEW(tWMassume);  // 20170227 prevSlot.eW = ch.getEmiss(tWMassume) * production.chEmmissCorrectionFactor;
+            prevSlot.setSpHt(tWMassume);
+            chSpHt = ch.avgSpHt(tWMassume, tWMassume);
+
             two = prevSlot.chargeSurfTemp(tempGB, tWMassume);
             if (furnace.canRun()) {
                 if ((tempGB - two)/(tempG - tempWO) < 0) {
@@ -780,9 +911,11 @@ public class UnitFurnace {
                 twmAvg = (tWMassume + tempWmean) / 2;
                 setEW(twmAvg); // 20170227  eW = ch.getEmiss(twmAvg) * production.chEmmissCorrectionFactor;
                 alpha = fceTempAndAlpha(tgAvg, twoAvg);
-                tau = evalTau(alpha, ch.getTk(twmAvg), ((bAddedTopSoak) ? furnace.effectiveChThickAS : furnace.effectiveChThick) * gRatio);
+                chTk = ch.getTk(twmAvg);
+                chSpHt = ch.avgSpHt(tWMassume, tempWmean);
+                tau = evalTau(alpha, chTk, ((bAddedTopSoak) ? furnace.effectiveChThickAS : furnace.effectiveChThick) * gRatio);
                 tWMrevised = chargeEndTemp(tgAvg, tempWmean,
-                        g * gRatio * ch.avgSpHt(tWMassume, tempWmean), alpha, tau, inReverse);
+                        g * gRatio * chSpHt, alpha, tau, inReverse);
                 if (tWMrevised < -100) {
                     retVal = FceEvaluator.EvalStat.TOOHIGHGAS;
                     break;
@@ -860,7 +993,32 @@ public class UnitFurnace {
             dpAlphaWall.updateVal(alphaWallPart);
             dpAlphaTOW.updateVal(alphaTOW);
             dpAlphaAbsorb.updateVal(alphaAbsorbWRTtempG);
-            dpWallOnlyFactor.updateVal(fceSec.wallOnlyFactor);
+            dpEffGasEmiss.updateVal(effectiveGasEmiss);
+            dpChTk.updateVal(chTk);
+            dpEw.updateVal(eW);
+            dpPsi.updateVal(psi);
+            dpHeight.updateVal(height);
+            dpGratio.updateVal(gRatio);
+            dpGthick.updateVal(gThick);
+            dpS152.updateVal(s152);
+            dpChTau.updateVal(chTau);
+            dpChSpHt.updateVal(chSpHt);
+            dpTempWmean2d.updateVal(tempWmean2d);
+            dpTempWO2d.updateVal(tempWO2d);
+            dpTempWmin2d.updateVal(tempWmin2d);
+            dpS5122d.updateVal(s5122d);
+            dpChTau2d.updateVal(chTau2d);
+//            dpWallOnlyFactor.updateVal(fceSec.wallOnlyFactor);
+        }
+    }
+
+    public void upload2dData() {
+        if (tuning.bOnTest) {
+            dpTempWmean2d.updateVal(tempWmean2d);
+            dpTempWO2d.updateVal(tempWO2d);
+            dpTempWmin2d.updateVal(tempWmin2d);
+            dpS5122d.updateVal(s5122d);
+            dpChTau2d.updateVal(chTau2d);
         }
     }
 
@@ -894,9 +1052,11 @@ public class UnitFurnace {
             twmAvg = (tWMassume + prevSlot.tempWmean) / 2;
             setEW(twmAvg); // 20170227  eW = ch.getEmiss(twmAvg) * production.chEmmissCorrectionFactor;
             alpha = fceTempAndAlpha(tgAvg, twoAvg);
-            tau = evalTau(alpha, ch.getTk(twmAvg), ((bAddedTopSoak) ? furnace.effectiveChThickAS : furnace.effectiveChThick)* gRatio);
+            chTk = ch.getTk(twmAvg);
+            chSpHt = ch.avgSpHt(tWMassume, prevSlot.tempWmean);
+            tau = evalTau(alpha, chTk, ((bAddedTopSoak) ? furnace.effectiveChThickAS : furnace.effectiveChThick)* gRatio);
             tWMrevised = chargeEndTemp(tgAvg, prevSlot.tempWmean,
-                    g * gRatio * ch.avgSpHt(tWMassume, prevSlot.tempWmean), alpha, tau, false);
+                    g * gRatio * chSpHt, alpha, tau, false);
             diff = tWMassume - tWMrevised;
             if (Math.abs(diff) <= 0.5 * tuning.errorAllowed) {
                 retVal = FceEvaluator.EvalStat.OK;
@@ -921,12 +1081,12 @@ public class UnitFurnace {
         return unitFceForWallOnlyFactor.evalForWallOnlyFactor(bFirstSlot, prevSlot);
     }
 
-        /**
-         *
-         * @param bFirstSlot
-         * @param prevSlot
-         * @return
-         */
+    /**
+     *
+     * @param bFirstSlot
+     * @param prevSlot
+     * @return
+     */
     public FceEvaluator.EvalStat evalWithWallRadiationInFwd(boolean bFirstSlot, UnitFurnace prevSlot) {
         FceEvaluator.EvalStat status = FceEvaluator.EvalStat.OK;
         double tau, deltaT;
@@ -939,14 +1099,16 @@ public class UnitFurnace {
         double alpha;
         while (!done  && furnace.canRun()) {
             chHeat = production.production * gRatio *
-                     (ch.getHeatFromTemp(tWMassume) - ch.getHeatFromTemp(prevSlot.tempWmean));
+                    (ch.getHeatFromTemp(tWMassume) - ch.getHeatFromTemp(prevSlot.tempWmean));
             two = chargeSurfTempWithOnlyWallRadiation(tWMassume);
             lmDiff = SPECIAL.lmtd((tempO - two), (tempO - prevSlot.tempWO));
             twmAvg = tempO - lmDiff;
             alpha = getSimpleAlpha(twmAvg);
-            tau = evalTau(alpha, ch.getTk(twmAvg), furnace.effectiveChThick* gRatio);
+            chTk = ch.getTk(twmAvg);
+            chSpHt = ch.avgSpHt(tWMassume, prevSlot.tempWmean);
+            tau = evalTau(alpha, chTk, furnace.effectiveChThick* gRatio);
             tWMrevised = chargeEndTemp(tempO, prevSlot.tempWmean,
-                     g * gRatio * ch.avgSpHt(tWMassume, prevSlot.tempWmean), alpha, tau,false);
+                    g * gRatio * chSpHt, alpha, tau,false);
             diff = tWMassume - tWMrevised;
             if (Math.abs(diff) <= 0.5 * tuning.errorAllowed)
                 done = true;
@@ -972,7 +1134,8 @@ public class UnitFurnace {
     }
 
     void debug(String msg) {
-        System.out.println("UnitFurnace " + msg);
+        System.out.println("UnitFurnace " + msg + " for " +
+                ((bBot)? "Bottom " : "Top") + " slot with end pos " + endPos);
     }
 }
 

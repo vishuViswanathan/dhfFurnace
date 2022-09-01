@@ -284,7 +284,7 @@ public class FlueComposition extends Fluid {
     }
 
     public double airTempFromSensHeat(double heat) {
-         return hContAir.getXat(heat);
+        return hContAir.getXat(heat);
     }
 
     public MultiPairColPanel mpFlueCompo(String name) {
@@ -321,13 +321,13 @@ public class FlueComposition extends Fluid {
         if (stoicFlue == null)
             return sensHeatFromTemp(temp);
         else {
-          double hCO2 = hContCO2.getYat(temp);
-          double hH2O = hContH2O.getYat(temp);
-          double hSO2 = hContSO2.getYat(temp);
-          double hO2 = hContO2.getYat(temp);
-          double hN2 = hContN2.getYat(temp);
-          return (hCO2 * stoicFlue.fractCO2 + hH2O * stoicFlue.fractH2O +
-                  hSO2 * stoicFlue.fractSO2 + hO2 * stoicFlue.fractO2 + hN2 * stoicFlue.fractN2);
+            double hCO2 = hContCO2.getYat(temp);
+            double hH2O = hContH2O.getYat(temp);
+            double hSO2 = hContSO2.getYat(temp);
+            double hO2 = hContO2.getYat(temp);
+            double hN2 = hContN2.getYat(temp);
+            return (hCO2 * stoicFlue.fractCO2 + hH2O * stoicFlue.fractH2O +
+                    hSO2 * stoicFlue.fractSO2 + hO2 * stoicFlue.fractO2 + hN2 * stoicFlue.fractN2);
         }
     }
 
@@ -469,10 +469,20 @@ public class FlueComposition extends Fluid {
         return emissCO2.getRowArray(gThick * fractCO2);
     }
 
+    public double effectiveEmissivity(double temp1, double temp2, double gThick) {
+        return effectiveEmissivity(temp1, temp2, gThick, true);
+    }
+
     public double alphaGas(double temp1, double temp2, double gThick) {
         return alphaGas(temp1, temp2, gThick, true);
     }
 
+    public double effectiveEmissivity(double temp1, double temp2, double gThick, boolean withCorrection) {
+        double effectiveEmiss = alphaGas(temp1, temp2, gThick, true) *
+                (temp1 - temp2)/ (SPECIAL.stefenBoltz * (Math.pow(temp1 + 273, 4) - Math.pow(temp2 + 273, 4)));
+        return effectiveEmiss;
+
+    }
 
     public double alphaGas(double temp1, double temp2, double gThick, boolean withCorrection) {
         double retVal = 0;
@@ -487,7 +497,6 @@ public class FlueComposition extends Fluid {
         }
         return retVal;
     }
-
 
     // alphaFactor has to be applied by the caller
     public static double alphaGasBasic(double temp1, double temp2, XYArray emmXYCO2, XYArray emmXYH2O, boolean withCorrection) {
@@ -541,7 +550,7 @@ public class FlueComposition extends Fluid {
             }
 
             retVal = (qCO2 + qH2O) / (temp1 - temp2);
-             done = true;
+            done = true;
         }
 //        double effectiveEmiss = retVal * (temp1 - temp2)/ (SPECIAL.stefenBoltz * (T1_4 - T2_4));
         return retVal;

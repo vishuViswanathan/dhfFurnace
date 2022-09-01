@@ -215,8 +215,10 @@ public class ThreeDDisplay extends JFrame {//  implements Runnable {
     x += 20;
     y += 20;
     // text Frame
+//    yzTextFrame = new TextFrame("Text YZ section", statsData,
+//            TextFrame.XLAYER, true, selFrame);
     yzTextFrame = new TextFrame("Text YZ section", statsData,
-            TextFrame.XLAYER, true, selFrame);
+            TextFrame.XLAYER, false, selFrame);
     yzTextFrame.setLocation(x, y);
     deskTop.add(yzTextFrame);
     yzTextFrame.setVisible(true);
@@ -227,7 +229,7 @@ public class ThreeDDisplay extends JFrame {//  implements Runnable {
     y += 50;
     // text Frame
     xzTextFrame = new TextFrame("Text XZ section", statsData,
-            TextFrame.YLAYER, true, selFrame);
+            TextFrame.YLAYER, false, selFrame);
     xzTextFrame.setLocation(x, y);
     deskTop.add(xzTextFrame);
     xzTextFrame.setVisible(true);
@@ -238,7 +240,7 @@ public class ThreeDDisplay extends JFrame {//  implements Runnable {
     y += 50;
     // text Frame
     xyTextFrame = new TextFrame("Text XY section", statsData,
-            TextFrame.ZLAYER, true, selFrame);
+            TextFrame.ZLAYER, false, selFrame);
     xyTextFrame.setLocation(x, y);
     deskTop.add(xyTextFrame);
     xyTextFrame.setVisible(true);
@@ -290,14 +292,26 @@ public class ThreeDDisplay extends JFrame {//  implements Runnable {
     tda.writeArrayToFile(fName, false);
   }
 
-  void saveToDataFile() {
+  void saveToDataFileOLD() {
     String fName = getFileName(false, "trd", "Temperature Profile Files");
     if (fName == null)
       return;
     statsData.saveHistory(fName);
   }
 
-  static public TemperatureStats readFromFile(Component parent) {
+    void saveToDataFile() {
+        Frame parent = null;
+        FileDialog fileDlg =
+                new FileDialog(parent, "Temperature Profile Files",
+                        FileDialog.SAVE);
+        fileDlg.setFile("*.trd");
+        fileDlg.setVisible(true);
+        String fileName = fileDlg.getFile();
+        if (fileName != null)
+            statsData.saveHistory(fileDlg.getDirectory() + fileName);
+    }
+
+    static public TemperatureStats readFromFileOLD(Component parent) {
     GetFileName getFile = new GetFileName(true, "trd", "Temperature Profile Files");
     String fName = getFile.getIt(parent);
     if (fName == null)
@@ -306,7 +320,21 @@ public class ThreeDDisplay extends JFrame {//  implements Runnable {
     return newStat;
   }
 
-File lastDirectory = null;
+  static public TemperatureStats readFromFile(Frame parent) {
+    FileDialog fileDlg =
+            new FileDialog(parent, "Temperature Profile Files",
+                    FileDialog.LOAD);
+    fileDlg.setFile("*.trd");
+    fileDlg.setVisible(true);
+    String fileName = fileDlg.getFile();
+    if (fileName != null) {
+      TemperatureStats newStat = new TemperatureStats(fileDlg.getDirectory() + fileName);
+      return newStat;
+    } else
+      return null;
+  }
+
+  File lastDirectory = null;
 
   String getFileName (boolean toRead, String ext, String desription) {
     GetFileName getFile = new GetFileName(toRead, ext, desription);

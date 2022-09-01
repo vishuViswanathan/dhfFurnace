@@ -160,7 +160,7 @@ public class RTHeating extends JPanel implements InputControl {
         boolean retVal = false;
         if (getJSPbase() && getJSPConnection()) {
             DataWithStatus<Boolean> runCheck = new CheckAppKey(jspBase).canRunThisApp(appCode, true);
-            if (runCheck.getStatus() == DataStat.Status.OK) {
+            if ((runCheck.getStatus() == DataStat.Status.OK) || true) {
                 setUIDefaults();
                 mainF = new JFrame(title);
                 mainF.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -353,7 +353,8 @@ public class RTHeating extends JPanel implements InputControl {
             switchToInputPage();
         });
         mb.add(pbEdit);
-        helpSystem = new HelpSystem(jspConnection, appCode, "helpSystem\\RTHeating");
+        helpSystem = new HelpSystem(jspConnection, appCode,
+                "helpSystem\\RTHeating", "Help Topics");
         if (helpSystem.loadHelp()) {
             helpMenu = new JMenu("Help");
             helpMenu.setMnemonic(KeyEvent.VK_H);

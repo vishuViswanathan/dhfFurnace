@@ -285,13 +285,27 @@ public class SurfaceAmbientsDlg extends JDialog {
 
   File lastDirectory = null;
 
-  String getFileName (boolean toRead) {
+  String getFileNameOLD (boolean toRead) {
     GetFileName getFile = new GetFileName(toRead, "amb", "Ambient Data Files");
     getFile.setDirectory(lastDirectory);
     String fName = getFile.getIt(this);
     lastDirectory = getFile.getDirectory();
     return fName;
   }
+
+    String getFileName(boolean toRead) {
+      Frame parent = null;
+      FileDialog fileDlg =
+              new FileDialog(parent, "Ambient Data Files",
+                      FileDialog.LOAD);
+      fileDlg.setFile("*.amb");
+      fileDlg.setVisible(true);
+      String fileName = fileDlg.getFile();
+      if (fileName != null)
+        return (fileDlg.getDirectory() + fileName);
+      else
+        return null;
+    }
 
 
   void takeData() {

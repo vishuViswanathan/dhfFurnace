@@ -57,7 +57,9 @@ public class TransientHeat extends JFrame {
   private void jbInit() {
     GetChargeListener getChListener = new GetChargeListener();
     defBeamBlankV.addActionListener(getChListener);
+      defBeamBlankV.setEnabled(false);
     defBeamBlankH.addActionListener(getChListener);
+      defBeamBlankH.setEnabled(false);
     defRectCharge.addActionListener(getChListener);
 
     mChargeAndCycle.addActionListener(
